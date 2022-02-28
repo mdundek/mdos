@@ -1,0 +1,55 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appName }}
+{{- range .Values.appComponents }}
+{{- if .virtualService.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # name: {{ include "stateless-helm.fullname" $ }}
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  hosts:
+    {{- range .virtualService.hosts }}
+    - {{ . | quote -}}
+    {{- end }}
+  gateways:
+    - istio-system/http-gateway
+  http:
+    - name: {{ $appName }}-{{ lower .name }}
+      match:
+      {{- if .virtualService.matchPrefix }}
+        - uri:
+            prefix: {{ .virtualService.matchPrefix }}
+      rewrite:
+        uri: /
+      {{- end }}
+      route:
+      - destination:
+          port:
+            number: {{ .virtualService.svcPort }}
+          host: {{ $appName }}-{{ lower .name }}.{{ $.Release.Namespace }}.svc.cluster.local
+    {{- range $.serviceLinks }}
+    - name: {{ lower .appName }}-service-link
+      match:
+        - uri:
+            prefix: /scds/{{ lower .appName }}
+      rewrite:
+        uri: /
+      route:
+      - destination:
+          port:
+            number: {{ .port }} # which port ??
+          host: {{ $appName }}-{{ lower .appName }}.{{ lower .appDomain }}.svc.cluster.local
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

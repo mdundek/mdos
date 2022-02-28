@@ -1,0 +1,1106 @@
+{{- if .Values.enabled }}
+{{- range .Values.appComponents }}
+{{- $appComponentName := lower .name }}
+{{- $appName := lower $.Values.appName }}
+{{- if .isDaemonset }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  {{- if not .autoscaling.enabled }}
+  replicas: {{ .replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
+      {{- if $.Values.isScdsApp }}
+      scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+      scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+      scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+      scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with .podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
+        {{- if $.Values.isScdsApp }}
+        scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+        scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+        scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+        scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+        scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+        {{- end }}
+    spec:
+      {{- with .imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .serviceAccount.create }}
+      serviceAccountName: {{ $appName }}-{{ lower .name }}
+      {{- else }}
+      serviceAccountName: default
+      {{- end }}
+      {{- with $.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      {{- end }}
+      {{- if .persistence.enabled }}
+      initContainers:
+      - name: {{ $appName }}-{{ lower .name }}-init
+        image: {{ $.Values.registry }}/{{ .initContainer.image }}:{{ .initContainer.imageTag }}
+        command: [{{ .initContainer.option1 | quote }}, {{ .initContainer.option2 | quote }}]
+      {{- end }}
+      containers:
+        - name: {{ $appName }}-{{ lower .name }}
+          {{- with $.Values.securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}
+          image: "{{ $.Values.registry }}/{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          {{- if .overwriteCommand }}
+          {{- with .command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .commandArgs }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          env:
+            {{- if .secrets.enabled }}
+              {{- range .secrets.data }} {{- /*# ENV from secrets */}}
+                {{- if eq .type "env" }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                {{- end }}
+              {{- end }}
+
+              {{- range $.Values.global.secrets }}
+                {{- if eq .type "env" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ $rangeKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+
+            {{- end }}
+
+            {{- if .config.enabled }}
+              {{- range .config.data }} {{- /* ENV from config */}}
+                {{- if eq .type "env" }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                {{- end }}
+              {{- end }}
+
+              {{- range $.Values.global.config }}
+                {{- if eq .type "env" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ $rangeKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- if .service.create }}
+          ports:
+          {{- range .service.portMappings }}
+          - name: http-{{ .port }}
+            containerPort: {{ .containerPort }}
+            # protocol: TCP
+          {{- end }}
+          {{- if .service.livenessProbePath }}
+          livenessProbe:
+            httpGet:
+              path: {{ .service.livenessProbePath }}
+              port: {{ .service.containerPort }}
+          {{- end }}
+          {{- if .service.readinessProbePath }}
+          readinessProbe:
+            httpGet:
+              path: {{ .service.readinessProbePath }}
+              port: {{ .service.containerPort }}
+          {{- end }}
+          {{- end }}
+          {{- if .resources }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .persistence.hostpathVolumes }}
+              {{- range .persistence.hostpathVolumes }}
+            - name: {{ .name | replace "." "-" | quote }}
+              mountPath: {{ .mountPath }}
+              {{- end }}
+            {{- end }}
+            {{- if .config.enabled }}
+              {{- range .config.data }} {{- /* configmap volumeMounts */}}
+                {{- if eq .type "file" }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: "{{ .mountPath }}/{{ .key }}"
+              subPath: {{ .key | quote }}
+               {{- end }}
+              {{- end }}
+
+              {{- range $.Values.global.config }}
+                {{- if eq .type "file" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- $rangeMPath := .mountPath }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" }}
+              mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
+              subPath: {{ $rangeKey | quote }}            
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: "{{ .mountPath }}/{{ .key }}"
+              subPath: {{ .key | quote }}.           
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+
+            {{- end }}
+
+            {{- if .secrets.enabled }}
+              {{- range .secrets.data }} {{- /* secret volumeMounts */}}
+                {{- if eq .type "file" }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: {{ .mountPath | quote }}
+                {{- end }}
+              {{- end }}
+
+              {{- range $.Values.global.secrets }} {{- /* secret volumes */}}
+                {{- if eq .type "file" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- $rangeMPath := .mountPath }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" }}
+              mountPath: {{ $rangeMPath | quote }}  
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: {{ .mountPath | quote }}          
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+
+      volumes:
+        {{- if .persistence.hostpathVolumes }}
+          {{- range .persistence.hostpathVolumes }}
+        - name: {{ .name | replace "." "-" | quote }}
+          hostPath:
+            path: {{ .hostPath }}
+            {{- if .type }}
+            type: {{ .type }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .config.enabled }}
+          {{- range .config.data }} {{- /* configmap volumes */}}
+            {{- if eq .type "file" }}
+        - name: {{ .key | replace "." "-" | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+            {{- end }}
+          {{- end }}
+
+          {{- range $.Values.global.config }}
+            {{- if eq .type "file" }}
+              {{- if .appCompNames }}
+                {{- $rangeKey := .key }}
+                {{- $rangeMPath := .mountPath }}
+                {{- range .appCompNames }}
+                  {{- if eq . $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ $rangeKey }}
+                path: {{ $rangeKey }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+
+        {{- if .secrets.enabled }}
+          {{- range .secrets.data }} {{- /* secret volumes */}}
+            {{- if eq .type "file" }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+            {{- end }}
+          {{- end }}
+
+          {{- range $.Values.global.secrets }}
+            {{- if eq .type "file" }}
+              {{- if .appCompNames }}
+                {{- $rangeKey := .key }}
+                {{- range .appCompNames }}
+                  {{- if eq . $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ $rangeKey }}
+                path: {{ $rangeKey }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- else if and (.persistence.enabled) (.persistence.volumes) }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  serviceName: {{ $appName }}-{{ lower .name }}
+  {{- if not .autoscaling.enabled }}
+  replicas: {{ .replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
+      {{- if $.Values.isScdsApp }}
+      scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+      scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+      scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+      scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with .podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
+        {{- if $.Values.isScdsApp }}
+        scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+        scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+        scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+        scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+        scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+        {{- end }}
+    spec:
+      {{- with .imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .serviceAccount.create }}
+      serviceAccountName: {{ $appName }}-{{ lower .name }}
+      {{- else }}
+      serviceAccountName: default
+      {{- end }}
+      {{- with $.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      {{- end }}
+
+      {{- $srcPaths := "" }}
+      {{- $dstPaths := "" }}
+      {{- $types := "" }}
+      {{- $ldlSyncs := "" }}
+      {{- range .persistence.volumes }}
+      {{- if .ldlSync }}
+      {{- if $srcPaths }}
+        {{- $srcPaths = print $srcPaths  ";" .sourcePath -}}
+        {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
+        {{- $types = print $types  ";" .type -}}
+        {{- $ldlSyncs = print $srcPaths  " " .ldlSync -}}
+      {{- else }}
+        {{- $srcPaths = print .sourcePath -}}
+        {{- $dstPaths = print .mountPath -}}
+        {{- $types = print .type -}}
+        {{- $ldlSyncs = print .ldlSync -}}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+
+      {{- $initWaitApps := "" }}
+      {{- range .waitForComponents }}
+      {{- if $initWaitApps }}
+        {{- $initWaitApps = print $initWaitApps  ";" . -}}
+      {{- else }}
+        {{- $initWaitApps = print . -}}
+      {{- end }}
+      {{- end }}
+
+      {{- if or (contains "true" $ldlSyncs) ($initWaitApps) }}
+      initContainers:
+      {{- if contains "true" $ldlSyncs }}
+      - name: {{ $appName }}-{{ lower .name }}-init
+        image: {{ $.Values.registry }}/{{ $.Values.initContainer.image }}:{{ $.Values.initContainer.imageTag }}
+        volumeMounts:
+          {{- range .persistence.volumes }}
+          {{- if .ldlSync }}
+          - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            mountPath: "{{ .mountPath }}"
+          - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}-host
+            mountPath: "{{ .sourcePath }}"
+          {{- end }}
+          {{- end }}
+        env: 
+        - name: SYNC_SOURCE_DIR
+          value: "{{ $srcPaths }}"
+        - name: SYNC_TARGET_DIR
+          value: "{{ $dstPaths }}"
+        - name: SYNC_TYPE
+          value: "{{ $types }}"
+      {{- end }}
+      {{- if $initWaitApps }}
+      - name: {{ $appName }}-{{ lower .name }}-init
+        image: {{ $.Values.registry }}/{{ $.Values.initContainer.image }}:{{ $.Values.initContainer.imageTag }}
+        command: ["/usr/src/ops/waitForDeployment.sh"]
+        env: 
+        - name: APP_UUID_WAIT_LIST
+          value: "{{ $initWaitApps }}"
+      {{- end }}
+      {{- end }}
+      
+      containers:
+        - name: {{ $appName }}-{{ lower .name }}
+          {{- with $.Values.securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}
+          image: "{{ $.Values.registry }}/{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          {{- if .overwriteCommand }}
+          {{- with .command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .commandArgs }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+   
+          env:
+            {{- if .secrets.enabled }}
+              {{- range .secrets.data }} {{- /*# ENV from secrets */}}
+                {{- if eq .type "env" }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                {{- end }}
+              {{- end }}
+              {{- range $.Values.global.secrets }}
+                {{- if eq .type "env" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ $rangeKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- if .config.enabled }}
+              {{- range .config.data }} {{- /* ENV from config */}}
+                {{- if eq .type "env" }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                {{- end }}
+              {{- end }}
+              {{- range $.Values.global.config }}
+                {{- if eq .type "env" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ $rangeKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- if .service.create }}
+          ports:
+          {{- range .service.portMappings }}
+          - name: http-{{ .port }}
+            containerPort: {{ .containerPort }}
+            # protocol: TCP
+          {{- end }}
+          {{- if .service.livenessProbePath }}
+          livenessProbe:
+            httpGet:
+              path: {{ .service.livenessProbePath }}
+              port: {{ .service.containerPort }}
+          {{- end }}
+          {{- if .service.readinessProbePath }}
+          readinessProbe:
+            httpGet:
+              path: {{ .service.readinessProbePath }}
+              port: {{ .service.containerPort }}
+          {{- end }}
+          {{- end }}
+          {{- if .resources }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .persistence.hostpathVolumes }}
+              {{- range .persistence.hostpathVolumes }}
+            - name: {{ .name | replace "." "-" | quote }}
+              mountPath: {{ .mountPath }}
+              {{- end }}
+            {{- end }}
+            {{- if .config.enabled }}
+              {{- range .config.data }} {{- /* configmap volumeMounts */}}
+                {{- if eq .type "file" }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: "{{ .mountPath }}/{{ .key }}"
+              subPath: {{ .key | quote }}
+               {{- end }}
+              {{- end }}
+              {{- range $.Values.global.config }}
+                {{- if eq .type "file" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- $rangeMPath := .mountPath }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" }}
+              mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
+              subPath: {{ $rangeKey | quote }}            
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: "{{ .mountPath }}/{{ .key }}"
+              subPath: {{ .key | quote }}.           
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- if .secrets.enabled }}
+              {{- range .secrets.data }} {{- /* secret volumeMounts */}}
+                {{- if eq .type "file" }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: {{ .mountPath | quote }}
+                {{- end }}
+              {{- end }}
+
+              {{- range $.Values.global.secrets }} {{- /* secret volumes */}}
+                {{- if eq .type "file" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- $rangeMPath := .mountPath }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" }}
+              mountPath: {{ $rangeMPath | quote }}  
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: {{ .mountPath | quote }}          
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- range .persistence.volumes }} {{- /* PVC volumeMounts */}}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+              mountPath: "{{ .mountPath }}"
+            {{- end }}
+      volumes:
+        {{- if .persistence.hostpathVolumes }}
+          {{- range .persistence.hostpathVolumes }}
+        - name: {{ .name | replace "." "-" | quote }}
+          hostPath:
+            path: {{ .hostPath }}
+            {{- if .type }}
+            type: {{ .type }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .config.enabled }}
+          {{- range .config.data }} {{- /* configmap volumes */}}
+            {{- if eq .type "file" }}
+        - name: {{ .key | replace "." "-" | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+            {{- end }}
+          {{- end }}
+          {{- range $.Values.global.config }}
+            {{- if eq .type "file" }}
+              {{- if .appCompNames }}
+                {{- $rangeKey := .key }}
+                {{- range .appCompNames }}
+                  {{- if eq . $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ $rangeKey }}
+                path: {{ $rangeKey }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .secrets.enabled }}
+          {{- range .secrets.data }} {{- /* secret volumes */}}
+            {{- if eq .type "file" }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+            {{- end }}
+          {{- end }}
+          {{- range $.Values.global.secrets }}
+            {{- if eq .type "file" }}
+              {{- if .appCompNames }}
+                {{- $rangeKey := .key }}
+                {{- range .appCompNames }}
+                  {{- if eq . $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ $rangeKey }}
+                path: {{ $rangeKey }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if contains "true" $ldlSyncs }} {{- /* PVC volumes */}}
+        {{- range .persistence.volumes }}
+        {{- if .ldlSync }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}-host
+          hostPath:
+            path: {{ .sourcePath }}
+            type: Directory
+        {{- end }}
+        {{- end }}
+        {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    {{- range .persistence.volumes }}
+    - metadata:
+        name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+        labels:
+          appId: {{ $appName }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: {{ .size }}
+    {{- end }}
+{{- else }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  {{- if not .autoscaling.enabled }}
+  replicas: {{ .replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
+      {{- if $.Values.isScdsApp }}
+      scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+      scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+      scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+      scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with .podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
+        {{- if $.Values.isScdsApp }}
+        scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+        scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+        scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+        scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+        scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+        {{- end }}
+    spec:
+      {{- with .imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .serviceAccount.create }}
+      serviceAccountName: {{ $appName }}-{{ lower .name }}
+      {{- else }}
+      serviceAccountName: default
+      {{- end }}
+      {{- with $.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      {{- end }}
+
+      {{- $initWaitApps := "" }}
+      {{- range .waitForComponents }}
+      {{- if $initWaitApps }}
+        {{- $initWaitApps = print $initWaitApps  ";" . -}}
+      {{- else }}
+        {{- $initWaitApps = print . -}}
+      {{- end }}
+      {{- end }}
+      {{- if $initWaitApps }}
+      initContainers:
+      - name: {{ $appName }}-{{ lower .name }}-init
+        image: {{ $.Values.registry }}/{{ $.Values.initContainer.image }}:{{ $.Values.initContainer.imageTag }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        command: ["/usr/src/ops/waitForDeployment.sh"]
+        env: 
+        - name: APP_UUID_WAIT_LIST
+          value: "{{ $initWaitApps }}"
+      {{- end }}
+      containers:
+        - name: {{ $appName }}-{{ lower .name }}
+          {{- with $.Values.securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}
+          image: "{{ $.Values.registry }}/{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          {{- if .overwriteCommand }}
+          {{- with .command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .commandArgs }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          env:
+            {{- if .secrets.enabled }}
+              {{- range .secrets.data }} {{- /*# ENV from secrets */}}
+                {{- if eq .type "env" }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                {{- end }}
+              {{- end }}
+
+              {{- range $.Values.global.secrets }}
+                {{- if eq .type "env" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ $rangeKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- if .config.enabled }}
+              {{- range .config.data }} {{- /* ENV from config */}}
+                {{- if eq .type "env" }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                {{- end }}
+              {{- end }}
+              {{- range $.Values.global.config }}
+                {{- if eq .type "env" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ $rangeKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}
+                  key: {{ .key }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- if .service.create }}
+          ports:
+          {{- range .service.portMappings }}
+          - name: http-{{ .port }}
+            containerPort: {{ .containerPort }}
+            # protocol: TCP
+          {{- end }}
+          {{- if .service.livenessProbePath }}
+          livenessProbe:
+            httpGet:
+              path: {{ .service.livenessProbePath }}
+              port: {{ .service.containerPort }}
+          {{- end }}
+          {{- if .service.readinessProbePath }}
+          readinessProbe:
+            httpGet:
+              path: {{ .service.readinessProbePath }}
+              port: {{ .service.containerPort }}
+          {{- end }}
+          {{- end }}
+          {{- if .resources }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .persistence.hostpathVolumes }}
+              {{- range .persistence.hostpathVolumes }}
+            - name: {{ .name | replace "." "-" | quote }}
+              mountPath: {{ .mountPath }}
+              {{- end }}
+            {{- end }}
+            {{- if .config.enabled }}
+              {{- range .config.data }} {{- /* configmap volumeMounts */}}
+                {{- if eq .type "file" }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: "{{ .mountPath }}/{{ .key }}"
+              subPath: {{ .key | quote }}
+               {{- end }}
+              {{- end }}
+              {{- range $.Values.global.config }}
+                {{- if eq .type "file" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- $rangeMPath := .mountPath }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" }}
+              mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
+              subPath: {{ $rangeKey | quote }}            
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: "{{ .mountPath }}/{{ .key }}"
+              subPath: {{ .key | quote }}.           
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- if .secrets.enabled }}
+              {{- range .secrets.data }} {{- /* secret volumeMounts */}}
+                {{- if eq .type "file" }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: {{ .mountPath | quote }}
+                {{- end }}
+              {{- end }}
+              {{- range $.Values.global.secrets }} {{- /* secret volumes */}}
+                {{- if eq .type "file" }}
+                  {{- if .appCompNames }}
+                    {{- $rangeKey := .key }}
+                    {{- $rangeMPath := .mountPath }}
+                    {{- range .appCompNames }}
+                      {{- if eq . $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" }}
+              mountPath: {{ $rangeMPath | quote }}  
+                      {{- end }}
+                    {{- end }}
+                  {{- else }}
+            - name: {{ .key | replace "." "-" }}
+              mountPath: {{ .mountPath | quote }}          
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- if .persistence.hostpathVolumes }}
+          {{- range .persistence.hostpathVolumes }}
+        - name: {{ .name | replace "." "-" | quote }}
+          hostPath:
+            path: {{ .hostPath }}
+            {{- if .type }}
+            type: {{ .type }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .config.enabled }}
+          {{- range .config.data }} {{- /* configmap volumes */}}
+            {{- if eq .type "file" }}
+        - name: {{ .key | replace "." "-" | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+            {{- end }}
+          {{- end }}
+          {{- range $.Values.global.config }}
+            {{- if eq .type "file" }}
+              {{- if .appCompNames }}
+                {{- $rangeKey := .key }}
+                {{- range .appCompNames }}
+                  {{- if eq . $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ $rangeKey }}
+                path: {{ $rangeKey }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .secrets.enabled }}
+          {{- range .secrets.data }} {{- /* secret volumes */}}
+            {{- if eq .type "file" }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+            {{- end }}
+          {{- end }}
+          {{- range $.Values.global.secrets }}
+            {{- if eq .type "file" }}
+              {{- if .appCompNames }}
+                {{- $rangeKey := .key }}
+                {{- range .appCompNames }}
+                  {{- if eq . $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ $rangeKey }}
+                path: {{ $rangeKey }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+        - name: {{ .key | replace "." "-" | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -14,8 +14,24 @@ echo "server {
 
     location / {
         proxy_pass http://127.0.0.1:8080/;
-        proxy_set_header Host $host;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection upgrade;
+        proxy_set_header Accept-Encoding gzip;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name *.mdundek.network;
+
+    ssl_certificate /etc/letsencrypt/live/mdundek.network/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mdundek.network/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:30978/;
+        proxy_set_header Host \$host;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection upgrade;
         proxy_set_header Accept-Encoding gzip;
     }

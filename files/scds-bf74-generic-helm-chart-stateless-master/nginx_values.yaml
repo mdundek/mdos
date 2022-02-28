@@ -1,0 +1,157 @@
+enabled: true
+developement: false # if true, services will be exposed as NodePorts
+registry: docker.io # The registry host to get the images from
+isScdsApp: true
+scdsAcbmAppUUID: abcd
+scdsAcbmUUID: abcd
+scdsBundleName: nginx
+scdsCompanyUUID: abcd
+appName: nginx
+
+global:
+    imagePullPolicy: IfNotPresent
+
+initContainer:
+    image: scds/scds-ldl-data-sync
+    imageTag: 0.1.3
+
+appComponents:
+    - name: nginx
+      scdsAcbmAppCompUUID: abcd
+      replicaCount: 1
+      networkIsolation: "private" # fully isolated, only ODM and kubernetes system components can access
+      allowedAppComponents: []
+
+      image:
+          repository: nginx
+          # Overrides the image tag whose default is the chart appVersion.
+          tag: "alpine"
+
+      imagePullSecrets: []
+
+      # allow the deployment to be a daemonset
+      isDaemonSet: false
+
+      # allow to overwrite the default docker command to use
+      overwriteCommand: false
+      command: []
+      commandArgs: []
+
+      serviceAccount:
+          # Specifies whether a service account should be created
+          create: false
+          # Annotations to add to the service account
+          annotations: {}
+          # The name of the service account to use.
+          # If not set and create is true, a name is generated using the fullname template
+          # name: "default"
+
+      podAnnotations: {}
+
+      podSecurityContext:
+          {}
+          # fsGroup: 2000
+
+      securityContext:
+          {}
+          # capabilities:
+          #   drop:
+          #   - ALL
+          # readOnlyRootFilesystem: true
+          # runAsNonRoot: true
+          # runAsUser: 1000
+
+      service:
+          create: true
+          type: ClusterIP
+          portMappings:
+              - port: 80
+                containerPort: 80
+          # livenessProbePath: /
+          # readinessProbePath: /
+
+      virtualService:
+          enabled: true
+          svcPort: 80
+          matchPrefix:
+          hosts:
+              - nginx.mdundek.network
+          tls: []
+
+      config:
+          enabled: false
+          data: {}
+          # data:
+          #   - type: file # will be mounted as a file inside the pod
+          #     key: test.config
+          #     value: "Content of test.config file"
+          #     mountPath: "/etc/myApp/config/"
+          #   - type: env # will be mounted as an ENV var inside the pod
+          #     key: TEST_ENV
+          #     value: "Value of ENV variable TEST_ENV"
+
+      secrets:
+          enabled: false
+          data: {}
+          # data:
+          #   - type: file
+          #     key: test.secret
+          #     value: "Content of test.secret file"
+          #     mountPath: "/etc/myApp/config/"
+          #   - type: env
+          #     key: SECRET_ENV
+          #     value: "Value of ENV variable SECRET_ENV"
+
+      ## Persist data to a persistent volume
+      ### WARNING : To use ldlSync=true, initContainer bloc must be specified
+      persistence:
+          enabled: false
+          volumes:
+              - name: data-volume
+                size: 1Gi
+                mountPath: /tmp
+                ldlSync: false
+                sourcePath: /scds/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
+                type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)
+          # Used for SCDS only and dev center dev purposes
+          hostpathVolumes:
+              - name: host-data-volume
+                mountPath: /tmp
+                hostPath: /scds/content-volumes/app1
+                type: Directory
+
+      waitForComponents:
+      #  - ABCD
+      #  - EFGH
+
+      ## Persist logs to a persistent volume
+      logs:
+          enabled: false
+          existingClaim:
+          size: 1Gi
+
+      resources:
+          {}
+          # We usually recommend not to specify default resources and to leave this as a conscious
+          # choice for the user. This also increases chances charts run on environments with little
+          # resources, such as Minikube. If you do want to specify resources, uncomment the following
+          # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+          # limits:
+          #   cpu: 100m
+          #   memory: 128Mi
+          # requests:
+          #   cpu: 100m
+          #   memory: 128Mi
+
+      autoscaling:
+          enabled: false
+          minReplicas: 1
+          maxReplicas: 100
+          targetCPUUtilizationPercentage: 80
+          # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

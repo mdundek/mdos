@@ -1,0 +1,29 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appName }}
+# PVC + PV only for logs. ContentVolumes are mounted as HostPath
+{{- range .Values.appComponents }}
+{{- if and .logs.enabled (not .logs.existingClaim) }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .logs.size | quote }}
+  storageClassName: "scds-logs"
+{{- end }}
+{{- end }}
+{{- end }}

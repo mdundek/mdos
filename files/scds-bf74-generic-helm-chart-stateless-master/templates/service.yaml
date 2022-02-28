@@ -1,0 +1,39 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appName }}
+{{- range .Values.appComponents }}
+{{- if .service.create }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  {{- if $.Values.developement }}
+  type: NodePort
+  {{- else }}
+  type: {{ .service.type }}
+  {{- end }}
+  ports:
+    {{- range .service.portMappings }}
+    - port: {{ .port }}
+      targetPort: {{ .containerPort }}
+      {{- if $.Values.developement }}
+      nodePort: {{ .devNodePort }}
+      {{- end }}
+      # protocol: TCP
+      name: http-{{ .port }}
+    {{- end }}
+  selector:
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

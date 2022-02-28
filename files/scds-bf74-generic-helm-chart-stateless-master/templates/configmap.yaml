@@ -1,0 +1,39 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appName }}
+{{- range .Values.appComponents }}
+{{- if and .config.enabled }}
+{{- $appCompName := .name }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+data:
+  {{- range .config.data }}
+  {{ .key }}: {{ .value | quote }}
+  {{- end }}
+  {{- range $.Values.global.config }}
+    {{- if .appCompNames }}
+      {{- $rangeKey := .key }}
+      {{- $rangeVal := .value }}
+      {{- range .appCompNames }}
+        {{- if eq . $appCompName }}
+  {{ $rangeKey }}: {{ $rangeVal | quote }}
+        {{- end }}
+      {{- end }}
+    {{- else }}
+  {{ .key }}: {{ .value | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

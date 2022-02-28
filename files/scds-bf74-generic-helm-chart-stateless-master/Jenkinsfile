@@ -1,0 +1,67 @@
+def jenkinsSlaveToUse = "nonprod_standard";
+pipeline {
+    agent {
+        label jenkinsSlaveToUse
+    }
+    environment {
+        envAlias = getDevEnvNameForBranch(env.GIT_BRANCH);
+    }
+    options {
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: "scds_artifactory_credentials", usernameVariable: "ARTIFACTORY_USERNAME", passwordVariable: "ARTIFACTORY_API_KEY")]) {
+                        // NPM configuration
+                        sh ('echo "prep phase"')
+                    }
+                }
+            }
+        }
+        stage('Build & Publish init-container Docker Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: "scds_artifactory_credentials", usernameVariable: "ARTIFACTORY_USERNAME", passwordVariable: "ARTIFACTORY_API_KEY")]) {
+                        // NPM configuration                   
+                        sh(script: """
+                        echo build phase
+                        export CREDS="\$(echo -n "\$ARTIFACTORY_USERNAME\":"\$ARTIFACTORY_API_KEY\" | openssl base64)"
+                        cd infra/ldlInitContainer
+                        IMG_TAG=\$(cat ../../Chart.yaml | grep 'version:' | cut -d ":" -f2 | sed 's/^ *//;s/ *\$//')
+                        ./build-image.sh --reg-host r-bf74-scds-docker-local.artifactory.2b82.aws.cloud.airbus.corp --docker-repo scds/scds-ldl-data-sync:\$IMG_TAG --reg-creds-b64 "\$(echo "\$CREDS\" | xargs | sed 's/ //g')"                   
+                        """, label:'Build phase')
+                    }
+                }
+            }
+        } 
+        stage('Publish charts') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: "scds_artifactory_credentials", usernameVariable: "ARTIFACTORY_USERNAME", passwordVariable: "ARTIFACTORY_API_KEY")]) {
+                        // NPM configuration                   
+                        sh(script: """
+                        echo publish phase
+                        HELM_REPO_FOUND=\$(/home/jenkins/linux-amd64/helm repo list | grep "r-bf74-scds-helm-virtual")
+                        if [ "\$HELM_REPO_FOUND" == "" ]; then
+                            /home/jenkins/linux-amd64/helm repo add --pass-credentials r-bf74-scds-helm-virtual https://artifactory.2b82.aws.cloud.airbus.corp/artifactory/api/helm/r-bf74-scds-helm-virtual --username "\$ARTIFACTORY_USERNAME\" --password "\$ARTIFACTORY_API_KEY\"
+                            /home/jenkins/linux-amd64/helm repo update
+                        fi
+                        cd infra
+                        ./publish.sh --artifactory-password "\$ARTIFACTORY_API_KEY\"
+                        """, label:'publish phase')
+                    }
+                }
+            }
+        } 
+    }
+}
+def getDevEnvNameForBranch(String branchName) {
+    if (branchName == "master") {
+        return "dev";
+    }
+    else if(branchName == "release"){
+        return "val"
+    }
+}

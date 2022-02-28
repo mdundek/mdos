@@ -1,0 +1,86 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appName }}
+# 1 namespace per bundle per service provider
+# NP must be : 
+# - In 1 namespace : one label by application (networkIsolation: "private" --> fully isolated but ODM can access other apps from same bundle cannot, "$appID" --> $appCompID can access current app, "open" --> all apps from same namespace can access)
+{{- range .Values.appComponents }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+  {{- if eq .networkIsolation "open" }} # Allow traffic from all pods and all namespaces
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - {}
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: {{ $.Values.scdsBundleName }}
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: scds-odm
+  {{- else if eq .networkIsolation "private" }} # Deny traffic from ALL pods except system & ODM
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - {}
+  ingress: 
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: scds-odm
+  {{- else if eq .networkIsolation "limited" }} # Allow traffic from pods within same namespace, including system, istio & ODM
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - {}
+  ingress:
+    - from:
+      {{- range .allowedAppComponents }}
+      - podSelector:
+          matchLabels:
+            scdsAcbmAppCompUUID: {{ . }}
+      {{- end }}
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: scds-odm
+  {{- end }}
+{{- end }}
+{{- end }}

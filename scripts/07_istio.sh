@@ -19,10 +19,11 @@ sed -i '/name: status-port/a\      nodePort: 30977' ../files/istio_helm/gateways
 ## Deploy Istio Ingress
 echo "==>  Deploy Istio Ingress..."
 
+sed -i 's/type: LoadBalancer/type: NodePort/g' ../files/istio_helm/gateways/istio-ingress/values.yaml
+
 helm upgrade --install istio-ingress ../files/istio_helm/gateways/istio-ingress --kubeconfig /etc/rancher/k3s/k3s.yaml -n istio-system
 
 ## Deploy Istio Gateways
-echo "==>  Deploy Istio Gateways..."
 cat <<EOF | k3s kubectl apply -f -
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
