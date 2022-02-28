@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+    name: minio-backup-console
+    namespace: minio-backup
+spec:
+    gateways:
+        - istio-system/http-gateway
+    hosts:
+        - minioconsole.mdundek.network
+    http:
+        - name: minio-backup-console
+          route:
+              - destination:
+                    host: minio-backup-console.minio-backup.svc.cluster.local
+                    port:
+                        number: 80
