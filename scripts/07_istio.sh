@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# https://mdundek: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@github.com/mdundek/mdundek.network.git
+
 # Create namespace
 kubectl create namespace istio-system
 
