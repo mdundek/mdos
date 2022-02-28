@@ -5,7 +5,11 @@ cd /etc/nginx/sites-available/
 
 systemctl stop nginx
 
-echo "server {
+echo "upstream k3s_istio_80 {
+    server localhost:30978;
+}
+
+server {
     listen 443 ssl http2;
     server_name cs.mdundek.network;
 
@@ -29,7 +33,8 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/mdundek.network/privkey.pem;
 
     location / {
-        proxy_pass http://127.0.0.1:30978/;
+        proxy_pass http://k3s_istio_80;
+	    proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection upgrade;
