@@ -107,18 +107,8 @@ appComponents:
       persistence:
           enabled: false
           volumes:
-              - name: data-volume
-                size: 1Gi
-                mountPath: /tmp
-                ldlSync: false
-                sourcePath: /scds/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
-                type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)
           # Used for SCDS only and dev center dev purposes
           hostpathVolumes:
-              - name: host-data-volume
-                mountPath: /tmp
-                hostPath: /scds/content-volumes/app1
-                type: Directory
 
       waitForComponents:
       #  - ABCD

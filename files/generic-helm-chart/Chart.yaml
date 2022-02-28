@@ -1,6 +1,6 @@
 apiVersion: v2
-name: scds-generic-stateless-helm
-description: A Helm chart for SCDS applications deployed on Kubernetes
+name: generic-helm-chart
+description: A Helm chart for applications deployed on Kubernetes
 
 # A chart can be either an 'application' or a 'library' chart.
 #
