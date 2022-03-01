@@ -14,4 +14,4 @@ spec:
               - destination:
                     host: minio-backup-console.minio-backup.svc.cluster.local
                     port:
-                        number: 80
+                        number: 9001

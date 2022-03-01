@@ -18,10 +18,19 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:8080/;
-        proxy_set_header Host \$host;
+        proxy_http_version 1.1;
+        proxy_cache_bypass \$http_upgrade;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection upgrade;
+        proxy_set_header Host \$host;
         proxy_set_header Accept-Encoding gzip;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_set_header X-Forwarded-Port \$server_port;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_connect_timeout 30;
+        proxy_send_timeout 30;
     }
 }
 
@@ -33,12 +42,21 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/mdundek.network/privkey.pem;
 
     location / {
-        proxy_pass http://k3s_istio_80;
-	    proxy_http_version 1.1;
-        proxy_set_header Host \$host;
+        proxy_pass http://k3s_istio_80; 
+        proxy_http_version 1.1;
+        proxy_cache_bypass \$http_upgrade;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection upgrade;
+        proxy_set_header Host \$host;
         proxy_set_header Accept-Encoding gzip;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_set_header X-Forwarded-Port \$server_port;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_connect_timeout 30;
+        proxy_send_timeout 30;
+        
     }
 }" > ./default
 
