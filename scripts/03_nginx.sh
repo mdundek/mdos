@@ -60,5 +60,7 @@ server {
     }
 }" > ./default
 
+# TODO: For larger minio upload files, in /etc/nginx/nginx.config, in `http {}` block, add line: `client_max_body_size 0;`
+
 systemctl enable nginx
 systemctl start nginx
