@@ -15,3 +15,21 @@ spec:
                     host: minio-backup-console.minio-backup.svc.cluster.local
                     port:
                         number: 9001
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+    name: minio-backup
+    namespace: minio-backup
+spec:
+    gateways:
+        - istio-system/http-gateway
+    hosts:
+        - minio.mdundek.network
+    http:
+        - name: minio-backup
+          route:
+              - destination:
+                    host: minio-backup.minio-backup.svc.cluster.local
+                    port:
+                        number: 9000
