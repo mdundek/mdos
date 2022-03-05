@@ -40,17 +40,3 @@ kubectl apply -f ../files/minio/virtualservice.yaml
 # helm delete minio-backup -n minio-backup --kubeconfig /etc/rancher/k3s/k3s.yaml
 # kubectl delete -f ../files/minio/virtualservice.yaml
 # kubectl delete ns minio-backup
-
-
-
-
-
-
-
-
-
-
-
-/var/lib/rancher/k3s/storage
-
-/media/backup
