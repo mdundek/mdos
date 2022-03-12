@@ -10,6 +10,7 @@ Open crontab with `sudo crontab -e`, and append:
 
 Restart crontab service:
 `
+
 ```
 sudo /etc/init.d/cron restart
 ```
@@ -71,10 +72,11 @@ Delete bucket:
 aws --endpoint-url https://minio.mdundek.network s3 rb s3://mybucket
 ```
 
-
-
 Sync folder content with bucket:
 
 ```
 aws --endpoint-url https://minio.mdundek.network s3 sync . s3://mybucket/sync_folder/
 ```
+
+git checkout -b iss53
+git push -u origin iss53
