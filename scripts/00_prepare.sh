@@ -52,7 +52,7 @@ fi
 # ################## SYSTEM ##################
 # ############################################
 
-apt-get update -y && apt-get upgrade -yes
+apt-get update -y && apt-get upgrade -y
 apt-get install \
     jq \
     ca-certificates \
@@ -92,7 +92,7 @@ apt-get update
 apt-get install docker-ce docker-ce-cli containerd.io
 
 groupadd docker
-usermod -aG docker mdundek
+usermod -aG docker $PLATFORM_USER
 newgrp docker
 
 # Skip registry setup if certificate already there
