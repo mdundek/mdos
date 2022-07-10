@@ -39,7 +39,6 @@ else
 fi
 
 if [ "$(cat .env | grep "REGISTRY_BASE=")" == "" ]; then
-    informUpdateNeeded
     user_input REGISTRY_BASE "Enter the registry host & port:"
     echo "REGISTRY_BASE=$REGISTRY_BASE" >> .env
 fi

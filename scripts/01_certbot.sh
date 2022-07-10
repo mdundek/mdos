@@ -60,4 +60,4 @@ chmod 755 /etc/letsencrypt/renewal-hooks/pre/nginx.sh
 chmod 755 /etc/letsencrypt/renewal-hooks/post/nginx.sh
 
 # Set up auto renewal of certificate
-SLEEPTIME=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}'); echo "0 0,12 * * * root sleep $SLEEPTIME && certbot renew -q" | sudo tee -a /etc/crontab > /dev/null
+SLEEPTIME=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}'); echo "0 0,12 * * * root sleep $SLEEPTIME && certbot renew -q" | tee -a /etc/crontab > /dev/null

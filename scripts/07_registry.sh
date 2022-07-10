@@ -45,7 +45,7 @@ if [ -z $REG_CREDS_B64 ]; then
     exit 1
 fi
 
-if (k3s kubectl get pod mdundek-registry-v2-0 -n mdundek-registry) &> /dev/null; then
+if (k3s kubectl get pod mdos-registry-v2-0 -n mdos-registry) &> /dev/null; then
     echo "Registry v2 already deployed, skipping"
     exit 0
 else
@@ -60,16 +60,16 @@ else
   REG_PASS="${CREDS[1]}"
 
   # Create kubernetes namespace & secrets for registry
-  k3s kubectl create ns mdundek-registry
-  k3s kubectl create secret tls certs-secret --cert=/home/$PLATFORM_USER/registry/certs/$REGISTRY_HOST_STRIPPED.crt --key=/home/$PLATFORM_USER/registry/certs/$REGISTRY_HOST_STRIPPED.key -n mdundek-registry
-  k3s kubectl create secret generic auth-secret --from-file=/home/$PLATFORM_USER/registry/auth/htpasswd -n mdundek-registry
+  k3s kubectl create ns mdos-registry
+  k3s kubectl create secret tls certs-secret --cert=/home/$PLATFORM_USER/registry/certs/$REGISTRY_HOST_STRIPPED.crt --key=/home/$PLATFORM_USER/registry/certs/$REGISTRY_HOST_STRIPPED.key -n mdos-registry
+  k3s kubectl create secret generic auth-secret --from-file=/home/$PLATFORM_USER/registry/auth/htpasswd -n mdos-registry
 
   # Deploy registry on k3s
-  cat <<EOF | k3s kubectl apply -n mdundek-registry -f -
+  cat <<EOF | k3s kubectl apply -n mdos-registry -f -
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: mdundek-registry-v2-pv
+  name: mdos-registry-v2-pv
 spec:
   capacity:
     storage: 10Gi
@@ -81,25 +81,25 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mdundek-registry-v2
+  name: mdos-registry-v2
   labels:
-    app: mdundek-registry-v2
+    app: mdos-registry-v2
 spec:
   selector:
     matchLabels:
-      app: mdundek-registry-v2
-  serviceName: mdundek-registry-v2
+      app: mdos-registry-v2
+  serviceName: mdos-registry-v2
   updateStrategy:
     type: RollingUpdate
   replicas: 1
   template:
     metadata:
       labels:
-        app: mdundek-registry-v2
+        app: mdos-registry-v2
     spec:
       terminationGracePeriodSeconds: 30
       containers:
-      - name: mdundek-registry-v2
+      - name: mdos-registry-v2
         image: registry:latest
         imagePullPolicy: Always
         ports:
@@ -147,10 +147,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mdundek-registry-v2
+  name: mdos-registry-v2
 spec:
   selector:
-    app: mdundek-registry-v2
+    app: mdos-registry-v2
   ports:
     - port: 5000
       targetPort: 5000
@@ -158,7 +158,7 @@ spec:
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: mdundek-registry-v2
+  name: mdos-registry-v2
 spec:
   hosts:
     - $REGISTRY_HOST_STRIPPED
@@ -171,14 +171,14 @@ spec:
       - $REGISTRY_HOST_STRIPPED
     route:
     - destination:
-        host: mdundek-registry-v2.mdundek-registry.svc.cluster.local
+        host: mdos-registry-v2.mdos-registry.svc.cluster.local
         port:
           number: 5000
 EOF
 fi
 
 # Wait untill registry is up and running
-until (k3s kubectl get pod mdundek-registry-v2-0 -n mdundek-registry | grep "Running") &> /dev/null
+until (k3s kubectl get pod mdos-registry-v2-0 -n mdos-registry | grep "Running") &> /dev/null
 do
    echo "Waiting for the registry to come online ..."
    sleep 4

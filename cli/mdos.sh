@@ -36,6 +36,14 @@ case $1 in
             exit 0
         fi
         ./mdos_deploy.sh "$CDIR" $@
+    ;; 
+    core-setup )
+        shift
+        if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+            cat ./man/core-setup.man
+            exit 0
+        fi
+        ./mdos_core_setup.sh "$CDIR" $@
     ;;    
     help )
         shift
