@@ -7,7 +7,7 @@ source ./lib/components.sh
 source ./lib/helpers.sh
 
 # Docker
-sudo ../scripts/81_install_docker.sh
+sudo ../scripts/81_install_docker.sh --platform-user $USER
 
 HAS_ALIAS=$(cat $HOME/.bashrc | grep "alias mdos=")
 if [ "$HAS_ALIAS" == "" ]; then
