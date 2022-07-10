@@ -96,7 +96,7 @@ generate_app_values_yaml() {
     # Export vars for yaml generation
     export app_name=$APP_NAME
     export app_ns=$APP_NS
-    export registry=$REGISTRY_BASE
+    export registry=$REGISTRY_HOST
     export app_id="$(uuidgen)"
     app_comp_list=$( IFS=$'\n'; echo "${APP_COMP_YAML_ARRAY[*]}" )
 

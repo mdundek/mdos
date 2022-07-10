@@ -5,6 +5,9 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
+../cli/02_setup_env.sh --extended-nginx
+source ../cli/.env
+
 while [ "$1" != "" ]; do
     case $1 in
         --platform-user )
@@ -13,15 +16,15 @@ while [ "$1" != "" ]; do
         ;; 
         --admin-mdos-username )
             shift
-            ADMIN_USER=$1
+            NGINX_ADMIN_USER=$1
         ;; 
         --admin-mdos-password )
             shift
-            ADMIN_PASSWORD=$1
+            NGINX_ADMIN_PASSWORD=$1
         ;; 
         --hostname)
             shift
-            HOSTNAME=$1
+            DOMAIN=$1
         ;; 
         * ) echo "Invalid parameter detected => $1"
             exit 1
@@ -33,15 +36,15 @@ if [ -z $PLATFORM_USER ]; then
     echo "Missing param --platform-user"
     exit 1
 fi
-if [ -z $ADMIN_USER ]; then
+if [ -z $NGINX_ADMIN_USER ]; then
     echo "Missing param --admin-user"
     exit 1
 fi
-if [ -z $ADMIN_PASSWORD ]; then
+if [ -z $NGINX_ADMIN_PASSWORD ]; then
     echo "Missing param --admin-password"
     exit 1
 fi
-if [ -z $HOSTNAME ]; then
+if [ -z $DOMAIN ]; then
     echo "Missing param --hostname"
     exit 1
 fi
@@ -49,7 +52,7 @@ fi
 apt install nginx -y
 cd /etc/nginx/sites-available/
 
-htpasswd -Bbn $ADMIN_USER $ADMIN_PASSWORD > /etc/nginx/.htpasswd
+htpasswd -Bbn $NGINX_ADMIN_USER $NGINX_ADMIN_PASSWORD > /etc/nginx/.htpasswd
 
 echo "upstream k3s_istio_80 {
     server localhost:30978;
@@ -57,10 +60,10 @@ echo "upstream k3s_istio_80 {
 
 server {
     listen 443 ssl http2;
-    server_name cs.$HOSTNAME;
+    server_name cs.$DOMAIN;
 
-    ssl_certificate /etc/letsencrypt/live/$HOSTNAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:8080/;
@@ -85,10 +88,10 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name mkdocs.$HOSTNAME;
+    server_name mkdocs.$DOMAIN;
 
-    ssl_certificate /etc/letsencrypt/live/$HOSTNAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:8000/;
@@ -113,10 +116,10 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name *.$HOSTNAME;
+    server_name *.$DOMAIN;
 
-    ssl_certificate /etc/letsencrypt/live/$HOSTNAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
     location / {
         proxy_pass http://k3s_istio_80; 

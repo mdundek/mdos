@@ -12,6 +12,9 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
+../cli/02_setup_env.sh --extended-registry
+source ../cli/.env
+
 while [ "$1" != "" ]; do
     case $1 in
         --platform-user )
@@ -29,7 +32,7 @@ while [ "$1" != "" ]; do
         --skip-local-registry )
             SKIP_REG=true
         ;; 
-        * )              echo "Invalid parameter detected => $1"
+        * ) echo "Invalid parameter detected => $1"
             exit 1
     esac
     shift

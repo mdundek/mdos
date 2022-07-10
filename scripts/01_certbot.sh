@@ -5,6 +5,9 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
+../cli/02_setup_env.sh --extended-cf
+source ../cli/.env
+
 while [ "$1" != "" ]; do
     case $1 in
         --cloudflare-email )
