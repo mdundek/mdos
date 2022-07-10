@@ -35,9 +35,9 @@ wget https://github.com/coder/code-server/releases/download/v4.0.2/code-server-4
 tar -xf code-server-4.0.2-linux-amd64.tar.gz
 mkdir -p /home/$PLATFORM_USER/bin
 mv code-server-*/ /home/$PLATFORM_USER/bin/
-mv /home/$PLATFORM_USER/bin/
+mv /home/$PLATFORM_USER/bin/code-server-* /home/$PLATFORM_USER/bin/code-server
 chmod +x /home/$PLATFORM_USER/bin/code-server
-mkdir -p /home/$PLATFORM_USER/data/code-server-* /home/$PLATFORM_USER/data/code-server
+mkdir -p /home/$PLATFORM_USER/data/
 
 echo "[Unit]
 Description=Code-Server
