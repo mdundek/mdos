@@ -1,5 +1,12 @@
 # mdundek.network
 
+## Cloudflare credentials
+
+```
+mdundek@gmail.com
+dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee
+```
+
 ## disk mounts
 
 ```sh
