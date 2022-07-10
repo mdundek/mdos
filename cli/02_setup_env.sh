@@ -75,7 +75,7 @@ if [ ! -z $EXTENDED_CF ]; then
     fi
 
     if [ "$(cat .env | grep "CF_TOKEN=")" == "" ]; then
-        user_input CF_TOKEN "Enter your Cloudflare account email:"
+        user_input CF_TOKEN "Enter your Cloudflare API token:"
         echo "CF_TOKEN=$CF_TOKEN" >> .env
     fi
 fi
