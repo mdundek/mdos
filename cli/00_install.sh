@@ -28,7 +28,7 @@ cd $HOME/.mdos
 
 git clone https://github.com/mdundek/mdundek.network.git
 
-sudo ./mdundek.network/cli/01_setup_mdos_cmd.sh --platform-user $USER
+./mdundek.network/cli/01_setup_mdos_cmd.sh
 
 
 
