@@ -1,0 +1,94 @@
+    - name: ${app_comp_name}
+      scdsAcbmAppCompUUID: ${app_comp_id}
+      replicaCount: 1
+      networkIsolation: "open" # fully isolated, only ODM and kubernetes system components can access
+      allowedAppComponents: []
+
+      image:
+          repository: ${app_image}
+          tag: ${app_tag}
+
+      imagePullSecrets:
+        - name: regcred
+
+      isDaemonSet: false
+
+      # allow to overwrite the default docker command to use
+      overwriteCommand: false
+      command: []
+      commandArgs: []
+
+      serviceAccount:
+          create: false
+          annotations: {}
+
+      podAnnotations: {}
+
+      podSecurityContext:
+          {}
+
+      securityContext:
+          {}
+
+      virtualService:
+          enabled: ${app_expose}
+          svcPort: ${app_expose_port}
+          matchPrefix:
+          hosts:
+              - ${app_expose_host}
+          tls: []
+
+      config:
+          enabled: false
+          data: {}
+          # data:
+          #   - type: file # will be mounted as a file inside the pod
+          #     key: test.config
+          #     value: "Content of test.config file"
+          #     mountPath: "/etc/myApp/config/"
+          #   - type: env # will be mounted as an ENV var inside the pod
+          #     key: TEST_ENV
+          #     value: "Value of ENV variable TEST_ENV"
+
+      secrets:
+          enabled: false
+          data: {}
+          # data:
+          #   - type: file
+          #     key: test.secret
+          #     value: "Content of test.secret file"
+          #     mountPath: "/etc/myApp/config/"
+          #   - type: env
+          #     key: SECRET_ENV
+          #     value: "Value of ENV variable SECRET_ENV"
+
+      ## Persist data to a persistent volume
+      persistence:
+          enabled: false
+
+      waitForComponents:
+      #  - ${app_id}
+      #  - EFGH
+
+      resources:
+          {}
+          # We usually recommend not to specify default resources and to leave this as a conscious
+          # choice for the user. This also increases chances charts run on environments with little
+          # resources, such as Minikube. If you do want to specify resources, uncomment the following
+          # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+          # limits:
+          #   cpu: 100m
+          #   memory: 128Mi
+          # requests:
+          #   cpu: 100m
+          #   memory: 128Mi
+
+      autoscaling:
+          enabled: false
+          minReplicas: 1
+          maxReplicas: 100
+          targetCPUUtilizationPercentage: 80
+          # targetMemoryUtilizationPercentage: 80
+
+      logs:
+        enabled: false

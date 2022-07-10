@@ -15,14 +15,17 @@ gateways:
     - port: 15021
       targetPort: 15021
       name: status-port
+      nodePort: 30977
       protocol: TCP
     - port: 80
       targetPort: 8080
       name: http2
+      nodePort: 30978
       protocol: TCP
     - port: 443
       targetPort: 8443
       name: https
+      nodePort: 30979
       protocol: TCP
 
     # Scalability tuning
@@ -54,7 +57,7 @@ gateways:
     #    cloud.google.com/load-balancer-type: "internal"
 
     podAnnotations: {}
-    type: LoadBalancer #change to NodePort, ClusterIP or LoadBalancer if need be
+    type: NodePort #change to NodePort, ClusterIP or LoadBalancer if need be
 
     ##############
     secretVolumes:
@@ -156,10 +159,12 @@ global:
   # Default hub for Istio images.
   # Releases are published to docker hub under 'istio' project.
   # Dev builds from prow are on gcr.io
-  hub: gcr.io/istio-testing
 
+
+  hub: docker.io/istio
+  tag: 1.13.2
   # Default tag for Istio images.
-  tag: latest
+
 
   # Specify image pull policy if default behavior isn't desired.
   # Default behavior: latest images will be Always else IfNotPresent.
