@@ -13,4 +13,4 @@ kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator
 kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
 
 # Wait for all podds to be ready
-wait kubectl get all -n kube-system
+watch kubectl get pod -A

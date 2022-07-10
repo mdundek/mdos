@@ -11,13 +11,17 @@ while [ "$1" != "" ]; do
             shift
             PLATFORM_USER=$1
         ;; 
-        --admin-user )
+        --admin-mdos-username )
             shift
             ADMIN_USER=$1
         ;; 
-        --admin-password )
+        --admin-mdos-password )
             shift
             ADMIN_PASSWORD=$1
+        ;; 
+        --hostname)
+            shift
+            HOSTNAME=$1
         ;; 
         * ) echo "Invalid parameter detected => $1"
             exit 1
@@ -27,6 +31,18 @@ done
 
 if [ -z $PLATFORM_USER ]; then
     echo "Missing param --platform-user"
+    exit 1
+fi
+if [ -z $ADMIN_USER ]; then
+    echo "Missing param --admin-user"
+    exit 1
+fi
+if [ -z $ADMIN_PASSWORD ]; then
+    echo "Missing param --admin-password"
+    exit 1
+fi
+if [ -z $HOSTNAME ]; then
+    echo "Missing param --hostname"
     exit 1
 fi
 
@@ -41,10 +57,10 @@ echo "upstream k3s_istio_80 {
 
 server {
     listen 443 ssl http2;
-    server_name cs.mdundek.network;
+    server_name cs.$HOSTNAME;
 
-    ssl_certificate /etc/letsencrypt/live/mdundek.network/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/mdundek.network/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$HOSTNAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:8080/;
@@ -69,10 +85,10 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name mkdocs-dev.mdundek.network;
+    server_name mkdocs.$HOSTNAME;
 
-    ssl_certificate /etc/letsencrypt/live/mdundek.network/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/mdundek.network/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$HOSTNAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:8000/;
@@ -97,10 +113,10 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name *.mdundek.network;
+    server_name *.$HOSTNAME;
 
-    ssl_certificate /etc/letsencrypt/live/mdundek.network/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/mdundek.network/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$HOSTNAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME/privkey.pem;
 
     location / {
         proxy_pass http://k3s_istio_80; 
