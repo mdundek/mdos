@@ -94,7 +94,6 @@ apt-get install docker-ce docker-ce-cli containerd.io
 
 groupadd docker
 usermod -aG docker $PLATFORM_USER
-newgrp docker
 
 # Skip registry setup if certificate already there
 if [ -f /home/$PLATFORM_USER/registry/certs/$REGISTRY_HOST_STRIPPED.crt ]; then
