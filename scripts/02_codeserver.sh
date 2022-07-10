@@ -34,10 +34,12 @@ fi
 wget https://github.com/coder/code-server/releases/download/v4.0.2/code-server-4.0.2-linux-amd64.tar.gz
 tar -xf code-server-4.0.2-linux-amd64.tar.gz
 mkdir -p /home/$PLATFORM_USER/bin
-mv code-server-*/ /home/$PLATFORM_USER/bin/
+mv code-server-*/* /home/$PLATFORM_USER/bin/
 mv /home/$PLATFORM_USER/bin/code-server-* /home/$PLATFORM_USER/bin/code-server
-chmod +x /home/$PLATFORM_USER/bin/code-server
+chmod +x /home/$PLATFORM_USER/bin/code-server/code-server
+chown -R $PLATFORM_USER:$PLATFORM_USER /home/$PLATFORM_USER/bin/code-server
 mkdir -p /home/$PLATFORM_USER/data/
+chown $PLATFORM_USER:$PLATFORM_USER /home/$PLATFORM_USER/data/
 
 echo "[Unit]
 Description=Code-Server
@@ -47,7 +49,7 @@ After=network.target
 Type=simple
 WorkingDirectory=/home/$PLATFORM_USER
 Environment=PASSWORD=$CS_PASSWORD
-ExecStart=/home/$PLATFORM_USER/bin/code-server --host 127.0.0.1 --user-data-dir /home/$PLATFORM_USER/data --auth password
+ExecStart=/home/$PLATFORM_USER/bin/code-server/code-server --host 127.0.0.1 --user-data-dir /home/$PLATFORM_USER/data --auth password
 TimeoutStartSec=0
 User=$PLATFORM_USER
 RemainAfterExit=yes
