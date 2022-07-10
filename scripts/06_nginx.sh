@@ -1,11 +1,39 @@
 #!/bin/bash
 
+if [ "$EUID" -ne 0 ]
+  then echo "Please do not run as root"
+  exit 1
+fi
+
+while [ "$1" != "" ]; do
+    case $1 in
+        --platform-user )
+            shift
+            PLATFORM_USER=$1
+        ;; 
+        --admin-user )
+            shift
+            ADMIN_USER=$1
+        ;; 
+        --admin-password )
+            shift
+            ADMIN_PASSWORD=$1
+        ;; 
+        * ) echo "Invalid parameter detected => $1"
+            exit 1
+    esac
+    shift
+done
+
+if [ -z $PLATFORM_USER ]; then
+    echo "Missing param --platform-user"
+    exit 1
+fi
+
 apt install nginx -y
 cd /etc/nginx/sites-available/
 
-/etc/nginx/sites-available/
-
-htpasswd -Bbn admin J8cqu3s! > /etc/nginx/.htpasswd
+htpasswd -Bbn $ADMIN_USER $ADMIN_PASSWORD > /etc/nginx/.htpasswd
 
 echo "upstream k3s_istio_80 {
     server localhost:30978;

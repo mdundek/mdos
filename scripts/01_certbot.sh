@@ -50,7 +50,8 @@ certbot certonly \
     --dns-cloudflare \
     --dns-cloudflare-credentials ./cloudflare.ini \
     -d $DOMAIN \
-    -d *.$DOMAIN
+    -d *.$DOMAIN \
+    -n
 
 # Create nginx stop / start pre and post hooks
 sh -c 'printf "#!/bin/sh\nservice nginx stop\n" > /etc/letsencrypt/renewal-hooks/pre/nginx.sh'

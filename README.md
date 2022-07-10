@@ -7,6 +7,12 @@ mdundek@gmail.com
 dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee
 ```
 
+Need to configure Cloudflare DNS resolution for target host to redirect to home IP address. Also configure router to route ports 80 & 443 to this machine.
+
+## Istio updates
+
+Set ingress-gateway nodeports to 30977, 30978, 30979
+
 ## disk mounts
 
 ```sh
