@@ -63,7 +63,7 @@ apt-get install \
     python3 \
     lsb-release -y
 
-snap install yq -y
+snap install yq
 
 # ############################################
 # ############## REGISTRY PREP ###############
