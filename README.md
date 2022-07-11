@@ -1,5 +1,9 @@
 # mdundek.network
 
+# Install
+
+sudo curl https://raw.githubusercontent.com/mdundek/mdundek.network/main/cli/00_install.sh?token=GHSAT0AAAAAABWOZR2AEOZ5RPCAWQBKGFPUYWL32QA | sudo bash
+
 ## Cloudflare credentials
 
 ```

@@ -3,11 +3,11 @@
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
-source ./lib/components.sh
-source ./lib/helpers.sh
+source ../lib/components.sh
+source ../lib/helpers.sh
 
 # Docker
-sudo ../scripts/81_install_docker.sh --platform-user $USER
+sudo ../../scripts/81_install_docker.sh --platform-user $USER
 
 HAS_ALIAS=$(cat $HOME/.bashrc | grep "alias mdos=")
 if [ "$HAS_ALIAS" == "" ]; then
@@ -15,7 +15,7 @@ if [ "$HAS_ALIAS" == "" ]; then
 fi
 
 if [ ! -f .env ]; then
-    touch .env
+    touch ../.env
 fi
 ./02_setup_env.sh
 

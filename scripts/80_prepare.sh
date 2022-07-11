@@ -12,7 +12,7 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
-../cli/02_setup_env.sh --extended-registry
+../cli/install/02_setup_env.sh --extended-registry
 source ../cli/.env
 
 while [ "$1" != "" ]; do
