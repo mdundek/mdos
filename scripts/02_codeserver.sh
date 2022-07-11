@@ -1,5 +1,8 @@
 #!/bin/bash
 
+_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd $_DIR
+
 if [ "$EUID" -ne 0 ]
   then echo "Please do not run as root"
   exit 1

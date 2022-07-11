@@ -1,5 +1,8 @@
 #!/bin/bash
 
+_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd $_DIR
+
 # Create target folder for storage class
 mkdir /media/backup/k3s
 
