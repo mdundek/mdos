@@ -60,3 +60,5 @@ spec:
     tls:
       mode: PASSTHROUGH
 EOF
+
+watch kubectl get pod -n istio-system
