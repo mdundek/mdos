@@ -13,20 +13,18 @@ metadata:
   name: {{ $appName }}-{{ lower .name }}
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
     {{- end }}
 spec:
   podSelector:
     matchLabels:
-      scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-      scdsAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appComponentName | quote }}
   {{- if eq .networkIsolation "open" }} # Allow traffic from all pods and all namespaces
   policyTypes:
     - Ingress
@@ -37,7 +35,7 @@ spec:
     - from:
       - namespaceSelector:
           matchLabels:
-            kubernetes.io/metadata.name: {{ $.Values.scdsBundleName }}
+            kubernetes.io/metadata.name: {{ $.Values.mdosBundleName }}
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: kube-system
@@ -46,7 +44,7 @@ spec:
             kubernetes.io/metadata.name: istio-system
       - namespaceSelector:
           matchLabels:
-            kubernetes.io/metadata.name: scds
+            kubernetes.io/metadata.name: mdos
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: odm
@@ -66,7 +64,7 @@ spec:
             kubernetes.io/metadata.name: istio-system
       - namespaceSelector:
           matchLabels:
-            kubernetes.io/metadata.name: scds
+            kubernetes.io/metadata.name: mdos
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: odm
@@ -81,9 +79,9 @@ spec:
       {{- range .allowedAppComponents }}
       - podSelector:
           matchLabels:
-            scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID }}
-            scdsAcbmAppCompName: {{ .scdsAcbmAppCompName }}
-            scdsAcbmAppUUID: {{ .scdsAcbmAppUUID }}
+            mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID }}
+            mdosAcbmAppCompName: {{ .mdosAcbmAppCompName }}
+            mdosAcbmAppUUID: {{ .mdosAcbmAppUUID }}
       {{- end }}
       - namespaceSelector:
           matchLabels:
@@ -93,7 +91,7 @@ spec:
             kubernetes.io/metadata.name: istio-system
       - namespaceSelector:
           matchLabels:
-            kubernetes.io/metadata.name: scds
+            kubernetes.io/metadata.name: mdos
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: odm

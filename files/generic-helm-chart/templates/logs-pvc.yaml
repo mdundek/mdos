@@ -11,13 +11,11 @@ metadata:
   name: {{ $appName }}-{{ lower .name }}
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
     {{- end }}
 spec:
   accessModes:
@@ -25,7 +23,7 @@ spec:
   resources:
     requests:
       storage: {{ .logs.size | quote }}
-  storageClassName: "scds-logs"
+  storageClassName: "mdos-logs"
 {{- end }}
 {{- end }}
 {{- end }}

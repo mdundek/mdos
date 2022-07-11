@@ -5,6 +5,8 @@ CDIR=$1
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
+source .env
+
 cd ../files/generic-helm-chart
 GEN_HELP_CHART_PATH=$(pwd)
 cd $_DIR
@@ -14,7 +16,7 @@ source ./lib/helpers.sh
 
 generateValuesYaml() {
     STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
-    STATIC_APP_APPEND='{"enabled": true,"developement": true,"appInternalName": "'$1'","nodeSelector":{},"tolerations":[],"affinity":{},"isScdsApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
+    STATIC_APP_APPEND='{"enabled": true,"developement": true,"appInternalName": "'$1'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
 
     # Make copy of application values file to work with
     cp ./values.yaml ./values_merged.yaml
@@ -92,8 +94,7 @@ generateValuesYaml() {
     fi
 
     I_APP=$(yq eval '.appName' ./values.yaml)
-    I_NS=$(yq eval '.scdsBundleName' ./values.yaml)
-    I_REG=$(yq eval '.registry' ./values.yaml)
+    I_NS=$(yq eval '.mdosBundleName' ./values.yaml)
    
     while read NS_LINE ; do 
         NS_NAME=`echo "$NS_LINE" | cut -d' ' -f 1`
@@ -114,11 +115,13 @@ generateValuesYaml() {
     done < <(kubectl get secret -n $I_NS 2>/dev/null)
 
     if [ -z $SECRET_EXISTS ]; then
+        REG_CREDS=$(echo "$REG_CREDS_B64" | base64 --decode)
+        
         kubectl create secret docker-registry \
             regcred \
-            --docker-server=$I_REG \
-            --docker-username=mdundek \
-            --docker-password=J8cqu3s! \
+            --docker-server=$REGISTRY_HOST \
+            --docker-username=$(echo "$REG_CREDS" | cut -d':' -f1) \
+            --docker-password=$(echo "$REG_CREDS" | cut -d':' -f2) \
             -n $I_NS 1>/dev/null
     fi
 

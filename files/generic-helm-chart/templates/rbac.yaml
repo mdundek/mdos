@@ -6,11 +6,9 @@ metadata:
   name: {{ $appName }}-roles
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
     {{- end }}
 rules:
 - apiGroups: [""]

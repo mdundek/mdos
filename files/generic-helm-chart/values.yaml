@@ -1,11 +1,9 @@
 enabled: true
 developement: false # if true, services will be exposed as NodePorts
 registry: registry.mdundek.private:30979 # The registry host to get the images from
-isScdsApp: true
-scdsAcbmAppUUID:
-scdsAcbmUUID:
-scdsBundleName:
-scdsCompanyUUID:
+isMdosApp: true
+mdosAcbmAppUUID:
+mdosBundleName:
 appName: app1
 
 global:
@@ -47,17 +45,17 @@ serviceLinks: {}
 # serviceLinks:
 #   - appUUID: KIKT754-HGDEH-TRGJK
 #     appName: pacman
-#     appDomain: scds # the namespace of the service link app
+#     appDomain: mdos # the namespace of the service link app
 #     port: 80
 
 initContainer:
-  image: scds/scds-ldl-data-sync
+  image: mdos/mdos-ldl-data-sync
   imageTag: 0.2.2
 
 # appComponents: {}
 appComponents:
   - name: myAppComponent1
-    scdsAcbmAppCompUUID: # renamed from scdsAcbmAppUUID, to be kept on kubernetes objects
+    mdosAcbmAppCompUUID: # renamed from mdosAcbmAppUUID, to be kept on kubernetes objects
     replicaCount: 1
     
     # networkIsolation: "open" --> all apps from the same namespace (bundle) can access current appComponent
@@ -65,9 +63,9 @@ appComponents:
     networkIsolation: "private" # fully isolated, only ODM and kubernetes system components can access
     allowedAppComponents: []
     # allowedAppComponents: # NEW : allows a list of AppComponent IDs
-    #   - scdsAcbmAppCompUUID: "$AppComponentUUID" # --> pods with $AppComponentUUID can access current appComponent
-    #     scdsAcbmAppCompName: "$appName"
-    #     scdsAcbmAppUUID: "$scdsAcbmAppUUID"
+    #   - mdosAcbmAppCompUUID: "$AppComponentUUID" # --> pods with $AppComponentUUID can access current appComponent
+    #     mdosAcbmAppCompName: "$appName"
+    #     mdosAcbmAppUUID: "$mdosAcbmAppUUID"
 
     # Use the skipNetworkIsolation param if you want to manage network isolations manually
     # skipNetworkIsolation: true
@@ -208,18 +206,18 @@ appComponents:
           size: 1Gi
           mountPath: /tmp
           ldlSync: false
-          sourcePath: /scds/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
+          sourcePath: /mdos/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
           type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)
-      # Used for SCDS only and dev center dev purposes
+      # Used for MDOS only and dev center dev purposes
       hostpathVolumes: 
           - name: host-data-volume
             mountPath: /tmp
-            hostPath: /scds/content-volumes/app1
+            hostPath: /mdos/content-volumes/app1
             type: Directory
     
     waitForComponents:
-    #  - {scdsAcbmAppCompUUID}||{scdsAcbmAppCompName}||{scdsAcbmAppUUID}
-    #  - {scdsAcbmAppCompUUID}||{scdsAcbmAppCompName}||{scdsAcbmAppUUID}
+    #  - {mdosAcbmAppCompUUID}||{mdosAcbmAppCompName}||{mdosAcbmAppUUID}
+    #  - {mdosAcbmAppCompUUID}||{mdosAcbmAppCompName}||{mdosAcbmAppUUID}
 
     ## Persist logs to a persistent volume
     logs:

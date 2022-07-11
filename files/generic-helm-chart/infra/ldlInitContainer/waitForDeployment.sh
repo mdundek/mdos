@@ -28,7 +28,7 @@ logError() {
 wait_for_app () {
   while :
   do
-    POD_STATUS_LIST=$(curl -s --cacert ${CACERT} --header "Authorization: Bearer ${TOKEN}" -X GET ${APISERVER}/api/v1/namespaces/${NAMESPACE}/pods | jq -c ".items[] | select(.metadata.labels.scdsAcbmAppCompUUID == \"$scdsAcbmAppCompUUID\" and .metadata.labels.scdsAcbmAppCompName == \"$scdsAcbmAppCompName\" and .metadata.labels.scdsAcbmAppUUID == \"$scdsAcbmAppUUID\") | .status.phase")
+    POD_STATUS_LIST=$(curl -s --cacert ${CACERT} --header "Authorization: Bearer ${TOKEN}" -X GET ${APISERVER}/api/v1/namespaces/${NAMESPACE}/pods | jq -c ".items[] | select(.metadata.labels.mdosAcbmAppCompUUID == \"$mdosAcbmAppCompUUID\" and .metadata.labels.mdosAcbmAppCompName == \"$mdosAcbmAppCompName\" and .metadata.labels.mdosAcbmAppUUID == \"$mdosAcbmAppUUID\") | .status.phase")
     IFS=$'\n' STATUS_ARRAY=($POD_STATUS_LIST)
     POD_READY=0
     for POD_STATUS in "${STATUS_ARRAY[@]}"; do
@@ -59,11 +59,11 @@ main() {
       for y in "${APP_PARAMS_WAIT_ARRAY[@]}"; do
         if [ ! -z $y ]; then
           if [ $ITER_P == "0" ]; then
-            scdsAcbmAppCompUUID="$y"
+            mdosAcbmAppCompUUID="$y"
           elif [ $ITER_P == "1" ]; then
-            scdsAcbmAppCompName="$y"
+            mdosAcbmAppCompName="$y"
           elif [ $ITER_P == "2" ]; then
-            scdsAcbmAppUUID="$y"
+            mdosAcbmAppUUID="$y"
           fi
           ITER_P=$(expr $ITER_P + 1)
         fi

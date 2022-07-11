@@ -7,10 +7,10 @@ This folder contains the Dockerfile and it's dependencies to build an image that
 There is a script available to do this automatically:
 
 ```sh
-./build-image.sh --reg-host <REGISTRY HOST> --docker-repo scds/scds-ldl-data-sync:<IMG TAG> --reg-creds-b64 <BASE64 REG CREDENTIALS>
+./build-image.sh --reg-host <REGISTRY HOST> --docker-repo mdos/mdos-ldl-data-sync:<IMG TAG> --reg-creds-b64 <BASE64 REG CREDENTIALS>
 ```
 
-<!-- ./build-image.sh --reg-host r-bf74-scds-docker-local.artifactory.2b82.aws.cloud.airbus.corp --docker-repo scds/scds-ldl-data-sync:0.2.2 --reg-creds-b64 ZHVuZGVrLCBtaWNoYWVsOkFLQ3A4aHlqM1phYmNEZnN2MXNUVUpmVEptQjVjNUtNV2hLU0xQNUg4Vk0zMmpFR3Vva0dwZUtMNlhpNzdKcGM0cnRuVDF0ejU= -->
+<!-- ./build-image.sh --reg-host r-bf74-mdos-docker-local.artifactory.2b82.aws.cloud.airbus.corp --docker-repo mdos/mdos-ldl-data-sync:0.2.2 --reg-creds-b64 ZHVuZGVrLCBtaWNoYWVsOkFLQ3A4aHlqM1phYmNEZnN2MXNUVUpmVEptQjVjNUtNV2hLU0xQNUg4Vk0zMmpFR3Vva0dwZUtMNlhpNzdKcGM0cnRuVDF0ejU= -->
 
 > The `<IMG TAG>` must be the same that the generic helm chart version (Charts.yaml => version)
 

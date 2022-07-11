@@ -20,46 +20,35 @@ fi
 # ========================================================================
 generate_app_comp_yaml() {
     # Export vars for yaml generation
-    export app_comp_name=$1
-    export app_comp_id=$2
-    export app_image=$3
-    export app_tag=$4
-    export app_expose_port=$5
-    export app_expose_host=$6
+    app_comp_name=$1
+    app_comp_id=$2
+    app_image=$3
+    app_tag=$4
+    app_expose_port=$5
+    app_expose_host=$6
 
-    # Generate temp secret values yaml file
-    ( echo "cat <<EOF >$CDIR/values_app_comp.yaml";
-      cat templates/values_app_comp.yaml;
-      echo "
-EOF";
-    ) >$CDIR/mdostemp.yaml
-    . $CDIR/mdostemp.yaml
+    APP_COMP_YAML=$(cat templates/values_app_comp.yaml)
 
-    rm -rf $CDIR/mdostemp.yaml
-
-    APP_COMP_YAML=$(cat $CDIR/values_app_comp.yaml)
+    APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.mdosAcbmAppCompUUID = "'$app_comp_id'"')
+    APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.image.repository = "'$app_image'"')
+    APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.image.tag = "'$app_tag'"')
 
     if [ "$APP_COMP_EXPOSE" == "yes" ]; then
-        APP_COMP_YAML="$APP_COMP_YAML
-
-      # Create a service to make your application reachable from other components
-      service:
-        create: true
-        type: ClusterIP
-        portMappings:
-          - port: 80
-            containerPort: 80
-"
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].hosts[0] = "'$app_expose_host'"')
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].httpMatch.port = "'$app_expose_port'"')
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].svcPort = "'$app_expose_port'"')
     else
-        APP_COMP_YAML="$APP_COMP_YAML
-
-      # Create a service to make your application reachable from other components
-      service:
-        create: false
-"
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq 'del(.virtualService[0])')
     fi
 
-    rm -rf $CDIR/values_app_comp.yaml
+    APP_COMP_YAML=$(echo "$APP_COMP_YAML" | sed -e 's/^/    /')
+    APP_COMP_YAML_ALL="$APP_COMP_YAML_ALL
+  - name: $app_comp_name
+$APP_COMP_YAML"
+
+    #APP_COMP_YAML_ARRAY+=("$APP_COMP_YAML")
+
+    #echo "$APP_COMP_YAML" | yq -o=json
 }
 
 # ========================================================================
@@ -86,7 +75,7 @@ collect_app_comp_params() {
 
     if [ "$APP_COMP_EXPOSE" == "yes" ]; then
         # URL for virtualhost
-        regex_user_input APP_COMP_HOST "Enter the component target host name:" "$APP_COMP_NAME.mdundek.network" "hostname"
+        regex_user_input APP_COMP_HOST "Enter the component target host name:" "$APP_COMP_NAME.$DOMAIN" "hostname"
     fi
 
     generate_app_comp_yaml "$APP_COMP_NAME" "$(uuidgen)" "$APP_COMP_IMG" "latest" "80" "$(if [ -z $APP_COMP_HOST ]; then echo "na";else echo "$APP_COMP_HOST";fi)"
@@ -95,27 +84,19 @@ collect_app_comp_params() {
 # ========================================================================
 generate_app_values_yaml() {
     # Export vars for yaml generation
-    export app_name=$APP_NAME
-    export app_ns=$APP_NS
-    export registry=$REGISTRY_HOST
-    export app_id="$(uuidgen)"
+    app_name=$APP_NAME
+    app_ns=$APP_NS
+    app_id="$(uuidgen)"
     app_comp_list=$( IFS=$'\n'; echo "${APP_COMP_YAML_ARRAY[*]}" )
 
-    # Generate temp secret values yaml file
-    ( echo "cat <<EOF >$APP_PATH/values_app.yaml";
-        cat templates/values_app.yaml;
-        echo "
-EOF";
-    ) >$APP_PATH/mdostemp.yaml
-    . $APP_PATH/mdostemp.yaml
+    APP_YAML=$(cat templates/values_app.yaml)
 
-    rm -rf $APP_PATH/mdostemp.yaml
+    APP_YAML=$(echo "$APP_YAML" | yq '.mdosAcbmAppUUID = "'$app_id'"')
+    APP_YAML=$(echo "$APP_YAML" | yq '.mdosBundleName = "'$app_ns'"')
+    APP_YAML=$(echo "$APP_YAML" | yq '.appName = "'$app_name'"')
 
-    APP_YAML=$(cat $APP_PATH/values_app.yaml)
-
-    rm -rf $APP_PATH/values_app.yaml
-
-    echo "$APP_YAML" > $APP_PATH/values.yaml
+    echo "$APP_YAML    
+appComponents:" > $APP_PATH/values.yaml
 }
 
 
@@ -144,6 +125,7 @@ EOF";
   
     # ############### EXECUTE ################
     APP_COMP_YAML_ARRAY=()
+    APP_COMP_YAML_ALL=""
 
     if [ "$GEN_TYPE" == "application" ]; then
         collect_app_params
@@ -167,8 +149,7 @@ EOF";
 
         touch $CDIR/$APP_COMP_NAME/Dockerfile
 
-        echo "" >> $CDIR/values.yaml
-        echo "$APP_COMP_YAML" >> $CDIR/values.yaml
+        echo "$APP_COMP_YAML_ALL" >> $CDIR/values.yaml
         info "Done"
     else
         error "Wrong argument, expected \"application\" or \"component\""

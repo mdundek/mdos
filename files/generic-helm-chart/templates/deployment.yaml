@@ -10,13 +10,11 @@ metadata:
   name: {{ $appName }}-{{ lower .name }}
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- if $.Values.developement }}
     date: "{{ now | unixEpoch }}"
       {{- end }}
@@ -28,13 +26,11 @@ spec:
   selector:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
-      {{- if $.Values.isScdsApp }}
-      scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-      scdsAcbmAppCompName: {{ $appComponentName | quote }}
-      scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-      scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-      scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- if $.Values.isMdosApp }}
+      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- end }}
   template:
     metadata:
@@ -44,13 +40,11 @@ spec:
       {{- end }}
       labels:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
-        {{- if $.Values.isScdsApp }}
-        scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-        scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-        scdsAcbmAppCompName: {{ $appComponentName | quote }}
-        scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-        scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-        scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+        {{- if $.Values.isMdosApp }}
+        mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+        mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+        mdosAcbmAppCompName: {{ $appComponentName | quote }}
+        mdosBundleName: {{ $.Values.mdosBundleName | quote }}
           {{- if $.Values.developement }}
         date: "{{ now | unixEpoch }}"
           {{- end }}
@@ -432,13 +426,11 @@ metadata:
   name: {{ $appName }}-{{ lower .name }}
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- if $.Values.developement }}
     date: "{{ now | unixEpoch }}"
       {{- end }}
@@ -451,13 +443,11 @@ spec:
   selector:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
-      {{- if $.Values.isScdsApp }}
-      scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-      scdsAcbmAppCompName: {{ $appComponentName | quote }}
-      scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-      scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-      scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- if $.Values.isMdosApp }}
+      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- end }}
   template:
     metadata:
@@ -467,13 +457,11 @@ spec:
       {{- end }}
       labels:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
-        {{- if $.Values.isScdsApp }}
-        scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-        scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-        scdsAcbmAppCompName: {{ $appComponentName | quote }}
-        scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-        scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-        scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+        {{- if $.Values.isMdosApp }}
+        mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+        mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+        mdosAcbmAppCompName: {{ $appComponentName | quote }}
+        mdosBundleName: {{ $.Values.mdosBundleName | quote }}
           {{- if $.Values.developement }}
         date: "{{ now | unixEpoch }}"
           {{- end }}
@@ -932,13 +920,11 @@ metadata:
   name: {{ $appName }}-{{ lower .name }}
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- if $.Values.developement }}
     date: "{{ now | unixEpoch }}"
       {{- end }}
@@ -950,13 +936,11 @@ spec:
   selector:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
-      {{- if $.Values.isScdsApp }}
-      scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-      scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-      scdsAcbmAppCompName: {{ $appComponentName | quote }}
-      scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-      scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-      scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- if $.Values.isMdosApp }}
+      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- end }}
   template:
     metadata:
@@ -966,13 +950,11 @@ spec:
       {{- end }}
       labels:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
-        {{- if $.Values.isScdsApp }}
-        scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-        scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-        scdsAcbmAppCompName: {{ $appComponentName | quote }}
-        scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-        scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-        scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+        {{- if $.Values.isMdosApp }}
+        mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+        mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+        mdosAcbmAppCompName: {{ $appComponentName | quote }}
+        mdosBundleName: {{ $.Values.mdosBundleName | quote }}
           {{- if $.Values.developement }}
         date: "{{ now | unixEpoch }}"
           {{- end }}

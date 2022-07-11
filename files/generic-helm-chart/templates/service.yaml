@@ -10,13 +10,11 @@ metadata:
   name: {{ $appName }}-{{ lower .name }}
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
     {{- end }}
 spec:
   {{- if $.Values.developement }}
@@ -35,9 +33,9 @@ spec:
       name: http-{{ .port }}
     {{- end }}
   selector:
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
 {{- end }}
 # NodePorts (Needed for internal use cases, such as FTP server in passive mode)
 {{- if .nodePortService }}
@@ -48,13 +46,11 @@ metadata:
   name: {{ $appName }}-{{ lower .name }}-np
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
     {{- end }}
 spec:
   type: NodePort
@@ -67,9 +63,9 @@ spec:
       name: http-{{ .port }}
     {{- end }}
   selector:
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
 {{- end }}
 {{- end }}
 {{- end }}

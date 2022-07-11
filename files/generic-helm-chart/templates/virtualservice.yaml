@@ -1,7 +1,7 @@
 {{- if .Values.enabled }}
 {{- $appName := lower $.Values.appName }}
 {{- range .Values.appComponents }}
-{{- $appCompUUID := .scdsAcbmAppCompUUID }}
+{{- $appCompUUID := .mdosAcbmAppCompUUID }}
 {{- $appCompName := lower .name }}
 {{- if .virtualService }}
 {{- range .virtualService }}
@@ -16,13 +16,11 @@ metadata:
   {{- end }}
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isScdsApp }}
-    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
-    scdsAcbmAppCompUUID: {{ $appCompUUID | quote }}
-    scdsAcbmAppCompName: {{ $appCompName | quote }}
-    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
-    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
-    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appCompName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
     {{- end }}
 spec:
   hosts:
@@ -52,7 +50,7 @@ spec:
     - name: {{ $appName }}-{{ $appCompName }}-service-link
       match:
         - uri:
-            prefix: /scds/{{ lower .appName }}
+            prefix: /{{ lower .appName }}
       rewrite:
         uri: /
       route:
