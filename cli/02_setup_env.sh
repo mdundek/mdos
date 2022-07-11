@@ -94,7 +94,7 @@ if [ ! -z $EXTENDED_NGINX ]; then
     fi
 
     if [ "$(cat .env | grep "NGINX_ADMIN_PASSWORD=")" == "" ]; then
-        user_input NGINX_ADMIN_PASSWORD "Enter a Nginx admin username:"
+        user_input NGINX_ADMIN_PASSWORD "Enter a Nginx admin password:"
         echo "NGINX_ADMIN_PASSWORD=$NGINX_ADMIN_PASSWORD" >> .env
     fi
 fi
