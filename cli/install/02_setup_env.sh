@@ -3,8 +3,8 @@
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
-source ./lib/components.sh
-source ./lib/helpers.sh
+source ../lib/components.sh
+source ../lib/helpers.sh
 
 while [ "$1" != "" ]; do
     case $1 in
