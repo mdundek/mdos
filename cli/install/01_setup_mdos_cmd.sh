@@ -10,7 +10,7 @@ source ../lib/helpers.sh
 sudo ../../setup/81_install_docker.sh --platform-user $USER
 
 HAS_ALIAS=$(cat $HOME/.bashrc | grep "alias mdos=")
-if [ "$HAS_ALIAS" == "" ]; the
+if [ "$HAS_ALIAS" == "" ]; then
     echo 'alias mdos="'$(dirname "$(pwd)")'/mdos.sh"' >> $HOME/.bashrc
 fi
 
