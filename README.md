@@ -44,7 +44,7 @@ mount -a
 Open crontab with `sudo crontab -e`, and append:
 
 ```
-5 6 * * * /home/mdundek/workspaces/mdundek.network/scripts/90_update_ip_cloudflare.sh
+5 6 * * * /home/mdundek/workspaces/mdundek.network/setup/90_update_ip_cloudflare.sh
 ```
 
 Restart crontab service:

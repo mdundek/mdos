@@ -13,7 +13,7 @@ select_command() {
     local  __resultvar=$1
     OPTIONS_STRING=()
     OPTIONS_VALUES=()
-    commands=( $(find ../scripts/0*.sh) )
+    commands=( $(find ../setup/0*.sh) )
     for i in "${!commands[@]}"; do
       CMD_NAME=$(basename -- ${commands[$i]} .sh)
       OPTIONS_STRING+="$CMD_NAME;"
@@ -54,5 +54,5 @@ select_command() {
     question "Select installation step:"
     select_command SEL_COMMAND
 
-    sudo ../scripts/$SEL_COMMAND.sh
+    sudo ../setup/$SEL_COMMAND.sh
 )
