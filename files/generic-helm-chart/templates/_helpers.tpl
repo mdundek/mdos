@@ -46,7 +46,7 @@ Selector labels
 */}}
 {{- define "stateless-helm.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Values.appName }}
-app.kubernetes.io/instance: {{ .Values.appName }}
+app.kubernetes.io/instance: {{ .Values.appInternalName }}
 {{- end }}
 
 {{/*

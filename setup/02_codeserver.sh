@@ -37,7 +37,7 @@ if [ -z $CS_PASSWORD ]; then
     exit 1
 fi
 
-CS_VERSION="4.0.2"
+CS_VERSION="4.5.0"
 
 wget https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
 tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz

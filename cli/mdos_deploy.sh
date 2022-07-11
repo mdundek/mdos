@@ -12,6 +12,55 @@ cd $_DIR
 source ./lib/components.sh
 source ./lib/helpers.sh
 
+generateValuesYaml() {
+    STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
+    STATIC_APP_APPEND='{"enabled": true,"developement": true,"appInternalName": "'$1'","nodeSelector":{},"tolerations":[],"affinity":{},"isScdsApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
+
+    # Make copy of application values file to work with
+    cp ./values.yaml ./values_merged.yaml
+
+    # Declare App comp array
+    APP_COMPONENTS=()
+
+    # Load all application components from the file
+    readarray appcomponents < <(yq e -o=j -I=0 '.appComponents[]' values_merged.yaml )
+
+    C_INDEX=0
+    # Iterate over components
+    for appComponent in "${appcomponents[@]}"; do
+        COMP_NAME=$(echo "$appComponent" | jq -r '.name')
+        
+        # Appens what we need to this component
+        COMP_UPD=$(yq ".appComponents[$C_INDEX] + $STATIC_COMP_APPEND" values_merged.yaml)
+
+        # Store the updated component in our array
+        APP_COMPONENTS+=("$COMP_UPD")
+
+        # Increment index
+        C_INDEX=$((C_INDEX+1))
+    done
+
+    C_INDEX=0
+    # Iterate over components
+    for appComponent in "${appcomponents[@]}"; do
+        echo "$(yq 'del(.appComponents[0])' values_merged.yaml)" > ./values_merged.yaml
+
+        # Increment index
+        C_INDEX=$((C_INDEX+1))
+    done
+
+    # Put it all back together
+    for appComponent in "${APP_COMPONENTS[@]}"; do
+        APP_COMP_JSON=$(echo "$appComponent" | yq -o=json -I=0 '.')
+
+        VALUES_UPD=$(yq ".appComponents += $APP_COMP_JSON" values_merged.yaml)
+        echo "$VALUES_UPD" > values_merged.yaml
+    done
+
+    VALUES_UPD=$(yq ". += $STATIC_APP_APPEND" values_merged.yaml)
+    echo "$VALUES_UPD" > values_merged.yaml
+}
+
 
 # ################################################
 # ############ TRY CATCH INTERCEPTORS ############
@@ -27,6 +76,7 @@ source ./lib/helpers.sh
 
     function _finally {
         # Cleanup
+        rm -rf $CDIR/values_merged.yaml
         echo ""
     }
 
@@ -72,10 +122,12 @@ source ./lib/helpers.sh
             -n $I_NS 1>/dev/null
     fi
 
+    generateValuesYaml $I_APP
+
     helm upgrade --install $I_APP $GEN_HELP_CHART_PATH \
-        --values ./values.yaml \
+        --values ./values_merged.yaml \
         --kubeconfig /etc/rancher/k3s/k3s.yaml \
-        -n $I_NS 1> /dev/null
+        -n $I_NS --atomic 1> /dev/null
 
     echo ""
     info "Application deployed successfully"

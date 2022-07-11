@@ -1,94 +1,89 @@
     - name: ${app_comp_name}
       scdsAcbmAppCompUUID: ${app_comp_id}
       replicaCount: 1
-      networkIsolation: "open" # fully isolated, only ODM and kubernetes system components can access
-      allowedAppComponents: []
 
+      # Your image name and tag
       image:
-          repository: ${app_image}
-          tag: ${app_tag}
+        repository: ${app_image}
+        tag: ${app_tag}
 
-      imagePullSecrets:
-        - name: regcred
-
-      isDaemonSet: false
-
-      # allow to overwrite the default docker command to use
+      # Overwrite the default command for your docker image
       overwriteCommand: false
       command: []
       commandArgs: []
 
-      serviceAccount:
-          create: false
-          annotations: {}
-
-      podAnnotations: {}
-
-      podSecurityContext:
-          {}
-
-      securityContext:
-          {}
-
+      # Configure ingress for your application component
       virtualService:
-          enabled: ${app_expose}
-          svcPort: ${app_expose_port}
-          matchPrefix:
+        - gateway: http-gateway
           hosts:
-              - ${app_expose_host}
-          tls: []
+            - ${app_expose_host}
+          protocol: http
+          httpMatch:
+            prefix: /
+            port: ${app_expose_port}
+          svcPort: ${app_expose_port}
+        # - gateway: http-gateway | https-gateway | <other>
+        #   hosts:
+        #     - chart-example.com
+        #   protocol: https # http / https / tls / tcp
+        #   tlsMatchHosts: # only for tls/https route
+        #     - host: chart-example.com
+        #       port: 443
+        #       svcPort: 8443
+        #   httpMatch: # only for http route
+        #     prefix: /
+        #     port: 80
+        #   tcpMatchPorts: # only for tcp
+        #     - 27017
+        #   svcPort: 80
+        #   tls: []
 
+      # Configuration parameters
       config:
-          enabled: false
-          data: {}
-          # data:
-          #   - type: file # will be mounted as a file inside the pod
-          #     key: test.config
-          #     value: "Content of test.config file"
-          #     mountPath: "/etc/myApp/config/"
-          #   - type: env # will be mounted as an ENV var inside the pod
-          #     key: TEST_ENV
-          #     value: "Value of ENV variable TEST_ENV"
-
-      secrets:
-          enabled: false
-          data: {}
-          # data:
-          #   - type: file
-          #     key: test.secret
-          #     value: "Content of test.secret file"
-          #     mountPath: "/etc/myApp/config/"
-          #   - type: env
-          #     key: SECRET_ENV
-          #     value: "Value of ENV variable SECRET_ENV"
-
-      ## Persist data to a persistent volume
-      persistence:
-          enabled: false
-
-      waitForComponents:
-      #  - ${app_id}
-      #  - EFGH
-
-      resources:
-          {}
-          # We usually recommend not to specify default resources and to leave this as a conscious
-          # choice for the user. This also increases chances charts run on environments with little
-          # resources, such as Minikube. If you do want to specify resources, uncomment the following
-          # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-          # limits:
-          #   cpu: 100m
-          #   memory: 128Mi
-          # requests:
-          #   cpu: 100m
-          #   memory: 128Mi
-
-      autoscaling:
-          enabled: false
-          minReplicas: 1
-          maxReplicas: 100
-          targetCPUUtilizationPercentage: 80
-          # targetMemoryUtilizationPercentage: 80
-
-      logs:
         enabled: false
+        data: {}
+        # data:
+        #   - type: file # will be mounted as a file inside the pod
+        #     key: test.config
+        #     value: "Content of test.config file"
+        #     mountPath: "/etc/myApp/config/"
+        #   - type: env # will be mounted as an ENV var inside the pod
+        #     key: TEST_ENV
+        #     value: "Value of ENV variable TEST_ENV"
+
+      # Secret configuration parameters
+      secrets:
+        enabled: false
+        data: {}
+        # data:
+        #   - type: file
+        #     key: test.secret
+        #     value: "Content of test.secret file"
+        #     mountPath: "/etc/myApp/config/"
+        #   - type: env
+        #     key: SECRET_ENV
+        #     value: "Value of ENV variable SECRET_ENV"
+
+      # Persist data to a persistent volume
+      persistence:
+        enabled: false
+        # volumes:
+        #   - name: data-volume
+        #     size: 1Gi
+        #     mountPath: /tmp
+        #     ldlSync: false
+        #     sourcePath: /scds/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
+        #     type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)
+        # hostpathVolumes: 
+        #   - name: host-data-volume
+        #     mountPath: /tmp
+        #     hostPath: /scds/content-volumes/app1
+        #     type: Directory
+
+      resources: {}
+        # limits:
+        #   cpu: 100m
+        #   memory: 128Mi
+        # requests:
+        #   cpu: 100m
+        #   memory: 128Mi

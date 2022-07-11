@@ -1,20 +1,8 @@
-enabled: true
-developement: false # if true, services will be exposed as NodePorts
-registry: ${registry} # The registry host to get the images from
-isScdsApp: true
+registry: ${registry}
 scdsAcbmAppUUID: ${app_id}
 scdsAcbmUUID: ${app_id}
 scdsBundleName: ${app_ns}
 scdsCompanyUUID: ${app_id}
 appName: ${app_name}
-
-global:
-    imagePullPolicy: Always
-    
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
 
 appComponents:

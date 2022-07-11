@@ -1,7 +1,8 @@
 {{- if .Values.enabled }}
-{{- $appName := lower $.Values.appName }}
+{{- $appName := lower $.Values.appInternalName }}
 # PVC + PV only for logs. ContentVolumes are mounted as HostPath
 {{- range .Values.appComponents }}
+{{- $appComponentName := lower .name -}}
 {{- if and .logs.enabled (not .logs.existingClaim) }}
 ---
 kind: PersistentVolumeClaim
@@ -13,6 +14,7 @@ metadata:
     {{- if $.Values.isScdsApp }}
     scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
     scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
     scdsBundleName: {{ $.Values.scdsBundleName | quote }}
     scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}

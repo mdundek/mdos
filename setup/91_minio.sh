@@ -3,8 +3,24 @@
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
+while [ "$1" != "" ]; do
+    case $1 in
+        --storage-dir )
+            shift
+            STORAGE_DIR=$1
+        ;; 
+        * ) echo "Invalid parameter detected => $1"
+            exit 1
+    esac
+    shift
+done
+
+if [ -z $STORAGE_DIR ]; then
+  error "Missing parameter: --storage-dir"
+fi
+
 # Create target folder for storage class
-mkdir /media/backup/k3s
+mkdir -p $STORAGE_DIR
 
 # Create specific storage class for backup
 kubectl create ns minio-backup-storage-class
@@ -12,7 +28,7 @@ kubectl create ns minio-backup-storage-class
 helm install minio-backup-storage-class \
   --set storageClass.name=local-path-minio-backup \
   --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
-  --set nodePathMap[0].paths[0]=/media/backup/k3s \
+  --set nodePathMap[0].paths[0]=$STORAGE_DIR \
   ../files/local-path-provisioner \
   -n minio-backup-storage-class \
   --kubeconfig /etc/rancher/k3s/k3s.yaml

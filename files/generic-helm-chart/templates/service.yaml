@@ -1,6 +1,7 @@
 {{- if .Values.enabled }}
-{{- $appName := lower $.Values.appName }}
+{{- $appName := lower $.Values.appInternalName }}
 {{- range .Values.appComponents }}
+{{- $appComponentName := lower .name -}}
 {{- if .service.create }}
 ---
 apiVersion: v1
@@ -12,6 +13,7 @@ metadata:
     {{- if $.Values.isScdsApp }}
     scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
     scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
     scdsBundleName: {{ $.Values.scdsBundleName | quote }}
     scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
@@ -26,14 +28,48 @@ spec:
     {{- range .service.portMappings }}
     - port: {{ .port }}
       targetPort: {{ .containerPort }}
-      {{- if $.Values.developement }}
+      {{- if or ($.Values.developement) (.forceNodePort) }}
       nodePort: {{ .devNodePort }}
       {{- end }}
       # protocol: TCP
       name: http-{{ .port }}
     {{- end }}
   selector:
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
+{{- end }}
+# NodePorts (Needed for internal use cases, such as FTP server in passive mode)
+{{- if .nodePortService }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}-{{ lower .name }}-np
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isScdsApp }}
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
+    scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
+    scdsBundleName: {{ $.Values.scdsBundleName | quote }}
+    scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+    {{- end }}
+spec:
+  type: NodePort
+  ports:
+    {{- range .nodePortService.portMappings }}
+    - port: {{ .port }}
+      targetPort: {{ .containerPort }}
+      nodePort: {{ .nodePort }}
+      # protocol: TCP
+      name: http-{{ .port }}
+    {{- end }}
+  selector:
+    scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
+    scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
 {{- end }}
 {{- end }}
 {{- end }}

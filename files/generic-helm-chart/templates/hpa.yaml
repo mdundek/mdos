@@ -1,6 +1,7 @@
 {{- if .Values.enabled }}
-{{- $appName := lower $.Values.appName }}
+{{- $appName := lower $.Values.appInternalName }}
 {{- range .Values.appComponents }}
+{{- $appComponentName := lower .name -}}
 {{- if .autoscaling.enabled }}
 ---
 apiVersion: autoscaling/v2beta1
@@ -13,6 +14,7 @@ metadata:
     scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
     scdsBundleName: {{ $.Values.scdsBundleName | quote }}
     scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
     {{- end }}

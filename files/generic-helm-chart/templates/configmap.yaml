@@ -1,6 +1,7 @@
 {{- if .Values.enabled }}
 {{- $appName := lower $.Values.appName }}
 {{- range .Values.appComponents }}
+{{- $appComponentName := lower .name -}}
 {{- if and .config.enabled }}
 {{- $appCompName := .name }}
 ---
@@ -13,6 +14,7 @@ metadata:
     {{- if $.Values.isScdsApp }}
     scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
     scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
     scdsBundleName: {{ $.Values.scdsBundleName | quote }}
     scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
@@ -22,11 +24,11 @@ data:
   {{ .key }}: {{ .value | quote }}
   {{- end }}
   {{- range $.Values.global.config }}
-    {{- if .appCompNames }}
+    {{- if .appComp }}
       {{- $rangeKey := .key }}
       {{- $rangeVal := .value }}
-      {{- range .appCompNames }}
-        {{- if eq . $appCompName }}
+      {{- range .appComp }}
+        {{- if eq .name $appCompName }}
   {{ $rangeKey }}: {{ $rangeVal | quote }}
         {{- end }}
       {{- end }}

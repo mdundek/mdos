@@ -59,7 +59,7 @@ certbot certonly \
     -d *.$DOMAIN \
     --email $CF_EMAIL \
     --agree-tos \
-    -n --dry-run
+    -n
 
 # Create nginx stop / start pre and post hooks
 sh -c 'printf "#!/bin/sh\nservice nginx stop\n" > /etc/letsencrypt/renewal-hooks/pre/nginx.sh'

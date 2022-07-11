@@ -24,9 +24,8 @@ generate_app_comp_yaml() {
     export app_comp_id=$2
     export app_image=$3
     export app_tag=$4
-    export app_expose=$5
-    export app_expose_port=$6
-    export app_expose_host=$7
+    export app_expose_port=$5
+    export app_expose_host=$6
 
     # Generate temp secret values yaml file
     ( echo "cat <<EOF >$CDIR/values_app_comp.yaml";
@@ -43,6 +42,7 @@ EOF";
     if [ "$APP_COMP_EXPOSE" == "yes" ]; then
         APP_COMP_YAML="$APP_COMP_YAML
 
+      # Create a service to make your application reachable from other components
       service:
         create: true
         type: ClusterIP
@@ -53,6 +53,7 @@ EOF";
     else
         APP_COMP_YAML="$APP_COMP_YAML
 
+      # Create a service to make your application reachable from other components
       service:
         create: false
 "
@@ -88,7 +89,7 @@ collect_app_comp_params() {
         regex_user_input APP_COMP_HOST "Enter the component target host name:" "$APP_COMP_NAME.mdundek.network" "hostname"
     fi
 
-    generate_app_comp_yaml "$APP_COMP_NAME" "$(uuidgen)" "$APP_COMP_IMG" "latest" "$(if [ $APP_COMP_EXPOSE == "yes" ]; then echo 'true';else echo 'false';fi)" "80" "$(if [ -z $APP_COMP_HOST ]; then echo "na";else echo "$APP_COMP_HOST";fi)"
+    generate_app_comp_yaml "$APP_COMP_NAME" "$(uuidgen)" "$APP_COMP_IMG" "latest" "80" "$(if [ -z $APP_COMP_HOST ]; then echo "na";else echo "$APP_COMP_HOST";fi)"
 }
 
 # ========================================================================

@@ -1,8 +1,8 @@
 {{- if .Values.enabled }}
-{{- range .Values.appComponents }}
-{{- $appComponentName := lower .name }}
-{{- $appName := lower $.Values.appName }}
-{{- if .isDaemonset }}
+  {{- $appName := lower .Values.appName -}}
+  {{- range .Values.appComponents }}
+    {{- $appComponentName := lower .name -}}
+    {{- if .isDaemonset }}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -13,9 +13,13 @@ metadata:
     {{- if $.Values.isScdsApp }}
     scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
     scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
     scdsBundleName: {{ $.Values.scdsBundleName | quote }}
     scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- if $.Values.developement }}
+    date: "{{ now | unixEpoch }}"
+      {{- end }}
     {{- end }}
 spec:
   {{- if not .autoscaling.enabled }}
@@ -27,6 +31,7 @@ spec:
       {{- if $.Values.isScdsApp }}
       scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
       scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+      scdsAcbmAppCompName: {{ $appComponentName | quote }}
       scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
       scdsBundleName: {{ $.Values.scdsBundleName | quote }}
       scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
@@ -42,9 +47,16 @@ spec:
         {{- if $.Values.isScdsApp }}
         scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
         scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+        scdsAcbmAppCompName: {{ $appComponentName | quote }}
         scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
         scdsBundleName: {{ $.Values.scdsBundleName | quote }}
         scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+          {{- if $.Values.developement }}
+        date: "{{ now | unixEpoch }}"
+          {{- end }}
+          {{- if .podLabels }}
+        {{- toYaml .podLabels | nindent 8 }}
+          {{- end }}
         {{- end }}
     spec:
       {{- with .imagePullSecrets }}
@@ -75,14 +87,17 @@ spec:
           image: "{{ $.Values.registry }}/{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           {{- if .overwriteCommand }}
-          {{- with .command }}
+            {{- with .command }}
           command:
             {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .commandArgs }}
+            {{- end }}
+            {{- with .commandArgs }}
           args:
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
+          {{- if .workingDir }}
+          workingDir: {{ .workingDir }}
           {{- end }}
           env:
             {{- if .secrets.enabled }}
@@ -98,10 +113,10 @@ spec:
 
               {{- range $.Values.global.secrets }}
                 {{- if eq .type "env" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 secretKeyRef:
@@ -118,7 +133,6 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- end }}
-
             {{- end }}
 
             {{- if .config.enabled }}
@@ -134,10 +148,10 @@ spec:
 
               {{- range $.Values.global.config }}
                 {{- if eq .type "env" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 configMapKeyRef:
@@ -157,24 +171,85 @@ spec:
             {{- end }}
           {{- if .service.create }}
           ports:
-          {{- range .service.portMappings }}
+            {{- range .service.portMappings }}
           - name: http-{{ .port }}
             containerPort: {{ .containerPort }}
             # protocol: TCP
+            {{- end }}
           {{- end }}
-          {{- if .service.livenessProbePath }}
+
+          {{- if .service.livenessProbe }}
+            {{- if .service.livenessProbe.enabled }}
           livenessProbe:
+              {{- if eq .service.livenessProbe.type "http" }}
             httpGet:
-              path: {{ .service.livenessProbePath }}
-              port: {{ .service.containerPort }}
+              path: {{ .service.livenessProbe.path }}
+              port: {{ .service.livenessProbe.port }}
+                {{- if .service.livenessProbe.headers }}
+              httpHeaders:
+                  {{- range .service.livenessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+                  {{- end }}
+                {{- end }}
+              {{- else if eq .service.livenessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .service.livenessProbe.port }}
+              {{- end }}
+              {{- if .service.livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .service.livenessProbe.initialDelaySeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.periodSeconds }}
+            periodSeconds: {{ .service.livenessProbe.periodSeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .service.livenessProbe.timeoutSeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.successThreshold }}
+            successThreshold: {{ .service.livenessProbe.successThreshold }}
+              {{- end }}
+              {{- if .service.livenessProbe.failureThreshold }}
+            failureThreshold: {{ .service.livenessProbe.failureThreshold }}
+              {{- end }}
+            {{- end }}
           {{- end }}
-          {{- if .service.readinessProbePath }}
+
+          {{- if .service.readinessProbe }}
+            {{- if .service.readinessProbe.enabled }}
           readinessProbe:
+              {{- if eq .service.readinessProbe.type "http" }}
             httpGet:
-              path: {{ .service.readinessProbePath }}
-              port: {{ .service.containerPort }}
+              path: {{ .service.readinessProbe.path }}
+              port: {{ .service.readinessProbe.port }}
+                {{- if .service.readinessProbe.headers }}
+              httpHeaders:
+                  {{- range .service.readinessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+                  {{- end }}
+                {{- end }}
+              {{- else if eq .service.readinessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .service.readinessProbe.port }}
+              {{- end }}
+            {{- if .service.readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .service.readinessProbe.initialDelaySeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.periodSeconds }}
+            periodSeconds: {{ .service.readinessProbe.periodSeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .service.readinessProbe.timeoutSeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.successThreshold }}
+            successThreshold: {{ .service.readinessProbe.successThreshold }}
+              {{- end }}
+              {{- if .service.readinessProbe.failureThreshold }}
+            failureThreshold: {{ .service.readinessProbe.failureThreshold }}
+              {{- end }}
+            {{- end }}
           {{- end }}
-          {{- end }}
+
           {{- if .resources }}
           resources:
             {{- toYaml .resources | nindent 12 }}
@@ -182,14 +257,14 @@ spec:
           volumeMounts:
             {{- if .persistence.hostpathVolumes }}
               {{- range .persistence.hostpathVolumes }}
-            - name: {{ .name | replace "." "-" | quote }}
+            - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
               mountPath: {{ .mountPath }}
               {{- end }}
             {{- end }}
             {{- if .config.enabled }}
               {{- range .config.data }} {{- /* configmap volumeMounts */}}
                 {{- if eq .type "file" }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ .mountPath }}/{{ .key }}"
               subPath: {{ .key | quote }}
                {{- end }}
@@ -197,48 +272,52 @@ spec:
 
               {{- range $.Values.global.config }}
                 {{- if eq .type "file" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
                     {{- $rangeMPath := .mountPath }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
-            - name: {{ $rangeKey | replace "." "-" }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
-              subPath: {{ $rangeKey | quote }}            
+              subPath: {{ $rangeKey | quote }}
                       {{- end }}
                     {{- end }}
                   {{- else }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ .mountPath }}/{{ .key }}"
-              subPath: {{ .key | quote }}.           
+              subPath: {{ .key | quote }}
                   {{- end }}
                 {{- end }}
               {{- end }}
-
             {{- end }}
 
             {{- if .secrets.enabled }}
               {{- range .secrets.data }} {{- /* secret volumeMounts */}}
                 {{- if eq .type "file" }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: {{ .mountPath | quote }}
                 {{- end }}
               {{- end }}
 
               {{- range $.Values.global.secrets }} {{- /* secret volumes */}}
                 {{- if eq .type "file" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
                     {{- $rangeMPath := .mountPath }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
-            - name: {{ $rangeKey | replace "." "-" }}
-              mountPath: {{ $rangeMPath | quote }}  
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  }}
+                        {{- if .mountPath }} # if a specific mountPath is specified for current appComp, otherwise use global one
+              mountPath: "{{ .mountPath }}/{{ $rangeKey }}"
+                        {{- else }}
+              mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
+                        {{- end }}
+              subPath: {{ $rangeKey | quote }}
                       {{- end }}
                     {{- end }}
                   {{- else }}
-            - name: {{ .key | replace "." "-" }}
-              mountPath: {{ .mountPath | quote }}          
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
+              mountPath: {{ .mountPath | quote }}
                   {{- end }}
                 {{- end }}
               {{- end }}
@@ -247,7 +326,7 @@ spec:
       volumes:
         {{- if .persistence.hostpathVolumes }}
           {{- range .persistence.hostpathVolumes }}
-        - name: {{ .name | replace "." "-" | quote }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
           hostPath:
             path: {{ .hostPath }}
             {{- if .type }}
@@ -258,7 +337,7 @@ spec:
         {{- if .config.enabled }}
           {{- range .config.data }} {{- /* configmap volumes */}}
             {{- if eq .type "file" }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -269,12 +348,12 @@ spec:
 
           {{- range $.Values.global.config }}
             {{- if eq .type "file" }}
-              {{- if .appCompNames }}
+              {{- if .appComp }}
                 {{- $rangeKey := .key }}
                 {{- $rangeMPath := .mountPath }}
-                {{- range .appCompNames }}
-                  {{- if eq . $appComponentName }}
-        - name: {{ $rangeKey | replace "." "-" | quote }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -283,7 +362,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- else }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -297,7 +376,7 @@ spec:
         {{- if .secrets.enabled }}
           {{- range .secrets.data }} {{- /* secret volumes */}}
             {{- if eq .type "file" }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -308,11 +387,11 @@ spec:
 
           {{- range $.Values.global.secrets }}
             {{- if eq .type "file" }}
-              {{- if .appCompNames }}
+              {{- if .appComp }}
                 {{- $rangeKey := .key }}
-                {{- range .appCompNames }}
-                  {{- if eq . $appComponentName }}
-        - name: {{ $rangeKey | replace "." "-" | quote }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -321,7 +400,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- else }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -344,7 +423,8 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-{{- else if and (.persistence.enabled) (.persistence.volumes) }}
+
+    {{- else if and (.persistence.enabled) (.persistence.volumes) }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -355,9 +435,13 @@ metadata:
     {{- if $.Values.isScdsApp }}
     scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
     scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
     scdsBundleName: {{ $.Values.scdsBundleName | quote }}
     scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- if $.Values.developement }}
+    date: "{{ now | unixEpoch }}"
+      {{- end }}
     {{- end }}
 spec:
   serviceName: {{ $appName }}-{{ lower .name }}
@@ -370,6 +454,7 @@ spec:
       {{- if $.Values.isScdsApp }}
       scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
       scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+      scdsAcbmAppCompName: {{ $appComponentName | quote }}
       scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
       scdsBundleName: {{ $.Values.scdsBundleName | quote }}
       scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
@@ -385,9 +470,16 @@ spec:
         {{- if $.Values.isScdsApp }}
         scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
         scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+        scdsAcbmAppCompName: {{ $appComponentName | quote }}
         scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
         scdsBundleName: {{ $.Values.scdsBundleName | quote }}
         scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+          {{- if $.Values.developement }}
+        date: "{{ now | unixEpoch }}"
+          {{- end }}
+          {{- if .podLabels }}
+        {{- toYaml .podLabels | nindent 8 }}
+          {{- end }}
         {{- end }}
     spec:
       {{- with .imagePullSecrets }}
@@ -438,6 +530,7 @@ spec:
       {{- if contains "true" $ldlSyncs }}
       - name: {{ $appName }}-{{ lower .name }}-init
         image: {{ $.Values.registry }}/{{ $.Values.initContainer.image }}:{{ $.Values.initContainer.imageTag }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
         volumeMounts:
           {{- range .persistence.volumes }}
           {{- if .ldlSync }}
@@ -454,6 +547,8 @@ spec:
           value: "{{ $dstPaths }}"
         - name: SYNC_TYPE
           value: "{{ $types }}"
+        - name: PROCESS_ID
+          value: "{{ $.Values.processId }}"
       {{- end }}
       {{- if $initWaitApps }}
       - name: {{ $appName }}-{{ lower .name }}-init
@@ -462,6 +557,8 @@ spec:
         env: 
         - name: APP_UUID_WAIT_LIST
           value: "{{ $initWaitApps }}"
+        - name: PROCESS_ID
+          value: "{{ $.Values.processId }}"
       {{- end }}
       {{- end }}
       
@@ -474,16 +571,18 @@ spec:
           image: "{{ $.Values.registry }}/{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           {{- if .overwriteCommand }}
-          {{- with .command }}
+            {{- with .command }}
           command:
             {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .commandArgs }}
+            {{- end }}
+            {{- with .commandArgs }}
           args:
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
+          {{- if .workingDir }}
+          workingDir: {{ .workingDir }}
           {{- end }}
-   
           env:
             {{- if .secrets.enabled }}
               {{- range .secrets.data }} {{- /*# ENV from secrets */}}
@@ -497,10 +596,10 @@ spec:
               {{- end }}
               {{- range $.Values.global.secrets }}
                 {{- if eq .type "env" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 secretKeyRef:
@@ -530,10 +629,10 @@ spec:
               {{- end }}
               {{- range $.Values.global.config }}
                 {{- if eq .type "env" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 configMapKeyRef:
@@ -553,24 +652,85 @@ spec:
             {{- end }}
           {{- if .service.create }}
           ports:
-          {{- range .service.portMappings }}
+            {{- range .service.portMappings }}
           - name: http-{{ .port }}
             containerPort: {{ .containerPort }}
             # protocol: TCP
+            {{- end }}
           {{- end }}
-          {{- if .service.livenessProbePath }}
+
+          {{- if .service.livenessProbe }}
+            {{- if .service.livenessProbe.enabled }}
           livenessProbe:
+              {{- if eq .service.livenessProbe.type "http" }}
             httpGet:
-              path: {{ .service.livenessProbePath }}
-              port: {{ .service.containerPort }}
+              path: {{ .service.livenessProbe.path }}
+              port: {{ .service.livenessProbe.port }}
+                {{- if .service.livenessProbe.headers }}
+              httpHeaders:
+                  {{- range .service.livenessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+                  {{- end }}
+                {{- end }}
+              {{- else if eq .service.livenessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .service.livenessProbe.port }}
+              {{- end }}
+              {{- if .service.livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .service.livenessProbe.initialDelaySeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.periodSeconds }}
+            periodSeconds: {{ .service.livenessProbe.periodSeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .service.livenessProbe.timeoutSeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.successThreshold }}
+            successThreshold: {{ .service.livenessProbe.successThreshold }}
+              {{- end }}
+              {{- if .service.livenessProbe.failureThreshold }}
+            failureThreshold: {{ .service.livenessProbe.failureThreshold }}
+              {{- end }}
+            {{- end }}
           {{- end }}
-          {{- if .service.readinessProbePath }}
+
+          {{- if .service.readinessProbe }}
+            {{- if .service.readinessProbe.enabled }}
           readinessProbe:
+              {{- if eq .service.readinessProbe.type "http" }}
             httpGet:
-              path: {{ .service.readinessProbePath }}
-              port: {{ .service.containerPort }}
+              path: {{ .service.readinessProbe.path }}
+              port: {{ .service.readinessProbe.port }}
+                {{- if .service.readinessProbe.headers }}
+              httpHeaders:
+                  {{- range .service.readinessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+                  {{- end }}
+                {{- end }}
+              {{- else if eq .service.readinessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .service.readinessProbe.port }}
+              {{- end }}
+              {{- if .service.readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .service.readinessProbe.initialDelaySeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.periodSeconds }}
+            periodSeconds: {{ .service.readinessProbe.periodSeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .service.readinessProbe.timeoutSeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.successThreshold }}
+            successThreshold: {{ .service.readinessProbe.successThreshold }}
+              {{- end }}
+              {{- if .service.readinessProbe.failureThreshold }}
+            failureThreshold: {{ .service.readinessProbe.failureThreshold }}
+              {{- end }}
+            {{- end }}
           {{- end }}
-          {{- end }}
+
           {{- if .resources }}
           resources:
             {{- toYaml .resources | nindent 12 }}
@@ -578,34 +738,34 @@ spec:
           volumeMounts:
             {{- if .persistence.hostpathVolumes }}
               {{- range .persistence.hostpathVolumes }}
-            - name: {{ .name | replace "." "-" | quote }}
+            - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
               mountPath: {{ .mountPath }}
               {{- end }}
             {{- end }}
             {{- if .config.enabled }}
               {{- range .config.data }} {{- /* configmap volumeMounts */}}
                 {{- if eq .type "file" }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ .mountPath }}/{{ .key }}"
               subPath: {{ .key | quote }}
                {{- end }}
               {{- end }}
               {{- range $.Values.global.config }}
                 {{- if eq .type "file" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
                     {{- $rangeMPath := .mountPath }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
-            - name: {{ $rangeKey | replace "." "-" }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
-              subPath: {{ $rangeKey | quote }}            
+              subPath: {{ $rangeKey | quote }}
                       {{- end }}
                     {{- end }}
                   {{- else }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ .mountPath }}/{{ .key }}"
-              subPath: {{ .key | quote }}.           
+              subPath: {{ .key | quote }}
                   {{- end }}
                 {{- end }}
               {{- end }}
@@ -613,25 +773,30 @@ spec:
             {{- if .secrets.enabled }}
               {{- range .secrets.data }} {{- /* secret volumeMounts */}}
                 {{- if eq .type "file" }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: {{ .mountPath | quote }}
                 {{- end }}
               {{- end }}
 
               {{- range $.Values.global.secrets }} {{- /* secret volumes */}}
                 {{- if eq .type "file" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
                     {{- $rangeMPath := .mountPath }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
-            - name: {{ $rangeKey | replace "." "-" }}
-              mountPath: {{ $rangeMPath | quote }}  
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  }}
+                        {{- if .mountPath }} # if a specific mountPath is specified for current appComp, otherwise use global one
+              mountPath: "{{ .mountPath }}/{{ $rangeKey }}"
+                        {{- else }}
+              mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
+                        {{- end }}
+              subPath: {{ $rangeKey | quote }}
                       {{- end }}
                     {{- end }}
                   {{- else }}
-            - name: {{ .key | replace "." "-" }}
-              mountPath: {{ .mountPath | quote }}          
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
+              mountPath: {{ .mountPath | quote }}
                   {{- end }}
                 {{- end }}
               {{- end }}
@@ -643,7 +808,7 @@ spec:
       volumes:
         {{- if .persistence.hostpathVolumes }}
           {{- range .persistence.hostpathVolumes }}
-        - name: {{ .name | replace "." "-" | quote }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
           hostPath:
             path: {{ .hostPath }}
             {{- if .type }}
@@ -654,7 +819,7 @@ spec:
         {{- if .config.enabled }}
           {{- range .config.data }} {{- /* configmap volumes */}}
             {{- if eq .type "file" }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -664,11 +829,11 @@ spec:
           {{- end }}
           {{- range $.Values.global.config }}
             {{- if eq .type "file" }}
-              {{- if .appCompNames }}
+              {{- if .appComp }}
                 {{- $rangeKey := .key }}
-                {{- range .appCompNames }}
-                  {{- if eq . $appComponentName }}
-        - name: {{ $rangeKey | replace "." "-" | quote }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -677,7 +842,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- else }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -690,7 +855,7 @@ spec:
         {{- if .secrets.enabled }}
           {{- range .secrets.data }} {{- /* secret volumes */}}
             {{- if eq .type "file" }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -700,11 +865,11 @@ spec:
           {{- end }}
           {{- range $.Values.global.secrets }}
             {{- if eq .type "file" }}
-              {{- if .appCompNames }}
+              {{- if .appComp }}
                 {{- $rangeKey := .key }}
-                {{- range .appCompNames }}
-                  {{- if eq . $appComponentName }}
-        - name: {{ $rangeKey | replace "." "-" | quote }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -713,7 +878,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- else }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -746,7 +911,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
   volumeClaimTemplates:
-    {{- range .persistence.volumes }}
+      {{- range .persistence.volumes }}
     - metadata:
         name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
         labels:
@@ -758,8 +923,8 @@ spec:
         resources:
           requests:
             storage: {{ .size }}
-    {{- end }}
-{{- else }}
+      {{- end }}
+    {{- else }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -770,9 +935,13 @@ metadata:
     {{- if $.Values.isScdsApp }}
     scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
     scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+    scdsAcbmAppCompName: {{ $appComponentName | quote }}
     scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
     scdsBundleName: {{ $.Values.scdsBundleName | quote }}
     scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+      {{- if $.Values.developement }}
+    date: "{{ now | unixEpoch }}"
+      {{- end }}
     {{- end }}
 spec:
   {{- if not .autoscaling.enabled }}
@@ -784,6 +953,7 @@ spec:
       {{- if $.Values.isScdsApp }}
       scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
       scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+      scdsAcbmAppCompName: {{ $appComponentName | quote }}
       scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
       scdsBundleName: {{ $.Values.scdsBundleName | quote }}
       scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
@@ -799,9 +969,16 @@ spec:
         {{- if $.Values.isScdsApp }}
         scdsAcbmAppUUID: {{ $.Values.scdsAcbmAppUUID | quote }}
         scdsAcbmAppCompUUID: {{ .scdsAcbmAppCompUUID | quote }}
+        scdsAcbmAppCompName: {{ $appComponentName | quote }}
         scdsAcbmUUID: {{ $.Values.scdsAcbmUUID | quote }}
         scdsBundleName: {{ $.Values.scdsBundleName | quote }}
         scdsCompanyUUID: {{ $.Values.scdsCompanyUUID | quote }}
+          {{- if $.Values.developement }}
+        date: "{{ now | unixEpoch }}"
+          {{- end }}
+          {{- if .podLabels }}
+        {{- toYaml .podLabels | nindent 8 }}
+          {{- end }}
         {{- end }}
     spec:
       {{- with .imagePullSecrets }}
@@ -845,14 +1022,17 @@ spec:
           image: "{{ $.Values.registry }}/{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           {{- if .overwriteCommand }}
-          {{- with .command }}
+            {{- with .command }}
           command:
             {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .commandArgs }}
+            {{- end }}
+            {{- with .commandArgs }}
           args:
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
+          {{- if .workingDir }}
+          workingDir: {{ .workingDir }}
           {{- end }}
           env:
             {{- if .secrets.enabled }}
@@ -868,10 +1048,10 @@ spec:
 
               {{- range $.Values.global.secrets }}
                 {{- if eq .type "env" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 secretKeyRef:
@@ -901,10 +1081,10 @@ spec:
               {{- end }}
               {{- range $.Values.global.config }}
                 {{- if eq .type "env" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 configMapKeyRef:
@@ -924,24 +1104,85 @@ spec:
             {{- end }}
           {{- if .service.create }}
           ports:
-          {{- range .service.portMappings }}
+            {{- range .service.portMappings }}
           - name: http-{{ .port }}
             containerPort: {{ .containerPort }}
             # protocol: TCP
+            {{- end }}
           {{- end }}
-          {{- if .service.livenessProbePath }}
+
+          {{- if .service.livenessProbe }}
+            {{- if .service.livenessProbe.enabled }}
           livenessProbe:
+              {{- if eq .service.livenessProbe.type "http" }}
             httpGet:
-              path: {{ .service.livenessProbePath }}
-              port: {{ .service.containerPort }}
+              path: {{ .service.livenessProbe.path }}
+              port: {{ .service.livenessProbe.port }}
+                {{- if .service.livenessProbe.headers }}
+              httpHeaders:
+                  {{- range .service.livenessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+                  {{- end }}
+                {{- end }}
+              {{- else if eq .service.livenessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .service.livenessProbe.port }}
+              {{- end }}
+              {{- if .service.livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .service.livenessProbe.initialDelaySeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.periodSeconds }}
+            periodSeconds: {{ .service.livenessProbe.periodSeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .service.livenessProbe.timeoutSeconds }}
+              {{- end }}
+              {{- if .service.livenessProbe.successThreshold }}
+            successThreshold: {{ .service.livenessProbe.successThreshold }}
+              {{- end }}
+              {{- if .service.livenessProbe.failureThreshold }}
+            failureThreshold: {{ .service.livenessProbe.failureThreshold }}
+              {{- end }}
+            {{- end }}
           {{- end }}
-          {{- if .service.readinessProbePath }}
+
+          {{- if .service.readinessProbe }}
+            {{- if .service.readinessProbe.enabled }}
           readinessProbe:
+              {{- if eq .service.readinessProbe.type "http" }}
             httpGet:
-              path: {{ .service.readinessProbePath }}
-              port: {{ .service.containerPort }}
+              path: {{ .service.readinessProbe.path }}
+              port: {{ .service.readinessProbe.port }}
+                {{- if .service.livenessProbe.headers }}
+              httpHeaders:
+                  {{- range .service.readinessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+                  {{- end }}
+                {{- end }}
+              {{- else if eq .service.readinessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .service.readinessProbe.port }}
+              {{- end }}
+            {{- if .service.readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .service.readinessProbe.initialDelaySeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.periodSeconds }}
+            periodSeconds: {{ .service.readinessProbe.periodSeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .service.readinessProbe.timeoutSeconds }}
+              {{- end }}
+              {{- if .service.readinessProbe.successThreshold }}
+            successThreshold: {{ .service.readinessProbe.successThreshold }}
+              {{- end }}
+              {{- if .service.readinessProbe.failureThreshold }}
+            failureThreshold: {{ .service.readinessProbe.failureThreshold }}
+              {{- end }}
+            {{- end }}
           {{- end }}
-          {{- end }}
+
           {{- if .resources }}
           resources:
             {{- toYaml .resources | nindent 12 }}
@@ -949,34 +1190,39 @@ spec:
           volumeMounts:
             {{- if .persistence.hostpathVolumes }}
               {{- range .persistence.hostpathVolumes }}
-            - name: {{ .name | replace "." "-" | quote }}
+            - name: {{ .name | replace "." "-" | replace "_" "-" | quote }}
               mountPath: {{ .mountPath }}
+              # subPath: {{ .key | quote }} TO BE REMOVED
               {{- end }}
             {{- end }}
             {{- if .config.enabled }}
               {{- range .config.data }} {{- /* configmap volumeMounts */}}
                 {{- if eq .type "file" }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ .mountPath }}/{{ .key }}"
               subPath: {{ .key | quote }}
                {{- end }}
               {{- end }}
               {{- range $.Values.global.config }}
                 {{- if eq .type "file" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
                     {{- $rangeMPath := .mountPath }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
-            - name: {{ $rangeKey | replace "." "-" }}
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  }}
+                        {{- if .mountPath }} # if a specific mountPath is specified for current appComp, otherwise use global one
+              mountPath: "{{ .mountPath }}/{{ $rangeKey }}"
+                        {{- else }}
               mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
-              subPath: {{ $rangeKey | quote }}            
+                        {{- end }}
+              subPath: {{ $rangeKey | quote }}
                       {{- end }}
                     {{- end }}
                   {{- else }}
-            - name: {{ .key | replace "." "-" }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
               mountPath: "{{ .mountPath }}/{{ .key }}"
-              subPath: {{ .key | quote }}.           
+              subPath: {{ .key | quote }}
                   {{- end }}
                 {{- end }}
               {{- end }}
@@ -984,24 +1230,31 @@ spec:
             {{- if .secrets.enabled }}
               {{- range .secrets.data }} {{- /* secret volumeMounts */}}
                 {{- if eq .type "file" }}
-            - name: {{ .key | replace "." "-" }}
-              mountPath: {{ .mountPath | quote }}
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
+              mountPath: {{ .mountPath }}/{{ .key }}
+              subPath: {{ .key | quote }}
                 {{- end }}
               {{- end }}
               {{- range $.Values.global.secrets }} {{- /* secret volumes */}}
                 {{- if eq .type "file" }}
-                  {{- if .appCompNames }}
+                  {{- if .appComp }}
                     {{- $rangeKey := .key }}
                     {{- $rangeMPath := .mountPath }}
-                    {{- range .appCompNames }}
-                      {{- if eq . $appComponentName }}
-            - name: {{ $rangeKey | replace "." "-" }}
-              mountPath: {{ $rangeMPath | quote }}  
+                    {{- range .appComp }}
+                      {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  }}
+                        {{- if .mountPath }} # if a specific mountPath is specified for current appComp, otherwise use global one
+              mountPath: "{{ .mountPath }}/{{ $rangeKey }}"
+                        {{- else }}
+              mountPath: "{{ $rangeMPath }}/{{ $rangeKey }}"
+                        {{- end }}
+              subPath: {{ $rangeKey | quote }}
                       {{- end }}
                     {{- end }}
                   {{- else }}
-            - name: {{ .key | replace "." "-" }}
-              mountPath: {{ .mountPath | quote }}          
+            - name: {{ .key | replace "." "-" | replace "_" "-"  }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .key | quote }}
                   {{- end }}
                 {{- end }}
               {{- end }}
@@ -1009,7 +1262,7 @@ spec:
       volumes:
         {{- if .persistence.hostpathVolumes }}
           {{- range .persistence.hostpathVolumes }}
-        - name: {{ .name | replace "." "-" | quote }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
           hostPath:
             path: {{ .hostPath }}
             {{- if .type }}
@@ -1020,7 +1273,7 @@ spec:
         {{- if .config.enabled }}
           {{- range .config.data }} {{- /* configmap volumes */}}
             {{- if eq .type "file" }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -1030,11 +1283,11 @@ spec:
           {{- end }}
           {{- range $.Values.global.config }}
             {{- if eq .type "file" }}
-              {{- if .appCompNames }}
+              {{- if .appComp }}
                 {{- $rangeKey := .key }}
-                {{- range .appCompNames }}
-                  {{- if eq . $appComponentName }}
-        - name: {{ $rangeKey | replace "." "-" | quote }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -1043,7 +1296,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- else }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -1056,7 +1309,7 @@ spec:
         {{- if .secrets.enabled }}
           {{- range .secrets.data }} {{- /* secret volumes */}}
             {{- if eq .type "file" }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -1066,11 +1319,11 @@ spec:
           {{- end }}
           {{- range $.Values.global.secrets }}
             {{- if eq .type "file" }}
-              {{- if .appCompNames }}
+              {{- if .appComp }}
                 {{- $rangeKey := .key }}
-                {{- range .appCompNames }}
-                  {{- if eq . $appComponentName }}
-        - name: {{ $rangeKey | replace "." "-" | quote }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
+        - name: {{ $rangeKey | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -1079,7 +1332,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- else }}
-        - name: {{ .key | replace "." "-" | quote }}
+        - name: {{ .key | replace "." "-" | replace "_" "-"  | quote }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}
             items:
@@ -1101,6 +1354,6 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-{{- end }}
-{{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
