@@ -99,11 +99,14 @@ if [ -z $SKIP_REG ]; then
 
   # Create credentials file for the registry
   cd /home/$PLATFORM_USER/registry
-  
   htpasswd -Bbn $REG_USER $REG_PASS > auth/htpasswd
 
+  # Get the default network interface in use to connect to the internet
+  host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
+  INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
+
   # Get local IP
-  LOC_IP=$(ip addr show enp0s25 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+  LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 
   # Update hosts file to resolve registry domain
   echo "$LOC_IP $REGISTRY_HOST_STRIPPED" | tee -a /etc/hosts > /dev/null
