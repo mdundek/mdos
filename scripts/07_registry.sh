@@ -15,6 +15,11 @@ fi
 ../cli/02_setup_env.sh --extended-registry
 source ../cli/.env
 
+# Preflight checks
+if [ ! -f /etc/docker/certs.d/$REGISTRY_HOST/ca.crt ]; then
+  ../80_prepare.sh
+fi
+
 while [ "$1" != "" ]; do
     case $1 in
         --platform-user )

@@ -68,6 +68,9 @@ apt-get install \
 
 snap install yq
 
+# Docker
+./81_install_docker.sh
+
 # ############################################
 # ############## REGISTRY PREP ###############
 # ############################################
@@ -79,14 +82,11 @@ else
   REGISTRY_HOST_STRIPPED=$REGISTRY_HOST
 fi
 
- # Extract the credentials from the base64 string
+# Extract the credentials from the base64 string
 B64_DECODED=$(echo $REG_CREDS_B64 | base64 --decode)
 IFS=':' read -r -a CREDS <<< "$B64_DECODED"
 REG_USER="${CREDS[0]}"
 REG_PASS="${CREDS[1]}"
-
-# Docker
-./81_install_docker.sh
 
 # Skip registry setup if certificate already there
 if [ -f /home/$PLATFORM_USER/registry/certs/$REGISTRY_HOST_STRIPPED.crt ]; then

@@ -31,15 +31,21 @@ if [ -z $PLATFORM_USER ]; then
     exit 1
 fi
 
-# Docker
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# Docker binary
+if ! command -v docker &> /dev/null; then
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-apt-get update
-apt-get install docker-ce docker-ce-cli containerd.io -y
+  apt-get update
+  apt-get install docker-ce docker-ce-cli containerd.io -y
+fi
 
-groupadd docker
-usermod -aG docker $PLATFORM_USER
+# Docker user group
+if id -nG "$PLATFORM_USER" | grep -qw "docker"; then
+    echo "User $PLATFORM_USER is already part of the docker group"
+else
+  groupadd docker
+  usermod -aG docker $PLATFORM_USER
+fi

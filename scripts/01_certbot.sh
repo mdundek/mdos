@@ -22,7 +22,7 @@ while [ "$1" != "" ]; do
             shift
             DOMAIN=$1
         ;; 
-        * )              echo "Invalid parameter detected => $1"
+        * ) echo "Invalid parameter detected => $1"
             exit 1
     esac
     shift
