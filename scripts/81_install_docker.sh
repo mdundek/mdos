@@ -3,8 +3,6 @@
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
-source ../cli/.env
-
 # ############################################
 # ############## CHECKS & INIT ###############
 # ############################################
@@ -12,6 +10,10 @@ source ../cli/.env
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
   exit 1
+fi
+
+if [ -f ../cli/.env ]; then
+  source ../cli/.env
 fi
 
 while [ "$1" != "" ]; do
