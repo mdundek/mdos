@@ -34,7 +34,7 @@ if [ "$OLD_IP" != "$NEW_IP" ]; then
         -H "Content-Type: application/json" \
         --data '{"content":"'$NEW_IP'"}'
 
-    echo "IP updated on the $now" >> ./ip_update.log
+    echo "IP updated on the $now" >> ./90_update_ip_cloudflare.log
 else
-    echo "IP has not changed, checked on the $now" >> ./ip_update.log
+    echo "IP has not changed, checked on the $now" >> ./90_update_ip_cloudflare.log
 fi

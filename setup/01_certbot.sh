@@ -68,6 +68,6 @@ chmod 755 /etc/letsencrypt/renewal-hooks/pre/nginx.sh
 chmod 755 /etc/letsencrypt/renewal-hooks/post/nginx.sh
 
 # Set up auto renewal of certificate
-(crontab -l ; echo "5 8 * * * root certbot renew -q")| crontab -
-(crontab -l ; echo "5 6 * * * root /home/mdundek/workspaces/mdundek.network/setup/90_update_ip_cloudflare.sh")| crontab -
+(crontab -l ; echo "5 6 * * * root $_DIR/90_update_ip_cloudflare.sh")| crontab -
+(crontab -l ; echo "5 8 * * * root $_DIR/91_renew_certbot.sh")| crontab -
 /etc/init.d/cron restart
