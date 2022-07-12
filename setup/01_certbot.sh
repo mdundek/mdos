@@ -4,7 +4,7 @@ _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
 if [ "$EUID" -ne 0 ]
-  then echo "Please do not run as root"
+  then echo "Please run as root"
   exit 1
 fi
 
@@ -68,4 +68,6 @@ chmod 755 /etc/letsencrypt/renewal-hooks/pre/nginx.sh
 chmod 755 /etc/letsencrypt/renewal-hooks/post/nginx.sh
 
 # Set up auto renewal of certificate
-SLEEPTIME=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}'); echo "0 0,12 * * * root sleep $SLEEPTIME && certbot renew -q" | tee -a /etc/crontab > /dev/null
+(crontab -l ; echo "5 8 * * * root certbot renew -q")| crontab -
+(crontab -l ; echo "5 6 * * * root /home/mdundek/workspaces/mdundek.network/setup/90_update_ip_cloudflare.sh")| crontab -
+/etc/init.d/cron restart

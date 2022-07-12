@@ -88,6 +88,11 @@ generateValuesYaml() {
     # ############### EXECUTE ################
     cd $CDIR
 
+    if [ -f ../values.yaml ]; then
+        cd ..
+        CDIR=$(pwd)
+    fi
+
     if [ ! -f ./values.yaml ]; then
         error "You do not seem to be in a MDOS project"
         exit 1

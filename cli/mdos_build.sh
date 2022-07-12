@@ -44,6 +44,11 @@ source ./lib/helpers.sh
         exit 1
     fi
 
+    if [ -f ./pre_build.sh ]; then
+        chmod a+x ./pre_build.sh
+        ./pre_build.sh
+    fi
+
     COMP_NAME=$(basename "$(pwd)")
 
     I_REPO=$(yq eval '.appComponents[] | select(.name == "'"$COMP_NAME"'") | .image.repository' ../values.yaml)
