@@ -1,0 +1,9 @@
+site_name: MDos setup
+site_url: https://doc-mdos.mdundek.network/
+theme:
+  name: null
+  custom_dir: 'cinder'
+nav:
+    - Install: index.md
+    - Getting started: getting-started.md
+    - Minio S3: minio.md

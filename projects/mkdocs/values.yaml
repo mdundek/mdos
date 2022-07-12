@@ -1,0 +1,95 @@
+mdosAcbmAppUUID: 58aac0f8-9e9a-4fc6-8c8f-8e1aab66adc3
+mdosBundleName: mkdocs
+appName: mkdocs-mdos
+appComponents:
+
+  - name: mdos
+    mdosAcbmAppCompUUID: fd37ec35-1a8f-49ce-b2bd-231085b12362
+    replicaCount: 1
+    # Your image name and tag
+    image:
+      repository: mdundek-mkdocs-mdos
+      tag: latest
+    # Overwrite the default command for your docker image
+    overwriteCommand: false
+    command: []
+    commandArgs: []
+    # Services
+    service:
+      create: true
+      type: ClusterIP
+      portMappings:
+        - port: 80
+          containerPort: 80
+    # Configure ingress for your application component
+    virtualService:
+      - gateway: http-gateway
+        hosts:
+          - doc-mdos.mdundek.network
+        protocol: http
+        httpMatch:
+          prefix: /
+          port: "80"
+        svcPort: "80"
+    # - gateway: http-gateway | https-gateway | <other>
+    #   hosts:
+    #     - chart-example.com
+    #   protocol: https # http / https / tls / tcp
+    #   tlsMatchHosts: # only for tls/https route
+    #     - host: chart-example.com
+    #       port: 443
+    #       svcPort: 8443
+    #   httpMatch: # only for http route
+    #     prefix: /
+    #     port: 80
+    #   tcpMatchPorts: # only for tcp
+    #     - 27017
+    #   svcPort: 80
+    #   tls: []
+    
+    # Configuration parameters
+    config:
+      enabled: false
+      data: {}
+      # data:
+      #   - type: file # will be mounted as a file inside the pod
+      #     key: test.config
+      #     value: "Content of test.config file"
+      #     mountPath: "/etc/myApp/config/"
+      #   - type: env # will be mounted as an ENV var inside the pod
+      #     key: TEST_ENV
+      #     value: "Value of ENV variable TEST_ENV"
+    # Secret configuration parameters
+    secrets:
+      enabled: false
+      data: {}
+      # data:
+      #   - type: file
+      #     key: test.secret
+      #     value: "Content of test.secret file"
+      #     mountPath: "/etc/myApp/config/"
+      #   - type: env
+      #     key: SECRET_ENV
+      #     value: "Value of ENV variable SECRET_ENV"
+    # Persist data to a persistent volume
+    persistence:
+      enabled: false
+      # volumes:
+      #   - name: data-volume
+      #     size: 1Gi
+      #     mountPath: /tmp
+      #     ldlSync: false
+      #     sourcePath: /mdos/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
+      #     type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)
+      # hostpathVolumes: 
+      #   - name: host-data-volume
+      #     mountPath: /tmp
+      #     hostPath: /mdos/content-volumes/app1
+      #     type: Directory
+    resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
