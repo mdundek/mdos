@@ -1,5 +1,7 @@
 # Welcome to the MDos platform
 
+![logo](img/mdos.jpg)
+
 MDos is a application runtime platform based on Kubernetes to run your workloads on.  
 
 ## Install the MDos CLI

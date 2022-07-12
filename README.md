@@ -1,3 +1,5 @@
-# mdundek.network
+# MDOS platform
 
-[Install](projects/mkdocs/mdos/docs/index.md)
+![logo](projects/mkdocs/mdos/docs/img/mdos.jpg)
+
+* [Install platform](projects/mkdocs/mdos/docs/index.md)
