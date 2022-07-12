@@ -42,7 +42,7 @@ CS_VERSION="4.5.0"
 wget https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
 tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz
 mkdir -p /home/$PLATFORM_USER/bin
-mv code-server-* /home/$PLATFORM_USER/bin/
+mv code-server-$CS_VERSION-linux-amd64 /home/$PLATFORM_USER/bin/
 mv /home/$PLATFORM_USER/bin/code-server-$CS_VERSION-linux-amd64 /home/$PLATFORM_USER/bin/code-server
 chmod +x /home/$PLATFORM_USER/bin/code-server/code-server
 chown -R $PLATFORM_USER:$PLATFORM_USER /home/$PLATFORM_USER/bin/code-server

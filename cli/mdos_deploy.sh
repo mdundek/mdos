@@ -134,7 +134,6 @@ generateValuesYaml() {
 
     helm upgrade --install $I_APP $GEN_HELP_CHART_PATH \
         --values ./values_merged.yaml \
-        --kubeconfig /etc/rancher/k3s/k3s.yaml \
         -n $I_NS --atomic 1> /dev/null
 
     echo ""

@@ -60,6 +60,18 @@ build_component() {
     trap _finally EXIT
   
     # ############### EXECUTE ################
+
+    # Authenticate to registry
+    if [ -z "$(cat $HOME/.docker/config.json | grep "$REGISTRY_HOST")" ]; then
+        # Extract the credentials from the base64 string
+        B64_DECODED=$(echo $REG_CREDS_B64 | base64 --decode)
+        IFS=':' read -r -a CREDS <<< "$B64_DECODED"
+        REG_USER="${CREDS[0]}"
+        REG_PASS="${CREDS[1]}"
+
+        docker login --username "$REG_USER" --password $REG_PASS $REGISTRY_HOST
+    fi
+
     cd $CDIR
 
     ## Build current component only

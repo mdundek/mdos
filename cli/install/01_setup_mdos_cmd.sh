@@ -6,6 +6,14 @@ cd $_DIR
 source ../lib/components.sh
 source ../lib/helpers.sh
 
+echo "
+  __  __ ___   ___  ___      ___ _    ___ 
+ |  \/  |   \ / _ \/ __|___ / __| |  |_ _|
+ | |\/| | |) | (_) \__ \___| (__| |__ | | 
+ |_|  |_|___/ \___/|___/    \___|____|___|
+
+"                                          
+
 # Docker
 sudo ../../setup/81_install_docker.sh --platform-user $USER
 

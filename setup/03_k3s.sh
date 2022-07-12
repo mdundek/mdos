@@ -23,5 +23,13 @@ curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--fla
 kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
 kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
 
+# Configure user K8S credentiald config file
+PLATFORM_USER=mdundek
+mkdir -p /home/$PLATFORM_USER/.kube
+rm -rf /home/$PLATFORM_USER/.kube/config
+cp /etc/rancher/k3s/k3s.yaml /home/$PLATFORM_USER/.kube/config
+chown $PLATFORM_USER:$PLATFORM_USER /home/$PLATFORM_USER/.kube/config
+sudo runuser -u $PLATFORM_USER -- chmod 600 /home/$PLATFORM_USER/.kube/config
+
 # Wait for all podds to be ready
 watch kubectl get pod -A
