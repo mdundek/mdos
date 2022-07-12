@@ -1,6 +1,6 @@
 # Welcome to the MDos platform
 
-![logo](img/mdos.jpg)
+![logo](img/mdos.png)
 
 MDos is a application runtime platform based on Kubernetes to run your workloads on.  
 
