@@ -40,6 +40,8 @@ To install the platform, you can use the `mdos` CLI to do so. For a more granual
 
 ![Platform](img/mdos_platform.jpeg)
 
+> NOTE: The GlusterFS shared filesystem is not available at the moment, this is planned for future releases.
+
 The CLI command that will allow you to install each one of these components is `mdos core-setup`:
 
 ![CLI](img/setup/cli.png)
