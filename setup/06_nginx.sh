@@ -52,13 +52,17 @@ if [ -z $DOMAIN ]; then
     exit 1
 fi
 
+# Install NGinx
 apt install nginx -y
 cd /etc/nginx/sites-available/
 
+# Generate the NGinx basic auth credentials
 htpasswd -Bbn $NGINX_ADMIN_USER $NGINX_ADMIN_PASSWORD > /etc/nginx/.htpasswd
 
+# Set domains that should not use basic auth here
 NO_AUTH_DOMAINS="minio-console.$DOMAIN minio-backup.$DOMAIN"
 
+# Create the NGinx config file
 echo "upstream k3s_istio_80 {
     server localhost:30978;
 }
@@ -146,5 +150,6 @@ server {
 
 # TODO: For larger minio upload files, in /etc/nginx/nginx.config, in `http {}` block, add line: `client_max_body_size 0;`
 
+# Start NGinx server
 systemctl enable nginx
 systemctl start nginx
