@@ -38,7 +38,7 @@ To install the platform, you can use the `mdos` CLI to do so. For a more granual
 * Install a local `private Docker regisytry` on the K3S cluster
 * Install `Minio` for file sharing
 
-![Platform](img/mdos_platform.jpeg)
+![Platform](img/mdos-platform.png)
 
 > NOTE: The GlusterFS shared filesystem is not available at the moment, this is planned for future releases.
 
