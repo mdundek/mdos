@@ -10,9 +10,6 @@ The easiest way to install the platform is to use the MDos CLI. Do do so, you wi
 git clone https://github.com/mdundek/mdos.git
 ```
 
-> _Username: mdundek_  
-> _Password: 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_
-
 Then install the CLI by executing the following script:
 
 ```sh
@@ -55,9 +52,6 @@ Select `01_certbot` as the target installation step. You will be asked to enter 
 
 * Cloudflare email address
 * Cloudflare API token
-
-> _Email: mdundek@gmail.com_  
-> _API token: fe5beef86732475a7073b122139f64f9f49ee_
 
 Your SSL certificate is not setup and will automatically renew when necessary.  
 Your crontab has also been updated to automatically update your public IP address on Cloudflare.
