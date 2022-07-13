@@ -57,6 +57,8 @@ cd /etc/nginx/sites-available/
 
 htpasswd -Bbn $NGINX_ADMIN_USER $NGINX_ADMIN_PASSWORD > /etc/nginx/.htpasswd
 
+NO_AUTH_DOMAINS="minio-console.$DOMAIN minio-backup.$DOMAIN"
+
 echo "upstream k3s_istio_80 {
     server localhost:30978;
 }
@@ -91,13 +93,13 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name mkdocs.$DOMAIN;
+    server_name $NO_AUTH_DOMAINS;
 
     ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
     location / {
-        proxy_pass http://127.0.0.1:8000/;
+        proxy_pass http://k3s_istio_80; 
         proxy_http_version 1.1;
         proxy_cache_bypass \$http_upgrade;
         proxy_set_header Upgrade \$http_upgrade;
@@ -111,9 +113,6 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_connect_timeout 30;
         proxy_send_timeout 30;
-
-        auth_basic \"Restricted Content\";
-        auth_basic_user_file /etc/nginx/.htpasswd;
     }
 }
 

@@ -24,6 +24,9 @@ while [ "$1" != "" ]; do
         --extended-nginx )
             EXTENDED_NGINX=1
         ;;
+        --minio )
+            EXTENDED_MINIO=1
+        ;;
         * ) error "Invalid parameter detected: $1"
             exit 1
     esac
@@ -98,3 +101,21 @@ if [ ! -z $EXTENDED_NGINX ]; then
         echo "NGINX_ADMIN_PASSWORD=$NGINX_ADMIN_PASSWORD" >> ../.env
     fi
 fi
+
+if [ ! -z $EXTENDED_MINIO ]; then
+    if [ "$(cat ../.env | grep "MINIO_STORAGE_DIR=")" == "" ]; then
+        user_input MINIO_STORAGE_DIR "Where do you want to store your Minio files:"
+        echo "MINIO_STORAGE_DIR=$MINIO_STORAGE_DIR" >> ../.env
+    fi
+
+    if [ "$(cat ../.env | grep "MINIO_ACCESS_KEY=")" == "" ]; then
+        user_input MINIO_ACCESS_KEY "Specify your ACCESS_KEY:" "REp9k63uJ6qTe4KRtMsU"
+        echo "MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY" >> ../.env
+    fi
+
+    if [ "$(cat ../.env | grep "MINIO_SECRET_KEY=")" == "" ]; then
+        user_input MINIO_SECRET_KEY "Specify your SECRET_KEY:" "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
+        echo "MINIO_SECRET_KEY=$MINIO_SECRET_KEY" >> ../.env
+    fi
+fi
+
