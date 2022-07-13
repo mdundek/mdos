@@ -4,9 +4,16 @@
 
 ### Applications & application components
 
+Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, another might be a database server and a third one your front end application for instance.
+
 ![CLI](img/anatomy.png)
 
+This architecture allows you to compose quite complex applications to suit most needs.
+
 ### Project layout
+
+A MDos application project layout is composed of one or more folders, each one representing an application component.  
+At the root of the application folder is a `values.yaml` file that holds all runtime configuration parameters for the application and it's components:  
 
 ``` title="Project structure"
 my-application/
@@ -210,11 +217,33 @@ appComponents:
     #   memory: 128Mi
 ```
 
+This is where you configure things like volumed, environement variables, secrets such as API tokens or credentials... The generated `values.yaml` file contains examples of these properties.
+
+> The `mdos` CLI will allow you to scafold / create application projects and application components, as well as build and deploy them to your Kubernetes cluster.
+
 ## Build applications for the platform
 
 ### Create a new application
 
+Let's create a new application project using the `mdos` CLI command:
+
+```sh
+mdos generate application
+```
+
+This will create a new folder with the `values.yaml` configuration file in it. We are now ready to create application components.
+
 ### Create a new application component
+
+Inside your application project folder, run the following command:
+
+```sh
+mdos generate component
+```
+
+The CLI will ask you a couple of things about some base configuration parameters.
+This will create a new component folder with an empty `Dockerfile` for you to use, as well as update the `values.yaml` file referencing the component as part of the overall application project along with it's configuration parameters.  
+You can no go ahead and build & test your application locally, and complete the `Dockerfile` that will be used to build your component application image for deployment onto the cluster.
 
 ## Deploy application on the platform
 
