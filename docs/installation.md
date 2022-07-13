@@ -38,7 +38,7 @@ To install the platform, you can use the `mdos` CLI to do so. For a more granual
 * Install a local `private Docker regisytry` on the K3S cluster
 * Install `Minio` for file sharing
 
-![Platform](img/mdos-platform.jpeg)
+![Platform](img/mdos_platform.jpeg)
 
 The CLI command that will allow you to install each one of these components is `mdos core-setup`:
 
