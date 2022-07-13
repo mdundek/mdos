@@ -10,7 +10,7 @@ aws configure
 
 Values:
 
-```sh
+```sh title="Use for Minio S3 Client"
 AWS Access Key ID [****************W55N]: xxxx
 AWS Secret Access Key [****************Bjdu]: xxxx
 Default region name [None]: us-east-1

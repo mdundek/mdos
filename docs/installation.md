@@ -131,7 +131,7 @@ Select `08_minio` as the target installation step. You will be asked to enter yo
 
 ### disk mounts
 
-```sh
+```sh title="Example of disk mounts in linux" linenums="1"
 # Create mount folders
 mkdir /media/storage
 mkdir /media/multimedia
