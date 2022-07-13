@@ -7,7 +7,7 @@ spec:
     gateways:
         - istio-system/http-gateway
     hosts:
-        - minio-console.mdundek.network
+        - minio-console.<yourdomain>
     http:
         - name: minio-backup-console
           route:
@@ -25,7 +25,7 @@ spec:
     gateways:
         - istio-system/http-gateway
     hosts:
-        - minio-backup.mdundek.network
+        - minio-backup.<yourdomain>
     http:
         - name: minio-backup
           route:

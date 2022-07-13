@@ -1,3 +1,5 @@
+# Installation & setup
+
 ## Install the MDos CLI
 
 The easiest way to install the platform is to use the MDos CLI. Do do so, you will have to clone the repo on your target machine:
