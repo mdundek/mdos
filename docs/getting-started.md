@@ -8,7 +8,7 @@
 
 ### Project layout
 
-```sh
+```
 my-application/
 ├── backend
 │   └── Dockerfile
@@ -21,7 +21,7 @@ In this example we have an application named `my-application`, that is composed 
 Each component has it's own Dockerfile.  
 At the `application` level, there is also a `values.yaml` config file that holds all runtime configuration parameters for the application:
 
-```yaml
+``` { .yaml .annotate }
 mdosAcbmAppUUID: 8c259ee5-d70f-409b-8eea-3f410e385d0f
 mdosBundleName: my-ns
 appName: my-app    
