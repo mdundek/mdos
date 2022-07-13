@@ -4,4 +4,6 @@
 
 MDos is a application runtime platform based on Kubernetes to run your workloads on.  
 
-* [Install platform](docs/index.md)
+* [Install platform](docs/installation.md)
+* [Getting started](docs/getting-started.md)
+* [Minio S3](docs/minio.md)
