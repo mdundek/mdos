@@ -1,3 +1,4 @@
 **/.env
 **/*.log
 projects/mkdocs/mdos/site
+setup/cloudflare.ini
