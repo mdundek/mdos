@@ -51,7 +51,7 @@ Select `01_certbot` as the target installation step. You will be asked to enter 
 * Cloudflare email address
 * Cloudflare API token
 
-Your SSL certificate is not setup and will automatically renew when necessary.  
+Your SSL certificate is now setup and will automatically renew when necessary.  
 Your crontab has also been updated to automatically update your public IP address on Cloudflare.
 
 #### Router config
@@ -76,7 +76,7 @@ Select `02_codeserver` as the target installation step. You will be asked to spe
 > Once done, your code-server instance will be up and running, but you will have to wait untill you set up NGinx before being able to access it.  
 > Once that is done, you will be able to access your Code-server instance on the following URL: `https://cs.<your domain>`
 
-### 03 - Code-server setup
+### 03 - K3S & Calico setup
 
 Select `03_k3s` as the target installation step. You will be asked to enter your:
 
@@ -103,16 +103,29 @@ Select `06_nginx` as the target installation step. You will be asked to enter yo
 * WAN facing username
 * WAN facing password
 
-This NGinx server will capture traffic on port 443 and 80 on your machine, and forward this traffic to your local code-server, as well as to all applications running on your K3S cluster. Segregagtion happens on the HOST subdomain used with your CloudFlare main domain name.  
-Unless configured otherwise, the NGinx server will also enforce user authentication for all application it serves
+This NGinx server will capture traffic on port 443 on your machine, and forward this traffic to your local code-server, as well as to all applications running on your K3S cluster. Segregagtion happens on the HOST subdomain used with your CloudFlare main domain name.  
+Unless configured otherwise, the NGinx server will also enforce user authentication for all application it serves except for Minio who comes with's it's own authentication mechanism.
 
-> NGinx is installed navively on the host, rather than as a container in the cluster. 
+> NOTE: NGinx is installed navively on the host, rather than as a container in the cluster. 
 
 ### 07 - Private docker registry setup
 
 Select `07_registry` as the target installation step. 
 
 > This registry is used by Kubernetes to store and distribute your private application images
+
+### 08 - Minio S3 backup server setup
+
+Select `08_minio` as the target installation step. You will be asked to enter your:
+
+* The minio storage path to use
+* Minio ACCESS_KEY to use
+* Minio SECRET_KEY to use
+
+> Once that is done, you will be able to access:
+>  
+> * The Minio console: `https://minio-console.<your domain>`
+> * The Minio S3 server: `https://minio-backup.<your domain>`
 
 ## Extra
 
