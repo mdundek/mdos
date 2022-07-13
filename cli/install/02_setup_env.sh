@@ -42,12 +42,12 @@ if [ ! -f ../.env ]; then
 fi
 
 #if [ -f $C_HOME_DIR/.docker/config.json ]; then
-#    DOCKER_AUTH_LOCAL_OK=$(cat $C_HOME_DIR/.docker/config.json | jq '.[]["registry.mdundek.network:30979"].auth')
+#    DOCKER_AUTH_LOCAL_OK=$(cat $C_HOME_DIR/.docker/config.json | jq '.[]["registry.mdundek.private:30979"].auth')
 #    if [ "$DOCKER_AUTH_LOCAL_OK" == "null" ]; then
-#        docker login registry.mdundek.network:30979 -u mdundek -p J8cqu3s! > /dev/null 2>&1
+#        docker login registry.mdundek.private:30979 -u mdundek -p J8cqu3s! > /dev/null 2>&1
 #    fi
 #else
-#    docker login registry.mdundek.network:30979 -u mdundek -p J8cqu3s! > /dev/null 2>&1
+#    docker login registry.mdundek.private:30979 -u mdundek -p J8cqu3s! > /dev/null 2>&1
 #fi
 
 if [ "$(cat ../.env | grep "DOMAIN=")" == "" ]; then

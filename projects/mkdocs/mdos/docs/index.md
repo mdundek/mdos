@@ -7,7 +7,7 @@ MDos is a application runtime platform based on Kubernetes to run your workloads
 The easiest way to install the platform is to use the MDos CLI. Do do so, you will have to clone the repo on your target machine:
 
 ```sh
-git clone https://github.com/mdundek/mdundek.network.git
+git clone https://github.com/mdundek/mdos.git
 ```
 
 > _Username: mdundek_  
@@ -16,13 +16,13 @@ git clone https://github.com/mdundek/mdundek.network.git
 Then install the CLI by executing the following script:
 
 ```sh
-./mdundek.network/cli/install/01_setup_mdos_cmd.sh
+./mdos/cli/install/01_setup_mdos_cmd.sh
 ```
 
 During the installation of the CLI, you will be asked to enter your main domain name.  
 
-> _Ex. mdundek.network_  
-> _Enter your root domain name: `mdundek.network`_
+> _Ex. yourdomain.com_  
+> _Enter your root domain name: `yourdomain.com`_
 
 Once done, execute the following command to reload your aliases for the mdos CLI:
 

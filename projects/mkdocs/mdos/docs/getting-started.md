@@ -49,7 +49,7 @@ appComponents:
     virtualService:
       - gateway: http-gateway
         hosts:
-          - backend.mdundek.network
+          - backend.yourdomain.com
         protocol: http
         httpMatch:
           prefix: /
@@ -140,7 +140,7 @@ appComponents:
     virtualService:
       - gateway: http-gateway
         hosts:
-          - frontend.mdundek.network
+          - frontend.yourdomain.com
         protocol: http
         httpMatch:
           prefix: /
