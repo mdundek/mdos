@@ -17,7 +17,7 @@ source ../cli/.env
 
 # Preflight checks
 if [ ! -f /etc/docker/certs.d/$REGISTRY_HOST/ca.crt ]; then
-  ../80_prepare.sh
+  ./80_prepare.sh
 fi
 
 while [ "$1" != "" ]; do

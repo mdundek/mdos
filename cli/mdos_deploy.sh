@@ -16,7 +16,7 @@ source ./lib/helpers.sh
 
 generateValuesYaml() {
     STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
-    STATIC_APP_APPEND='{"enabled": true,"developement": true,"appInternalName": "'$1'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
+    STATIC_APP_APPEND='{"enabled": true,"developement": false,"appInternalName": "'$1'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
 
     # Make copy of application values file to work with
     cp ./values.yaml ./values_merged.yaml

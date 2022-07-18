@@ -1,0 +1,122 @@
+mdosAcbmAppUUID: 58aac0f8-9e9a-4fc6-8c8f-keycloak
+mdosBundleName: keycloak
+appName: mdos-keycloak
+appComponents:
+
+  - name: postgres
+    mdosAcbmAppCompUUID: 335f860d-27e4-4716-957a-keycloak-postgres
+    replicaCount: 1
+    image:
+      repository: postgres
+      tag: 13.2
+    overwriteCommand: false
+    command: []
+    commandArgs: []
+    service:
+      create: true
+      type: ClusterIP
+      portMappings:
+        - port: 5432
+          containerPort: 5432
+    virtualService: []
+    config:
+      enabled: true
+      data:
+        - type: env
+          key: POSTGRES_DB
+          value: "keycloak"
+        - type: env
+          key: POSTGRES_USER
+          value: "admin"
+        - type: env
+          key: POSTGRES_PASSWORD
+          value: "admin"
+        - type: env
+          key: KEYCLOAK_USER
+          value: "admin"
+        - type: env
+          key: KEYCLOAK_PASS
+          value: "admin"
+    secrets:
+      enabled: false
+      data: {}
+    persistence:
+      enabled: true
+      hostpathVolumes: 
+        - name: host-data-volume
+          mountPath: /var/lib/postgresql/data
+          hostPath: /home/mdundek/workspaces/mdos/data/keycloak-db
+          type: Directory
+        - name: db-init
+          mountPath: /docker-entrypoint-initdb.d
+          hostPath: /home/mdundek/workspaces/mdos/data/pg-init-scripts
+          type: Directory
+    resources: {}
+
+  - name: keycloak
+    mdosAcbmAppCompUUID: 6e1edac1-8895-49a2-ba99-keycloak
+    replicaCount: 1
+    image:
+      repository: keycloak
+      tag: 18.0.2
+    commandArgs: ["start-dev"]
+    service:
+      create: true
+      type: NodePort
+      portMappings:
+        - port: 8080
+          containerPort: 8080
+          forceNodePort: true
+          devNodePort: 31650
+        - port: 8443
+          containerPort: 8443
+          forceNodePort: true
+          devNodePort: 31651
+      readinessProbe:
+        enabled: true
+        type: http
+        path: /realms/master
+        port: 8080
+    virtualService: []
+    config:
+      enabled: true
+      data:
+        - type: env
+          key: KEYCLOAK_ADMIN
+          value: "admin"
+        - type: env
+          key: KEYCLOAK_ADMIN_PASSWORD
+          value: "admin"
+        - type: env
+          key: KC_DB_USERNAME
+          value: "admin"
+        - type: env
+          key: KC_DB_PASSWORD
+          value: "admin"
+        - type: env
+          key: KC_HTTPS_CERTIFICATE_FILE
+          value: "/etc/x509/https/tls.crt"
+        - type: env
+          key: KC_HTTPS_CERTIFICATE_KEY_FILE
+          value: "/etc/x509/https/tls.key"
+        - type: env
+          key: KC_DB
+          value: "postgres"
+        - type: env
+          key: KC_DB_URL
+          value: "jdbc:postgresql://mdos-keycloak-postgres:5432/keycloak"
+    secrets:
+      enabled: false
+      data: {}
+    persistence:
+      enabled: true
+      hostpathVolumes: 
+        - name: ssl-fullchain-pem
+          mountPath: /etc/x509/https/tls.crt
+          hostPath: /etc/letsencrypt/live/yourdomain/fullchain.pem
+          type: File
+        - name: ssl-privkey-pem
+          mountPath: /etc/x509/https/tls.key
+          hostPath: /etc/letsencrypt/live/yourdomain/privkey.pem
+          type: File
+    resources: {}

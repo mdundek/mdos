@@ -56,6 +56,18 @@ warn() {
     echo "${c_warn}WARN${c_reset}: $1"
 }
 
+info_print() {
+    echo "${c_info}$1${c_reset}"
+}
+
+error_print() {
+    echo "${c_error}$1${c_reset}"
+}
+
+warn_print() {
+    echo "${c_warn}$1${c_reset}"
+}
+
 get_full_path() {
     local __resultvar=$1
     _CPWD=$(pwd)

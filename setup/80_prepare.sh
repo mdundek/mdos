@@ -177,7 +177,6 @@ fi
 
 # Firewall
 ufw allow ssh
-ufw allow http
-ufw allow https
+ufw allow 'Nginx HTTPS'
 
 ufw enable

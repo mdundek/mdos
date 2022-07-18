@@ -37,7 +37,7 @@ select_command() {
 
     function _catch {
         # Rollback
-        error "An error occured"
+        error "An error occured" > /dev/null 2>&1
         
     }
 
