@@ -20,26 +20,6 @@ if [ ! -f /etc/docker/certs.d/$REGISTRY_HOST/ca.crt ]; then
   ./dep/80_prepare.sh
 fi
 
-while [ "$1" != "" ]; do
-    case $1 in
-        --platform-user )
-            shift
-            PLATFORM_USER=$1
-        ;; 
-        --reg-host )
-            shift
-            REGISTRY_HOST=$1
-        ;; 
-        --reg-cred-b64 )
-            shift
-            REG_CREDS_B64=$1
-        ;; 
-        * )              echo "Invalid parameter detected => $1"
-            exit 1
-    esac
-    shift
-done
-
 if [ -z $PLATFORM_USER ]; then
     echo "Missing param --platform-user"
     exit 1

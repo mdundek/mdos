@@ -11,26 +11,6 @@ fi
 ../cli/install/02_setup_env.sh --extended-cf
 source ../cli/.env
 
-while [ "$1" != "" ]; do
-    case $1 in
-        --cloudflare-email )
-            shift
-            CF_EMAIL=$1
-        ;; 
-        --cloudflare-api-key )
-            shift
-            CF_TOKEN=$1
-        ;; 
-        --domain )
-            shift
-            DOMAIN=$1
-        ;; 
-        * ) echo "Invalid parameter detected => $1"
-            exit 1
-    esac
-    shift
-done
-
 if [ -z $CF_EMAIL ]; then
     echo "Missing param --cloudflare-email"
     exit 1
@@ -46,7 +26,7 @@ fi
 
 # Create cloudflare credentials file
 echo "dns_cloudflare_email = $CF_EMAIL
-dns_cloudflare_api_key = $CF_TOKEN" > ./cloudflare.ini
+dns_cloudflare_api_key = $CF_TOKEN" > $_DIR/cloudflare.ini
 
 # Install certbot
 apt-get install certbot python3-certbot-dns-cloudflare -y
@@ -54,7 +34,7 @@ apt-get install certbot python3-certbot-dns-cloudflare -y
 # Create certificate now (will require manual input)
 certbot certonly \
     --dns-cloudflare \
-    --dns-cloudflare-credentials ./cloudflare.ini \
+    --dns-cloudflare-credentials $_DIR/cloudflare.ini \
     -d $DOMAIN \
     -d *.$DOMAIN \
     --email $CF_EMAIL \
@@ -62,12 +42,12 @@ certbot certonly \
     -n
 
 # Create nginx stop / start pre and post hooks
-sh -c 'printf "#!/bin/sh\nservice nginx stop\n" > /etc/letsencrypt/renewal-hooks/pre/nginx.sh'
-sh -c 'printf "#!/bin/sh\nservice nginx start\n" > /etc/letsencrypt/renewal-hooks/post/nginx.sh'
-chmod 755 /etc/letsencrypt/renewal-hooks/pre/nginx.sh
-chmod 755 /etc/letsencrypt/renewal-hooks/post/nginx.sh
+# sh -c 'printf "#!/bin/sh\nservice nginx stop\n" > /etc/letsencrypt/renewal-hooks/pre/nginx.sh'
+# sh -c 'printf "#!/bin/sh\nservice nginx start\n" > /etc/letsencrypt/renewal-hooks/post/nginx.sh'
+# chmod 755 /etc/letsencrypt/renewal-hooks/pre/nginx.sh
+# chmod 755 /etc/letsencrypt/renewal-hooks/post/nginx.sh
 
-# Set up auto renewal of certificate
-(crontab -l ; echo "5 6 * * * root $_DIR/cron/90_update_ip_cloudflare.sh")| crontab -
-(crontab -l ; echo "5 8 * * * root $_DIR/cron/91_renew_certbot.sh")| crontab -
+# Set up auto renewal of certificate (the script will be run as the user who created the crontab)
+(crontab -l ; echo "5 6 * * * $_DIR/cron/90_update_ip_cloudflare.sh")| crontab -
+(crontab -l ; echo "5 8 * * * $_DIR/cron/91_renew_certbot.sh")| crontab -
 /etc/init.d/cron restart

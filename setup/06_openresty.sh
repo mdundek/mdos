@@ -15,34 +15,6 @@ source ../cli/lib/helpers.sh
 ../cli/install/02_setup_env.sh --extended-openresty
 source ../cli/.env
 
-while [ "$1" != "" ]; do
-    case $1 in
-        --platform-user )
-            shift
-            PLATFORM_USER=$1
-        ;; 
-        --admin-mdos-username )
-            shift
-            NGINX_ADMIN_USER=$1
-        ;; 
-        --admin-mdos-password )
-            shift
-            NGINX_ADMIN_PASSWORD=$1
-        ;; 
-        --hostname)
-            shift
-            DOMAIN=$1
-        ;; 
-        --local-ip)
-            shift
-            LOCAL_IP=$1
-        ;; 
-        * ) echo "Invalid parameter detected => $1"
-            exit 1
-    esac
-    shift
-done
-
 if [ -z $PLATFORM_USER ]; then
     echo "Missing param --platform-user"
     exit 1

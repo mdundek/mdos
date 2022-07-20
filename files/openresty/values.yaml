@@ -11,12 +11,10 @@ appComponents:
       tag: latest
     service:
       create: true
-      type: NodePort
+      type: ClusterIP
       portMappings:
         - port: 443
           containerPort: 443
-          forceNodePort: true
-          devNodePort: 31111
     virtualService: []
     config:
       enabled: false

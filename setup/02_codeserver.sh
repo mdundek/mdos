@@ -11,22 +11,6 @@ fi
 ../cli/install/02_setup_env.sh --extended-cs
 source ../cli/.env
 
-while [ "$1" != "" ]; do
-    case $1 in
-        --platform-user )
-            shift
-            PLATFORM_USER=$1
-        ;; 
-        --cs-password )
-            shift
-            CS_PASSWORD=$1
-        ;; 
-        * ) echo "Invalid parameter detected => $1"
-            exit 1
-    esac
-    shift
-done
-
 if [ -z $PLATFORM_USER ]; then
     echo "Missing param --platform-user"
     exit 1
