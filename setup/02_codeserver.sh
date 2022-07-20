@@ -8,7 +8,7 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
-../cli/install/02_setup_env.sh --extended-cs
+./cli/02_setup_env.sh --extended-cs
 source ../cli/.env
 
 if [ -z $PLATFORM_USER ]; then

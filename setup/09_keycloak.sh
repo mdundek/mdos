@@ -15,7 +15,7 @@ fi
 source ../cli/lib/components.sh
 source ../cli/lib/helpers.sh
 
-../cli/install/02_setup_env.sh --extended-registry
+./cli/02_setup_env.sh --extended-registry
 source ../cli/.env
 
 # Preflight checks
@@ -73,9 +73,11 @@ collect_api_key() {
 	echo "  4. Enable the boolean value 'Service Accounts Enabled'"
 	echo "  5. Set 'Valid Redirect URIs' value to '*'"
 	echo "  6. Save those changes (button at the bottom of the page)"
-	echo "  7. Go to the 'Service Account Roles' tab and add the role 'admin' to the 'Assigned Roles' box"
-	echo "  8. Click on tab 'Credentials'"
-	echo "  9. When ready, copy and paste the 'Secret' value into this terminal, then press enter:"
+	echo "  7. In tab 'Roles', Click on button 'edit' for role 'magage realm'."
+	echo "     Enable 'Composite roles' and add 'admin' realm to associated roles"
+	echo "  8. Go to the 'Service Account Roles' tab and add the role 'admin' to the 'Assigned Roles' box"
+	echo "  9. Click on tab 'Credentials'"
+	echo " 10. When ready, copy and paste the 'Secret' value into this terminal, then press enter:"
 	echo ""
 	user_input KEYCLOAK_SECRET "SECRET:"
 	echo ""
@@ -136,7 +138,7 @@ setup_keycloak_kubernetes_client() {
         -H "Accept: application/json" \
         -H "Content-Type:application/json" \
         -H "Authorization: Bearer $KC_TOKEN" \
-        https://keycloak.$DOMAIN/admin/realms/master/users?username=admin | jq '.[0].id' | sed 's/[\"]//g')
+        https://keycloak.$DOMAIN/admin/realms/master/users?username=$KEYCLOAK_USER | jq '.[0].id' | sed 's/[\"]//g')
 
     curl -s -k -X PUT \
         https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID \
@@ -150,6 +152,185 @@ setup_keycloak_kubernetes_client() {
         -H "Authorization: Bearer $KC_TOKEN" \
         --data '[{"name": "mdos-sysadmin", "id": "'"$SYSADMIN_ROLE_UUID"'"}]' \
         https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID/role-mappings/clients/$CLIENT_UUID
+}
+
+setup_keycloak_mdos_realm() {
+	curl -k --request POST \
+		https://keycloak.$DOMAIN/admin/realms \
+		-H "Accept: application/json" \
+        -H "Content-Type:application/json" \
+        -H "Authorization: Bearer $KC_TOKEN" \
+		-d '{"id": "mdos","realm": "mdos","rememberMe": true, "enabled": true}'
+	gen_api_token
+	curl -k --request POST \
+		https://keycloak.$DOMAIN/admin/realms/mdos/clients \
+		-H "Accept: application/json" \
+        -H "Content-Type:application/json" \
+        -H "Authorization: Bearer $KC_TOKEN" \
+		--data-raw '{
+			"clientId": "openresty",
+			"rootUrl": "",
+			"baseUrl": "",
+			"surrogateAuthRequired": false,
+			"enabled": true,
+			"alwaysDisplayInConsole": false,
+			"clientAuthenticatorType": "client-secret",
+			"redirectUris": [
+				"*"
+			],
+			"webOrigins": [],
+			"notBefore": 0,
+			"bearerOnly": false,
+			"consentRequired": false,
+			"standardFlowEnabled": true,
+			"implicitFlowEnabled": false,
+			"directAccessGrantsEnabled": true,
+			"serviceAccountsEnabled": true,
+			"authorizationServicesEnabled": true,
+			"publicClient": false,
+			"frontchannelLogout": false,
+			"protocol": "openid-connect",
+			"attributes": {
+				"saml.multivalued.roles": "false",
+				"saml.force.post.binding": "false",
+				"frontchannel.logout.session.required": "false",
+				"oauth2.device.authorization.grant.enabled": "true",
+				"backchannel.logout.revoke.offline.tokens": "false",
+				"saml.server.signature.keyinfo.ext": "false",
+				"use.refresh.tokens": "true",
+				"oidc.ciba.grant.enabled": "false",
+				"backchannel.logout.session.required": "true",
+				"client_credentials.use_refresh_token": "false",
+				"saml.client.signature": "false",
+				"require.pushed.authorization.requests": "false",
+				"saml.allow.ecp.flow": "false",
+				"saml.assertion.signature": "false",
+				"id.token.as.detached.signature": "false",
+				"client.secret.creation.time": "1658151759",
+				"saml.encrypt": "false",
+				"saml.server.signature": "false",
+				"exclude.session.state.from.auth.response": "false",
+				"saml.artifact.binding": "false",
+				"saml_force_name_id_format": "false",
+				"tls.client.certificate.bound.access.tokens": "false",
+				"acr.loa.map": "{}",
+				"saml.authnstatement": "false",
+				"display.on.consent.screen": "false",
+				"token.response.type.bearer.lower-case": "false",
+				"saml.onetimeuse.condition": "false"
+			},
+			"authenticationFlowBindingOverrides": {},
+			"fullScopeAllowed": true,
+			"nodeReRegistrationTimeout": -1,
+			"protocolMappers": [
+				{
+					"name": "Client ID",
+					"protocol": "openid-connect",
+					"protocolMapper": "oidc-usersessionmodel-note-mapper",
+					"consentRequired": false,
+					"config": {
+						"user.session.note": "clientId",
+						"id.token.claim": "true",
+						"access.token.claim": "true",
+						"claim.name": "clientId",
+						"jsonType.label": "String"
+					}
+				},
+				{
+					"name": "Client Host",
+					"protocol": "openid-connect",
+					"protocolMapper": "oidc-usersessionmodel-note-mapper",
+					"consentRequired": false,
+					"config": {
+						"user.session.note": "clientHost",
+						"id.token.claim": "true",
+						"access.token.claim": "true",
+						"claim.name": "clientHost",
+						"jsonType.label": "String"
+					}
+				},
+				{
+					"name": "Client IP Address",
+					"protocol": "openid-connect",
+					"protocolMapper": "oidc-usersessionmodel-note-mapper",
+					"consentRequired": false,
+					"config": {
+						"user.session.note": "clientAddress",
+						"id.token.claim": "true",
+						"access.token.claim": "true",
+						"claim.name": "clientAddress",
+						"jsonType.label": "String"
+					}
+				}
+			],
+			"defaultClientScopes": [
+				"web-origins",
+				"acr",
+				"profile",
+				"roles",
+				"email"
+			],
+			"optionalClientScopes": [
+				"address",
+				"phone",
+				"offline_access",
+				"microprofile-jwt"
+			],
+			"access": {
+				"view": true,
+				"configure": true,
+				"manage": true
+			}
+		}'
+	gen_api_token
+	MDOS_CLIENT_UUID=$(curl -s -k --request GET \
+        -H "Accept: application/json" \
+        -H "Content-Type:application/json" \
+        -H "Authorization: Bearer $KC_TOKEN" \
+        https://keycloak.$DOMAIN/admin/realms/mdos/clients?clientId=openresty | jq '.[0].id' | sed 's/[\"]//g')
+
+	MDOS_CLIENT_SECRET=$(curl -s --location --request GET \
+		https://keycloak.$DOMAIN/admin/realms/mdos/clients/$MDOS_CLIENT_UUID/client-secret \
+		-H "Accept: application/json" \
+        -H "Content-Type:application/json" \
+        -H "Authorization: Bearer $KC_TOKEN" | jq '.value' | sed 's/[\"]//g')
+	gen_api_token
+	curl -k --request POST \
+		https://keycloak.$DOMAIN/admin/realms/mdos/users \
+		-H "Accept: application/json" \
+        -H "Content-Type:application/json" \
+        -H "Authorization: Bearer $KC_TOKEN" \
+		--data-raw '{
+			"username": "'$KEYCLOAK_USER'",
+			"enabled": true,
+			"totp": false,
+			"emailVerified": true,
+			"email": "'$KUBE_ADMIN_EMAIL'",
+			"disableableCredentialTypes": [],
+			"requiredActions": [],
+			"notBefore": 0,
+			"access": {
+				"manageGroupMembership": true,
+				"view": true,
+				"mapRoles": true,
+				"impersonate": true,
+				"manage": true
+			}
+		}'
+	gen_api_token
+	MDOS_USER_UUID=$(curl --location --request GET \
+		https://keycloak.$DOMAIN/admin/realms/mdos/users \
+		-H "Accept: application/json" \
+        -H "Content-Type:application/json" \
+        -H "Authorization: Bearer $KC_TOKEN" | jq '.[0].id' | sed 's/[\"]//g')
+
+	
+	curl -s -k --request PUT \
+		https://keycloak.$DOMAIN/admin/realms/mdos/users/$MDOS_USER_UUID/reset-password \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer $KC_TOKEN" \
+		--data-raw '{"type":"password","value":"'$KEYCLOAK_PASS'","temporary":false}'
 }
 
 
@@ -180,8 +361,8 @@ setup_keycloak_kubernetes_client() {
 	docker tag postgres:13.2-alpine $REGISTRY_HOST/postgres:13.2-alpine
 	docker push $REGISTRY_HOST/postgres:13.2-alpine
 
-	docker pull keycloak:18.0.2
-	docker tag keycloak:18.0.2 $REGISTRY_HOST/keycloak:18.0.2
+	docker pull quay.io/keycloak/keycloak:18.0.2
+	docker tag quay.io/keycloak/keycloak:18.0.2 $REGISTRY_HOST/keycloak:18.0.2
 	docker push $REGISTRY_HOST/keycloak:18.0.2
 
 	# Keycloak already deployed?
@@ -214,10 +395,24 @@ setup_keycloak_kubernetes_client() {
 	
 	CATCH_LOG=1
 
+	# Enable auth on openresty and reload config
+	mv /home/$PLATFORM_USER/.mdos/openresty/conf.d/keycloak.conf.disabled /home/$PLATFORM_USER/.mdos/openresty/conf.d/keycloak.conf
+	su - $PLATFORM_USER -c "$CLI_HOME/mdos_ssh.sh /home/$PLATFORM_USER/.mdos/openresty/conf.d -t openresty openresty -s reload"
+
 	# Configure API key
 	collect_api_key
 
 	gen_api_token
-
 	setup_keycloak_kubernetes_client
+
+	gen_api_token
+	setup_keycloak_mdos_realm
+
+	sed -i "s/__KC_CLIENT_ID__/openresty/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/codeserver.conf
+	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/codeserver.conf
+	sed -i "s/__KC_CLIENT_ID__/openresty/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/default.conf
+	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/default.conf
+	sed -i 's/oidcenabled = false/oidcenabled = true/g' /home/$PLATFORM_USER/.mdos/openresty/conf.d/default.conf
+
+	su - $PLATFORM_USER -c "$CLI_HOME/mdos_ssh.sh /home/$PLATFORM_USER/.mdos/openresty/conf.d -t openresty openresty -s reload"
 )

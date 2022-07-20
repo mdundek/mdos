@@ -11,8 +11,8 @@ fi
 source ../cli/lib/components.sh
 source ../cli/lib/helpers.sh
 
-../cli/install/02_setup_env.sh --extended-nginx
-../cli/install/02_setup_env.sh --extended-openresty
+./cli/02_setup_env.sh --extended-nginx
+./cli/02_setup_env.sh --extended-openresty
 source ../cli/.env
 
 if [ -z $PLATFORM_USER ]; then
@@ -156,8 +156,18 @@ EOF
     # Prepare openresty conf.d file
     mkdir -p /home/$PLATFORM_USER/.mdos/openresty
     cp -R ../files/openresty/conf.d /home/$PLATFORM_USER/.mdos/openresty/
+
     sed -i "s/_DOMAIN_/$DOMAIN/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/default.conf
     sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/default.conf
+
+    sed -i "s/_DOMAIN_/$DOMAIN/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/codeserver.conf
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/codeserver.conf
+
+    sed -i "s/_DOMAIN_/$DOMAIN/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/registry.conf
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/registry.conf
+
+    sed -i "s/_DOMAIN_/$DOMAIN/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/keycloak.conf.disabled
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" /home/$PLATFORM_USER/.mdos/openresty/conf.d/keycloak.conf.disabled
     
     # Deploy keycloak on k3s
 	cd ../cli
@@ -168,19 +178,17 @@ EOF
 	echo "$OPENRESTY_VAL" > /home/$PLATFORM_USER/kc_tmp/values.yaml
 	chown $PLATFORM_USER:$PLATFORM_USER /home/$PLATFORM_USER/kc_tmp/values.yaml
 
-    cat /home/$PLATFORM_USER/kc_tmp/values.yaml
-
 	su - $PLATFORM_USER -c "$CLI_HOME/mdos_deploy.sh /home/$PLATFORM_USER/kc_tmp --lazy-pull"
 
-    CATCH_LOG=1
+  CATCH_LOG=1
 
-    # Now push the openresty image to the private registry in case we add nodes later on
-    B64_DECODED=$(echo $REG_CREDS_B64 | base64 --decode)
-    IFS=':' read -r -a CREDS <<< "$B64_DECODED"
-    REG_USER="${CREDS[0]}"
-    REG_PASS="${CREDS[1]}"
+  # Now push the openresty image to the private registry in case we add nodes later on
+  B64_DECODED=$(echo $REG_CREDS_B64 | base64 --decode)
+  IFS=':' read -r -a CREDS <<< "$B64_DECODED"
+  REG_USER="${CREDS[0]}"
+  REG_PASS="${CREDS[1]}"
 
-    sleep 10
-    echo "${REG_PASS}" | docker login $REGISTRY_HOST --username ${REG_USER} --password-stdin
-    docker push $REGISTRY_HOST/openresty:latest
+  sleep 10
+  echo "${REG_PASS}" | docker login $REGISTRY_HOST --username ${REG_USER} --password-stdin
+  docker push $REGISTRY_HOST/openresty:latest
 )

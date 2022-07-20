@@ -30,7 +30,7 @@ apt-get install \
 snap install yq
 
 # Docker
-./lib/81_install_docker.sh
+./81_install_docker.sh
 
 # Firewall
 ufw allow ssh

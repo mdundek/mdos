@@ -8,7 +8,7 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
-../cli/install/02_setup_env.sh --extended-cf
+./cli/02_setup_env.sh --extended-cf
 source ../cli/.env
 
 if [ -z $CF_EMAIL ]; then

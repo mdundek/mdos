@@ -12,7 +12,7 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
-../cli/install/02_setup_env.sh --extended-minio
+./cli/02_setup_env.sh --extended-minio
 source ../cli/.env
 
 
