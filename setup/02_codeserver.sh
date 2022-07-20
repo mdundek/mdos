@@ -57,7 +57,7 @@ After=network.target
 Type=simple
 WorkingDirectory=/home/$PLATFORM_USER
 Environment=PASSWORD=$CS_PASSWORD
-ExecStart=/home/$PLATFORM_USER/bin/code-server/code-server --host 127.0.0.1 --user-data-dir /home/$PLATFORM_USER/data --auth password
+ExecStart=/home/$PLATFORM_USER/bin/code-server/code-server --host 0.0.0.0 --user-data-dir /home/$PLATFORM_USER/data --auth password
 TimeoutStartSec=0
 User=$PLATFORM_USER
 RemainAfterExit=yes

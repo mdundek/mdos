@@ -14,9 +14,21 @@ cd $_DIR
 source ./lib/components.sh
 source ./lib/helpers.sh
 
+shift
+while [ "$1" != "" ]; do
+    case $1 in
+        --lazy-pull|-lp )
+            LAZY_PULL=1
+        ;; 
+        * ) echo "Invalid parameter detected => $1"
+            exit 1
+    esac
+    shift
+done
+
 generateValuesYaml() {
     STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
-    STATIC_APP_APPEND='{"enabled": true,"developement": false,"appInternalName": "'$1'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
+    STATIC_APP_APPEND='{"registry": "'$REGISTRY_HOST'","enabled": true,"developement": false,"appInternalName": "'$1'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"'$(if [ -z $LAZY_PULL ]; then echo "Always"; else echo "IfNotPresent"; fi)'","config": [],"secrets": []}}'
 
     # Make copy of application values file to work with
     cp ./values.yaml ./values_merged.yaml

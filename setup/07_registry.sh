@@ -17,7 +17,7 @@ source ../cli/.env
 
 # Preflight checks
 if [ ! -f /etc/docker/certs.d/$REGISTRY_HOST/ca.crt ]; then
-  ./80_prepare.sh
+  ./dep/80_prepare.sh
 fi
 
 while [ "$1" != "" ]; do
@@ -162,26 +162,6 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: mdos-registry-v2
-spec:
-  hosts:
-    - $REGISTRY_HOST_STRIPPED
-  gateways:
-    - istio-system/https-gateway
-  tls:
-  - match:
-    - port: 443
-      sniHosts:
-      - $REGISTRY_HOST_STRIPPED
-    route:
-    - destination:
-        host: mdos-registry-v2.mdos-registry.svc.cluster.local
-        port:
-          number: 5000
 EOF
 fi
 

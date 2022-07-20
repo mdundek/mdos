@@ -14,7 +14,6 @@ shift
 while [ "$1" != "" ]; do
     case $1 in
         --all|-a )
-            shift
             BUILD_ALL=1
         ;; 
         * ) echo "Invalid parameter detected => $1"

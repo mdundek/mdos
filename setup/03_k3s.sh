@@ -13,7 +13,7 @@ source ../cli/.env
 
 # Preflight checks
 if [ ! -f /etc/docker/certs.d/$REGISTRY_HOST/ca.crt ]; then
-  ./80_prepare.sh
+  ./dep/80_prepare.sh
 fi
 
 # Install K3S

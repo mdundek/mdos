@@ -8,7 +8,7 @@ appComponents:
     replicaCount: 1
     image:
       repository: postgres
-      tag: 13.2
+      tag: 13.2-alpine
     overwriteCommand: false
     command: []
     commandArgs: []
@@ -62,16 +62,12 @@ appComponents:
     commandArgs: ["start-dev"]
     service:
       create: true
-      type: NodePort
+      type: ClusterIP
       portMappings:
         - port: 8080
           containerPort: 8080
-          forceNodePort: true
-          devNodePort: 31650
         - port: 8443
           containerPort: 8443
-          forceNodePort: true
-          devNodePort: 31651
       readinessProbe:
         enabled: true
         type: http

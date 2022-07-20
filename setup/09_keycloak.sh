@@ -20,7 +20,7 @@ source ../cli/.env
 
 # Preflight checks
 if [ ! -f /etc/docker/certs.d/$REGISTRY_HOST/ca.crt ]; then
-	./80_prepare.sh
+	./dep/80_prepare.sh
 fi
 
 # Check if namespace keycloak exists
@@ -175,6 +175,15 @@ setup_keycloak_kubernetes_client() {
 	trap _catch ERR
 	trap _finally EXIT
 
+	# Pull & push to images to registry
+	docker pull postgres:13.2-alpine
+	docker tag postgres:13.2-alpine $REGISTRY_HOST/postgres:13.2-alpine
+	docker push $REGISTRY_HOST/postgres:13.2-alpine
+
+	docker pull keycloak:18.0.2
+	docker tag keycloak:18.0.2 $REGISTRY_HOST/keycloak:18.0.2
+	docker push $REGISTRY_HOST/keycloak:18.0.2
+
 	# Keycloak already deployed?
 	if [ ! -z $NS_FOUND ]; then
 		yes_no DO_DEL "The Keycloak namespace already exists. Prosceed anyway?" 1
@@ -212,4 +221,3 @@ setup_keycloak_kubernetes_client() {
 
 	setup_keycloak_kubernetes_client
 )
-
