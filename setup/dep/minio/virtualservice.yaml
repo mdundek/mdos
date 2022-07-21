@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+    name: minio-backup-console
+    namespace: minio-backup
+spec:
+    gateways:
+        - istio-system/http-gateway
+    hosts:
+        - minio-console.<yourdomain>
+    http:
+        - name: minio-backup-console
+          route:
+              - destination:
+                    host: minio-backup-console.minio-backup.svc.cluster.local
+                    port:
+                        number: 9001
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+    name: minio-backup
+    namespace: minio-backup
+spec:
+    gateways:
+        - istio-system/http-gateway
+    hosts:
+        - minio-backup.<yourdomain>
+    http:
+        - name: minio-backup
+          route:
+              - destination:
+                    host: minio-backup.minio-backup.svc.cluster.local
+                    port:
+                        number: 9000

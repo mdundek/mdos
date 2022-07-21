@@ -1,0 +1,29 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appInternalName }}
+# PVC + PV only for logs. ContentVolumes are mounted as HostPath
+{{- range .Values.appComponents }}
+{{- $appComponentName := lower .name -}}
+{{- if and .logs.enabled (not .logs.existingClaim) }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    {{- end }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .logs.size | quote }}
+  storageClassName: "mdos-logs"
+{{- end }}
+{{- end }}
+{{- end }}

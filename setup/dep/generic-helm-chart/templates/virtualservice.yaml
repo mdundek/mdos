@@ -1,0 +1,90 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appName }}
+{{- range .Values.appComponents }}
+{{- $appCompUUID := .mdosAcbmAppCompUUID }}
+{{- $appCompName := lower .name }}
+{{- if .virtualService }}
+{{- range .virtualService }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  {{- if .name }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .name }}
+  {{- else }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .protocol }}
+  {{- end }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appCompName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    {{- end }}
+spec:
+  hosts:
+    {{- range .hosts }}
+    - {{ . | quote -}}
+    {{- end }}
+  gateways:
+    - istio-system/{{ .gateway }}
+
+  {{- if eq .protocol "http" }}
+  http:
+    - name: {{ $appName }}-{{ $appCompName }}-http
+    {{- if .httpMatch }}
+      match:
+        - uri:
+            prefix: {{ .httpMatch.prefix }}
+          port: {{ .httpMatch.port }}
+      rewrite:
+        uri: /
+    {{- end }}
+      route:
+      - destination:
+          port:
+            number: {{ .svcPort }}
+          host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
+    {{- range $.serviceLinks }}
+    - name: {{ $appName }}-{{ $appCompName }}-service-link
+      match:
+        - uri:
+            prefix: /{{ lower .appName }}
+      rewrite:
+        uri: /
+      route:
+      - destination:
+          port:
+            number: {{ .port }} # which port ??
+          host: {{ lower .appName }}.{{ lower .appDomain }}.svc.cluster.local
+    {{- end }}
+  {{- else if or (eq .protocol "https") (eq .protocol "tls") }}
+  tls:
+    {{- range .tlsMatchHosts }}
+    - match:
+        - port: {{ .port }}
+          sniHosts: 
+            - {{ .host }}
+      route:
+      - destination:
+          port:
+            number: {{ .svcPort }}
+          host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
+    {{- end }}
+  {{- else if eq .protocol "tcp" }}
+  tcp:
+    {{- range .tcpMatchPorts }}
+    - match:
+        - port: {{ . }}
+      route:
+      - destination:
+          port:
+            number: {{ . }}
+          host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

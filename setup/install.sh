@@ -61,7 +61,10 @@ fi
 # SET UP FIREWALL
 if command -v ufw >/dev/null; then
     if [ "$(ufw status | grep 'Status: active')" == "" ]; then
-        ufw enable
+        yes_no USE_FIREWALL "Your firewall is currently disabled. Do you want to enable it now and configure the necessary ports for the platform?" 1
+        if [ "$USE_FIREWALL" == "yes" ]; then
+            ufw enable
+        fi
     fi
     if [ "$(ufw status | grep '22/tcp' | grep 'ALLOW')" == "" ]; then
         ufw allow ssh
@@ -79,11 +82,152 @@ fi
 # LOAD INSTALLATION TRACKING LOGS
 INST_ENV_PATH="$HOME/.mdos/install.dat"
 mkdir -p "$HOME/.mdos"
+touch $HOME/.mdos/install.dat
 if [ -f $INST_ENV_PATH ]; then
     source $INST_ENV_PATH
 fi
 
-# ############### DEPENDENCIES ################
+
+# ############### UPDATE ENV DATA VALUE ################
+set_env_step_data() {
+    sed -i '/'$1'=/d' $INST_ENV_PATH
+    echo "$1=$2" >> $INST_ENV_PATH
+}
+
+# ############### CHECK KUBE RESOURCE ################
+check_kube_resource() {
+    local __resultvar=$1
+    while read K_LINE ; do 
+        K_NAME=`echo "$K_LINE" | cut -d' ' -f 1`
+        if [ "$K_NAME" == "$4" ]; then
+            eval $__resultvar=1
+        fi
+    done < <(kubectl get $2 -n $3 2>/dev/null)
+}
+
+check_kube_namespace() {
+    local __resultvar=$1
+    while read K_LINE ; do 
+        K_NAME=`echo "$K_LINE" | cut -d' ' -f 1`
+        if [ "$K_NAME" == "$2" ]; then
+            eval $__resultvar=1
+        fi
+    done < <(kubectl get ns 2>/dev/null)
+}
+
+# ############### MDOS APP DEPLOY ################
+mdos_deploy_app() {
+    I_APP=$(cat ./target_values.yaml | yq eval '.appName')
+    I_NS=$(cat ./target_values.yaml | yq eval '.mdosBundleName')
+    unset NS_EXISTS
+    while read NS_LINE ; do 
+        NS_NAME=`echo "$NS_LINE" | cut -d' ' -f 1`
+        if [ "$NS_NAME" == "$I_NS" ]; then
+            NS_EXISTS=1
+        fi
+    done < <(kubectl get ns 2>/dev/null)
+
+    if [ -z $NS_EXISTS ]; then
+        kubectl create ns $I_NS
+    fi
+
+    unset SECRET_EXISTS
+    while read SECRET_LINE ; do 
+        NS_NAME=`echo "$SECRET_LINE" | cut -d' ' -f 1`
+        if [ "$NS_NAME" == "regcred" ]; then
+            SECRET_EXISTS=1
+        fi
+    done < <(kubectl get secret -n $I_NS 2>/dev/null)
+
+    if [ -z $SECRET_EXISTS ]; then
+        REG_CREDS=$(echo "$REG_CREDS_B64" | base64 --decode)
+        
+        kubectl create secret docker-registry \
+            regcred \
+            --docker-server=registry.$DOMAIN \
+            --docker-username=$(echo "$REG_CREDS" | cut -d':' -f1) \
+            --docker-password=$(echo "$REG_CREDS" | cut -d':' -f2) \
+            -n $I_NS 1>/dev/null
+    fi
+
+    STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
+    STATIC_APP_APPEND='{"registry": "registry.'$DOMAIN'","enabled": true,"developement": false,"appInternalName": "'$I_APP'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"IfNotPresent","config": [],"secrets": []}}'
+
+    # Make copy of application values file to work with
+    cp ./target_values.yaml ./values_merged.yaml
+
+    # Declare App comp array
+    APP_COMPONENTS=()
+
+    # Load all application components from the file
+    readarray appcomponents < <(cat values_merged.yaml | yq e -o=j -I=0 '.appComponents[]' )
+
+    C_INDEX=0
+    # Iterate over components
+    for appComponent in "${appcomponents[@]}"; do
+        COMP_NAME=$(echo "$appComponent" | jq -r '.name')
+        
+        # Appens what we need to this component
+        COMP_UPD=$(cat values_merged.yaml | yq ".appComponents[$C_INDEX] + $STATIC_COMP_APPEND")
+
+        # Store the updated component in our array
+        APP_COMPONENTS+=("$COMP_UPD")
+
+        # Increment index
+        C_INDEX=$((C_INDEX+1))
+    done
+
+    C_INDEX=0
+    # Iterate over components
+    for appComponent in "${appcomponents[@]}"; do
+        echo "$(cat values_merged.yaml | yq 'del(.appComponents[0])')" > ./values_merged.yaml
+
+        # Increment index
+        C_INDEX=$((C_INDEX+1))
+    done
+
+    # Put it all back together
+    for appComponent in "${APP_COMPONENTS[@]}"; do
+        APP_COMP_JSON=$(echo "$appComponent" | yq -o=json -I=0 '.')
+
+        VALUES_UPD=$(cat values_merged.yaml | yq ".appComponents += $APP_COMP_JSON")
+        echo "$VALUES_UPD" > values_merged.yaml
+    done
+
+    VALUES_UPD=$(cat values_merged.yaml | yq ". += $STATIC_APP_APPEND")
+    echo "$VALUES_UPD" > values_merged.yaml
+
+    helm upgrade --install $I_APP ./dep/generic-helm-chart \
+        --values ./values_merged.yaml \
+        -n $I_NS --atomic 1> /dev/null
+
+    rm -rf ./values_merged.yaml
+}
+
+# ############### EXEC IN POD ################
+exec_in_pod() {
+    POD_CANDIDATES=()
+    NS_CANDIDATES=()
+    while read DEPLOYMENT_LINE ; do 
+        POD_NAME=`echo "$DEPLOYMENT_LINE" | awk 'END {print $2}'`
+        NS_NAME=`echo "$DEPLOYMENT_LINE" | awk 'END {print $1}'`
+        if [[ "$POD_NAME" == *"$1"* ]]; then
+           POD_CANDIDATES+=($POD_NAME)
+           NS_CANDIDATES+=($NS_NAME)
+        fi
+    done < <(kubectl get pod -A 2>/dev/null)
+
+    if [ ${#POD_CANDIDATES[@]} -eq 0 ]; then
+        error "Could not find any candidates for this pod name"
+        exit 1
+    else
+        k3s kubectl exec --stdin --tty ${POD_CANDIDATES[0]} -n ${NS_CANDIDATES[0]} -- $2
+    fi
+}
+
+# ############################################
+# ############### DEPENDENCIES ###############
+# ############################################
 dependencies() {
     if [ "$PSYSTEM" == "APT" ]; then
         apt-get update -y
@@ -109,7 +253,7 @@ dependencies() {
                 apt-get update
                 apt-get install docker-ce docker-ce-cli containerd.io -y
 
-                groupadd docker
+                groupadd docker || true
 
                 warn "Docker has been installed. To use docker for non root users, use the following command: usermod -aG docker <USER>"
             fi
@@ -117,79 +261,62 @@ dependencies() {
     fi
 }
 
-# ############### UPDATE ENV DATA VALUE ################
-set_env_step_data() {
-    sed -i '/'$1'=/d' $INST_ENV_PATH
-    echo "$1=$2" >> $INST_ENV_PATH
-}
-
 # ############################################
 # ########### CLOUDFLARE & CERTBOT ###########
 # ############################################
 setup_cloudflare_certbot() {
-    if [ -z $INST_STEP_CLOUDFLARE ]; then
-        if [ "$PSYSTEM" == "APT" ]; then
-            # Install certbot
-            apt-get install certbot python3-certbot-dns-cloudflare -y
-        fi
-
-        if [ -z $CF_EMAIL ]; then
-            user_input CF_EMAIL "Enter your Cloudflare account email:"
-            set_env_step_data "CF_EMAIL" "$CF_EMAIL"
-        fi
-        
-        if [ -z $CF_TOKEN ]; then
-            user_input CF_TOKEN "Enter your Cloudflare API token:"
-            set_env_step_data "CF_TOKEN" "$CF_TOKEN"
-        fi
-
-        # Create cloudflare credentials file
-        echo "dns_cloudflare_email = $CF_EMAIL" > $HOME/.mdos/cloudflare.ini
-        echo "dns_cloudflare_api_key = $CF_TOKEN" >> $HOME/.mdos/cloudflare.ini
-
-        # Create certificate now (will require manual input)
-        if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
-            certbot certonly \
-                --dns-cloudflare \
-                --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini \
-                -d $DOMAIN \
-                -d *.$DOMAIN \
-                --email $CF_EMAIL \
-                --agree-tos \
-                -n
-        fi
-
-        # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
-        if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
-            (crontab -l ; echo "5 8 * * * $_DIR/cron/91_renew_certbot.sh")| crontab -
-        fi
-
-        # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
-        if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
-            yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
-            if [ "$IP_UPDATE" == "yes" ]; then
-                (crontab -l ; echo "5 6 * * * $_DIR/cron/90_update_ip_cloudflare.sh")| crontab -
-            fi
-        fi
-
-        /etc/init.d/cron restart
+    
+    if [ "$PSYSTEM" == "APT" ]; then
+        # Install certbot
+        apt-get install certbot python3-certbot-dns-cloudflare -y
     fi
+
+    if [ -z $CF_EMAIL ]; then
+        user_input CF_EMAIL "Enter your Cloudflare account email:"
+        set_env_step_data "CF_EMAIL" "$CF_EMAIL"
+    fi
+    
+    if [ -z $CF_TOKEN ]; then
+        user_input CF_TOKEN "Enter your Cloudflare API token:"
+        set_env_step_data "CF_TOKEN" "$CF_TOKEN"
+    fi
+
+    # Create cloudflare credentials file
+    echo "dns_cloudflare_email = $CF_EMAIL" > $HOME/.mdos/cloudflare.ini
+    echo "dns_cloudflare_api_key = $CF_TOKEN" >> $HOME/.mdos/cloudflare.ini
+
+    # Create certificate now (will require manual input)
+    if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
+        certbot certonly \
+            --dns-cloudflare \
+            --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini \
+            -d $DOMAIN \
+            -d *.$DOMAIN \
+            --email $CF_EMAIL \
+            --agree-tos \
+            -n
+    fi
+
+    # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
+    if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
+        (crontab -l ; echo "5 8 * * * $_DIR/cron/91_renew_certbot.sh")| crontab -
+    fi
+
+    # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
+    if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
+        yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
+        if [ "$IP_UPDATE" == "yes" ]; then
+            (crontab -l ; echo "5 6 * * * $_DIR/cron/90_update_ip_cloudflare.sh")| crontab -
+        fi
+    fi
+
+    /etc/init.d/cron restart
 }
 
 # ############################################
 # ################# ETC_HOSTS ################
 # ############################################
 configure_etc_hosts() {
-    
-    # # Get the default network interface in use to connect to the internet
-    # host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
-    
-    # # Get local IP
-    # if [ "$PSYSTEM" == "APT" ]; then
-    #     INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
-    #     LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-    # fi
-
     if [ "$(cat /etc/hosts | grep registry.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 registry.$DOMAIN" >> /etc/hosts
     fi
@@ -207,11 +334,10 @@ configure_etc_hosts() {
 # ######## GENERATE SELF SIGNED CERT #########
 # ############################################
 generate_selfsigned() {
-    if [ -z $INST_STEP_SS_CERT ]; then
-        mkdir -p $HOME/.mdos/ss_cert
+    mkdir -p $HOME/.mdos/ss_cert
 
-        # Create registry self signed certificate for local domain 
-        echo "[req]
+    # Create registry self signed certificate for local domain 
+    echo "[req]
 default_bits = 4096
 default_md = sha256
 distinguished_name = req_distinguished_name
@@ -231,15 +357,843 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = $DOMAIN
 DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
-        /usr/bin/docker run -v $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg
+    /usr/bin/docker run -v $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg
+
+    cp $HOME/.mdos/ss_cert/$DOMAIN.key $HOME/.mdos/ss_cert/privkey.pem
+    cp $HOME/.mdos/ss_cert/$DOMAIN.crt $HOME/.mdos/ss_cert/fullchain.pem
+    chmod 655 $HOME/.mdos/ss_cert/*.pem
+}
+
+# ############################################
+# ############### INSTALL K3S ################
+# ############################################
+install_k3s() {
+    if ! command -v k3s &> /dev/null; then
+        curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.168.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664" sh -
+        # Install Calico
+        kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
+        kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
+
+        # Configure user K8S credentiald config file
+        mkdir -p $HOME/.kube
+        rm -rf $HOME/.kube/config
+        cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+        chmod 600 $HOME/.kube/config
+
+        info "Waiting for kubernetes to become ready..."
+        ATTEMPTS=0
+        while [ "$(kubectl get node | grep 'NotReady')" != "" ]; do
+            sleep 3
+            ATTEMPTS=$((ATTEMPTS+1))
+            if [ "$ATTEMPTS" -gt 100 ]; then
+                error "Timeout, Kubernetes did not come online, it is assumed there is a problem. Please check with the command kubectl get nodes and kubectl describe node <node name> for more information about the issue"
+                exit 1
+            fi
+        done
     fi
 }
 
-# ############ TRY CATCH INTERCEPTORS ############
+# ############################################
+# ############### INSTALL HELM ###############
+# ############################################
+install_helm() {
+    if ! command -v helm &> /dev/null; then
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        chmod 700 get_helm.sh
+        ./get_helm.sh
+        rm -rf ./get_helm.sh
+    fi
+}
+
+# ############################################
+# ############### INSTALL ISTIO ##############
+# ############################################
+install_istio() {
+    # Create namespace
+    unset NS_EXISTS
+    check_kube_namespace NS_EXISTS "istio-system"
+    if [ -z $NS_EXISTS ]; then
+        kubectl create namespace istio-system
+    fi
+
+    # Install base istio components
+    helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system
+    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -n istio-system
+
+    info "Waiting for istiod to become ready..."
+    ATTEMPTS=0
+    while [ "$(kubectl get pod -n istio-system | grep 'istiod-' | grep 'Running')" == "" ]; do
+        sleep 3
+        ATTEMPTS=$((ATTEMPTS+1))
+        if [ "$ATTEMPTS" -gt 100 ]; then
+            error "Timeout, Istio did not deploy in time. Please check with the command 'kubectl get pod -n istio-system' and 'kubectl describe pod <pod name> -n istio-system' for more information about the issue"
+            exit 1
+        fi
+    done
+
+    sed -i 's/type: LoadBalancer/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
+    sed -i 's/type: ClusterIP/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
+    helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system
+
+    info "Waiting for istio ingress gateway to become ready..."
+    ATTEMPTS=0
+    while [ "$(kubectl get pod -n istio-system | grep 'istio-ingressgateway-' | grep 'Running')" == "" ]; do
+        sleep 3
+        ATTEMPTS=$((ATTEMPTS+1))
+        if [ "$ATTEMPTS" -gt 100 ]; then
+            error "Timeout, Istio ingress gateway did not deploy in time. Please check with the command 'kubectl get pod -n istio-system' and 'kubectl describe pod <pod name> -n istio-system' for more information about the issue"
+            exit 1
+        fi
+    done
+
+    ## Deploy Istio Gateways
+    cat <<EOF | k3s kubectl apply -f -
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: http-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: https-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "*"
+    tls:
+      mode: PASSTHROUGH
+EOF
+
+    yes_no DO_PROXY_PORTS "Do you want to proxy traffic comming from port 443 to your Istio HTTPS ingress gateway?" 1
+    if [ "$DO_PROXY_PORTS" == "yes" ]; then
+        if [ "$PSYSTEM" == "APT" ]; then
+            apt install nginx -y
+        fi
+
+        echo "
+server {
+    listen 80;
+    server_name *.$DOMAIN;
+    location / {
+        proxy_pass http://127.0.0.1:30978;
+        proxy_set_header HOST \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_pass_request_headers on;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+    }
+}" > /etc/nginx/sites-available/default
+
+        echo "
+stream {
+  server {
+    listen     443;
+    proxy_pass 127.0.0.1:30979;
+  }
+}" >> /etc/nginx/nginx.conf
+
+        systemctl enable nginx
+        systemctl start nginx
+        systemctl restart nginx
+    fi
+}
+
+# ############################################
+# ############# INSTALL REGISTRY #############
+# ############################################
+install_registry() {
+    if [ -z $REG_USER ] || [ -z $REG_PASS ]; then
+        user_input REG_USER "Enter a registry username:"
+        user_input REG_PASS "Enter a registry password:"
+        REG_CREDS_B64=$(echo -n "$REG_USER:$REG_PASS" | base64 -w 0)
+        set_env_step_data "REG_USER" "$REG_USER"
+        set_env_step_data "REG_PASS" "$REG_PASS"
+        set_env_step_data "REG_CREDS_B64" "$REG_CREDS_B64"
+    fi
+
+    # Create credentials file for the registry
+    if [ ! -z $HOME/.mdos/registry/auth/htpasswd ]; then
+        mkdir -p $HOME/.mdos/registry/auth
+        rm -rf $HOME/.mdos/registry/auth/htpasswd
+        htpasswd -Bbn $REG_USER $REG_PASS > $HOME/.mdos/registry/auth/htpasswd
+    fi
+
+    # Create kubernetes namespace & secrets for registry
+    unset NS_EXISTS
+    check_kube_namespace NS_EXISTS "mdos-registry"
+    if [ -z $NS_EXISTS ]; then
+        kubectl create namespace mdos-registry
+        k3s kubectl create secret tls certs-secret --cert=$HOME/.mdos/ss_cert/$DOMAIN.crt --key=$HOME/.mdos/ss_cert/$DOMAIN.key -n mdos-registry
+        k3s kubectl create secret generic auth-secret --from-file=$HOME/.mdos/registry/auth/htpasswd -n mdos-registry
+    fi
+
+    # Deploy registry on k3s
+    cat <<EOF | k3s kubectl apply -n mdos-registry -f -
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mdos-registry-v2-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: $HOME/.mdos/registry/data
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mdos-registry-v2
+  labels:
+    app: mdos-registry-v2
+spec:
+  selector:
+    matchLabels:
+      app: mdos-registry-v2
+  serviceName: mdos-registry-v2
+  updateStrategy:
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mdos-registry-v2
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: mdos-registry-v2
+        image: registry:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: repo-vol
+          mountPath: /var/lib/registry
+        - name: certs-vol
+          mountPath: "/certs"
+          readOnly: true
+        - name: auth-vol
+          mountPath: "/auth"
+          readOnly: true
+        env:
+        - name: REGISTRY_HTTP_ADDR
+          value: "0.0.0.0:5000"
+        - name: REGISTRY_AUTH
+          value: "htpasswd"
+        - name: REGISTRY_AUTH_HTPASSWD_REALM
+          value: "Registry Realm"
+        - name: REGISTRY_AUTH_HTPASSWD_PATH
+          value: "/auth/htpasswd"
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: "/certs/tls.crt"
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: "/certs/tls.key"
+      volumes:
+      - name: certs-vol
+        secret:
+          secretName: certs-secret
+      - name: auth-vol
+        secret:
+          secretName: auth-secret
+  volumeClaimTemplates:
+  - metadata:
+      name: repo-vol
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mdos-registry-v2
+spec:
+  selector:
+    app: mdos-registry-v2
+  ports:
+    - port: 5000
+      targetPort: 5000
+EOF
+
+    # Wait untill registry is up and running
+    info "Waiting for the registry to come online..."
+    ATTEMPTS=0
+    while [ "$(kubectl get pod mdos-registry-v2-0 -n mdos-registry | grep 'Running')" == "" ]; do
+        sleep 3
+        ATTEMPTS=$((ATTEMPTS+1))
+        if [ "$ATTEMPTS" -gt 100 ]; then
+            error "Timeout, the registry did not come online, it is assumed there is a problem. Please check with the command 'kubectl get pod' and 'kubectl describe pod <node name> -n mdos-registry' for more information about the issue"
+            exit 1
+        fi
+    done
+
+    # Update docker and K3S registry for self signed cert
+    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+        # Configure self signed cert with local docker deamon
+        mkdir -p /etc/docker/certs.d/registry.$DOMAIN
+        cp $HOME/.mdos/ss_cert/$DOMAIN.crt /etc/docker/certs.d/registry.$DOMAIN/ca.crt
+
+        # Allow self signed cert registry for docker daemon
+        echo "{
+\"insecure-registries\" : [\"registry.$DOMAIN\"]
+}" > ./daemon.json
+        mv ./daemon.json /etc/docker/daemon.json
+        service docker restart
+
+        # Prepare k3s registry SSL containerd config
+        if [ ! -d /etc/rancher/k3s ]; then
+            mkdir -p /etc/rancher/k3s
+        fi
+        echo "mirrors:
+  registry.$DOMAIN:
+    endpoint:
+    - \"https://registry.$DOMAIN\"
+configs:
+  \"registry.$DOMAIN\":
+    auth:
+      username: $REG_USER
+      password: $REG_PASS
+    tls:
+      cert_file: $HOME/.mdos/ss_cert/$DOMAIN.crt
+      key_file: $HOME/.mdos/ss_cert/$DOMAIN.key
+      ca_file: $HOME/.mdos/ss_cert/$DOMAIN.crt" > /etc/rancher/k3s/registries.yaml
+
+        systemctl restart k3s
+    fi
+}
+
+# ############################################
+# ################ OPENRESTY #################
+# ############################################
+install_openresty() {
+    if [ -z $LOCAL_IP ]; then
+        if command -v getent >/dev/null; then
+            if command -v ip >/dev/null; then
+                # Get the default network interface in use to connect to the internet
+                host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
+                INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
+                LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+            fi
+        fi
+
+        if [ -z $LOC_IP ]; then
+            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):"
+        else
+            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):" "$LOC_IP"
+        fi
+        set_env_step_data "LOCAL_IP" "$LOCAL_IP"
+    fi
+
+    # Set domains that should not use basic auth here
+    NO_AUTH_DOMAINS="minio-console.$DOMAIN minio-backup.$DOMAIN"
+
+    if [ ! -z $HOME/.mdos/openresty/conf.d ]; then
+        mkdir -p $HOME/.mdos/openresty/conf.d
+    fi
+
+    # Create / update openresty values.yaml file
+    OPENRESTY_VAL=$(cat ./dep/openresty/values.yaml)
+
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
+        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/ss_cert/fullchain.pem"')
+        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "'$HOME'/.mdos/ss_cert/privkey.pem"')
+    else
+        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "/etc/letsencrypt/live/'"$DOMAIN"'/fullchain.pem"')
+        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "/etc/letsencrypt/live/'"$DOMAIN"'/privkey.pem"')
+    fi
+
+    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].mountPath = "/etc/letsencrypt/live/'"$DOMAIN"'/fullchain.pem"')
+    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].mountPath = "/etc/letsencrypt/live/'"$DOMAIN"'/privkey.pem"')
+    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[2].hostPath = "'$HOME'/.mdos/openresty/conf.d"')
+
+    # Create kubernetes namespace & secrets for registry
+    unset NS_EXISTS
+    check_kube_namespace NS_EXISTS "openresty"
+    if [ -z $NS_EXISTS ]; then
+        kubectl create namespace openresty
+    fi
+
+    # Build docker image & push to registry
+    cd ./dep/openresty
+    docker build -t registry.$DOMAIN/openresty:latest .
+    docker save registry.$DOMAIN/openresty:latest > ./openresty.tar
+    k3s ctr image import ./openresty.tar
+    rm -rf ./openresty.tar
+    cd $_DIR
+
+    # Create Code server endpoint to access it from within openresty namespace
+	cat <<EOF | k3s kubectl apply -n openresty -f -
+apiVersion: v1
+kind: Service
+metadata:
+   name: codeserver-service-egress
+spec:
+   clusterIP: None
+   ports:
+   - protocol: TCP
+     port: 8080
+     targetPort: 8080
+   type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: codeserver-service-egress
+subsets:
+  - addresses:
+    - ip: $LOCAL_IP
+    ports:
+      - port: 8080
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: openresty
+spec:
+  hosts:
+    - "*.$DOMAIN"
+  gateways:
+    - istio-system/https-gateway
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - "*.$DOMAIN"
+    route:
+    - destination:
+        host: mdos-openresty-openresty.openresty.svc.cluster.local
+        port:
+          number: 443
+EOF
+
+    # Prepare openresty conf.d file
+    cp -R ./dep/openresty/conf.d $HOME/.mdos/openresty/
+
+    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/default.conf
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/default.conf
+
+    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
+
+    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/registry.conf
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/registry.conf
+
+    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
+
+    # Deploy openresty
+    echo "$OPENRESTY_VAL" > ./target_values.yaml
+    mdos_deploy_app
+    rm -rf ./target_values.yaml
+
+    # Now that the registry is up and running, we push the openresty image to the registry
+    sleep 5
+    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin
+    docker push registry.$DOMAIN/openresty:latest
+}
+
+# ############################################
+# ################# KEYCLOAK #################
+# ############################################
+install_keycloak() {
+    if [ -z $KEYCLOAK_USER ]; then
+        user_input KEYCLOAK_USER "Enter a admin username for Keycloak:"
+        set_env_step_data "KEYCLOAK_USER" "$KEYCLOAK_USER"
+    fi
+
+    if [ -z $KEYCLOAK_PASS ]; then
+        user_input KEYCLOAK_PASS "Enter a admin password for Keycloak:"
+        set_env_step_data "KEYCLOAK_PASS" "$KEYCLOAK_PASS"
+    fi
+
+    if [ -z $KUBE_ADMIN_EMAIL ]; then
+        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
+        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
+    fi
+
+    # Create keycloak namespace & secrets for registry
+    unset NS_EXISTS
+    check_kube_namespace NS_EXISTS "keycloak"
+    if [ -z $NS_EXISTS ]; then
+        kubectl create namespace keycloak
+    fi
+
+    # Compute remaining parameters
+    POSTGRES_USER=$KEYCLOAK_USER
+    POSTGRES_PASSWORD=$KEYCLOAK_PASS
+    KEYCLOAK_DB_SCRIPT_MOUNT=$(pwd)/dep/keycloak/pg-init-scripts
+    
+    # Create / update keycloak values.yaml file
+    KEYCLOAK_VAL=$(cat ./dep/keycloak/values.yaml)
+
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[1].value = "'$POSTGRES_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[2].value = "'$POSTGRES_PASSWORD'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[3].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[4].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/keycloak/db"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
+
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[0].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[1].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[2].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[3].value = "'$KEYCLOAK_PASS'"')
+
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
+        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/ss_cert/fullchain.pem"')
+        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "'$HOME'/.mdos/ss_cert/privkey.pem"')
+    else
+        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "/etc/letsencrypt/live/'$DOMAIN'/fullchain.pem"')
+        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "/etc/letsencrypt/live/'$DOMAIN'/privkey.pem"')
+    fi
+
+    collect_api_key() {
+        echo ""
+        echo ""
+        question "To finalyze the setup, do the following:"
+        echo ""
+        echo "  1. Open a browser and go to:"
+        warn_print "     https://keycloak.$DOMAIN/admin/master/console/#/realms/master/clients"
+        echo "  2. From the 'Clients' section, click on the client 'master-realm'"
+        echo "  3. Change 'Access Type' value to 'confidential'"
+        echo "  4. Enable the boolean value 'Service Accounts Enabled'"
+        echo "  5. Set 'Valid Redirect URIs' value to '*'"
+        echo "  6. Save those changes (button at the bottom of the page)"
+        echo "  7. In tab 'Roles', Click on button 'edit' for role 'magage realm'."
+        echo "     Enable 'Composite roles' and add 'admin' realm to associated roles"
+        echo "  8. Go to the 'Service Account Roles' tab and add the role 'admin' to the 'Assigned Roles' box"
+        echo "  9. Click on tab 'Credentials'"
+        echo " 10. When ready, copy and paste the 'Secret' value into this terminal, then press enter:"
+        echo ""
+        user_input KEYCLOAK_SECRET "SECRET:"
+        echo ""
+    } 
+
+    gen_api_token() {
+        KC_TOKEN=$(curl -s -k -X POST \
+            "https://keycloak.$DOMAIN/realms/master/protocol/openid-connect/token" \
+            -H "Content-Type: application/x-www-form-urlencoded"  \
+            -d "grant_type=client_credentials" \
+            -d "client_id=master-realm" \
+            -d "client_secret=$KEYCLOAK_SECRET" \
+            -d "username=$KEYCLOAK_USER"  \
+            -d "password=$KEYCLOAK_PASS" \
+            -d "scope=openid" | jq -r '.access_token')
+    }
+
+    setup_keycloak_kubernetes_client() {
+        # Create client for kubernetes
+        curl -s -k --request POST \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            -d '{"clientId": "kubernetes-cluster", "publicClient": true, "standardFlowEnabled": true, "directGrantsOnly": true, "redirectUris": ["*"], "protocolMappers": [{"name": "groups", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper", "config": {"claim.name" : "groups", "full.path" : "true","id.token.claim" : "true", "access.token.claim" : "true", "userinfo.token.claim" : "true"}}]}' \
+            https://keycloak.$DOMAIN/admin/realms/master/clients
+
+        # Retrieve client UUID
+        CLIENT_UUID=$(curl -s -k --request GET \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            https://keycloak.$DOMAIN/admin/realms/master/clients?clientId=kubernetes-cluster | jq '.[0].id' | sed 's/[\"]//g')
+
+        # Create mdos base group for k8s clusters in Keycloak
+        curl -s -k --request POST \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            -d '{"name": "mdos"}' \
+            https://keycloak.$DOMAIN/admin/realms/master/groups
+
+        # Create client roles in Keycloak
+        curl -s -k --request POST \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            --data '{"clientRole": true,"name": "mdos-sysadmin"}' \
+            https://keycloak.$DOMAIN/admin/realms/master/clients/$CLIENT_UUID/roles
+
+        SYSADMIN_ROLE_UUID=$(curl -s -k --request GET \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            https://keycloak.$DOMAIN/admin/realms/master/clients/$CLIENT_UUID/roles/mdos-sysadmin | jq '.id' | sed 's/[\"]//g')
+
+        # Update admin email and role
+        ADMIN_U_ID=$(curl -s -k --request GET \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            https://keycloak.$DOMAIN/admin/realms/master/users?username=$KEYCLOAK_USER | jq '.[0].id' | sed 's/[\"]//g')
+
+        curl -s -k -X PUT \
+            https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID \
+            -H "Content-Type: application/json"  \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            -d '{"email": "'"$KUBE_ADMIN_EMAIL"'"}'
+
+        curl -s -k --request POST \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            --data '[{"name": "mdos-sysadmin", "id": "'"$SYSADMIN_ROLE_UUID"'"}]' \
+            https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID/role-mappings/clients/$CLIENT_UUID
+    }
+
+    setup_keycloak_mdos_realm() {
+        curl -k --request POST \
+            https://keycloak.$DOMAIN/admin/realms \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            -d '{"id": "mdos","realm": "mdos","rememberMe": true, "enabled": true}'
+        gen_api_token
+        curl -k --request POST \
+            https://keycloak.$DOMAIN/admin/realms/mdos/clients \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            --data-raw '{
+                "clientId": "openresty",
+                "rootUrl": "",
+                "baseUrl": "",
+                "surrogateAuthRequired": false,
+                "enabled": true,
+                "alwaysDisplayInConsole": false,
+                "clientAuthenticatorType": "client-secret",
+                "redirectUris": [
+                    "*"
+                ],
+                "webOrigins": [],
+                "notBefore": 0,
+                "bearerOnly": false,
+                "consentRequired": false,
+                "standardFlowEnabled": true,
+                "implicitFlowEnabled": false,
+                "directAccessGrantsEnabled": true,
+                "serviceAccountsEnabled": true,
+                "authorizationServicesEnabled": true,
+                "publicClient": false,
+                "frontchannelLogout": false,
+                "protocol": "openid-connect",
+                "attributes": {
+                    "saml.multivalued.roles": "false",
+                    "saml.force.post.binding": "false",
+                    "frontchannel.logout.session.required": "false",
+                    "oauth2.device.authorization.grant.enabled": "true",
+                    "backchannel.logout.revoke.offline.tokens": "false",
+                    "saml.server.signature.keyinfo.ext": "false",
+                    "use.refresh.tokens": "true",
+                    "oidc.ciba.grant.enabled": "false",
+                    "backchannel.logout.session.required": "true",
+                    "client_credentials.use_refresh_token": "false",
+                    "saml.client.signature": "false",
+                    "require.pushed.authorization.requests": "false",
+                    "saml.allow.ecp.flow": "false",
+                    "saml.assertion.signature": "false",
+                    "id.token.as.detached.signature": "false",
+                    "client.secret.creation.time": "1658151759",
+                    "saml.encrypt": "false",
+                    "saml.server.signature": "false",
+                    "exclude.session.state.from.auth.response": "false",
+                    "saml.artifact.binding": "false",
+                    "saml_force_name_id_format": "false",
+                    "tls.client.certificate.bound.access.tokens": "false",
+                    "acr.loa.map": "{}",
+                    "saml.authnstatement": "false",
+                    "display.on.consent.screen": "false",
+                    "token.response.type.bearer.lower-case": "false",
+                    "saml.onetimeuse.condition": "false"
+                },
+                "authenticationFlowBindingOverrides": {},
+                "fullScopeAllowed": true,
+                "nodeReRegistrationTimeout": -1,
+                "protocolMappers": [
+                    {
+                        "name": "Client ID",
+                        "protocol": "openid-connect",
+                        "protocolMapper": "oidc-usersessionmodel-note-mapper",
+                        "consentRequired": false,
+                        "config": {
+                            "user.session.note": "clientId",
+                            "id.token.claim": "true",
+                            "access.token.claim": "true",
+                            "claim.name": "clientId",
+                            "jsonType.label": "String"
+                        }
+                    },
+                    {
+                        "name": "Client Host",
+                        "protocol": "openid-connect",
+                        "protocolMapper": "oidc-usersessionmodel-note-mapper",
+                        "consentRequired": false,
+                        "config": {
+                            "user.session.note": "clientHost",
+                            "id.token.claim": "true",
+                            "access.token.claim": "true",
+                            "claim.name": "clientHost",
+                            "jsonType.label": "String"
+                        }
+                    },
+                    {
+                        "name": "Client IP Address",
+                        "protocol": "openid-connect",
+                        "protocolMapper": "oidc-usersessionmodel-note-mapper",
+                        "consentRequired": false,
+                        "config": {
+                            "user.session.note": "clientAddress",
+                            "id.token.claim": "true",
+                            "access.token.claim": "true",
+                            "claim.name": "clientAddress",
+                            "jsonType.label": "String"
+                        }
+                    }
+                ],
+                "defaultClientScopes": [
+                    "web-origins",
+                    "acr",
+                    "profile",
+                    "roles",
+                    "email"
+                ],
+                "optionalClientScopes": [
+                    "address",
+                    "phone",
+                    "offline_access",
+                    "microprofile-jwt"
+                ],
+                "access": {
+                    "view": true,
+                    "configure": true,
+                    "manage": true
+                }
+            }'
+        gen_api_token
+        MDOS_CLIENT_UUID=$(curl -s -k --request GET \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            https://keycloak.$DOMAIN/admin/realms/mdos/clients?clientId=openresty | jq '.[0].id' | sed 's/[\"]//g')
+
+        MDOS_CLIENT_SECRET=$(curl  -k -s --location --request GET \
+            https://keycloak.$DOMAIN/admin/realms/mdos/clients/$MDOS_CLIENT_UUID/client-secret \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" | jq '.value' | sed 's/[\"]//g')
+        gen_api_token
+        curl -k --request POST \
+            https://keycloak.$DOMAIN/admin/realms/mdos/users \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            --data-raw '{
+                "username": "'$KEYCLOAK_USER'",
+                "enabled": true,
+                "totp": false,
+                "emailVerified": true,
+                "email": "'$KUBE_ADMIN_EMAIL'",
+                "disableableCredentialTypes": [],
+                "requiredActions": [],
+                "notBefore": 0,
+                "access": {
+                    "manageGroupMembership": true,
+                    "view": true,
+                    "mapRoles": true,
+                    "impersonate": true,
+                    "manage": true
+                }
+            }'
+        gen_api_token
+        MDOS_USER_UUID=$(curl -k --location --request GET \
+            https://keycloak.$DOMAIN/admin/realms/mdos/users \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" | jq '.[0].id' | sed 's/[\"]//g')
+
+        
+        curl -s -k --request PUT \
+            https://keycloak.$DOMAIN/admin/realms/mdos/users/$MDOS_USER_UUID/reset-password \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            --data-raw '{"type":"password","value":"'$KEYCLOAK_PASS'","temporary":false}'
+    }
+
+    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin
+
+    # Pull & push images to registry
+	docker pull postgres:13.2-alpine
+	docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine
+	docker push registry.$DOMAIN/postgres:13.2-alpine
+
+	docker pull quay.io/keycloak/keycloak:18.0.2
+	docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2
+	docker push registry.$DOMAIN/keycloak:18.0.2
+
+    mkdir -p $HOME/.mdos/keycloak/db
+
+    # Deploy keycloak
+    echo "$KEYCLOAK_VAL" > ./target_values.yaml
+    mdos_deploy_app
+    rm -rf ./target_values.yaml
+
+    # Enable auth on openresty and reload config
+    if [ -f $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled ]; then
+        mv $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled $HOME/.mdos/openresty/conf.d/keycloak.conf
+        exec_in_pod openresty "openresty -s reload"
+    fi
+
+	# Configure API key
+	collect_api_key
+
+	gen_api_token
+	setup_keycloak_kubernetes_client
+
+	gen_api_token
+	setup_keycloak_mdos_realm
+
+	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
+	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
+	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/default.conf
+	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/default.conf
+	sed -i 's/oidcenabled = false/oidcenabled = true/g' $HOME/.mdos/openresty/conf.d/default.conf
+
+	exec_in_pod openresty "openresty -s reload"
+}
+
+
+# ###########################################################################################################################
+# ########################################################### MAIN ##########################################################
+# ###########################################################################################################################
 (
     set -Ee
 
     function _catch {
+        GLOBAL_ERROR=1
         # Rollback
         echo ""
         error "An error occured"
@@ -249,7 +1203,24 @@ DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
     function _finally {
         # Cleanup
         echo ""
-        info "Done!"
+        if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+            warn "You choose to generate a self signed certificate for this installation."
+            echo "      All certificates are located under the folder $HOME/.mdos/ss_cert."
+            echo "      You can use those certificates to allow your external tools to"
+            echo "      communicate with the platform (ex. docker)."
+            echo ""
+        fi
+
+        info "The following services are available on the platform:"
+        echo "        - registry.$DOMAIN"
+        echo "        - keycloak.$DOMAIN"
+        echo "        - minio-console.$DOMAIN"
+        echo "        - minio.$DOMAIN"
+        echo ""
+
+        if [ -z $GLOBAL_ERROR ]; then
+            info "Done!"
+        fi
     }
 
     trap _catch ERR
@@ -264,21 +1235,19 @@ DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
     echo ""
 
     # WHAT CERT MODE
-    OPTIONS_STRING="You already have a certificate and a wild card domain;You have a Cloudflare domain, but no certificates;Generate and use self signed, do not have a domain"
-    OPTIONS_VALUES=("PROVIDE_ALL" "CLOUDFLARE" "SELF_SIGNED")
-    set +Ee
-    prompt_for_select CMD_SELECT "$OPTIONS_STRING"
-    set -Ee
-    for i in "${!CMD_SELECT[@]}"; do
-        if [ "${CMD_SELECT[$i]}" == "true" ]; then
-            CERT_MODE="${OPTIONS_VALUES[$i]}"
-        fi
-    done
-
-    # TARGET SYSTEM USER
-    if [ -z $PLATFORM_USER ]; then
-        user_input PLATFORM_USER "Enter the default system user:" "$USER" 
-        set_env_step_data "PLATFORM_USER" "$PLATFORM_USER"
+    if [ -z $INST_STEP_MODE_SELECT ]; then
+        OPTIONS_STRING="You already have a certificate and a wild card domain;You have a Cloudflare domain, but no certificates;Generate and use self signed, do not have a domain"
+        OPTIONS_VALUES=("SSL_PROVIDED" "CLOUDFLARE" "SELF_SIGNED")
+        set +Ee
+        prompt_for_select CMD_SELECT "$OPTIONS_STRING"
+        set -Ee
+        for i in "${!CMD_SELECT[@]}"; do
+            if [ "${CMD_SELECT[$i]}" == "true" ]; then
+                CERT_MODE="${OPTIONS_VALUES[$i]}"
+            fi
+        done
+        set_env_step_data "CERT_MODE" "$CERT_MODE"
+        set_env_step_data "INST_STEP_MODE_SELECT" "1"
     fi
 
     # PREPARE CERTIFICATES & DOMAIN
@@ -288,9 +1257,11 @@ DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
             set_env_step_data "DOMAIN" "$DOMAIN"
         fi
 
-        setup_cloudflare_certbot
-        set_env_step_data "INST_STEP_CLOUDFLARE" "1"
-    elif [ "$CERT_MODE" == "PROVIDE_ALL" ]; then
+        if [ -z $INST_STEP_CLOUDFLARE ]; then
+            setup_cloudflare_certbot
+            set_env_step_data "INST_STEP_CLOUDFLARE" "1"
+        fi
+    elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
         error "Not implemented yet"
         exit 1
     else
@@ -299,47 +1270,47 @@ DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
             set_env_step_data "DOMAIN" "$DOMAIN"
         fi
 
-        generate_selfsigned
-        set_env_step_data "INST_STEP_SS_CERT" "1"
+        if [ -z $INST_STEP_SS_CERT ]; then
+            generate_selfsigned
+            set_env_step_data "INST_STEP_SS_CERT" "1"
+        fi
 
         configure_etc_hosts
     fi
 
-    
-    # if [ -z $REG_USER ] || [ -z $REG_PASS ]; then
-    #     user_input REG_USER "Enter a registry username:"
-    #     user_input REG_PASS "Enter a registry password:"
-    #     REG_CREDS_B64=$(echo -n "$REG_USER:$REG_PASS" | base64 -w 0)
-    #     set_env_step_data "REG_USER" "$REG_USER"
-    #     set_env_step_data "REG_PASS" "$REG_PASS"
-    #     set_env_step_data "REG_CREDS_B64" "$REG_CREDS_B64"
-    # fi
-
     # INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
-        if ! command -v k3s &> /dev/null; then
-            curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.168.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664" sh -
-            # Install Calico
-            kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
-            kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
-
-            # Configure user K8S credentiald config file
-            mkdir -p /home/$USER/.kube
-            rm -rf /home/$USER/.kube/config
-            cp /etc/rancher/k3s/k3s.yaml /home/$USER/.kube/config
-            chmod 600 /home/$USER/.kube/config
-
-            info "Waiting for kubernetes to become ready..."
-            ATTEMPTS=0
-            while [ "$(kubectl get node | grep 'NotReady')" != "" ]; Do
-                sleep 3
-                ATTEMPTS=$((ATTEMPTS+1))
-                if [ "$ATTEMPTS" -gt 100 ]; then
-                    error "Timeout, Kubernetes did not come online, it is assumed there is a problem. Please check with the command kubectl get nodes and kubectl describe node <node name> for more information about the issue"
-                    exit 1
-                fi
-            done
-        fi
+        install_k3s
         set_env_step_data "INST_STEP_K3S" "1"
+    fi
+
+    # INSTALL HELM
+    if [ -z $INST_STEP_HELM ]; then
+        install_helm
+        set_env_step_data "INST_STEP_HELM" "1"
+    fi
+
+    # INSTALL ISTIO
+    if [ -z $INST_STEP_ISTIO ]; then
+        install_istio
+        set_env_step_data "INST_STEP_ISTIO" "1"
+    fi
+
+    # INSTALL REGISTRY
+    if [ -z $INST_STEP_REGISTRY ]; then
+        install_registry
+        set_env_step_data "INST_STEP_REGISTRY" "1"
+    fi
+
+    # INSTALL OPENRESTY
+    if [ -z $INST_STEP_OPENRESTY ]; then
+        install_openresty
+        set_env_step_data "INST_STEP_OPENRESTY" "1"
+    fi
+
+    # INSTALL KEYCLOAK
+    if [ -z $INST_STEP_KEYCLOAK ]; then
+        install_keycloak
+        set_env_step_data "INST_STEP_KEYCLOAK" "1"
     fi
 )

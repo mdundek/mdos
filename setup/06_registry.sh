@@ -153,3 +153,34 @@ do
 done
 
 (docker login --username "$REG_USER" --password $REG_PASS $REGISTRY_HOST) &> /dev/null
+
+
+
+
+
+
+
+
+
+
+
+
+  cat <<EOF | k3s kubectl apply -f -
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: nginx
+spec:
+  hosts:
+    - "registry.mydomain.com"
+  gateways:
+    - istio-system/http-gateway
+  http:
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: nginx
+        port:
+          number: 80
+EOF
