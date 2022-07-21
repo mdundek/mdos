@@ -58,6 +58,20 @@ elif [ "$DISTRO" != "Ubuntu" ]; then
     exit 1
 fi
 
+LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_install.log"
+
+# Parse user input
+while [ "$1" != "" ]; do
+    case $1 in
+        --reset )
+            rm -rf $HOME/.mdos
+        ;;
+        * ) error "Invalid parameter detected: $1"
+            exit 1
+    esac
+    shift
+done
+
 # SET UP FIREWALL (ufw)
 if command -v ufw >/dev/null; then
     if [ "$(ufw status | grep 'Status: active')" == "" ]; then
@@ -71,13 +85,9 @@ if command -v ufw >/dev/null; then
 
     if [ "$USE_FIREWALL" == "yes" ]; then
         if [ "$(ufw status | grep '22/tcp' | grep 'ALLOW')" == "" ]; then
-            ufw allow ssh
+            ufw allow ssh &>> $LOG_FILE
         fi
     fi
-    
-    # if [ "$(ufw status | grep '8080' | grep 'ALLOW')" == "" ]; then
-    #     ufw allow from 192.168.0.0/16 to any port 8080
-    # fi
 else
     warn "Configure your firewall to allow traffic on port 0.0.0.0:22, 0.0.0.0:30979 and 192.168.0.0/16:8080"
 fi
@@ -85,11 +95,11 @@ fi
 # LOAD INSTALLATION TRACKING LOGS
 INST_ENV_PATH="$HOME/.mdos/install.dat"
 mkdir -p "$HOME/.mdos"
-touch $HOME/.mdos/install.dat
 if [ -f $INST_ENV_PATH ]; then
     source $INST_ENV_PATH
+else
+    touch $HOME/.mdos/install.dat
 fi
-
 
 # ############### UPDATE ENV DATA VALUE ################
 set_env_step_data() {
@@ -233,8 +243,8 @@ exec_in_pod() {
 # ############################################
 dependencies() {
     if [ "$PSYSTEM" == "APT" ]; then
-        apt-get update -y
-        apt-get upgrade -y
+        apt-get update -y &>> $LOG_FILE
+        apt-get upgrade -y &>> $LOG_FILE
         apt-get install \
             jq \
             ca-certificates \
@@ -242,8 +252,8 @@ dependencies() {
             gnupg \
             apache2-utils \
             python3 \
-            lsb-release -y
-        snap install yq
+            lsb-release -y &>> $LOG_FILE
+        snap install yq &>> $LOG_FILE
 
         # Docker binary
         if [ "$DISTRO" == "Ubuntu" ]; then
@@ -253,10 +263,10 @@ dependencies() {
                 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
                     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-                apt-get update
-                apt-get install docker-ce docker-ce-cli containerd.io -y
+                apt-get update &>> $LOG_FILE
+                apt-get install docker-ce docker-ce-cli containerd.io -y &>> $LOG_FILE
 
-                groupadd docker || true
+                groupadd docker &>> $LOG_FILE || true
 
                 warn "Docker has been installed. To use docker for non root users, use the following command: usermod -aG docker <USER>"
             fi
@@ -271,7 +281,7 @@ setup_cloudflare_certbot() {
     
     if [ "$PSYSTEM" == "APT" ]; then
         # Install certbot
-        apt-get install certbot python3-certbot-dns-cloudflare -y
+        apt-get install certbot python3-certbot-dns-cloudflare -y &>> $LOG_FILE
     fi
 
     if [ -z $CF_EMAIL ]; then
@@ -297,23 +307,26 @@ setup_cloudflare_certbot() {
             -d *.$DOMAIN \
             --email $CF_EMAIL \
             --agree-tos \
-            -n
+            -n &>> $LOG_FILE
     fi
 
+    mkdir -p $HOME/.mdos/cron
     # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
+    cp $_DIR/dep/cron/91_renew_certbot.sh $HOME/.mdos/cron/91_renew_certbot.sh
     if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
-        (crontab -l ; echo "5 8 * * * $_DIR/cron/91_renew_certbot.sh")| crontab -
+        (crontab -l ; echo "5 8 * * * $HOME/.mdos/cron/91_renew_certbot.sh")| crontab -
     fi
 
     # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
+    cp $_DIR/dep/cron/90_update_ip_cloudflare.sh $HOME/.mdos/cron/90_update_ip_cloudflare.sh
     if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
         yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
         if [ "$IP_UPDATE" == "yes" ]; then
-            (crontab -l ; echo "5 6 * * * $_DIR/cron/90_update_ip_cloudflare.sh")| crontab -
+            (crontab -l ; echo "5 6 * * * $HOME/.mdos/cron/90_update_ip_cloudflare.sh")| crontab -
         fi
     fi
 
-    /etc/init.d/cron restart
+    /etc/init.d/cron restart &>> $LOG_FILE
 }
 
 # ############################################
@@ -360,7 +373,7 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = $DOMAIN
 DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
-    /usr/bin/docker run -v $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg
+    /usr/bin/docker run -v $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
 
     cp $HOME/.mdos/ss_cert/$DOMAIN.key $HOME/.mdos/ss_cert/privkey.pem
     cp $HOME/.mdos/ss_cert/$DOMAIN.crt $HOME/.mdos/ss_cert/fullchain.pem
@@ -372,10 +385,10 @@ DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
 # ############################################
 install_k3s() {
     if ! command -v k3s &> /dev/null; then
-        curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.168.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664" sh -
+        curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.168.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664" sh - &>> $LOG_FILE
         # Install Calico
-        kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
-        kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
+        kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml &>> $LOG_FILE
+        kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml &>> $LOG_FILE
 
         # Configure user K8S credentiald config file
         mkdir -p $HOME/.kube
@@ -403,7 +416,7 @@ install_helm() {
     if ! command -v helm &> /dev/null; then
         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
         chmod 700 get_helm.sh
-        ./get_helm.sh
+        ./get_helm.sh &>> $LOG_FILE
         rm -rf ./get_helm.sh
     fi
 }
@@ -416,12 +429,12 @@ install_istio() {
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "istio-system"
     if [ -z $NS_EXISTS ]; then
-        kubectl create namespace istio-system
+        kubectl create namespace istio-system &>> $LOG_FILE
     fi
 
     # Install base istio components
-    helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system
-    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -n istio-system
+    helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system &>> $LOG_FILE
+    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -n istio-system &>> $LOG_FILE
 
     info "Waiting for istiod to become ready..."
     ATTEMPTS=0
@@ -436,7 +449,7 @@ install_istio() {
 
     sed -i 's/type: LoadBalancer/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
     sed -i 's/type: ClusterIP/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
-    helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system
+    helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system &>> $LOG_FILE
 
     info "Waiting for istio ingress gateway to become ready..."
     ATTEMPTS=0
@@ -450,7 +463,7 @@ install_istio() {
     done
 
     ## Deploy Istio Gateways
-    cat <<EOF | k3s kubectl apply -f -
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
@@ -486,10 +499,18 @@ spec:
       mode: PASSTHROUGH
 EOF
 
+    echo ""
+    note "If you have a router / proxy that can redirect HTTPS (TLS) traffic to"
+    echo "      this node on port 30979, configure this now before prosceeding."
+    echo "      Otherwise a light NGing reverse proxy can be set up now that will forward"
+    echo "      traffic from port 443 to the cluster for you."
+    echo ""
+
     yes_no DO_PROXY_PORTS "Do you want to proxy traffic comming from port 443 to your Istio HTTPS ingress gateway?" 1
     if [ "$DO_PROXY_PORTS" == "yes" ]; then
+        info "Setting up NGinx..."
         if [ "$PSYSTEM" == "APT" ]; then
-            apt install nginx -y
+            apt install nginx -y &>> $LOG_FILE
         fi
 
         echo "
@@ -520,23 +541,29 @@ stream {
         if [ "$USE_FIREWALL" == "yes" ]; then
             if command -v ufw >/dev/null; then
                 if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
-                    ufw allow 443
+                    ufw allow 443 &>> $LOG_FILE
+                    echo ""
                 fi
             fi
         fi
         
-        systemctl enable nginx
-        systemctl start nginx
-        systemctl restart nginx
+        systemctl enable nginx &>> $LOG_FILE
+        systemctl start nginx &>> $LOG_FILE
+        systemctl restart nginx &>> $LOG_FILE
     else
+    yes_no ROUTER_READY "Did you set up your router / proxy to redirect traffic for your domain to port 30979 on this node?" 1
+    if [ "$ROUTER_READY" == "yes" ]; then
         # Enable firewall ports if necessary for istio HTTPS gateway ingress
         if [ "$USE_FIREWALL" == "yes" ]; then
             if command -v ufw >/dev/null; then
                 if [ "$(ufw status | grep '30979' | grep 'ALLOW')" == "" ]; then
-                    ufw allow 30979
+                    ufw allow 30979 &>> $LOG_FILE
                 fi
             fi
         fi
+    else
+        error "Could not finish the installation"
+        exit 1
     fi
 }
 
@@ -564,13 +591,13 @@ install_registry() {
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "mdos-registry"
     if [ -z $NS_EXISTS ]; then
-        kubectl create namespace mdos-registry
-        k3s kubectl create secret tls certs-secret --cert=$HOME/.mdos/ss_cert/$DOMAIN.crt --key=$HOME/.mdos/ss_cert/$DOMAIN.key -n mdos-registry
-        k3s kubectl create secret generic auth-secret --from-file=$HOME/.mdos/registry/auth/htpasswd -n mdos-registry
+        kubectl create namespace mdos-registry &>> $LOG_FILE
+        k3s kubectl create secret tls certs-secret --cert=$HOME/.mdos/ss_cert/$DOMAIN.crt --key=$HOME/.mdos/ss_cert/$DOMAIN.key -n mdos-registry &>> $LOG_FILE
+        k3s kubectl create secret generic auth-secret --from-file=$HOME/.mdos/registry/auth/htpasswd -n mdos-registry &>> $LOG_FILE
     fi
 
     # Deploy registry on k3s
-    cat <<EOF | k3s kubectl apply -n mdos-registry -f -
+    cat <<EOF | k3s kubectl apply -n mdos-registry -f &>> $LOG_FILE -
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -684,7 +711,7 @@ EOF
 \"insecure-registries\" : [\"registry.$DOMAIN\"]
 }" > ./daemon.json
         mv ./daemon.json /etc/docker/daemon.json
-        service docker restart
+        service docker restart &>> $LOG_FILE
 
         # Prepare k3s registry SSL containerd config
         if [ ! -d /etc/rancher/k3s ]; then
@@ -704,7 +731,7 @@ configs:
       key_file: $HOME/.mdos/ss_cert/$DOMAIN.key
       ca_file: $HOME/.mdos/ss_cert/$DOMAIN.crt" > /etc/rancher/k3s/registries.yaml
 
-        systemctl restart k3s
+        systemctl restart k3s &>> $LOG_FILE
     fi
 }
 
@@ -756,19 +783,19 @@ install_openresty() {
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "openresty"
     if [ -z $NS_EXISTS ]; then
-        kubectl create namespace openresty
+        kubectl create namespace openresty &>> $LOG_FILE
     fi
 
     # Build docker image & push to registry
     cd ./dep/openresty
-    docker build -t registry.$DOMAIN/openresty:latest .
+    docker build -t registry.$DOMAIN/openresty:latest . &>> $LOG_FILE
     docker save registry.$DOMAIN/openresty:latest > ./openresty.tar
-    k3s ctr image import ./openresty.tar
+    k3s ctr image import ./openresty.tar &>> $LOG_FILE
     rm -rf ./openresty.tar
     cd $_DIR
 
     # Create Code server endpoint to access it from within openresty namespace
-	cat <<EOF | k3s kubectl apply -n openresty -f -
+	cat <<EOF | k3s kubectl apply -n openresty -f &>> $LOG_FILE -
 apiVersion: v1
 kind: Service
 metadata:
@@ -829,13 +856,13 @@ EOF
 
     # Deploy openresty
     echo "$OPENRESTY_VAL" > ./target_values.yaml
-    mdos_deploy_app
+    mdos_deploy_app &>> $LOG_FILE
     rm -rf ./target_values.yaml
 
     # Now that the registry is up and running, we push the openresty image to the registry
     sleep 5
-    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin
-    docker push registry.$DOMAIN/openresty:latest
+    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
+    docker push registry.$DOMAIN/openresty:latest &>> $LOG_FILE
 }
 
 # ############################################
@@ -861,7 +888,7 @@ install_keycloak() {
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "keycloak"
     if [ -z $NS_EXISTS ]; then
-        kubectl create namespace keycloak
+        kubectl create namespace keycloak &>> $LOG_FILE
     fi
 
     # Compute remaining parameters
@@ -986,14 +1013,14 @@ install_keycloak() {
     }
 
     setup_keycloak_mdos_realm() {
-        curl -k --request POST \
+        curl -k -s --request POST \
             https://keycloak.$DOMAIN/admin/realms \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
             -d '{"id": "mdos","realm": "mdos","rememberMe": true, "enabled": true}'
         gen_api_token
-        curl -k --request POST \
+        curl -k -s --request POST \
             https://keycloak.$DOMAIN/admin/realms/mdos/clients \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
@@ -1120,13 +1147,13 @@ install_keycloak() {
             -H "Authorization: Bearer $KC_TOKEN" \
             https://keycloak.$DOMAIN/admin/realms/mdos/clients?clientId=openresty | jq '.[0].id' | sed 's/[\"]//g')
 
-        MDOS_CLIENT_SECRET=$(curl  -k -s --location --request GET \
+        MDOS_CLIENT_SECRET=$(curl -k -s --location --request GET \
             https://keycloak.$DOMAIN/admin/realms/mdos/clients/$MDOS_CLIENT_UUID/client-secret \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" | jq '.value' | sed 's/[\"]//g')
         gen_api_token
-        curl -k --request POST \
+        curl -k -s --request POST \
             https://keycloak.$DOMAIN/admin/realms/mdos/users \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
@@ -1149,13 +1176,12 @@ install_keycloak() {
                 }
             }'
         gen_api_token
-        MDOS_USER_UUID=$(curl -k --location --request GET \
+        MDOS_USER_UUID=$(curl -k -s --location --request GET \
             https://keycloak.$DOMAIN/admin/realms/mdos/users \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" | jq '.[0].id' | sed 's/[\"]//g')
 
-        
         curl -s -k --request PUT \
             https://keycloak.$DOMAIN/admin/realms/mdos/users/$MDOS_USER_UUID/reset-password \
             -H "Accept: application/json" \
@@ -1164,28 +1190,28 @@ install_keycloak() {
             --data-raw '{"type":"password","value":"'$KEYCLOAK_PASS'","temporary":false}'
     }
 
-    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin
+    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
 
     # Pull & push images to registry
-	docker pull postgres:13.2-alpine
-	docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine
-	docker push registry.$DOMAIN/postgres:13.2-alpine
+	docker pull postgres:13.2-alpine &>> $LOG_FILE
+	docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
+	docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
 
-	docker pull quay.io/keycloak/keycloak:18.0.2
-	docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2
-	docker push registry.$DOMAIN/keycloak:18.0.2
+	docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
+	docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
+	docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
 
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
     echo "$KEYCLOAK_VAL" > ./target_values.yaml
-    mdos_deploy_app
+    mdos_deploy_app &>> $LOG_FILE
     rm -rf ./target_values.yaml
 
     # Enable auth on openresty and reload config
     if [ -f $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled ]; then
         mv $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled $HOME/.mdos/openresty/conf.d/keycloak.conf
-        exec_in_pod openresty "openresty -s reload"
+        exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
     fi
 
 	# Configure API key
@@ -1203,8 +1229,170 @@ install_keycloak() {
 	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/default.conf
 	sed -i 's/oidcenabled = false/oidcenabled = true/g' $HOME/.mdos/openresty/conf.d/default.conf
 
-	exec_in_pod openresty "openresty -s reload"
+	exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
 }
+
+# ############################################
+# ################### MINIO ##################
+# ############################################
+install_minio() {
+    if [ -z $MINIO_ACCESS_KEY ]; then
+        user_input MINIO_ACCESS_KEY "Specify your ACCESS_KEY:" "REp9k63uJ6qTe4KRtMsU" 
+        set_env_step_data "MINIO_ACCESS_KEY" "$MINIO_ACCESS_KEY"
+    fi
+    if [ -z $MINIO_SECRET_KEY ]; then
+        user_input MINIO_SECRET_KEY "Specify your SECRET_KEY:" "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
+        set_env_step_data "MINIO_SECRET_KEY" "$MINIO_SECRET_KEY"
+    fi
+
+    mkdir -p $HOME/.mdos/minio
+
+    # Add minio HELM repository
+    helm repo add minio https://charts.min.io/ &>> $LOG_FILE
+
+    # Create specific storage class for backup
+    unset NS_EXISTS
+    check_kube_namespace NS_EXISTS "minio-backup-storage-class"
+    if [ -z $NS_EXISTS ]; then
+        kubectl create ns minio-backup-storage-class &>> $LOG_FILE
+    fi
+
+    # Install storage class provisionner for local path
+    if [ ! -d "./local-path-provisioner" ]; then
+        git clone https://github.com/rancher/local-path-provisioner.git &>> $LOG_FILE
+    fi
+
+    cd local-path-provisioner
+
+    # Set up minio specific storage class
+    helm upgrade --install minio-backup-storage-class \
+      --set storageClass.name=local-path-minio-backup \
+      --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
+      --set nodePathMap[0].paths[0]=$HOME/.mdos/minio \
+      ./deploy/chart/local-path-provisioner \
+      -n minio-backup-storage-class --atomic &>> $LOG_FILE
+
+    cd ..
+    rm -rf local-path-provisioner
+
+    # Create minio namespace
+    unset NS_EXISTS
+    check_kube_namespace NS_EXISTS "minio"
+    if [ -z $NS_EXISTS ]; then
+        kubectl create ns minio &>> $LOG_FILE
+    fi
+
+    # Install minio
+    helm upgrade --install minio \
+      --set persistence.enabled=true \
+      --set persistence.storageClass=local-path-minio-backup \
+      --set mode=standalone \
+      --set resources.requests.memory=1Gi \
+      --set rootUser=$MINIO_ACCESS_KEY \
+      --set rootPassword=$MINIO_SECRET_KEY \
+      minio/minio \
+      -n minio --atomic &>> $LOG_FILE
+
+    # Create virtual service for minio
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: minio-console
+  namespace: minio
+spec:
+  gateways:
+    - istio-system/http-gateway
+  hosts:
+    - minio-console.$DOMAIN
+  http:
+    - name: minio-console
+      route:
+        - destination:
+            host: minio-console.minio.svc.cluster.local
+            port:
+              number: 9001
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+    name: minio
+    namespace: minio
+spec:
+    gateways:
+        - istio-system/http-gateway
+    hosts:
+        - minio-backup.$DOMAIN
+    http:
+        - name: minio
+          route:
+              - destination:
+                    host: minio.minio.svc.cluster.local
+                    port:
+                        number: 9000
+EOF
+}
+
+# ############################################
+# ############### CODE SERVER ################
+# ############################################
+install_code_server() {
+    if [ -z $CS_USER ]; then
+        user_input CS_USER "For which user do you want to install code-server for:" "root"
+        set_env_step_data "CS_USER" "$CS_USER"
+    fi
+
+    if [ "$CS_USER" == "root" ]; then
+        CS_USER_HOME="$HOME"
+    else
+        CS_USER_HOME="/home/$CS_USER"
+    fi
+
+    CS_VERSION="4.5.0"
+
+    wget https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
+    tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz &>> $LOG_FILE
+    mkdir -p $CS_USER_HOME/bin
+    mkdir -p $CS_USER_HOME/data/
+    mv code-server-$CS_VERSION-linux-amd64 $CS_USER_HOME/bin/
+    mv $CS_USER_HOME/bin/code-server-$CS_VERSION-linux-amd64 $CS_USER_HOME/bin/code-server
+    
+    if [ "$CS_USER" != "root" ]; then
+        chmod +x $CS_USER_HOME/bin/code-server/code-server
+        chown -R $CS_USER:$CS_USER $CS_USER_HOME/bin/code-server
+        chown $CS_USER:$CS_USER $CS_USER_HOME/data/
+    fi
+
+    rm -rf code-server-$CS_VERSION-linux-amd64.tar.gz
+
+    echo "[Unit]
+Description=Code-Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=$CS_USER_HOME
+ExecStart=$CS_USER_HOME/bin/code-server/code-server --host 0.0.0.0 --user-data-dir $CS_USER_HOME/data
+TimeoutStartSec=0
+User=$CS_USER
+RemainAfterExit=yes
+Restart=always
+
+[Install]
+WantedBy=default.target" > /etc/systemd/system/code-server.service
+
+    systemctl daemon-reload &>> $LOG_FILE
+    systemctl enable code-server.service &>> $LOG_FILE
+
+    systemctl start code-server.service &>> $LOG_FILE
+
+    if command -v ufw >/dev/null; then
+        if [ "$(ufw status | grep '8080' | grep 'ALLOW')" == "" ]; then
+            ufw allow from 192.168.0.0/16 to any port 8080 &>> $LOG_FILE
+        fi
+    fi
+}
+
 
 
 # ###########################################################################################################################
@@ -1230,14 +1418,21 @@ install_keycloak() {
             echo "      You can use those certificates to allow your external tools to"
             echo "      communicate with the platform (ex. docker)."
             echo ""
+
+            if [ -z $GLOBAL_ERROR ]; then
+                info "The following services are available on the platform:"
+                echo "        - registry.$DOMAIN"
+                echo "        - keycloak.$DOMAIN"
+                echo "        - minio-console.$DOMAIN"
+                echo "        - minio.$DOMAIN"
+                if [ "$INSTALL_CS" == "yes" ]; then
+                    echo "        - cs.$DOMAIN"
+                fi
+                echo ""
+            fi
         fi
 
-        info "The following services are available on the platform:"
-        echo "        - registry.$DOMAIN"
-        echo "        - keycloak.$DOMAIN"
-        echo "        - minio-console.$DOMAIN"
-        echo "        - minio.$DOMAIN"
-        echo ""
+        note_print "Log details of the nstallation can be found here: $LOG_FILE"
 
         if [ -z $GLOBAL_ERROR ]; then
             info "Done!"
@@ -1249,6 +1444,7 @@ install_keycloak() {
   
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
+        info "Update system and install dependencies..."
         dependencies
         set_env_step_data "INST_STEP_DEPENDENCY" "1"
     fi
@@ -1301,37 +1497,65 @@ install_keycloak() {
 
     # INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
+        info "Installing K3S..."
         install_k3s
         set_env_step_data "INST_STEP_K3S" "1"
     fi
 
     # INSTALL HELM
     if [ -z $INST_STEP_HELM ]; then
+        info "Installing HELM..."
         install_helm
         set_env_step_data "INST_STEP_HELM" "1"
     fi
 
     # INSTALL ISTIO
     if [ -z $INST_STEP_ISTIO ]; then
+        info "Install Istio..."
         install_istio
         set_env_step_data "INST_STEP_ISTIO" "1"
     fi
 
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
+        info "Install Registry..."
         install_registry
+        echo ""
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
 
     # INSTALL OPENRESTY
     if [ -z $INST_STEP_OPENRESTY ]; then
+        info "Install Openresty..."
+        echo ""
         install_openresty
         set_env_step_data "INST_STEP_OPENRESTY" "1"
     fi
 
+    # INSTALL MINIO
+    if [ -z $INST_STEP_MINIO ]; then
+        info "Install Minio..."
+        echo ""
+        install_minio
+        set_env_step_data "INST_STEP_MINIO" "1"
+    fi
+
     # INSTALL KEYCLOAK
     if [ -z $INST_STEP_KEYCLOAK ]; then
+        info "Install Keycloak..."
+        echo ""
         install_keycloak
         set_env_step_data "INST_STEP_KEYCLOAK" "1"
+    fi
+
+    # INSTALL CODE-SERVER
+    if [ -z $INST_STEP_CS ]; then
+        yes_no INSTALL_CS "Do you wish to install code-server on this machine?" 1
+        if [ "$INSTALL_CS" == "yes" ]; then
+            info "Install Code-server..."
+            echo ""
+            install_code_server
+        fi
+        set_env_step_data "INST_STEP_CS" "1"
     fi
 )

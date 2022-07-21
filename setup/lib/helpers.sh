@@ -1,6 +1,7 @@
 #!/bin/bash
 
 c_info=""
+c_note=""
 c_error=""
 c_warn=""
 c_reset=""
@@ -13,6 +14,7 @@ if [ ! -z $TERM ] && [ "$TERM" != "dumb" ]; then
     command -v tput &> /dev/null || NO_TPUT=1
     if [ -z $NO_TPUT ]; then
         c_info=$(tput setaf 2)
+        c_note=$(tput setaf 6)
         c_error=$(tput setaf 160)
         c_warn=$(tput setaf 214)
         c_reset=$(tput sgr0)
@@ -48,6 +50,10 @@ info() {
     echo "${c_info}INFO${c_reset}: $1"
 }
 
+note() {
+    echo "${c_note}NOTE${c_reset}: $1"
+}
+
 error() {
     echo "${c_error}ERROR${c_reset}: $1"
 }
@@ -58,6 +64,10 @@ warn() {
 
 info_print() {
     echo "${c_info}$1${c_reset}"
+}
+
+note_print() {
+    echo "${c_note}$1${c_reset}"
 }
 
 error_print() {
