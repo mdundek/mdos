@@ -58,23 +58,26 @@ elif [ "$DISTRO" != "Ubuntu" ]; then
     exit 1
 fi
 
-# SET UP FIREWALL
+# SET UP FIREWALL (ufw)
 if command -v ufw >/dev/null; then
     if [ "$(ufw status | grep 'Status: active')" == "" ]; then
         yes_no USE_FIREWALL "Your firewall is currently disabled. Do you want to enable it now and configure the necessary ports for the platform?" 1
         if [ "$USE_FIREWALL" == "yes" ]; then
             ufw enable
         fi
+    else
+        USE_FIREWALL="yes"
     fi
-    if [ "$(ufw status | grep '22/tcp' | grep 'ALLOW')" == "" ]; then
-        ufw allow ssh
+
+    if [ "$USE_FIREWALL" == "yes" ]; then
+        if [ "$(ufw status | grep '22/tcp' | grep 'ALLOW')" == "" ]; then
+            ufw allow ssh
+        fi
     fi
-    if [ "$(ufw status | grep '8080' | grep 'ALLOW')" == "" ]; then
-        ufw allow from 192.168.0.0/16 to any port 8080
-    fi
-    if [ "$(ufw status | grep '30979' | grep 'ALLOW')" == "" ]; then
-        ufw allow 30979
-    fi
+    
+    # if [ "$(ufw status | grep '8080' | grep 'ALLOW')" == "" ]; then
+    #     ufw allow from 192.168.0.0/16 to any port 8080
+    # fi
 else
     warn "Configure your firewall to allow traffic on port 0.0.0.0:22, 0.0.0.0:30979 and 192.168.0.0/16:8080"
 fi
@@ -513,9 +516,27 @@ stream {
   }
 }" >> /etc/nginx/nginx.conf
 
+        # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
+        if [ "$USE_FIREWALL" == "yes" ]; then
+            if command -v ufw >/dev/null; then
+                if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
+                    ufw allow 443
+                fi
+            fi
+        fi
+        
         systemctl enable nginx
         systemctl start nginx
         systemctl restart nginx
+    else
+        # Enable firewall ports if necessary for istio HTTPS gateway ingress
+        if [ "$USE_FIREWALL" == "yes" ]; then
+            if command -v ufw >/dev/null; then
+                if [ "$(ufw status | grep '30979' | grep 'ALLOW')" == "" ]; then
+                    ufw allow 30979
+                fi
+            fi
+        fi
     fi
 }
 
