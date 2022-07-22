@@ -8,8 +8,8 @@ cd $_DIR
 # ############################################
 
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
-  exit 1
+    then echo "Please run as root"
+    exit 1
 fi
 
 source ./lib/components.sh
@@ -24,13 +24,13 @@ echo "
 
 # CHECK PACKAGE SYSTEM
 if command -v apt-get >/dev/null; then
-  PSYSTEM="APT"
+    PSYSTEM="APT"
 elif command -v yum >/dev/null; then
-  error "Unsupported linux package system"
-  exit 1
+    error "Unsupported linux package system"
+    exit 1
 else
-  error "Unsupported linux package system"
-  exit 1
+    error "Unsupported linux package system"
+    exit 1
 fi
 
 # DETERMINE DISTRO
@@ -225,8 +225,8 @@ exec_in_pod() {
         POD_NAME=`echo "$DEPLOYMENT_LINE" | awk 'END {print $2}'`
         NS_NAME=`echo "$DEPLOYMENT_LINE" | awk 'END {print $1}'`
         if [[ "$POD_NAME" == *"$1"* ]]; then
-           POD_CANDIDATES+=($POD_NAME)
-           NS_CANDIDATES+=($NS_NAME)
+            POD_CANDIDATES+=($POD_NAME)
+            NS_CANDIDATES+=($NS_NAME)
         fi
     done < <(kubectl get pod -A 2>/dev/null)
 
@@ -551,19 +551,20 @@ stream {
         systemctl start nginx &>> $LOG_FILE
         systemctl restart nginx &>> $LOG_FILE
     else
-    yes_no ROUTER_READY "Did you set up your router / proxy to redirect traffic for your domain to port 30979 on this node?" 1
-    if [ "$ROUTER_READY" == "yes" ]; then
-        # Enable firewall ports if necessary for istio HTTPS gateway ingress
-        if [ "$USE_FIREWALL" == "yes" ]; then
-            if command -v ufw >/dev/null; then
-                if [ "$(ufw status | grep '30979' | grep 'ALLOW')" == "" ]; then
-                    ufw allow 30979 &>> $LOG_FILE
+        yes_no ROUTER_READY "Did you set up your router / proxy to redirect traffic for your domain to port 30979 on this node?" 1
+        if [ "$ROUTER_READY" == "yes" ]; then
+            # Enable firewall ports if necessary for istio HTTPS gateway ingress
+            if [ "$USE_FIREWALL" == "yes" ]; then
+                if command -v ufw >/dev/null; then
+                    if [ "$(ufw status | grep '30979' | grep 'ALLOW')" == "" ]; then
+                        ufw allow 30979 &>> $LOG_FILE
+                    fi
                 fi
             fi
+        else
+            error "Could not finish the installation"
+            exit 1
         fi
-    else
-        error "Could not finish the installation"
-        exit 1
     fi
 }
 
@@ -1266,11 +1267,11 @@ install_minio() {
 
     # Set up minio specific storage class
     helm upgrade --install minio-backup-storage-class \
-      --set storageClass.name=local-path-minio-backup \
-      --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
-      --set nodePathMap[0].paths[0]=$HOME/.mdos/minio \
-      ./deploy/chart/local-path-provisioner \
-      -n minio-backup-storage-class --atomic &>> $LOG_FILE
+        --set storageClass.name=local-path-minio-backup \
+        --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
+        --set nodePathMap[0].paths[0]=$HOME/.mdos/minio \
+        ./deploy/chart/local-path-provisioner \
+        -n minio-backup-storage-class --atomic &>> $LOG_FILE
 
     cd ..
     rm -rf local-path-provisioner
@@ -1284,14 +1285,14 @@ install_minio() {
 
     # Install minio
     helm upgrade --install minio \
-      --set persistence.enabled=true \
-      --set persistence.storageClass=local-path-minio-backup \
-      --set mode=standalone \
-      --set resources.requests.memory=1Gi \
-      --set rootUser=$MINIO_ACCESS_KEY \
-      --set rootPassword=$MINIO_SECRET_KEY \
-      minio/minio \
-      -n minio --atomic &>> $LOG_FILE
+        --set persistence.enabled=true \
+        --set persistence.storageClass=local-path-minio-backup \
+        --set mode=standalone \
+        --set resources.requests.memory=1Gi \
+        --set rootUser=$MINIO_ACCESS_KEY \
+        --set rootPassword=$MINIO_SECRET_KEY \
+        minio/minio \
+        -n minio --atomic &>> $LOG_FILE
 
     # Create virtual service for minio
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
@@ -1411,6 +1412,9 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
 
     function _finally {
         # Cleanup
+        info "Cleaning up..."
+        docker rmi
+
         echo ""
         if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
             warn "You choose to generate a self signed certificate for this installation."
@@ -1441,7 +1445,7 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
 
     trap _catch ERR
     trap _finally EXIT
-  
+
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
         info "Update system and install dependencies..."
