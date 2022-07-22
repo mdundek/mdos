@@ -373,7 +373,7 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = $DOMAIN
 DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
-    /usr/bin/docker run -v $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
+    /usr/bin/docker run -v --rm $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
 
     cp $HOME/.mdos/ss_cert/$DOMAIN.key $HOME/.mdos/ss_cert/privkey.pem
     cp $HOME/.mdos/ss_cert/$DOMAIN.crt $HOME/.mdos/ss_cert/fullchain.pem
@@ -573,6 +573,7 @@ stream {
 # ############################################
 install_registry() {
     if [ -z $REG_USER ] || [ -z $REG_PASS ]; then
+        echo ""
         user_input REG_USER "Enter a registry username:"
         user_input REG_PASS "Enter a registry password:"
         REG_CREDS_B64=$(echo -n "$REG_USER:$REG_PASS" | base64 -w 0)
@@ -1413,7 +1414,13 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
     function _finally {
         # Cleanup
         info "Cleaning up..."
-        docker rmi
+        docker rmi registry.mydomain.com/openresty:latest &>> $LOG_FILE
+        docker rmi nginx:latest &>> $LOG_FILE
+        docker rmi openresty/openresty:alpine-fat &>> $LOG_FILE
+        docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
+        docker rmi registry.mydomain.com/keycloak:18.0.2 &>> $LOG_FILE
+        docker rmi postgres:13.2-alpine &>> $LOG_FILE
+        docker rmi registry.mydomain.com/postgres:13.2-alpine &>> $LOG_FILE
 
         echo ""
         if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
@@ -1479,6 +1486,7 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
         fi
 
         if [ -z $INST_STEP_CLOUDFLARE ]; then
+            info "Certbot installation and setup, including certificate generation..."
             setup_cloudflare_certbot
             set_env_step_data "INST_STEP_CLOUDFLARE" "1"
         fi
@@ -1492,6 +1500,7 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
         fi
 
         if [ -z $INST_STEP_SS_CERT ]; then
+            info "Generating self signed certificate..."
             generate_selfsigned
             set_env_step_data "INST_STEP_SS_CERT" "1"
         fi
