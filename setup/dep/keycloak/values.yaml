@@ -78,7 +78,6 @@ appComponents:
         hosts:
           - keycloak.mydomain.com
         protocol: https
-        oidcAuth: true
         openrestyIntercept: true
         tlsMatchHosts:
           - host: keycloak.mydomain.com
