@@ -43,9 +43,38 @@ spec:
     {{- end }}
       route:
       - destination:
+          {{- if .openrestyIntercept }}
           port:
-            number: {{ .svcPort }}
+            number: 443
+          host: mdos-openresty-openresty.openresty.svc.cluster.local
+          {{- else }}
+          port:
+            number: {{ .httpMatch.svcPort }}
           host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        {{- if .openrestyIntercept }}
+        headers:
+          request:
+            set:
+              {{- if .name }}
+              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
+              {{- else }}
+              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
+              {{- end }}
+              {{- if .oidcAuth }}
+              oidc: true
+              {{- end }}
+          response:
+            set:
+              {{- if .name }}
+              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
+              {{- else }}
+              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
+              {{- end }}
+              {{- if .oidcAuth }}
+              oidc: true
+              {{- end }}
+        {{- end }}
     {{- range $.serviceLinks }}
     - name: {{ $appName }}-{{ $appCompName }}-service-link
       match:
@@ -68,9 +97,38 @@ spec:
             - {{ .host }}
       route:
       - destination:
+          {{- if .openrestyIntercept }}
+          port:
+            number: 443
+          host: mdos-openresty-openresty.openresty.svc.cluster.local
+          {{- else }}
           port:
             number: {{ .svcPort }}
           host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        {{- if .openrestyIntercept }}
+        headers:
+          request:
+            set:
+              {{- if .name }}
+              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+              {{- else }}
+              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+              {{- end }}
+              {{- if .oidcAuth }}
+              oidc: true
+              {{- end }}
+          response:
+            set:
+              {{- if .name }}
+              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+              {{- else }}
+              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+              {{- end }}
+              {{- if .oidcAuth }}
+              oidc: true
+              {{- end }}
+        {{- end }}
     {{- end }}
   {{- else if eq .protocol "tcp" }}
   tcp:

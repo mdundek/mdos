@@ -161,6 +161,7 @@ appComponents:
         hosts:
           - chart-example.com
         protocol: https # http / https / tls / tcp
+        oidcAuth: true # Enable OIDC (SSO) authentication
         tlsMatchHosts: # only for tls/https route
           - host: chart-example.com
             port: 443
@@ -168,9 +169,9 @@ appComponents:
         httpMatch: # only for http route
           prefix: /
           port: 80
+          svcPort: 80
         tcpMatchPorts: # only for tcp
           - 27017
-        svcPort: 80
         tls: []
 
     config:

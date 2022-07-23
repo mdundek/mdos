@@ -498,7 +498,12 @@ spec:
     tls:
       mode: PASSTHROUGH
 EOF
+}
 
+# ############################################
+# ############### INSTALL NGINX ##############
+# ############################################
+install_nginx() {
     echo ""
     note "If you have a router / proxy that can redirect HTTPS (TLS) traffic to"
     echo "      this node on port 30979, configure this now before prosceeding."
@@ -512,22 +517,6 @@ EOF
         if [ "$PSYSTEM" == "APT" ]; then
             apt install nginx -y &>> $LOG_FILE
         fi
-
-        echo "
-server {
-    listen 80;
-    server_name *.$DOMAIN;
-    location / {
-        proxy_pass http://127.0.0.1:30978;
-        proxy_set_header HOST \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_pass_request_headers on;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-    }
-}" > /etc/nginx/sites-available/default
 
         echo "
 stream {
@@ -819,27 +808,27 @@ subsets:
     - ip: $LOCAL_IP
     ports:
       - port: 8080
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: openresty
-spec:
-  hosts:
-    - "*.$DOMAIN"
-  gateways:
-    - istio-system/https-gateway
-  tls:
-  - match:
-    - port: 443
-      sniHosts:
-      - "*.$DOMAIN"
-    route:
-    - destination:
-        host: mdos-openresty-openresty.openresty.svc.cluster.local
-        port:
-          number: 443
 EOF
+
+# apiVersion: networking.istio.io/v1beta1
+# kind: VirtualService
+# metadata:
+#   name: openresty
+# spec:
+#   hosts:
+#     - "*.$DOMAIN"
+#   gateways:
+#     - istio-system/https-gateway
+#   tls:
+#   - match:
+#     - port: 443
+#       sniHosts:
+#       - "*.$DOMAIN"
+#     route:
+#     - destination:
+#         host: mdos-openresty-openresty.openresty.svc.cluster.local
+#         port:
+#           number: 443
 
     # Prepare openresty conf.d file
     cp -R ./dep/openresty/conf.d $HOME/.mdos/openresty/
@@ -853,8 +842,8 @@ EOF
     sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/registry.conf
     sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/registry.conf
 
-    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
-    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
+    # sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
+    # sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
 
     # Deploy openresty
     echo "$OPENRESTY_VAL" > ./target_values.yaml
@@ -912,7 +901,8 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[1].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[2].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[3].value = "'$KEYCLOAK_PASS'"')
-
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].virtualService[0].hosts[0] = "keycloak.'$DOMAIN'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].virtualService[0].tlsMatchHosts[0].host = "keycloak.'$DOMAIN'"')
     if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
         KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/ss_cert/fullchain.pem"')
         KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "'$HOME'/.mdos/ss_cert/privkey.pem"')
@@ -1210,11 +1200,11 @@ install_keycloak() {
     mdos_deploy_app &>> $LOG_FILE
     rm -rf ./target_values.yaml
 
-    # Enable auth on openresty and reload config
-    if [ -f $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled ]; then
-        mv $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled $HOME/.mdos/openresty/conf.d/keycloak.conf
-        exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
-    fi
+    # # Enable auth on openresty and reload config
+    # if [ -f $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled ]; then
+    #     mv $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled $HOME/.mdos/openresty/conf.d/keycloak.conf
+    #     exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
+    # fi
 
 	# Configure API key
 	collect_api_key
@@ -1526,6 +1516,7 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
     if [ -z $INST_STEP_ISTIO ]; then
         info "Install Istio..."
         install_istio
+        install_nginx
         set_env_step_data "INST_STEP_ISTIO" "1"
     fi
 
