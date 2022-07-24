@@ -101,6 +101,8 @@ else
     touch $HOME/.mdos/install.dat
 fi
 
+CS_VERSION="4.5.0"
+
 # ############### UPDATE ENV DATA VALUE ################
 set_env_step_data() {
     sed -i '/'$1'=/d' $INST_ENV_PATH
@@ -373,7 +375,7 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = $DOMAIN
 DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
-    /usr/bin/docker run -v --rm $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
+    /usr/bin/docker run --rm -v $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
 
     cp $HOME/.mdos/ss_cert/$DOMAIN.key $HOME/.mdos/ss_cert/privkey.pem
     cp $HOME/.mdos/ss_cert/$DOMAIN.crt $HOME/.mdos/ss_cert/fullchain.pem
@@ -462,6 +464,8 @@ install_istio() {
         fi
     done
 
+    kubectl create -n istio-system secret tls httpbin-credential --key=$HOME/.mdos/ss_cert/privkey.pem --cert=$HOME/.mdos/ss_cert/fullchain.pem &>> $LOG_FILE
+
     ## Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
@@ -495,6 +499,27 @@ spec:
       protocol: HTTPS
     hosts:
     - "*"
+    tls:
+      mode: SIMPLE
+      credentialName: httpbin-credential
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: https-gateway-mdos
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "registry.$DOMAIN"
+    - "keycloak.$DOMAIN"
+    - "cs.$DOMAIN"
     tls:
       mode: PASSTHROUGH
 EOF
@@ -677,6 +702,26 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: mdos-registry
+spec:
+  hosts:
+    - "registry.$DOMAIN"
+  gateways:
+    - istio-system/https-gateway-mdos
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - "registry.$DOMAIN"
+    route:
+    - destination:
+        host: mdos-registry-v2.mdos-registry.svc.cluster.local
+        port:
+          number: 5000
 EOF
 
     # Wait untill registry is up and running
@@ -833,17 +878,11 @@ EOF
     # Prepare openresty conf.d file
     cp -R ./dep/openresty/conf.d $HOME/.mdos/openresty/
 
-    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/default.conf
-    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/default.conf
+    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
+    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
 
     sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
     sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
-
-    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/registry.conf
-    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/registry.conf
-
-    # sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
-    # sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled
 
     # Deploy openresty
     echo "$OPENRESTY_VAL" > ./target_values.yaml
@@ -1200,12 +1239,6 @@ install_keycloak() {
     mdos_deploy_app &>> $LOG_FILE
     rm -rf ./target_values.yaml
 
-    # # Enable auth on openresty and reload config
-    # if [ -f $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled ]; then
-    #     mv $HOME/.mdos/openresty/conf.d/keycloak.conf.disabled $HOME/.mdos/openresty/conf.d/keycloak.conf
-    #     exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
-    # fi
-
 	# Configure API key
 	collect_api_key
 
@@ -1217,9 +1250,9 @@ install_keycloak() {
 
 	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
 	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
-	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/default.conf
-	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/default.conf
-	sed -i 's/oidcenabled = false/oidcenabled = true/g' $HOME/.mdos/openresty/conf.d/default.conf
+	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
+	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
+	sed -i 's/oidcenabled = false/oidcenabled = true/g' $HOME/.mdos/openresty/conf.d/oidcproxy.conf
 
 	exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
 }
@@ -1340,9 +1373,9 @@ install_code_server() {
         CS_USER_HOME="/home/$CS_USER"
     fi
 
-    CS_VERSION="4.5.0"
+    
 
-    wget https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
+    wget -q https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
     tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz &>> $LOG_FILE
     mkdir -p $CS_USER_HOME/bin
     mkdir -p $CS_USER_HOME/data/
@@ -1404,13 +1437,17 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
     function _finally {
         # Cleanup
         info "Cleaning up..."
-        docker rmi registry.mydomain.com/openresty:latest &>> $LOG_FILE
-        docker rmi nginx:latest &>> $LOG_FILE
-        docker rmi openresty/openresty:alpine-fat &>> $LOG_FILE
-        docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
-        docker rmi registry.mydomain.com/keycloak:18.0.2 &>> $LOG_FILE
-        docker rmi postgres:13.2-alpine &>> $LOG_FILE
-        docker rmi registry.mydomain.com/postgres:13.2-alpine &>> $LOG_FILE
+        
+        rm -rf code-server-$CS_VERSION-linux-amd64.tar.gz
+        rm -rf code-server-$CS_VERSION-linux-amd64
+        
+        # docker rmi registry.mydomain.com/openresty:latest &>> $LOG_FILE
+        # docker rmi nginx:latest &>> $LOG_FILE
+        # docker rmi openresty/openresty:alpine-fat &>> $LOG_FILE
+        # docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
+        # docker rmi registry.mydomain.com/keycloak:18.0.2 &>> $LOG_FILE
+        # docker rmi postgres:13.2-alpine &>> $LOG_FILE
+        # docker rmi registry.mydomain.com/postgres:13.2-alpine &>> $LOG_FILE
 
         echo ""
         if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then

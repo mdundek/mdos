@@ -74,15 +74,14 @@ appComponents:
         path: /realms/master
         port: 8080
     virtualService:
-      - gateway: https-gateway
+      - gateway: https-gateway-mdos
         hosts:
           - keycloak.mydomain.com
         protocol: https
-        openrestyIntercept: true
         tlsMatchHosts:
           - host: keycloak.mydomain.com
-            port: 8443
-            svcPort: 443
+            port: 443
+            svcPort: 8443
     config:
       enabled: true
       data:

@@ -15,6 +15,8 @@ appComponents:
       portMappings:
         - port: 443
           containerPort: 443
+        - port: 80
+          containerPort: 80
     virtualService: []
     config:
       enabled: false
