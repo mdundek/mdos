@@ -5,6 +5,60 @@
 {{- $appCompName := lower .name }}
 {{- if .virtualService }}
 {{- range .virtualService }}
+{{- if .openrestyIntercept }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  {{- if .name }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .name }}
+  {{- else }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .protocol }}
+  {{- end }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isMdosApp }}
+    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+    mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appCompName | quote }}
+    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    {{- end }}
+spec:
+  hosts:
+    {{- range .hosts }}
+    - {{ . | quote -}}
+    {{- end }}
+  gateways:
+    - istio-system/https-gateway
+  {{- if or (eq .protocol "http") (eq .protocol "https") (eq .protocol "tls") }}
+    {{- $schema := "" }}
+    {{- if or (eq .protocol "http") }}
+    {{- $schema = "http" -}}
+    {{- else }}
+    {{- $schema = "https" -}}
+    {{- end }}
+  http:
+    - name: {{ $appName }}-{{ $appCompName }}-http
+      match:
+      - uri:
+          prefix: {{ .httpMatch.prefix }}
+        port: 443
+      rewrite:
+        uri: /
+      route:
+      - destination:
+          host: mdos-openresty-openresty.openresty.svc.cluster.local
+          port:
+            number: 80
+        headers:
+          request:
+            set:
+              kdns: {{ $schema }}://{{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+          response:
+            set:
+              kdns: {{ $schema }}://{{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+  {{- end }}
+{{- else }}
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -43,38 +97,9 @@ spec:
     {{- end }}
       route:
       - destination:
-          {{- if .openrestyIntercept }}
           port:
-            number: 443
-          host: mdos-openresty-openresty.openresty.svc.cluster.local
-          {{- else }}
-          port:
-            number: {{ .httpMatch.svcPort }}
+            number: {{ .svcPort }}
           host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
-          {{- end }}
-        {{- if .openrestyIntercept }}
-        headers:
-          request:
-            set:
-              {{- if .name }}
-              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
-              {{- else }}
-              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
-              {{- end }}
-              {{- if .oidcAuth }}
-              oidc: true
-              {{- end }}
-          response:
-            set:
-              {{- if .name }}
-              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
-              {{- else }}
-              kdns: http://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .httpMatch.svcPort }}
-              {{- end }}
-              {{- if .oidcAuth }}
-              oidc: true
-              {{- end }}
-        {{- end }}
     {{- range $.serviceLinks }}
     - name: {{ $appName }}-{{ $appCompName }}-service-link
       match:
@@ -97,38 +122,9 @@ spec:
             - {{ .host }}
       route:
       - destination:
-          {{- if .openrestyIntercept }}
-          port:
-            number: 443
-          host: mdos-openresty-openresty.openresty.svc.cluster.local
-          {{- else }}
           port:
             number: {{ .svcPort }}
           host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
-          {{- end }}
-        {{- if .openrestyIntercept }}
-        headers:
-          request:
-            set:
-              {{- if .name }}
-              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
-              {{- else }}
-              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
-              {{- end }}
-              {{- if .oidcAuth }}
-              oidc: true
-              {{- end }}
-          response:
-            set:
-              {{- if .name }}
-              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
-              {{- else }}
-              kdns: https://{{ $appName }}-{{ $appCompName }}-{{ .protocol }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
-              {{- end }}
-              {{- if .oidcAuth }}
-              oidc: true
-              {{- end }}
-        {{- end }}
     {{- end }}
   {{- else if eq .protocol "tcp" }}
   tcp:
@@ -142,6 +138,7 @@ spec:
           host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
     {{- end }}
   {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
