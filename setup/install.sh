@@ -855,26 +855,6 @@ subsets:
       - port: 8080
 EOF
 
-# apiVersion: networking.istio.io/v1beta1
-# kind: VirtualService
-# metadata:
-#   name: openresty
-# spec:
-#   hosts:
-#     - "*.$DOMAIN"
-#   gateways:
-#     - istio-system/https-gateway
-#   tls:
-#   - match:
-#     - port: 443
-#       sniHosts:
-#       - "*.$DOMAIN"
-#     route:
-#     - destination:
-#         host: mdos-openresty-openresty.openresty.svc.cluster.local
-#         port:
-#           number: 443
-
     # Prepare openresty conf.d file
     cp -R ./dep/openresty/conf.d $HOME/.mdos/openresty/
 
@@ -1372,8 +1352,6 @@ install_code_server() {
     else
         CS_USER_HOME="/home/$CS_USER"
     fi
-
-    
 
     wget -q https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
     tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz &>> $LOG_FILE
