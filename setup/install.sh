@@ -306,16 +306,9 @@ setup_cloudflare_certbot() {
     # Create certificate now (will require manual input)
     if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
         question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
-        echo "
-        certbot certonly /\
-            --dns-cloudflare /\
-            --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini /\
-            -d $DOMAIN /\
-            -d *.$DOMAIN /\
-            --email $CF_EMAIL /\
-            --agree-tos /\
-            -n
-"
+        echo ""
+        echo "certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
+        echo ""
 
         yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
         
