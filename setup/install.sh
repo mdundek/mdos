@@ -610,7 +610,7 @@ install_registry() {
     check_kube_namespace NS_EXISTS "mdos-registry"
     if [ -z $NS_EXISTS ]; then
         kubectl create namespace mdos-registry &>> $LOG_FILE
-        k3s kubectl create secret tls certs-secret --cert=$SSL_ROOT/$DOMAIN.crt --key=$SSL_ROOT/$DOMAIN.key -n mdos-registry &>> $LOG_FILE
+        k3s kubectl create secret tls certs-secret --cert=$SSL_ROOT/fullchain.pem --key=$SSL_ROOT/privkey.pem -n mdos-registry &>> $LOG_FILE
         k3s kubectl create secret generic auth-secret --from-file=$HOME/.mdos/registry/auth/htpasswd -n mdos-registry &>> $LOG_FILE
     fi
 
@@ -742,7 +742,7 @@ EOF
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         # Configure self signed cert with local docker deamon
         mkdir -p /etc/docker/certs.d/registry.$DOMAIN
-        cp $SSL_ROOT/$DOMAIN.crt /etc/docker/certs.d/registry.$DOMAIN/ca.crt
+        cp $SSL_ROOT/fullchain.pem /etc/docker/certs.d/registry.$DOMAIN/ca.crt
 
         # Allow self signed cert registry for docker daemon
         echo "{
@@ -765,9 +765,9 @@ configs:
       username: $REG_USER
       password: $REG_PASS
     tls:
-      cert_file: $SSL_ROOT/$DOMAIN.crt
-      key_file: $SSL_ROOT/$DOMAIN.key
-      ca_file: $SSL_ROOT/$DOMAIN.crt" > /etc/rancher/k3s/registries.yaml
+      cert_file: $SSL_ROOT/fullchain.pem
+      key_file: $SSL_ROOT/privkey.pem
+      ca_file: $SSL_ROOT/fullchain.pem" > /etc/rancher/k3s/registries.yaml
 
         systemctl restart k3s &>> $LOG_FILE
     fi
