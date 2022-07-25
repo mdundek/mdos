@@ -300,6 +300,9 @@ setup_cloudflare_certbot() {
     echo "dns_cloudflare_email = $CF_EMAIL" > $HOME/.mdos/cloudflare.ini
     echo "dns_cloudflare_api_key = $CF_TOKEN" >> $HOME/.mdos/cloudflare.ini
 
+    echo "dns_cloudflare_email = mdundek@gmail.com" > $HOME/.mdos/cloudflare.ini
+    echo "dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee" >> $HOME/.mdos/cloudflare.ini
+
     # Create certificate now (will require manual input)
     if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
         certbot certonly \
@@ -352,7 +355,7 @@ configure_etc_hosts() {
 # ######## GENERATE SELF SIGNED CERT #########
 # ############################################
 generate_selfsigned() {
-    mkdir -p $HOME/.mdos/ss_cert
+    mkdir -p $SSL_ROOT
 
     # Create registry self signed certificate for local domain 
     echo "[req]
@@ -374,12 +377,12 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 [alt_names]
 DNS.1 = $DOMAIN
-DNS.2 = *.$DOMAIN" > $HOME/.mdos/ss_cert/config.cfg
-    /usr/bin/docker run --rm -v $HOME/.mdos/ss_cert:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
+DNS.2 = *.$DOMAIN" > $SSL_ROOT/config.cfg
+    /usr/bin/docker run --rm -v $SSL_ROOT:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
 
-    cp $HOME/.mdos/ss_cert/$DOMAIN.key $HOME/.mdos/ss_cert/privkey.pem
-    cp $HOME/.mdos/ss_cert/$DOMAIN.crt $HOME/.mdos/ss_cert/fullchain.pem
-    chmod 655 $HOME/.mdos/ss_cert/*.pem
+    cp $SSL_ROOT/$DOMAIN.key $SSL_ROOT/privkey.pem
+    cp $SSL_ROOT/$DOMAIN.crt $SSL_ROOT/fullchain.pem
+    chmod 655 $SSL_ROOT/*.pem
 }
 
 # ############################################
@@ -464,7 +467,7 @@ install_istio() {
         fi
     done
 
-    kubectl create -n istio-system secret tls httpbin-credential --key=$HOME/.mdos/ss_cert/privkey.pem --cert=$HOME/.mdos/ss_cert/fullchain.pem &>> $LOG_FILE
+    kubectl create -n istio-system secret tls httpbin-credential --key=$SSL_ROOT/privkey.pem --cert=$SSL_ROOT/fullchain.pem &>> $LOG_FILE
 
     ## Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
@@ -607,7 +610,7 @@ install_registry() {
     check_kube_namespace NS_EXISTS "mdos-registry"
     if [ -z $NS_EXISTS ]; then
         kubectl create namespace mdos-registry &>> $LOG_FILE
-        k3s kubectl create secret tls certs-secret --cert=$HOME/.mdos/ss_cert/$DOMAIN.crt --key=$HOME/.mdos/ss_cert/$DOMAIN.key -n mdos-registry &>> $LOG_FILE
+        k3s kubectl create secret tls certs-secret --cert=$SSL_ROOT/$DOMAIN.crt --key=$SSL_ROOT/$DOMAIN.key -n mdos-registry &>> $LOG_FILE
         k3s kubectl create secret generic auth-secret --from-file=$HOME/.mdos/registry/auth/htpasswd -n mdos-registry &>> $LOG_FILE
     fi
 
@@ -739,7 +742,7 @@ EOF
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         # Configure self signed cert with local docker deamon
         mkdir -p /etc/docker/certs.d/registry.$DOMAIN
-        cp $HOME/.mdos/ss_cert/$DOMAIN.crt /etc/docker/certs.d/registry.$DOMAIN/ca.crt
+        cp $SSL_ROOT/$DOMAIN.crt /etc/docker/certs.d/registry.$DOMAIN/ca.crt
 
         # Allow self signed cert registry for docker daemon
         echo "{
@@ -762,9 +765,9 @@ configs:
       username: $REG_USER
       password: $REG_PASS
     tls:
-      cert_file: $HOME/.mdos/ss_cert/$DOMAIN.crt
-      key_file: $HOME/.mdos/ss_cert/$DOMAIN.key
-      ca_file: $HOME/.mdos/ss_cert/$DOMAIN.crt" > /etc/rancher/k3s/registries.yaml
+      cert_file: $SSL_ROOT/$DOMAIN.crt
+      key_file: $SSL_ROOT/$DOMAIN.key
+      ca_file: $SSL_ROOT/$DOMAIN.crt" > /etc/rancher/k3s/registries.yaml
 
         systemctl restart k3s &>> $LOG_FILE
     fi
@@ -783,15 +786,10 @@ install_openresty() {
 
     # Create / update openresty values.yaml file
     OPENRESTY_VAL=$(cat ./dep/openresty/values.yaml)
-
-    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
-        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/ss_cert/fullchain.pem"')
-        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "'$HOME'/.mdos/ss_cert/privkey.pem"')
-    else
-        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "/etc/letsencrypt/live/'"$DOMAIN"'/fullchain.pem"')
-        OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "/etc/letsencrypt/live/'"$DOMAIN"'/privkey.pem"')
-    fi
-
+   
+    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "'$SSL_ROOT'/fullchain.pem"')
+    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "'$SSL_ROOT'/privkey.pem"')
+   
     OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].mountPath = "/etc/letsencrypt/live/'"$DOMAIN"'/fullchain.pem"')
     OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].mountPath = "/etc/letsencrypt/live/'"$DOMAIN"'/privkey.pem"')
     OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[2].hostPath = "'$HOME'/.mdos/openresty/conf.d"')
@@ -875,13 +873,8 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[3].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].virtualService[0].hosts[0] = "keycloak.'$DOMAIN'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].virtualService[0].tlsMatchHosts[0].host = "keycloak.'$DOMAIN'"')
-    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
-        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/ss_cert/fullchain.pem"')
-        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "'$HOME'/.mdos/ss_cert/privkey.pem"')
-    else
-        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "/etc/letsencrypt/live/'$DOMAIN'/fullchain.pem"')
-        KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "/etc/letsencrypt/live/'$DOMAIN'/privkey.pem"')
-    fi
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "'$SSL_ROOT'/fullchain.pem"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "'$SSL_ROOT'/privkey.pem"')
 
     collect_api_key() {
         echo ""
@@ -1455,7 +1448,7 @@ EOF
         echo ""
         if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
             warn "You choose to generate a self signed certificate for this installation."
-            echo "      All certificates are located under the folder $HOME/.mdos/ss_cert."
+            echo "      All certificates are located under the folder $SSL_ROOT."
             echo "      You can use those certificates to allow your external tools to"
             echo "      communicate with the platform (ex. docker)."
             echo ""
@@ -1510,6 +1503,8 @@ EOF
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
+        SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
+
         if [ -z $DOMAIN ]; then
             user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
             set_env_step_data "DOMAIN" "$DOMAIN"
@@ -1524,6 +1519,8 @@ EOF
         error "Not implemented yet"
         exit 1
     else
+        SSL_ROOT=$HOME/.mdos/ss_cert
+
         if [ -z $DOMAIN ]; then
             user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
             set_env_step_data "DOMAIN" "$DOMAIN"
@@ -1546,11 +1543,11 @@ EOF
     fi
 
     # INSTALL HELM
-    if [ -z $INST_STEP_HELM ]; then
-        info "Installing HELM..."
-        install_helm
-        set_env_step_data "INST_STEP_HELM" "1"
-    fi
+    # if [ -z $INST_STEP_HELM ]; then
+    #     info "Installing HELM..."
+    #     install_helm
+    #     set_env_step_data "INST_STEP_HELM" "1"
+    # fi
 
     # INSTALL ISTIO
     if [ -z $INST_STEP_ISTIO ]; then

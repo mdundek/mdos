@@ -54,9 +54,15 @@ spec:
           request:
             set:
               kdns: {{ $schema }}://{{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+              {{- if .oidcAuth }}
+              oidc: "true"
+              {{- end }}
           response:
             set:
               kdns: {{ $schema }}://{{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
+              {{- if .oidcAuth }}
+              oidc: "true"
+              {{- end }}
   {{- end }}
 {{- else }}
 ---
