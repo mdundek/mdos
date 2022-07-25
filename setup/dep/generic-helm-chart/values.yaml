@@ -173,16 +173,17 @@ appComponents:
         tcpMatchPorts: # only for tcp
           - 27017
         
-      # - openrestyIntercept: true
-      #   oidcAuth: true
-      #   hosts:
-      #     - chart-example.com
-      #   protocol: https
-      #   httpMatch:
-      #     prefix: /
-      #   tlsMatchHosts:
-      #     - host: chart-example.com
-      #   svcPort: 8443
+    # virtualService:
+    # - openrestyIntercept: true
+    #   oidcAuth: true
+    #   hosts:
+    #     - chart-example.com
+    #   protocol: http
+    #   httpMatch:
+    #     prefix: /
+    #   tlsMatchHosts:
+    #     - host: chart-example.com
+    #   svcPort: 8443
 
     config:
       enabled: false

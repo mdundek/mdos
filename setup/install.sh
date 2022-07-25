@@ -775,24 +775,6 @@ configs:
 # ################ OPENRESTY #################
 # ############################################
 install_openresty() {
-    if [ -z $LOCAL_IP ]; then
-        if command -v getent >/dev/null; then
-            if command -v ip >/dev/null; then
-                # Get the default network interface in use to connect to the internet
-                host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
-                INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
-                LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-            fi
-        fi
-
-        if [ -z $LOC_IP ]; then
-            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):"
-        else
-            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):" "$LOC_IP"
-        fi
-        set_env_step_data "LOCAL_IP" "$LOCAL_IP"
-    fi
-
     # Set domains that should not use basic auth here
     NO_AUTH_DOMAINS="minio-console.$DOMAIN minio-backup.$DOMAIN"
 
@@ -830,39 +812,11 @@ install_openresty() {
     rm -rf ./openresty.tar
     cd $_DIR
 
-    # Create Code server endpoint to access it from within openresty namespace
-	cat <<EOF | k3s kubectl apply -n openresty -f &>> $LOG_FILE -
-apiVersion: v1
-kind: Service
-metadata:
-   name: codeserver-service-egress
-spec:
-   clusterIP: None
-   ports:
-   - protocol: TCP
-     port: 8080
-     targetPort: 8080
-   type: ClusterIP
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: codeserver-service-egress
-subsets:
-  - addresses:
-    - ip: $LOCAL_IP
-    ports:
-      - port: 8080
-EOF
-
     # Prepare openresty conf.d file
     cp -R ./dep/openresty/conf.d $HOME/.mdos/openresty/
 
     sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
     sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
-
-    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
-    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
 
     # Deploy openresty
     echo "$OPENRESTY_VAL" > ./target_values.yaml
@@ -1342,17 +1296,36 @@ EOF
 # ############### CODE SERVER ################
 # ############################################
 install_code_server() {
+    # Collect information
     if [ -z $CS_USER ]; then
         user_input CS_USER "For which user do you want to install code-server for:" "root"
         set_env_step_data "CS_USER" "$CS_USER"
     fi
 
+    if [ -z $LOCAL_IP ]; then
+        if command -v getent >/dev/null; then
+            if command -v ip >/dev/null; then
+                # Get the default network interface in use to connect to the internet
+                host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
+                INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
+                LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+            fi
+        fi
+        if [ -z $LOC_IP ]; then
+            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):"
+        else
+            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):" "$LOC_IP"
+        fi
+        set_env_step_data "LOCAL_IP" "$LOCAL_IP"
+    fi
+    
     if [ "$CS_USER" == "root" ]; then
         CS_USER_HOME="$HOME"
     else
         CS_USER_HOME="/home/$CS_USER"
     fi
 
+    # Install Code-server locally
     wget -q https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
     tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz &>> $LOG_FILE
     mkdir -p $CS_USER_HOME/bin
@@ -1368,6 +1341,7 @@ install_code_server() {
 
     rm -rf code-server-$CS_VERSION-linux-amd64.tar.gz
 
+    # Configure CS startup service
     echo "[Unit]
 Description=Code-Server
 After=network.target
@@ -1389,11 +1363,63 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
 
     systemctl start code-server.service &>> $LOG_FILE
 
+    # Add firewall rule
     if command -v ufw >/dev/null; then
         if [ "$(ufw status | grep '8080' | grep 'ALLOW')" == "" ]; then
             ufw allow from 192.168.0.0/16 to any port 8080 &>> $LOG_FILE
         fi
     fi
+
+    # Create Code server endpoint to access it from within openresty namespace &nd VirtualService to use Openresty OIDC authenticator
+	cat <<EOF | k3s kubectl apply -n openresty -f &>> $LOG_FILE -
+apiVersion: v1
+kind: Service
+metadata:
+   name: codeserver-service-egress
+spec:
+   clusterIP: None
+   ports:
+   - protocol: TCP
+     port: 8080
+     targetPort: 8080
+   type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: codeserver-service-egress
+subsets:
+  - addresses:
+    - ip: $LOCAL_IP
+    ports:
+      - port: 8080
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: code-server
+  namespace: openresty
+spec:
+  gateways:
+  - istio-system/https-gateway
+  hosts:
+  - cs.$DOMAIN
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: mdos-openresty-openresty.openresty.svc.cluster.local
+        port:
+          number: 80
+      headers:
+        request:
+          set:
+            kdns: http://codeserver-service-egress.openresty.svc.cluster.local:8080
+        response:
+          set:
+            kdns: http://codeserver-service-egress.openresty.svc.cluster.local:8080
+EOF
 }
 
 

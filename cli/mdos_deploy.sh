@@ -7,7 +7,7 @@ cd $_DIR
 
 source .env
 
-cd ../files/generic-helm-chart
+cd ../setup/dep/generic-helm-chart
 GEN_HELP_CHART_PATH=$(pwd)
 cd $_DIR
 
