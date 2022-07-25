@@ -482,7 +482,7 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "*"
+    - "*.$DOMAIN"
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
@@ -498,7 +498,7 @@ spec:
       name: https
       protocol: HTTPS
     hosts:
-    - "*"
+    - "*.$DOMAIN"
     tls:
       mode: SIMPLE
       credentialName: httpbin-credential
@@ -519,7 +519,6 @@ spec:
     hosts:
     - "registry.$DOMAIN"
     - "keycloak.$DOMAIN"
-    - "cs.$DOMAIN"
     tls:
       mode: PASSTHROUGH
 EOF
