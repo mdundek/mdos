@@ -1433,14 +1433,36 @@ EOF
         
         rm -rf code-server-$CS_VERSION-linux-amd64.tar.gz
         rm -rf code-server-$CS_VERSION-linux-amd64
-        
-        # docker rmi registry.mydomain.com/openresty:latest &>> $LOG_FILE
-        # docker rmi nginx:latest &>> $LOG_FILE
-        # docker rmi openresty/openresty:alpine-fat &>> $LOG_FILE
-        # docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
-        # docker rmi registry.mydomain.com/keycloak:18.0.2 &>> $LOG_FILE
-        # docker rmi postgres:13.2-alpine &>> $LOG_FILE
-        # docker rmi registry.mydomain.com/postgres:13.2-alpine &>> $LOG_FILE
+
+        ALL_IMAGES="$(docker images)"
+
+        if [ "$(echo "$ALL_IMAGES" | grep "registry.mydomain.com/openresty" | grep "latest")" != "" ]; then
+            docker rmi registry.mydomain.com/openresty:latest &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "nginx" | grep "latest")" != "" ]; then
+            docker rmi nginx:latest &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "openresty/openresty" | grep "alpine-fat")" != "" ]; then
+            docker rmi openresty/openresty:alpine-fat &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "quay.io/keycloak/keycloak" | grep "18.0.2")" != "" ]; then
+            docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "registry.mydomain.com/keycloak" | grep "18.0.2")" != "" ]; then
+            docker rmi registry.mydomain.com/keycloak:18.0.2 &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "postgres" | grep "13.2-alpine")" != "" ]; then
+            docker rmi postgres:13.2-alpine &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "registry.mydomain.com/postgres" | grep "13.2-alpine")" != "" ]; then
+            docker rmi registry.mydomain.com/postgres:13.2-alpine &>> $LOG_FILE
+        fi
 
         echo ""
         if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
