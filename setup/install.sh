@@ -305,6 +305,8 @@ setup_cloudflare_certbot() {
 
     # Create certificate now (will require manual input)
     if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
+        question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
+        echo "
         certbot certonly \
             --dns-cloudflare \
             --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini \
@@ -312,8 +314,22 @@ setup_cloudflare_certbot() {
             -d *.$DOMAIN \
             --email $CF_EMAIL \
             --agree-tos \
-            -n &>> $LOG_FILE
+            -n
+"
+        yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation"
+        if [ "$CERT_OK" == "yes" ]; then
+            if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
+                error "Could not find generated certificate under: /etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+                exit 1
+            fi
+        else
+            warn "Aborting installation"
+            exit 1
+        fi
+        
     fi
+
+    crontab -e
 
     mkdir -p $HOME/.mdos/cron
     # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
