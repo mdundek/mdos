@@ -1174,11 +1174,8 @@ install_keycloak() {
 	gen_api_token
 	setup_keycloak_mdos_realm
 
-	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
-	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/codeserver.conf
 	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
 	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
-	sed -i 's/oidcenabled = false/oidcenabled = true/g' $HOME/.mdos/openresty/conf.d/oidcproxy.conf
 
 	exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
 }
