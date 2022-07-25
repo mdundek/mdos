@@ -1551,7 +1551,7 @@ EOF
 
         if [ -z $INST_STEP_CLOUDFLARE ]; then
             info "Certbot installation and setup, including certificate generation..."
-            # setup_cloudflare_certbot
+            setup_cloudflare_certbot
             set_env_step_data "INST_STEP_CLOUDFLARE" "1"
         fi
     elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
