@@ -322,6 +322,7 @@ setup_cloudflare_certbot() {
                 error "Could not find generated certificate under: /etc/letsencrypt/live/$DOMAIN/fullchain.pem"
                 exit 1
             fi
+            chmod 655 /etc/letsencrypt/archive/$DOMAIN/*.pem
         else
             warn "Aborting installation"
             exit 1
@@ -330,7 +331,9 @@ setup_cloudflare_certbot() {
     fi
 
     # TODO: Need fixing if chrontab does not exist for user: root
-    crontab -e
+    if [ ! -f /var/spool/cron/crontabs/root ]; then
+        crontab -e
+    fi
 
     mkdir -p $HOME/.mdos/cron
     # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
@@ -407,7 +410,7 @@ DNS.2 = *.$DOMAIN" > $SSL_ROOT/config.cfg
 # ############################################
 install_k3s() {
     if ! command -v k3s &> /dev/null; then
-        curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.168.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664" sh - &>> $LOG_FILE
+        curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.169.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664" sh - &>> $LOG_FILE
         # Install Calico
         kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml &>> $LOG_FILE
         kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml &>> $LOG_FILE
@@ -1179,6 +1182,7 @@ install_keycloak() {
 
     # Deploy keycloak
     echo "$KEYCLOAK_VAL" > ./target_values.yaml
+
     mdos_deploy_app &>> $LOG_FILE
     rm -rf ./target_values.yaml
 
@@ -1355,7 +1359,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=$CS_USER_HOME
-ExecStart=$CS_USER_HOME/bin/code-server/code-server --host 0.0.0.0 --user-data-dir $CS_USER_HOME/data
+ExecStart=$CS_USER_HOME/bin/code-server/code-server --host 0.0.0.0 --user-data-dir $CS_USER_HOME/data --auth none
 TimeoutStartSec=0
 User=$CS_USER
 RemainAfterExit=yes
