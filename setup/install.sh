@@ -329,6 +329,7 @@ setup_cloudflare_certbot() {
         
     fi
 
+    # TODO: Need fixing if chrontab does not exist for user: root
     crontab -e
 
     mkdir -p $HOME/.mdos/cron
@@ -1578,11 +1579,11 @@ EOF
     fi
 
     # INSTALL HELM
-    # if [ -z $INST_STEP_HELM ]; then
-    #     info "Installing HELM..."
-    #     install_helm
-    #     set_env_step_data "INST_STEP_HELM" "1"
-    # fi
+    if [ -z $INST_STEP_HELM ]; then
+        info "Installing HELM..."
+        install_helm
+        set_env_step_data "INST_STEP_HELM" "1"
+    fi
 
     # INSTALL ISTIO
     if [ -z $INST_STEP_ISTIO ]; then
