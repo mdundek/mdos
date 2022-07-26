@@ -327,7 +327,16 @@ setup_cloudflare_certbot() {
 
     if [ ! -f /var/spool/cron/crontabs/root ]; then
         # TODO: Need fixing if chrontab creation, opens editor and breaks install script
-        
+        yes_no CRON_OK "Please create a crontab for user 'root' in a separate terminal using the command: sudo crontab -e. Once done, select 'yes'" 1
+        if [ "$CRON_OK" == "yes" ]; then
+            if [ ! -f /var/spool/cron/crontabs/root ]; then
+                error "Could not find root user crontab"
+                exit 1
+            fi
+        else
+            warn "Aborting installation"
+            exit 1
+        fi
     fi
 
     mkdir -p $HOME/.mdos/cron
