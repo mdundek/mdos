@@ -1440,9 +1440,11 @@ spec:
         request:
           set:
             kdns: http://codeserver-service-egress.openresty.svc.cluster.local:8080
+            oidc: "true"
         response:
           set:
             kdns: http://codeserver-service-egress.openresty.svc.cluster.local:8080
+            oidc: "true"
 EOF
 }
 
