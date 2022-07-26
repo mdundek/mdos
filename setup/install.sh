@@ -1471,8 +1471,16 @@ EOF
 
         ALL_IMAGES="$(docker images)"
 
-        if [ "$(echo "$ALL_IMAGES" | grep "registry.mydomain.com/openresty" | grep "latest")" != "" ]; then
-            docker rmi registry.mydomain.com/openresty:latest &>> $LOG_FILE
+        if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/openresty" | grep "latest")" != "" ]; then
+            docker rmi registry.$DOMAIN/openresty:latest &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/keycloak" | grep "18.0.2")" != "" ]; then
+            docker rmi registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/postgres" | grep "13.2-alpine")" != "" ]; then
+            docker rmi registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
         fi
 
         if [ "$(echo "$ALL_IMAGES" | grep "nginx" | grep "latest")" != "" ]; then
@@ -1487,16 +1495,8 @@ EOF
             docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
         fi
 
-        if [ "$(echo "$ALL_IMAGES" | grep "registry.mydomain.com/keycloak" | grep "18.0.2")" != "" ]; then
-            docker rmi registry.mydomain.com/keycloak:18.0.2 &>> $LOG_FILE
-        fi
-
         if [ "$(echo "$ALL_IMAGES" | grep "postgres" | grep "13.2-alpine")" != "" ]; then
             docker rmi postgres:13.2-alpine &>> $LOG_FILE
-        fi
-
-        if [ "$(echo "$ALL_IMAGES" | grep "registry.mydomain.com/postgres" | grep "13.2-alpine")" != "" ]; then
-            docker rmi registry.mydomain.com/postgres:13.2-alpine &>> $LOG_FILE
         fi
 
         echo ""
