@@ -423,7 +423,7 @@ install_k3s() {
 
     # Install Calico
     kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml &>> $LOG_FILE
-    cat <<EOF | k3s kubectl apply -f -
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: operator.tigera.io/v1
 kind: Installation
 metadata:
