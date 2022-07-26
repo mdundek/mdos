@@ -307,7 +307,7 @@ setup_cloudflare_certbot() {
     if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
         question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
         echo ""
-        echo "certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
+        echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
         echo ""
 
         yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
@@ -325,16 +325,16 @@ setup_cloudflare_certbot() {
         
     fi
 
-    # TODO: Need fixing if chrontab does not exist for user: root
     if [ ! -f /var/spool/cron/crontabs/root ]; then
-        crontab -e
+        # TODO: Need fixing if chrontab creation, opens editor and breaks install script
+        
     fi
 
     mkdir -p $HOME/.mdos/cron
     # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
     cp $_DIR/dep/cron/91_renew_certbot.sh $HOME/.mdos/cron/91_renew_certbot.sh
     if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
-        (crontab -l ; echo "5 8 * * * $HOME/.mdos/cron/91_renew_certbot.sh")| crontab -
+        (crontab -l 2>/dev/null; echo "5 8 * * * $HOME/.mdos/cron/91_renew_certbot.sh") | crontab -
     fi
 
     # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
@@ -342,7 +342,7 @@ setup_cloudflare_certbot() {
     if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
         yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
         if [ "$IP_UPDATE" == "yes" ]; then
-            (crontab -l ; echo "5 6 * * * $HOME/.mdos/cron/90_update_ip_cloudflare.sh")| crontab -
+            (crontab -l 2>/dev/null; echo "5 6 * * * $HOME/.mdos/cron/90_update_ip_cloudflare.sh") | crontab -
         fi
     fi
 
@@ -414,7 +414,27 @@ install_k3s() {
 
     # Install Calico
     kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml &>> $LOG_FILE
-    kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml &>> $LOG_FILE
+    cat <<EOF | k3s kubectl apply -f -
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    ipPools:
+    - blockSize: 26
+      cidr: 192.169.0.0/16
+      encapsulation: VXLANCrossSubnet
+      natOutgoing: Enabled
+      nodeSelector: all()
+    containerIPForwarding: "Enabled"
+---
+apiVersion: operator.tigera.io/v1
+kind: APIServer 
+metadata: 
+  name: default 
+spec: {}
+EOF
 
     info "Waiting for kubernetes to become ready..."
     ATTEMPTS=0
@@ -426,7 +446,12 @@ install_k3s() {
             exit 1
         fi
     done
+
+    # Restart codedns to make sure external dns resolution works
+    kubectl -n kube-system rollout restart deployment coredns
+    sleep 3
 }
+
 
 # ############################################
 # ############### INSTALL HELM ###############
@@ -1213,11 +1238,11 @@ install_minio() {
     # Add minio HELM repository
     helm repo add minio https://charts.min.io/ &>> $LOG_FILE
 
-    # Create specific storage class for backup
+    # Create minio namespace
     unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "minio-backup-storage-class"
+    check_kube_namespace NS_EXISTS "minio"
     if [ -z $NS_EXISTS ]; then
-        kubectl create ns minio-backup-storage-class &>> $LOG_FILE
+        kubectl create ns minio &>> $LOG_FILE
     fi
 
     # Install storage class provisionner for local path
@@ -1233,17 +1258,12 @@ install_minio() {
         --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
         --set nodePathMap[0].paths[0]=$HOME/.mdos/minio \
         ./deploy/chart/local-path-provisioner \
-        -n minio-backup-storage-class --atomic &>> $LOG_FILE
+        -n minio --atomic &>> $LOG_FILE
 
     cd ..
     rm -rf local-path-provisioner
 
-    # Create minio namespace
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "minio"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create ns minio &>> $LOG_FILE
-    fi
+    
 
     # Install minio
     helm upgrade --install minio \
