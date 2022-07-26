@@ -1568,12 +1568,12 @@ EOF
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
-        SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
-
         if [ -z $DOMAIN ]; then
             user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
             set_env_step_data "DOMAIN" "$DOMAIN"
         fi
+
+        SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
 
         if [ -z $INST_STEP_CLOUDFLARE ]; then
             info "Certbot installation and setup..."
@@ -1584,12 +1584,12 @@ EOF
         error "Not implemented yet"
         exit 1
     else
-        SSL_ROOT=$HOME/.mdos/ss_cert
-
         if [ -z $DOMAIN ]; then
             user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
             set_env_step_data "DOMAIN" "$DOMAIN"
         fi
+
+        SSL_ROOT=$HOME/.mdos/ss_cert
 
         if [ -z $INST_STEP_SS_CERT ]; then
             info "Generating self signed certificate..."
