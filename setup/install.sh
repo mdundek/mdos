@@ -457,7 +457,7 @@ EOF
     done
 
     # Restart codedns to make sure external dns resolution works
-    kubectl -n kube-system rollout restart deployment coredns
+    kubectl -n kube-system rollout restart deployment coredns &>> $LOG_FILE
     sleep 3
 }
 
