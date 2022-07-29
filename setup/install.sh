@@ -609,7 +609,7 @@ extraArgs:
   oidc-issuer-url: $OIDC_ISSUER_URL
 config:
   clientID: \"$CLIENT_ID\"
-  clientSecret: \"$CLIENT_SECRET\"
+  clientSecret: \"$MDOS_CLIENT_SECRET\"
   cookieSecure: true
   cookieSecret: \"$COOKIE_SECRET\"
   cookieName: \"_oauth2_proxy_isio\"" > $_DIR/oauth2-proxy-values.yaml
@@ -618,7 +618,7 @@ config:
       --version 6.0.1 \
       --values $_DIR/oauth2-proxy-values.yaml \
       --set config.clientID=$CLIENT_ID \
-      --set config.clientSecret=$CLIENT_SECRET \
+      --set config.clientSecret=$MDOS_CLIENT_SECRET \
       --set config.cookieSecret=$COOKIE_SECRET \
       --set extraArgs.oidc-issuer-url=$OIDC_ISSUER_URL \
       --set extraArgs.whitelist-domain=.$DOMAIN \
@@ -1219,13 +1219,6 @@ install_keycloak() {
 
 	gen_api_token
 	setup_keycloak_mdos_realm
-
-    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
-    OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
-    OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
-    COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
-    CLIENT_ID="mdos"
-    CLIENT_SECRET="$MDOS_CLIENT_SECRET"
 }
 
 # ############################################
@@ -1270,8 +1263,6 @@ install_minio() {
 
     cd ..
     rm -rf local-path-provisioner
-
-    
 
     # Install minio
     helm upgrade --install minio \
@@ -1403,7 +1394,7 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
     fi
 
     # Load nginx / code-server proxy image to registry
-    docker load < ./dep/code-server/code-server.tar
+    docker load < ./dep/code-server/code-server-nginx.tar
 
     # Create Code server endpoint to access it from within mdos namespace
     unset NS_EXISTS
@@ -1717,8 +1708,16 @@ EOF
         info "Install Keycloak..."
         echo ""
         install_keycloak
+        set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
         set_env_step_data "INST_STEP_KEYCLOAK" "1"
     fi
+
+    # LOAD OAUTH2 DATA
+    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+    OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+    OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+    COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+    CLIENT_ID="mdos"
 
     # INSTALL OAUTH2 PROXY
     if [ -z $INST_STEP_OAUTH ]; then
