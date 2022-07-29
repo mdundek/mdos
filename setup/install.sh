@@ -1400,12 +1400,12 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
     # Load nginx / code-server proxy image to registry
     docker load < ./dep/code-server/code-server-nginx.tar
 
-    # Create Code server endpoint to access it from within mdos namespace
+    # Create Code server endpoint to access it from within code-server namespace
     unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "mdos"
+    check_kube_namespace NS_EXISTS "code-server"
     if [ -z $NS_EXISTS ]; then
-        kubectl create ns mdos &>> $LOG_FILE
-        kubectl label ns mdos istio-injection=enabled
+        kubectl create ns code-server &>> $LOG_FILE
+        kubectl label ns code-server istio-injection=enabled
     fi
 	cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
