@@ -1398,16 +1398,16 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
     fi
 
     # Load nginx / code-server proxy image to registry
-    docker load < ./dep/code-server/code-server-nginx.tar
+    docker load < ./dep/code-server/code-server-nginx.tar &>> $LOG_FILE
 
     # Create Code server endpoint to access it from within code-server namespace
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "code-server"
     if [ -z $NS_EXISTS ]; then
         kubectl create ns code-server &>> $LOG_FILE
-        kubectl label ns code-server istio-injection=enabled
+        kubectl label ns code-server istio-injection=enabled &>> $LOG_FILE
     fi
-	cat <<EOF | kubectl apply -f -
+	cat <<EOF | kubectl apply -f &>> $LOG_FILE -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1565,6 +1565,10 @@ EOF
 
         if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/postgres" | grep "13.2-alpine")" != "" ]; then
             docker rmi registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
+        fi
+
+        if [ "$(echo "$ALL_IMAGES" | grep "code-server-nginx" | grep "latest")" != "" ]; then
+            docker rmi code-server-nginx:latest &>> $LOG_FILE
         fi
 
         if [ "$(echo "$ALL_IMAGES" | grep "nginx" | grep "latest")" != "" ]; then
