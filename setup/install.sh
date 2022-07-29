@@ -592,24 +592,22 @@ install_oauth2_proxy() {
     echo "service:
   portNumber: 4180
 extraArgs:
-  provider: oidc
-  cookie-samesite: lax
+  provider: keycloak-oidc
   cookie-refresh: 1h
   cookie-expire: 4h
-  cookie-domain: \"*.$DOMAIN\"
+  cookie-domain: .$DOMAIN
+  whitelist-domain: .$DOMAIN
   set-xauthrequest: true
   set-authorization-header: true
   pass-authorization-header: true 
   pass-host-header: true
   pass-access-token: true
-  email-domain: \"*\"
-  upstream: static://200
-  skip-provider-button: true
   whitelist-domain: .$DOMAIN
   oidc-issuer-url: $OIDC_ISSUER_URL
+  redirect-url: https://cs.$DOMAIN/oauth2/callback
 config:
-  clientID: \"$CLIENT_ID\"
-  clientSecret: \"$MDOS_CLIENT_SECRET\"
+  clientID: \"mdos\"
+  clientSecret: \"rVLL3mqB0EMaEWM97XE3ewdUmRKgKEgS\"
   cookieSecure: true
   cookieSecret: \"$COOKIE_SECRET\"
   cookieName: \"_oauth2_proxy_isio\"" > $_DIR/oauth2-proxy-values.yaml
@@ -1399,7 +1397,7 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
 
     # Load nginx / code-server proxy image to registry
     echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
-    
+
     docker load < ./dep/code-server/code-server-nginx.tar &>> $LOG_FILE
     docker tag code-server-nginx:latest registry.$DOMAIN/code-server-nginx:latest
     docker push registry.$DOMAIN/code-server-nginx:latest
@@ -1411,6 +1409,15 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
         kubectl create ns code-server &>> $LOG_FILE
         kubectl label ns code-server istio-injection=enabled &>> $LOG_FILE
     fi
+
+    REG_CREDS=$(echo "$REG_CREDS_B64" | base64 --decode)
+    kubectl create secret docker-registry \
+            regcred \
+            --docker-server=registry.$DOMAIN \
+            --docker-username=$(echo "$REG_CREDS" | cut -d':' -f1) \
+            --docker-password=$(echo "$REG_CREDS" | cut -d':' -f2) \
+            -n code-server 1>/dev/null
+
 	cat <<EOF | kubectl apply -f &>> $LOG_FILE -
 apiVersion: apps/v1
 kind: Deployment
