@@ -1398,7 +1398,11 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
     fi
 
     # Load nginx / code-server proxy image to registry
+    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
+    
     docker load < ./dep/code-server/code-server-nginx.tar &>> $LOG_FILE
+    docker tag code-server-nginx:latest registry.$DOMAIN/code-server-nginx:latest
+    docker push registry.$DOMAIN/code-server-nginx:latest
 
     # Create Code server endpoint to access it from within code-server namespace
     unset NS_EXISTS
