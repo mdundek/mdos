@@ -487,7 +487,29 @@ install_istio() {
 
     # Install base istio components
     helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system &>> $LOG_FILE
-    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -n istio-system &>> $LOG_FILE
+
+    echo "meshConfig:
+  accessLogFile: /dev/stdout
+  extensionProviders:
+  - name: oauth2-proxy
+    envoyExtAuthzHttp:
+      service: oauth2-proxy.oauth2-proxy.svc.cluster.local
+      port: 4180
+      includeRequestHeadersInCheck:
+      - cookie
+      - x-forwarded-access-token
+      headersToUpstreamOnAllow:
+      - authorization
+      - cookie
+      - path
+      - x-auth-request-access-token
+      - x-auth-request-groups
+      - x-auth-request-email
+      - x-forwarded-access-token
+      headersToDownstreamOnDeny:
+      - set-cookie
+      - content-type" > $_DIR/istiod-values.yaml
+    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -f $_DIR/istiod-values.yaml -n istio-system &>> $LOG_FILE
 
     info "Waiting for istiod to become ready..."
     ATTEMPTS=0
@@ -519,22 +541,6 @@ install_istio() {
 
     ## Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
-apiVersion: networking.istio.io/v1beta1
-kind: Gateway
-metadata:
-  name: http-gateway
-  namespace: istio-system
-spec:
-  selector:
-    istio: ingressgateway
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "*.$DOMAIN"
----
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
@@ -573,6 +579,50 @@ spec:
     tls:
       mode: PASSTHROUGH
 EOF
+}
+
+# ############################################
+# ########### INSTALL OAUTH2-PROXY ###########
+# ############################################
+install_oauth2_proxy() {
+    helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
+    helm repo update
+    kubectl create ns oauth2-proxy && kubectl label ns oauth2-proxy istio-injection=enabled
+
+    echo "service:
+  portNumber: 4180
+extraArgs:
+  provider: oidc
+  cookie-samesite: lax
+  cookie-refresh: 1h
+  cookie-expire: 4h
+  cookie-domain: \"*.$DOMAIN\"
+  set-xauthrequest: true
+  set-authorization-header: true
+  pass-authorization-header: true 
+  pass-host-header: true
+  pass-access-token: true
+  email-domain: \"*\"
+  upstream: static://200
+  skip-provider-button: true
+  whitelist-domain: .$DOMAIN
+  oidc-issuer-url: $OIDC_ISSUER_URL
+config:
+  clientID: \"$CLIENT_ID\"
+  clientSecret: \"$CLIENT_SECRET\"
+  cookieSecure: true
+  cookieSecret: \"$COOKIE_SECRET\"
+  cookieName: \"_oauth2_proxy_isio\"" > $_DIR/oauth2-proxy-values.yaml
+
+    helm upgrade --install -n oauth2-proxy \
+      --version 6.0.1 \
+      --values $_DIR/oauth2-proxy-values.yaml \
+      --set config.clientID=$CLIENT_ID \
+      --set config.clientSecret=$CLIENT_SECRET \
+      --set config.cookieSecret=$COOKIE_SECRET \
+      --set extraArgs.oidc-issuer-url=$OIDC_ISSUER_URL \
+      --set extraArgs.whitelist-domain=.$DOMAIN \
+      oauth2-proxy oauth2-proxy/oauth2-proxy --atomic
 }
 
 # ############################################
@@ -822,59 +872,6 @@ configs:
 }
 
 # ############################################
-# ################ OPENRESTY #################
-# ############################################
-install_openresty() {
-    # Set domains that should not use basic auth here
-    NO_AUTH_DOMAINS="minio-console.$DOMAIN minio-backup.$DOMAIN"
-
-    if [ ! -z $HOME/.mdos/openresty/conf.d ]; then
-        mkdir -p $HOME/.mdos/openresty/conf.d
-    fi
-
-    # Create / update openresty values.yaml file
-    OPENRESTY_VAL=$(cat ./dep/openresty/values.yaml)
-   
-    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "'$SSL_ROOT'/fullchain.pem"')
-    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "'$SSL_ROOT'/privkey.pem"')
-   
-    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].mountPath = "/etc/letsencrypt/live/'"$DOMAIN"'/fullchain.pem"')
-    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].mountPath = "/etc/letsencrypt/live/'"$DOMAIN"'/privkey.pem"')
-    OPENRESTY_VAL=$(echo "$OPENRESTY_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[2].hostPath = "'$HOME'/.mdos/openresty/conf.d"')
-
-    # Create kubernetes namespace & secrets for registry
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "openresty"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create namespace openresty &>> $LOG_FILE
-    fi
-
-    # Build docker image & push to registry
-    cd ./dep/openresty
-    docker build -t registry.$DOMAIN/openresty:latest . &>> $LOG_FILE
-    docker save registry.$DOMAIN/openresty:latest > ./openresty.tar
-    k3s ctr image import ./openresty.tar &>> $LOG_FILE
-    rm -rf ./openresty.tar
-    cd $_DIR
-
-    # Prepare openresty conf.d file
-    cp -R ./dep/openresty/conf.d $HOME/.mdos/openresty/
-
-    sed -i "s/_DOMAIN_/$DOMAIN/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
-    sed -i "s/_NO_AUTH_DOMAINS_/$NO_AUTH_DOMAINS/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
-
-    # Deploy openresty
-    echo "$OPENRESTY_VAL" > ./target_values.yaml
-    mdos_deploy_app &>> $LOG_FILE
-    rm -rf ./target_values.yaml
-
-    # Now that the registry is up and running, we push the openresty image to the registry
-    sleep 5
-    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
-    docker push registry.$DOMAIN/openresty:latest &>> $LOG_FILE
-}
-
-# ############################################
 # ################# KEYCLOAK #################
 # ############################################
 install_keycloak() {
@@ -1031,7 +1028,7 @@ install_keycloak() {
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
             --data-raw '{
-                "clientId": "openresty",
+                "clientId": "mdos",
                 "rootUrl": "",
                 "baseUrl": "",
                 "surrogateAuthRequired": false,
@@ -1150,7 +1147,7 @@ install_keycloak() {
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/mdos/clients?clientId=openresty | jq '.[0].id' | sed 's/[\"]//g')
+            https://keycloak.$DOMAIN/admin/realms/mdos/clients?clientId=mdos | jq '.[0].id' | sed 's/[\"]//g')
 
         MDOS_CLIENT_SECRET=$(curl -k -s --location --request GET \
             https://keycloak.$DOMAIN/admin/realms/mdos/clients/$MDOS_CLIENT_UUID/client-secret \
@@ -1223,10 +1220,12 @@ install_keycloak() {
 	gen_api_token
 	setup_keycloak_mdos_realm
 
-	sed -i "s/__KC_CLIENT_ID__/openresty/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
-	sed -i "s/__KC_CLIENT_SECRET__/$MDOS_CLIENT_SECRET/g" $HOME/.mdos/openresty/conf.d/oidcproxy.conf
-
-	exec_in_pod openresty "openresty -s reload" &>> $LOG_FILE
+    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+    OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+    OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+    COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+    CLIENT_ID="mdos"
+    CLIENT_SECRET="$MDOS_CLIENT_SECRET"
 }
 
 # ############################################
@@ -1403,12 +1402,86 @@ WantedBy=default.target" > /etc/systemd/system/code-server.service
         fi
     fi
 
-    # Create Code server endpoint to access it from within openresty namespace &nd VirtualService to use Openresty OIDC authenticator
-	cat <<EOF | k3s kubectl apply -n openresty -f &>> $LOG_FILE -
+    # Load nginx / code-server proxy image to registry
+    docker load < ./dep/code-server/code-server.tar
+
+    # Create Code server endpoint to access it from within mdos namespace
+    unset NS_EXISTS
+    check_kube_namespace NS_EXISTS "mdos"
+    if [ -z $NS_EXISTS ]; then
+        kubectl create ns mdos &>> $LOG_FILE
+        kubectl label ns mdos istio-injection=enabled
+    fi
+	cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-server-proxy
+  namespace: code-server
+  labels:
+    app: code-server-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: code-server-proxy
+  template:
+    metadata:
+      labels:
+        app: code-server-proxy
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: code-server-proxy
+        image: registry.$DOMAIN/code-server-nginx:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
 apiVersion: v1
 kind: Service
 metadata:
-   name: codeserver-service-egress
+  name: code-server-proxy
+  namespace: code-server
+  labels:
+    app: code-server-proxy
+spec:
+  ports:
+  - name: http-code-server-proxy
+    port: 80
+    targetPort: 80
+  selector:
+    app: code-server-proxy
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: code-server-proxy
+  namespace: code-server
+  labels:
+    app: code-server-proxy
+spec:
+  gateways:
+  - istio-system/https-gateway
+  hosts:
+  - cs.$DOMAIN
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: code-server-proxy.code-server.svc.cluster.local
+        port:
+          number: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codeserver-service-egress
+  namespace: code-server
+  labels:
+    app: code-server
 spec:
    clusterIP: None
    ports:
@@ -1421,39 +1494,45 @@ apiVersion: v1
 kind: Endpoints
 metadata:
   name: codeserver-service-egress
+  namespace: code-server
+  labels:
+    app: code-server
 subsets:
   - addresses:
     - ip: $LOCAL_IP
     ports:
       - port: 8080
 ---
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
 metadata:
-  name: code-server
-  namespace: openresty
+  name: oidc-code-server-ra
+  namespace: code-server
 spec:
-  gateways:
-  - istio-system/https-gateway
-  hosts:
-  - cs.$DOMAIN
-  http:
-  - match:
-    - port: 443
-    route:
-    - destination:
-        host: mdos-openresty-openresty.openresty.svc.cluster.local
-        port:
-          number: 80
-      headers:
-        request:
-          set:
-            kdns: http://codeserver-service-egress.openresty.svc.cluster.local:8080
-            oidc: "true"
-        response:
-          set:
-            kdns: http://codeserver-service-egress.openresty.svc.cluster.local:8080
-            oidc: "true"
+  jwtRules:
+  - issuer: $OIDC_ISSUER_URL
+    jwksUri: $OIDC_JWKS_URI
+  selector:
+    matchLabels:
+      app: code-server-proxy
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: oidc-code-server-ap
+  namespace: code-server
+spec:
+  action: CUSTOM
+  provider:
+    name: oauth2-proxy
+  rules:
+  - to:
+    - operation:
+        hosts:
+        - "cs.$DOMAIN"
+  selector:
+    matchLabels:
+      app: code-server-proxy
 EOF
 }
 
@@ -1480,11 +1559,10 @@ EOF
         rm -rf code-server-$CS_VERSION-linux-amd64.tar.gz
         rm -rf code-server-$CS_VERSION-linux-amd64
 
-        ALL_IMAGES="$(docker images)"
+        rm -rf $_DIR/istiod-values.yaml
+        rm -rf $_DIR/oauth2-proxy-values.yaml
 
-        if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/openresty" | grep "latest")" != "" ]; then
-            docker rmi registry.$DOMAIN/openresty:latest &>> $LOG_FILE
-        fi
+        ALL_IMAGES="$(docker images)"
 
         if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/keycloak" | grep "18.0.2")" != "" ]; then
             docker rmi registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
@@ -1496,10 +1574,6 @@ EOF
 
         if [ "$(echo "$ALL_IMAGES" | grep "nginx" | grep "latest")" != "" ]; then
             docker rmi nginx:latest &>> $LOG_FILE
-        fi
-
-        if [ "$(echo "$ALL_IMAGES" | grep "openresty/openresty" | grep "alpine-fat")" != "" ]; then
-            docker rmi openresty/openresty:alpine-fat &>> $LOG_FILE
         fi
 
         if [ "$(echo "$ALL_IMAGES" | grep "quay.io/keycloak/keycloak" | grep "18.0.2")" != "" ]; then
@@ -1630,14 +1704,6 @@ EOF
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
 
-    # INSTALL OPENRESTY
-    if [ -z $INST_STEP_OPENRESTY ]; then
-        info "Install Openresty..."
-        echo ""
-        install_openresty
-        set_env_step_data "INST_STEP_OPENRESTY" "1"
-    fi
-
     # INSTALL MINIO
     if [ -z $INST_STEP_MINIO ]; then
         info "Install Minio..."
@@ -1654,6 +1720,14 @@ EOF
         set_env_step_data "INST_STEP_KEYCLOAK" "1"
     fi
 
+    # INSTALL OAUTH2 PROXY
+    if [ -z $INST_STEP_OAUTH ]; then
+        info "Install OAuth2 proxy..."
+        echo ""
+        install_oauth2_proxy
+        set_env_step_data "INST_STEP_OAUTH" "1"
+    fi
+    
     # INSTALL CODE-SERVER
     if [ -z $INST_STEP_CS ]; then
         yes_no INSTALL_CS "Do you wish to install code-server on this machine?" 1
