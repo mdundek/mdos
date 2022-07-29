@@ -1351,6 +1351,10 @@ install_code_server() {
     # Install Code-server locally
     wget -q https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
     tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz &>> $LOG_FILE
+
+    rm -rf $CS_USER_HOME/bin
+    rm -rf $CS_USER_HOME/data
+
     mkdir -p $CS_USER_HOME/bin
     mkdir -p $CS_USER_HOME/data/
     mv code-server-$CS_VERSION-linux-amd64 $CS_USER_HOME/bin/
