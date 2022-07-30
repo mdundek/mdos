@@ -615,7 +615,7 @@ config:
     oidc_issuer_url=\"$OIDC_ISSUER_URL\"
     profile_url=\"$OIDC_USERINPUT_URI\"
     validate_url=\"$OIDC_USERINPUT_URI\"
-    scope=\"openid email profile\"
+    scope=\"openid email profile roles\"
     pass_host_header = true
     reverse_proxy = true
     auth_logging = true
@@ -641,11 +641,6 @@ config:
     helm upgrade --install -n oauth2-proxy \
       --version 6.0.1 \
       --values $_DIR/oauth2-proxy-values.yaml \
-      --set config.clientID=$CLIENT_ID \
-      --set config.clientSecret=$MDOS_CLIENT_SECRET \
-      --set config.cookieSecret=$COOKIE_SECRET \
-      --set extraArgs.oidc-issuer-url=$OIDC_ISSUER_URL \
-      --set extraArgs.whitelist-domain=.$DOMAIN \
       oauth2-proxy oauth2-proxy/oauth2-proxy --atomic
 }
 
