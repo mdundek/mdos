@@ -5,66 +5,6 @@
 {{- $appCompName := lower .name }}
 {{- if .virtualService }}
 {{- range .virtualService }}
-{{- if .openrestyIntercept }}
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  {{- if .name }}
-  name: {{ $appName }}-{{ $appCompName }}-{{ .name }}
-  {{- else }}
-  name: {{ $appName }}-{{ $appCompName }}-{{ .protocol }}
-  {{- end }}
-  labels:
-    {{- include "stateless-helm.labels" $ | nindent 4 }}
-    {{- if $.Values.isMdosApp }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
-    mdosAcbmAppCompName: {{ $appCompName | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
-    {{- end }}
-spec:
-  hosts:
-    {{- range .hosts }}
-    - {{ . | quote -}}
-    {{- end }}
-  gateways:
-    - istio-system/https-gateway
-  {{- if or (eq .protocol "http") (eq .protocol "https") (eq .protocol "tls") }}
-    {{- $schema := "" }}
-    {{- if or (eq .protocol "http") }}
-    {{- $schema = "http" -}}
-    {{- else }}
-    {{- $schema = "https" -}}
-    {{- end }}
-  http:
-    - name: {{ $appName }}-{{ $appCompName }}-http
-      match:
-      - uri:
-          prefix: {{ .httpMatch.prefix }}
-        port: 443
-      rewrite:
-        uri: /
-      route:
-      - destination:
-          host: mdos-openresty-openresty.openresty.svc.cluster.local
-          port:
-            number: 80
-        headers:
-          request:
-            set:
-              kdns: {{ $schema }}://{{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
-              {{- if .oidcAuth }}
-              oidc: "true"
-              {{- end }}
-          response:
-            set:
-              kdns: {{ $schema }}://{{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ .svcPort }}
-              {{- if .oidcAuth }}
-              oidc: "true"
-              {{- end }}
-  {{- end }}
-{{- else }}
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -89,7 +29,6 @@ spec:
     {{- end }}
   gateways:
     - istio-system/{{ .gateway }}
-
   {{- if eq .protocol "http" }}
   http:
     - name: {{ $appName }}-{{ $appCompName }}-http
@@ -144,7 +83,59 @@ spec:
           host: {{ $appName }}-{{ $appCompName }}.{{ $.Release.Namespace }}.svc.cluster.local
     {{- end }}
   {{- end }}
-{{- end }}
+  {{- if .oidcAuth }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  {{- if .name }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .name }}-ra
+  {{- else }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .protocol }}-ra
+  {{- end }}
+spec:
+  jwtRules:
+  - issuer: .oidcIssuerUri
+    jwksUri: .oidcJwksUri
+  selector:
+    matchLabels:
+      {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
+      {{- if $.Values.isMdosApp }}
+      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+      {{- end }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  {{- if .name }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .name }}-ap
+  {{- else }}
+  name: {{ $appName }}-{{ $appCompName }}-{{ .protocol }}-ap
+  {{- end }}
+spec:
+  action: CUSTOM
+  provider:
+    name: oauth2-proxy
+  rules:
+  - to:
+    - operation:
+        hosts:
+        {{- range .hosts }}
+        - {{ . | quote -}}
+        {{- end }}
+  selector:
+    matchLabels:
+      {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
+      {{- if $.Values.isMdosApp }}
+      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
+      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+      {{- end }}
+  {{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

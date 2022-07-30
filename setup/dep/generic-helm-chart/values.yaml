@@ -158,7 +158,7 @@ appComponents:
     #   tls: []
     ## NEW VS
     virtualService:
-      - gateway: http-gateway
+      - gateway: https-gateway
         hosts:
           - chart-example.com
         protocol: https # http / https / tls / tcp
@@ -172,13 +172,15 @@ appComponents:
           svcPort: 80
         tcpMatchPorts: # only for tcp
           - 27017
-        
+          
     # virtualService:
-    # - openrestyIntercept: true
+    # - gateway: https-gateway
     #   oidcAuth: true
+    #   oidcIssuerUri: https://foo.com
+    #   oidcJwksUri: https://foo.com
     #   hosts:
     #     - chart-example.com
-    #   protocol: http
+    #   protocol: https
     #   httpMatch:
     #     prefix: /
     #   tlsMatchHosts:
