@@ -62,26 +62,19 @@ appComponents:
     commandArgs: ["start-dev"]
     service:
       create: true
-      type: ClusterIP
+      type: NodePort
       portMappings:
         - port: 8080
           containerPort: 8080
+          nodePort: 30999
         - port: 8443
           containerPort: 8443
+          nodePort: 30998
       readinessProbe:
         enabled: true
         type: http
         path: /realms/master
         port: 8080
-    virtualService:
-      - gateway: https-gateway-mdos
-        hosts:
-          - keycloak.mydomain.com
-        protocol: https
-        tlsMatchHosts:
-          - host: keycloak.mydomain.com
-            port: 443
-            svcPort: 8443
     config:
       enabled: true
       data:

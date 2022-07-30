@@ -488,6 +488,17 @@ install_istio() {
     # Install base istio components
     helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system &>> $LOG_FILE
 
+#     echo "meshConfig:
+#   accessLogFile: /dev/stdout
+#   extensionProviders:
+#   - name: oauth2-proxy
+#     envoyExtAuthzHttp:
+#       service: oauth2-proxy.oauth2-proxy.svc.cluster.local
+#       port: 4180
+#       includeHeadersInCheck: [\"authorization\", \"cookie\"]
+#       headersToUpstreamOnAllow: [\"x-forwarded-access-token\", \"authorization\", \"path\", \"x-auth-request-user\", \"x-auth-request-email\", \"x-auth-request-access-token\"]
+#       headersToDownstreamOnDeny: [\"content-type\", \"set-cookie\"]" > ./istiod-values.yaml
+
     echo "meshConfig:
   accessLogFile: /dev/stdout
   extensionProviders:
@@ -575,7 +586,6 @@ spec:
       protocol: HTTPS
     hosts:
     - "registry.$DOMAIN"
-    - "keycloak.$DOMAIN"
     tls:
       mode: PASSTHROUGH
 EOF
@@ -589,28 +599,44 @@ install_oauth2_proxy() {
     helm repo update
     kubectl create ns oauth2-proxy && kubectl label ns oauth2-proxy istio-injection=enabled
 
+    # oidc_issuer_url=\"https://keycloak.$DOMAIN/realms/mdos\"
+    # profile_url=\"https://keycloak.$DOMAIN/realms/mdos/protocol/openid-connect/userinfo\"
+    # validate_url=\"https://keycloak.$DOMAIN/realms/mdos/protocol/openid-connect/userinfo\"
+
     echo "service:
   portNumber: 4180
-extraArgs:
-  provider: keycloak-oidc
-  cookie-refresh: 1h
-  cookie-expire: 4h
-  cookie-domain: .$DOMAIN
-  whitelist-domain: .$DOMAIN
-  set-xauthrequest: true
-  set-authorization-header: true
-  pass-authorization-header: true 
-  pass-host-header: true
-  pass-access-token: true
-  whitelist-domain: .$DOMAIN
-  oidc-issuer-url: $OIDC_ISSUER_URL
-  redirect-url: https://cs.$DOMAIN/oauth2/callback
 config:
   clientID: \"mdos\"
-  clientSecret: \"rVLL3mqB0EMaEWM97XE3ewdUmRKgKEgS\"
-  cookieSecure: true
+  clientSecret: \"$MDOS_CLIENT_SECRET\"
   cookieSecret: \"$COOKIE_SECRET\"
-  cookieName: \"_oauth2_proxy_isio\"" > $_DIR/oauth2-proxy-values.yaml
+  cookieName: \"_oauth2_proxy\"
+  configFile: |-
+    provider = \"oidc\"
+    oidc_issuer_url=\"$OIDC_ISSUER_URL\"
+    profile_url=\"$OIDC_USERINPUT_URI\"
+    validate_url=\"$OIDC_USERINPUT_URI\"
+    scope=\"openid email profile\"
+    pass_host_header = true
+    reverse_proxy = true
+    auth_logging = true
+    cookie_httponly = true
+    cookie_refresh = \"4m\"
+    cookie_secure = true
+    email_domains = \"*\"
+    pass_access_token = true
+    pass_authorization_header = true
+    request_logging = true
+    session_store_type = \"cookie\"
+    set_authorization_header = true
+    set_xauthrequest = true
+    silence_ping_logging = true
+    skip_provider_button = true
+    skip_auth_strip_headers = false
+    skip_jwt_bearer_tokens = true
+    ssl_insecure_skip_verify = true
+    standard_logging = true
+    upstreams = [ \"static://200\" ]
+    whitelist_domains = [\".$DOMAIN\"]" > $_DIR/oauth2-proxy-values.yaml
 
     helm upgrade --install -n oauth2-proxy \
       --version 6.0.1 \
@@ -627,57 +653,32 @@ config:
 # ############### INSTALL NGINX ##############
 # ############################################
 install_nginx() {
-    echo ""
-    note "If you have a router / proxy that can redirect HTTPS (TLS) traffic to"
-    echo "      this node on port 30979, configure this now before prosceeding."
-    echo "      Otherwise a light NGing reverse proxy can be set up now that will forward"
-    echo "      traffic from port 443 to the cluster for you."
-    echo ""
+    info "Setting up NGinx..."
 
-    yes_no DO_PROXY_PORTS "Do you want to proxy traffic comming from port 443 to your Istio HTTPS ingress gateway?" 1
-    if [ "$DO_PROXY_PORTS" == "yes" ]; then
-        info "Setting up NGinx..."
-        if [ "$PSYSTEM" == "APT" ]; then
-            apt install nginx -y &>> $LOG_FILE
-        fi
-
-        echo "
-stream {
-  server {
-    listen     443;
-    proxy_pass 127.0.0.1:30979;
-  }
-}" >> /etc/nginx/nginx.conf
-
-        # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
-        if [ "$USE_FIREWALL" == "yes" ]; then
-            if command -v ufw >/dev/null; then
-                if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
-                    ufw allow 443 &>> $LOG_FILE
-                    echo ""
-                fi
-            fi
-        fi
-        
+    if [ "$PSYSTEM" == "APT" ]; then
+        apt install nginx -y &>> $LOG_FILE
         systemctl enable nginx &>> $LOG_FILE
         systemctl start nginx &>> $LOG_FILE
-        systemctl restart nginx &>> $LOG_FILE
-    else
-        yes_no ROUTER_READY "Did you set up your router / proxy to redirect traffic for your domain to port 30979 on this node?" 1
-        if [ "$ROUTER_READY" == "yes" ]; then
-            # Enable firewall ports if necessary for istio HTTPS gateway ingress
-            if [ "$USE_FIREWALL" == "yes" ]; then
-                if command -v ufw >/dev/null; then
-                    if [ "$(ufw status | grep '30979' | grep 'ALLOW')" == "" ]; then
-                        ufw allow 30979 &>> $LOG_FILE
-                    fi
-                fi
+    fi
+
+    if [ ! -f /etc/nginx/conf.d/k3s.conf ]; then
+        cp ./dep/proxy/k3s.conf /etc/nginx/conf.d/
+
+        sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/k3s.conf
+        sed -i "s/__NODE_IP__/127.0.0.1/g" /etc/nginx/conf.d/k3s.conf
+    fi
+
+    # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
+    if [ "$USE_FIREWALL" == "yes" ]; then
+        if command -v ufw >/dev/null; then
+            if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
+                ufw allow 443 &>> $LOG_FILE
+                echo ""
             fi
-        else
-            error "Could not finish the installation"
-            exit 1
         fi
     fi
+    
+    systemctl restart nginx &>> $LOG_FILE
 }
 
 # ############################################
@@ -914,8 +915,6 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[1].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[2].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[3].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].virtualService[0].hosts[0] = "keycloak.'$DOMAIN'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].virtualService[0].tlsMatchHosts[0].host = "keycloak.'$DOMAIN'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "'$SSL_ROOT'/fullchain.pem"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "'$SSL_ROOT'/privkey.pem"')
 
@@ -1702,8 +1701,14 @@ EOF
     if [ -z $INST_STEP_ISTIO ]; then
         info "Install Istio..."
         install_istio
-        install_nginx
         set_env_step_data "INST_STEP_ISTIO" "1"
+    fi
+
+    # INSTALL PROXY
+    if [ -z $INST_STEP_PROXY ]; then
+        info "Install NGinx proxy..."
+        install_nginx
+        set_env_step_data "INST_STEP_PROXY" "1"
     fi
 
     # INSTALL REGISTRY
@@ -1735,6 +1740,7 @@ EOF
     OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+    OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
     COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
     CLIENT_ID="mdos"
 
