@@ -122,6 +122,7 @@ generateValuesYaml() {
 
     if [ -z $NS_EXISTS ]; then
         kubectl create ns $I_NS
+        kubectl label ns $I_NS istio-injection=enabled
     fi
 
     while read SECRET_LINE ; do 

@@ -35,8 +35,11 @@ generate_app_comp_yaml() {
 
     if [ "$APP_COMP_EXPOSE" == "yes" ]; then
         APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].hosts[0] = "'$app_expose_host'"')
-        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].httpMatch.port = "'$app_expose_port'"')
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].httpMatch.port = "443"')
         APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].svcPort = "'$app_expose_port'"')
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].oidcAuth = true')
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].oidcIssuerUri = '$OIDC_ISSUER_URI)
+        APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq '.virtualService[0].oidcJwksUri = '$OIDC_JWKS_URI)
     else
         APP_COMP_YAML=$(echo "$APP_COMP_YAML" | yq 'del(.virtualService[0])')
     fi

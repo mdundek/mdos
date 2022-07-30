@@ -95,15 +95,15 @@ metadata:
   {{- end }}
 spec:
   jwtRules:
-  - issuer: .oidcIssuerUri
-    jwksUri: .oidcJwksUri
+  - issuer: {{ .oidcIssuerUri }}
+    jwksUri: {{ .oidcJwksUri }}
   selector:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
       {{- if $.Values.isMdosApp }}
       mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
-      mdosAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appCompName | quote }}
       mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- end }}
 ---
@@ -131,8 +131,8 @@ spec:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
       {{- if $.Values.isMdosApp }}
       mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
-      mdosAcbmAppCompName: {{ $appComponentName | quote }}
+      mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+      mdosAcbmAppCompName: {{ $appCompName | quote }}
       mdosBundleName: {{ $.Values.mdosBundleName | quote }}
       {{- end }}
   {{- end }}
