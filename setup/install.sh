@@ -15,12 +15,13 @@ fi
 source ./lib/components.sh
 source ./lib/helpers.sh
 
-echo "
-  __  __ ___   ___  ___ 
- |  \/  |   \ / _ \/ __|
- | |\/| | |) | (_) \__ \\
- |_|  |_|___/ \___/|___/
-"     
+echo '
+  __  __ ___   ___  ___   ___ _  _ ___ _____ _   _    _    
+ |  \/  |   \ / _ \/ __| |_ _| \| / __|_   _/_\ | |  | |   
+ | |\/| | |) | (_) \__ \  | || .` \__ \ | |/ _ \| |__| |__ 
+ |_|  |_|___/ \___/|___/ |___|_|\_|___/ |_/_/ \_\____|____|
+                                                           
+'     
 
 # CHECK PACKAGE SYSTEM
 if command -v apt-get >/dev/null; then
@@ -100,8 +101,6 @@ if [ -f $INST_ENV_PATH ]; then
 else
     touch $HOME/.mdos/install.dat
 fi
-
-CS_VERSION="4.5.0"
 
 # ############### UPDATE ENV DATA VALUE ################
 set_env_step_data() {
@@ -365,14 +364,6 @@ configure_etc_hosts() {
     if [ "$(cat /etc/hosts | grep registry.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 registry.$DOMAIN" >> /etc/hosts
     fi
-
-    if [ "$(cat /etc/hosts | grep keycloak.$DOMAIN)" == "" ]; then
-        echo "127.0.0.1 keycloak.$DOMAIN" >> /etc/hosts
-    fi
-
-    if [ "$(cat /etc/hosts | grep cs.$DOMAIN)" == "" ]; then
-        echo "127.0.0.1 cs.$DOMAIN" >> /etc/hosts
-    fi
 }
 
 # ############################################
@@ -487,40 +478,7 @@ install_istio() {
 
     # Install base istio components
     helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system &>> $LOG_FILE
-
-#     echo "meshConfig:
-#   accessLogFile: /dev/stdout
-#   extensionProviders:
-#   - name: oauth2-proxy
-#     envoyExtAuthzHttp:
-#       service: oauth2-proxy.oauth2-proxy.svc.cluster.local
-#       port: 4180
-#       includeHeadersInCheck: [\"authorization\", \"cookie\"]
-#       headersToUpstreamOnAllow: [\"x-forwarded-access-token\", \"authorization\", \"path\", \"x-auth-request-user\", \"x-auth-request-email\", \"x-auth-request-access-token\"]
-#       headersToDownstreamOnDeny: [\"content-type\", \"set-cookie\"]" > ./istiod-values.yaml
-
-    echo "meshConfig:
-  accessLogFile: /dev/stdout
-  extensionProviders:
-  - name: oauth2-proxy
-    envoyExtAuthzHttp:
-      service: oauth2-proxy.oauth2-proxy.svc.cluster.local
-      port: 4180
-      includeRequestHeadersInCheck:
-      - cookie
-      - x-forwarded-access-token
-      headersToUpstreamOnAllow:
-      - authorization
-      - cookie
-      - path
-      - x-auth-request-access-token
-      - x-auth-request-groups
-      - x-auth-request-email
-      - x-forwarded-access-token
-      headersToDownstreamOnDeny:
-      - set-cookie
-      - content-type" > $_DIR/istiod-values.yaml
-    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -f $_DIR/istiod-values.yaml -n istio-system &>> $LOG_FILE
+    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -n istio-system &>> $LOG_FILE
 
     info "Waiting for istiod to become ready..."
     ATTEMPTS=0
@@ -589,59 +547,6 @@ spec:
     tls:
       mode: PASSTHROUGH
 EOF
-}
-
-# ############################################
-# ########### INSTALL OAUTH2-PROXY ###########
-# ############################################
-install_oauth2_proxy() {
-    helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
-    helm repo update
-    kubectl create ns oauth2-proxy && kubectl label ns oauth2-proxy istio-injection=enabled
-
-    # oidc_issuer_url=\"https://keycloak.$DOMAIN/realms/mdos\"
-    # profile_url=\"https://keycloak.$DOMAIN/realms/mdos/protocol/openid-connect/userinfo\"
-    # validate_url=\"https://keycloak.$DOMAIN/realms/mdos/protocol/openid-connect/userinfo\"
-
-    echo "service:
-  portNumber: 4180
-config:
-  clientID: \"mdos\"
-  clientSecret: \"$MDOS_CLIENT_SECRET\"
-  cookieSecret: \"$COOKIE_SECRET\"
-  cookieName: \"_oauth2_proxy\"
-  configFile: |-
-    provider = \"oidc\"
-    oidc_issuer_url=\"$OIDC_ISSUER_URL\"
-    profile_url=\"$OIDC_USERINPUT_URI\"
-    validate_url=\"$OIDC_USERINPUT_URI\"
-    scope=\"openid email profile roles\"
-    pass_host_header = true
-    reverse_proxy = true
-    auth_logging = true
-    cookie_httponly = true
-    cookie_refresh = \"4m\"
-    cookie_secure = true
-    email_domains = \"*\"
-    pass_access_token = true
-    pass_authorization_header = true
-    request_logging = true
-    session_store_type = \"cookie\"
-    set_authorization_header = true
-    set_xauthrequest = true
-    silence_ping_logging = true
-    skip_provider_button = true
-    skip_auth_strip_headers = false
-    skip_jwt_bearer_tokens = true
-    ssl_insecure_skip_verify = true
-    standard_logging = true
-    upstreams = [ \"static://200\" ]
-    whitelist_domains = [\".$DOMAIN\"]" > $_DIR/oauth2-proxy-values.yaml
-
-    helm upgrade --install -n oauth2-proxy \
-      --version 6.0.1 \
-      --values $_DIR/oauth2-proxy-values.yaml \
-      oauth2-proxy oauth2-proxy/oauth2-proxy --atomic
 }
 
 # ############################################
@@ -866,354 +771,6 @@ configs:
 }
 
 # ############################################
-# ################# KEYCLOAK #################
-# ############################################
-install_keycloak() {
-    if [ -z $KEYCLOAK_USER ]; then
-        user_input KEYCLOAK_USER "Enter a admin username for Keycloak:"
-        set_env_step_data "KEYCLOAK_USER" "$KEYCLOAK_USER"
-    fi
-
-    if [ -z $KEYCLOAK_PASS ]; then
-        user_input KEYCLOAK_PASS "Enter a admin password for Keycloak:"
-        set_env_step_data "KEYCLOAK_PASS" "$KEYCLOAK_PASS"
-    fi
-
-    if [ -z $KUBE_ADMIN_EMAIL ]; then
-        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
-        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
-    fi
-
-    # Create keycloak namespace & secrets for registry
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "keycloak"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create namespace keycloak &>> $LOG_FILE
-    fi
-
-    # Compute remaining parameters
-    POSTGRES_USER=$KEYCLOAK_USER
-    POSTGRES_PASSWORD=$KEYCLOAK_PASS
-    KEYCLOAK_DB_SCRIPT_MOUNT=$(pwd)/dep/keycloak/pg-init-scripts
-    
-    # Create / update keycloak values.yaml file
-    KEYCLOAK_VAL=$(cat ./dep/keycloak/values.yaml)
-
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[1].value = "'$POSTGRES_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[2].value = "'$POSTGRES_PASSWORD'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[3].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[4].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/keycloak/db"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
-
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[0].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[1].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[2].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[3].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "'$SSL_ROOT'/fullchain.pem"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "'$SSL_ROOT'/privkey.pem"')
-
-    collect_api_key() {
-        echo ""
-        echo ""
-        question "To finalyze the setup, do the following:"
-        echo ""
-        echo "  1. Open a browser and go to:"
-        warn_print "     https://keycloak.$DOMAIN/admin/master/console/#/realms/master/clients"
-        echo "  2. From the 'Clients' section, click on the client 'master-realm'"
-        echo "  3. Change 'Access Type' value to 'confidential'"
-        echo "  4. Enable the boolean value 'Service Accounts Enabled'"
-        echo "  5. Set 'Valid Redirect URIs' value to '*'"
-        echo "  6. Save those changes (button at the bottom of the page)"
-        echo "  7. In tab 'Roles', Click on button 'edit' for role 'magage realm'."
-        echo "     Enable 'Composite roles' and add 'admin' realm to associated roles"
-        echo "  8. Go to the 'Service Account Roles' tab and add the role 'admin' to the 'Assigned Roles' box"
-        echo "  9. Click on tab 'Credentials'"
-        echo " 10. When ready, copy and paste the 'Secret' value into this terminal, then press enter:"
-        echo ""
-        user_input KEYCLOAK_SECRET "SECRET:"
-        echo ""
-    } 
-
-    gen_api_token() {
-        KC_TOKEN=$(curl -s -k -X POST \
-            "https://keycloak.$DOMAIN/realms/master/protocol/openid-connect/token" \
-            -H "Content-Type: application/x-www-form-urlencoded"  \
-            -d "grant_type=client_credentials" \
-            -d "client_id=master-realm" \
-            -d "client_secret=$KEYCLOAK_SECRET" \
-            -d "username=$KEYCLOAK_USER"  \
-            -d "password=$KEYCLOAK_PASS" \
-            -d "scope=openid" | jq -r '.access_token')
-    }
-
-    setup_keycloak_kubernetes_client() {
-        # Create client for kubernetes
-        curl -s -k --request POST \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            -d '{"clientId": "kubernetes-cluster", "publicClient": true, "standardFlowEnabled": true, "directGrantsOnly": true, "redirectUris": ["*"], "protocolMappers": [{"name": "groups", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper", "config": {"claim.name" : "groups", "full.path" : "true","id.token.claim" : "true", "access.token.claim" : "true", "userinfo.token.claim" : "true"}}]}' \
-            https://keycloak.$DOMAIN/admin/realms/master/clients
-
-        # Retrieve client UUID
-        CLIENT_UUID=$(curl -s -k --request GET \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/master/clients?clientId=kubernetes-cluster | jq '.[0].id' | sed 's/[\"]//g')
-
-        # Create mdos base group for k8s clusters in Keycloak
-        curl -s -k --request POST \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            -d '{"name": "mdos"}' \
-            https://keycloak.$DOMAIN/admin/realms/master/groups
-
-        # Create client roles in Keycloak
-        curl -s -k --request POST \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            --data '{"clientRole": true,"name": "mdos-sysadmin"}' \
-            https://keycloak.$DOMAIN/admin/realms/master/clients/$CLIENT_UUID/roles
-
-        SYSADMIN_ROLE_UUID=$(curl -s -k --request GET \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/master/clients/$CLIENT_UUID/roles/mdos-sysadmin | jq '.id' | sed 's/[\"]//g')
-
-        # Update admin email and role
-        ADMIN_U_ID=$(curl -s -k --request GET \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/master/users?username=$KEYCLOAK_USER | jq '.[0].id' | sed 's/[\"]//g')
-
-        curl -s -k -X PUT \
-            https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID \
-            -H "Content-Type: application/json"  \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            -d '{"email": "'"$KUBE_ADMIN_EMAIL"'"}'
-
-        curl -s -k --request POST \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            --data '[{"name": "mdos-sysadmin", "id": "'"$SYSADMIN_ROLE_UUID"'"}]' \
-            https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID/role-mappings/clients/$CLIENT_UUID
-    }
-
-    setup_keycloak_mdos_realm() {
-        curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            -d '{"id": "mdos","realm": "mdos","rememberMe": true, "enabled": true}'
-        gen_api_token
-        curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms/mdos/clients \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            --data-raw '{
-                "clientId": "mdos",
-                "rootUrl": "",
-                "baseUrl": "",
-                "surrogateAuthRequired": false,
-                "enabled": true,
-                "alwaysDisplayInConsole": false,
-                "clientAuthenticatorType": "client-secret",
-                "redirectUris": [
-                    "*"
-                ],
-                "webOrigins": [],
-                "notBefore": 0,
-                "bearerOnly": false,
-                "consentRequired": false,
-                "standardFlowEnabled": true,
-                "implicitFlowEnabled": false,
-                "directAccessGrantsEnabled": true,
-                "serviceAccountsEnabled": true,
-                "authorizationServicesEnabled": true,
-                "publicClient": false,
-                "frontchannelLogout": false,
-                "protocol": "openid-connect",
-                "attributes": {
-                    "saml.multivalued.roles": "false",
-                    "saml.force.post.binding": "false",
-                    "frontchannel.logout.session.required": "false",
-                    "oauth2.device.authorization.grant.enabled": "true",
-                    "backchannel.logout.revoke.offline.tokens": "false",
-                    "saml.server.signature.keyinfo.ext": "false",
-                    "use.refresh.tokens": "true",
-                    "oidc.ciba.grant.enabled": "false",
-                    "backchannel.logout.session.required": "true",
-                    "client_credentials.use_refresh_token": "false",
-                    "saml.client.signature": "false",
-                    "require.pushed.authorization.requests": "false",
-                    "saml.allow.ecp.flow": "false",
-                    "saml.assertion.signature": "false",
-                    "id.token.as.detached.signature": "false",
-                    "client.secret.creation.time": "1658151759",
-                    "saml.encrypt": "false",
-                    "saml.server.signature": "false",
-                    "exclude.session.state.from.auth.response": "false",
-                    "saml.artifact.binding": "false",
-                    "saml_force_name_id_format": "false",
-                    "tls.client.certificate.bound.access.tokens": "false",
-                    "acr.loa.map": "{}",
-                    "saml.authnstatement": "false",
-                    "display.on.consent.screen": "false",
-                    "token.response.type.bearer.lower-case": "false",
-                    "saml.onetimeuse.condition": "false"
-                },
-                "authenticationFlowBindingOverrides": {},
-                "fullScopeAllowed": true,
-                "nodeReRegistrationTimeout": -1,
-                "protocolMappers": [
-                    {
-                        "name": "Client ID",
-                        "protocol": "openid-connect",
-                        "protocolMapper": "oidc-usersessionmodel-note-mapper",
-                        "consentRequired": false,
-                        "config": {
-                            "user.session.note": "clientId",
-                            "id.token.claim": "true",
-                            "access.token.claim": "true",
-                            "claim.name": "clientId",
-                            "jsonType.label": "String"
-                        }
-                    },
-                    {
-                        "name": "Client Host",
-                        "protocol": "openid-connect",
-                        "protocolMapper": "oidc-usersessionmodel-note-mapper",
-                        "consentRequired": false,
-                        "config": {
-                            "user.session.note": "clientHost",
-                            "id.token.claim": "true",
-                            "access.token.claim": "true",
-                            "claim.name": "clientHost",
-                            "jsonType.label": "String"
-                        }
-                    },
-                    {
-                        "name": "Client IP Address",
-                        "protocol": "openid-connect",
-                        "protocolMapper": "oidc-usersessionmodel-note-mapper",
-                        "consentRequired": false,
-                        "config": {
-                            "user.session.note": "clientAddress",
-                            "id.token.claim": "true",
-                            "access.token.claim": "true",
-                            "claim.name": "clientAddress",
-                            "jsonType.label": "String"
-                        }
-                    }
-                ],
-                "defaultClientScopes": [
-                    "web-origins",
-                    "acr",
-                    "profile",
-                    "roles",
-                    "email"
-                ],
-                "optionalClientScopes": [
-                    "address",
-                    "phone",
-                    "offline_access",
-                    "microprofile-jwt"
-                ],
-                "access": {
-                    "view": true,
-                    "configure": true,
-                    "manage": true
-                }
-            }'
-        gen_api_token
-        MDOS_CLIENT_UUID=$(curl -s -k --request GET \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/mdos/clients?clientId=mdos | jq '.[0].id' | sed 's/[\"]//g')
-
-        MDOS_CLIENT_SECRET=$(curl -k -s --location --request GET \
-            https://keycloak.$DOMAIN/admin/realms/mdos/clients/$MDOS_CLIENT_UUID/client-secret \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" | jq '.value' | sed 's/[\"]//g')
-        gen_api_token
-        curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms/mdos/users \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            --data-raw '{
-                "username": "'$KEYCLOAK_USER'",
-                "enabled": true,
-                "totp": false,
-                "emailVerified": true,
-                "email": "'$KUBE_ADMIN_EMAIL'",
-                "disableableCredentialTypes": [],
-                "requiredActions": [],
-                "notBefore": 0,
-                "access": {
-                    "manageGroupMembership": true,
-                    "view": true,
-                    "mapRoles": true,
-                    "impersonate": true,
-                    "manage": true
-                }
-            }'
-        gen_api_token
-        MDOS_USER_UUID=$(curl -k -s --location --request GET \
-            https://keycloak.$DOMAIN/admin/realms/mdos/users \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" | jq '.[0].id' | sed 's/[\"]//g')
-
-        curl -s -k --request PUT \
-            https://keycloak.$DOMAIN/admin/realms/mdos/users/$MDOS_USER_UUID/reset-password \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            --data-raw '{"type":"password","value":"'$KEYCLOAK_PASS'","temporary":false}'
-    }
-
-    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
-
-    # Pull & push images to registry
-	docker pull postgres:13.2-alpine &>> $LOG_FILE
-	docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
-	docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
-
-	docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
-	docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-	docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-
-    mkdir -p $HOME/.mdos/keycloak/db
-
-    # Deploy keycloak
-    echo "$KEYCLOAK_VAL" > ./target_values.yaml
-
-    mdos_deploy_app &>> $LOG_FILE
-    rm -rf ./target_values.yaml
-
-	# Configure API key
-	collect_api_key
-
-	gen_api_token
-	setup_keycloak_kubernetes_client
-
-	gen_api_token
-	setup_keycloak_mdos_realm
-}
-
-# ############################################
 # ################### MINIO ##################
 # ############################################
 install_minio() {
@@ -1307,236 +864,6 @@ spec:
 EOF
 }
 
-# ############################################
-# ############### CODE SERVER ################
-# ############################################
-install_code_server() {
-    # Collect information
-    if [ -z $CS_USER ]; then
-        user_input CS_USER "For which user do you want to install code-server for:" "root"
-        set_env_step_data "CS_USER" "$CS_USER"
-    fi
-
-    if [ -z $LOCAL_IP ]; then
-        if command -v getent >/dev/null; then
-            if command -v ip >/dev/null; then
-                # Get the default network interface in use to connect to the internet
-                host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
-                INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
-                LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-            fi
-        fi
-        if [ -z $LOC_IP ]; then
-            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):"
-        else
-            user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):" "$LOC_IP"
-        fi
-        set_env_step_data "LOCAL_IP" "$LOCAL_IP"
-    fi
-    
-    if [ "$CS_USER" == "root" ]; then
-        CS_USER_HOME="$HOME"
-    else
-        CS_USER_HOME="/home/$CS_USER"
-    fi
-
-    # Install Code-server locally
-    wget -q https://github.com/coder/code-server/releases/download/v$CS_VERSION/code-server-$CS_VERSION-linux-amd64.tar.gz
-    tar -xf code-server-$CS_VERSION-linux-amd64.tar.gz &>> $LOG_FILE
-
-    rm -rf $CS_USER_HOME/bin
-    rm -rf $CS_USER_HOME/data
-
-    mkdir -p $CS_USER_HOME/bin
-    mkdir -p $CS_USER_HOME/data/
-    mv code-server-$CS_VERSION-linux-amd64 $CS_USER_HOME/bin/
-    mv $CS_USER_HOME/bin/code-server-$CS_VERSION-linux-amd64 $CS_USER_HOME/bin/code-server
-    
-    if [ "$CS_USER" != "root" ]; then
-        chmod +x $CS_USER_HOME/bin/code-server/code-server
-        chown -R $CS_USER:$CS_USER $CS_USER_HOME/bin/code-server
-        chown $CS_USER:$CS_USER $CS_USER_HOME/data/
-    fi
-
-    rm -rf code-server-$CS_VERSION-linux-amd64.tar.gz
-
-    # Configure CS startup service
-    echo "[Unit]
-Description=Code-Server
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=$CS_USER_HOME
-ExecStart=$CS_USER_HOME/bin/code-server/code-server --host 0.0.0.0 --user-data-dir $CS_USER_HOME/data --auth none
-TimeoutStartSec=0
-User=$CS_USER
-RemainAfterExit=yes
-Restart=always
-
-[Install]
-WantedBy=default.target" > /etc/systemd/system/code-server.service
-
-    systemctl daemon-reload &>> $LOG_FILE
-    systemctl enable code-server.service &>> $LOG_FILE
-
-    systemctl start code-server.service &>> $LOG_FILE
-
-    # Add firewall rule
-    if command -v ufw >/dev/null; then
-        if [ "$(ufw status | grep '8080' | grep 'ALLOW')" == "" ]; then
-            ufw allow from 192.168.0.0/16 to any port 8080 &>> $LOG_FILE
-        fi
-    fi
-
-    # Load nginx / code-server proxy image to registry
-    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
-
-    docker load < ./dep/code-server/code-server-nginx.tar &>> $LOG_FILE
-    docker tag code-server-nginx:latest registry.$DOMAIN/code-server-nginx:latest
-    docker push registry.$DOMAIN/code-server-nginx:latest
-
-    # Create Code server endpoint to access it from within code-server namespace
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "code-server"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create ns code-server &>> $LOG_FILE
-        kubectl label ns code-server istio-injection=enabled &>> $LOG_FILE
-    fi
-
-    REG_CREDS=$(echo "$REG_CREDS_B64" | base64 --decode)
-    kubectl create secret docker-registry \
-            regcred \
-            --docker-server=registry.$DOMAIN \
-            --docker-username=$(echo "$REG_CREDS" | cut -d':' -f1) \
-            --docker-password=$(echo "$REG_CREDS" | cut -d':' -f2) \
-            -n code-server 1>/dev/null
-
-	cat <<EOF | kubectl apply -f &>> $LOG_FILE -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: code-server-proxy
-  namespace: code-server
-  labels:
-    app: code-server-proxy
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: code-server-proxy
-  template:
-    metadata:
-      labels:
-        app: code-server-proxy
-    spec:
-      imagePullSecrets:
-      - name: regcred
-      containers:
-      - name: code-server-proxy
-        image: registry.$DOMAIN/code-server-nginx:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: code-server-proxy
-  namespace: code-server
-  labels:
-    app: code-server-proxy
-spec:
-  ports:
-  - name: http-code-server-proxy
-    port: 80
-    targetPort: 80
-  selector:
-    app: code-server-proxy
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: code-server-proxy
-  namespace: code-server
-  labels:
-    app: code-server-proxy
-spec:
-  gateways:
-  - istio-system/https-gateway
-  hosts:
-  - cs.$DOMAIN
-  http:
-  - match:
-    - port: 443
-    route:
-    - destination:
-        host: code-server-proxy.code-server.svc.cluster.local
-        port:
-          number: 80
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: codeserver-service-egress
-  namespace: code-server
-  labels:
-    app: code-server
-spec:
-   clusterIP: None
-   ports:
-   - protocol: TCP
-     port: 8080
-     targetPort: 8080
-   type: ClusterIP
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: codeserver-service-egress
-  namespace: code-server
-  labels:
-    app: code-server
-subsets:
-  - addresses:
-    - ip: $LOCAL_IP
-    ports:
-      - port: 8080
----
-apiVersion: security.istio.io/v1beta1
-kind: RequestAuthentication
-metadata:
-  name: oidc-code-server-ra
-  namespace: code-server
-spec:
-  jwtRules:
-  - issuer: $OIDC_ISSUER_URL
-    jwksUri: $OIDC_JWKS_URI
-  selector:
-    matchLabels:
-      app: code-server-proxy
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: oidc-code-server-ap
-  namespace: code-server
-spec:
-  action: CUSTOM
-  provider:
-    name: oauth2-proxy
-  rules:
-  - to:
-    - operation:
-        hosts:
-        - "cs.$DOMAIN"
-  selector:
-    matchLabels:
-      app: code-server-proxy
-EOF
-}
-
-
 
 # ###########################################################################################################################
 # ########################################################### MAIN ##########################################################
@@ -1556,36 +883,10 @@ EOF
         # Cleanup
         info "Cleaning up..."
         
-        rm -rf code-server-$CS_VERSION-linux-amd64.tar.gz
-        rm -rf code-server-$CS_VERSION-linux-amd64
-
-        rm -rf $_DIR/istiod-values.yaml
-        rm -rf $_DIR/oauth2-proxy-values.yaml
-
         ALL_IMAGES="$(docker images)"
-
-        if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/keycloak" | grep "18.0.2")" != "" ]; then
-            docker rmi registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-        fi
-
-        if [ "$(echo "$ALL_IMAGES" | grep "registry.$DOMAIN/postgres" | grep "13.2-alpine")" != "" ]; then
-            docker rmi registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
-        fi
-
-        if [ "$(echo "$ALL_IMAGES" | grep "code-server-nginx" | grep "latest")" != "" ]; then
-            docker rmi code-server-nginx:latest &>> $LOG_FILE
-        fi
 
         if [ "$(echo "$ALL_IMAGES" | grep "nginx" | grep "latest")" != "" ]; then
             docker rmi nginx:latest &>> $LOG_FILE
-        fi
-
-        if [ "$(echo "$ALL_IMAGES" | grep "quay.io/keycloak/keycloak" | grep "18.0.2")" != "" ]; then
-            docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
-        fi
-
-        if [ "$(echo "$ALL_IMAGES" | grep "postgres" | grep "13.2-alpine")" != "" ]; then
-            docker rmi postgres:13.2-alpine &>> $LOG_FILE
         fi
 
         echo ""
@@ -1599,12 +900,8 @@ EOF
             if [ -z $GLOBAL_ERROR ]; then
                 info "The following services are available on the platform:"
                 echo "        - registry.$DOMAIN"
-                echo "        - keycloak.$DOMAIN"
                 echo "        - minio-console.$DOMAIN"
                 echo "        - minio.$DOMAIN"
-                if [ "$INSTALL_CS" == "yes" ]; then
-                    echo "        - cs.$DOMAIN"
-                fi
                 echo ""
             fi
         fi
@@ -1720,41 +1017,5 @@ EOF
         echo ""
         install_minio
         set_env_step_data "INST_STEP_MINIO" "1"
-    fi
-
-    # INSTALL KEYCLOAK
-    if [ -z $INST_STEP_KEYCLOAK ]; then
-        info "Install Keycloak..."
-        echo ""
-        install_keycloak
-        set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
-        set_env_step_data "INST_STEP_KEYCLOAK" "1"
-    fi
-
-    # LOAD OAUTH2 DATA
-    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
-    OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
-    OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
-    OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
-    COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
-    CLIENT_ID="mdos"
-
-    # INSTALL OAUTH2 PROXY
-    if [ -z $INST_STEP_OAUTH ]; then
-        info "Install OAuth2 proxy..."
-        echo ""
-        install_oauth2_proxy
-        set_env_step_data "INST_STEP_OAUTH" "1"
-    fi
-    
-    # INSTALL CODE-SERVER
-    if [ -z $INST_STEP_CS ]; then
-        yes_no INSTALL_CS "Do you wish to install code-server on this machine?" 1
-        if [ "$INSTALL_CS" == "yes" ]; then
-            info "Install Code-server..."
-            echo ""
-            install_code_server
-        fi
-        set_env_step_data "INST_STEP_CS" "1"
     fi
 )

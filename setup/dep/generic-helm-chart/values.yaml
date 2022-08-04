@@ -92,14 +92,14 @@ appComponents:
     # allows to set the working directory of the container
     workingDir: 
 
-    serviceAccount:
-      # Specifies whether a service account should be created
-      create: false
-      # Annotations to add to the service account
-      annotations: {}
-      # The name of the service account to use.
-      # If not set and create is true, a name is generated using the fullname template
-      # name: "default"
+    # serviceAccount:
+    #   # Specifies whether a service account should be created
+    #   create: false
+    #   # Annotations to add to the service account
+    #   annotations: {}
+    #   # The name of the service account to use.
+    #   # If not set and create is true, a name is generated using the fullname template
+    #   # name: "default"
 
     podAnnotations: {}
 
@@ -233,12 +233,6 @@ appComponents:
     #  - {mdosAcbmAppCompUUID}||{mdosAcbmAppCompName}||{mdosAcbmAppUUID}
     #  - {mdosAcbmAppCompUUID}||{mdosAcbmAppCompName}||{mdosAcbmAppUUID}
 
-    ## Persist logs to a persistent volume
-    logs:
-      enabled: false
-      existingClaim:
-      size: 1Gi
-
     resources: {}
       # We usually recommend not to specify default resources and to leave this as a conscious
       # choice for the user. This also increases chances charts run on environments with little
@@ -251,12 +245,12 @@ appComponents:
       #   cpu: 100m
       #   memory: 128Mi
 
-    autoscaling:
-      enabled: false
-      minReplicas: 1
-      maxReplicas: 100
-      targetCPUUtilizationPercentage: 80
-      # targetMemoryUtilizationPercentage: 80
+    # autoscaling:
+    #   enabled: false
+    #   minReplicas: 1
+    #   maxReplicas: 100
+    #   targetCPUUtilizationPercentage: 80
+    #   # targetMemoryUtilizationPercentage: 80
 
 
 nodeSelector: {}

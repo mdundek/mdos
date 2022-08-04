@@ -1,0 +1,61 @@
+{
+  "name": "api",
+  "description": "Mdos API server",
+  "version": "0.0.0",
+  "homepage": "",
+  "private": true,
+  "main": "src",
+  "keywords": [
+    "feathers"
+  ],
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "contributors": [],
+  "bugs": {},
+  "directories": {
+    "lib": "src",
+    "test": "test/",
+    "config": "config/"
+  },
+  "engines": {
+    "node": "^16.0.0",
+    "npm": ">= 3.0.0"
+  },
+  "scripts": {
+    "test": "npm run lint && npm run jest",
+    "lint": "standard",
+    "dev": "nodemon src/",
+    "start": "node src/",
+    "jest": "jest --forceExit"
+  },
+  "standard": {
+    "env": [
+      "jest"
+    ],
+    "ignore": []
+  },
+  "dependencies": {
+    "@feathersjs/configuration": "^4.5.15",
+    "@feathersjs/errors": "^4.5.15",
+    "@feathersjs/express": "^4.5.15",
+    "@feathersjs/feathers": "^4.5.15",
+    "@feathersjs/socketio": "^4.5.15",
+    "@feathersjs/transport-commons": "^4.5.15",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "feathers-swagger": "^1.2.2",
+    "helmet": "^5.1.1",
+    "serve-favicon": "^2.5.0",
+    "shelljs": "^0.8.5",
+    "winston": "^3.8.1",
+    "yaml": "^2.1.1"
+  },
+  "devDependencies": {
+    "axios": "^0.27.2",
+    "jest": "^28.1.3",
+    "nodemon": "^2.0.19",
+    "standard": "^17.0.0"
+  }
+}

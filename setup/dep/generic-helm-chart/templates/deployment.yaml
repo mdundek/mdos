@@ -20,7 +20,7 @@ metadata:
       {{- end }}
     {{- end }}
 spec:
-  {{- if not .autoscaling.enabled }}
+  {{- if not .autoscaling }}
   replicas: {{ .replicaCount }}
   {{- end }}
   selector:
@@ -57,7 +57,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .serviceAccount.create }}
+      {{- if .serviceAccount }}
       serviceAccountName: {{ $appName }}-{{ lower .name }}
       {{- else }}
       serviceAccountName: default
@@ -165,6 +165,7 @@ spec:
                 {{- end }}
               {{- end }}
             {{- end }}
+          {{- if .service }}
           {{- if .service.create }}
           ports:
             {{- range .service.portMappings }}
@@ -172,6 +173,7 @@ spec:
             containerPort: {{ .containerPort }}
             # protocol: TCP
             {{- end }}
+          {{- end }}
           {{- end }}
 
           {{- if .service.livenessProbe }}
@@ -439,7 +441,7 @@ metadata:
     {{- end }}
 spec:
   serviceName: {{ $appName }}-{{ lower .name }}
-  {{- if not .autoscaling.enabled }}
+  {{- if not .autoscaling }}
   replicas: {{ .replicaCount }}
   {{- end }}
   selector:
@@ -476,7 +478,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .serviceAccount.create }}
+      {{- if .serviceAccount }}
       serviceAccountName: {{ $appName }}-{{ lower .name }}
       {{- else }}
       serviceAccountName: default
@@ -642,6 +644,7 @@ spec:
                 {{- end }}
               {{- end }}
             {{- end }}
+          {{- if .service }}
           {{- if .service.create }}
           ports:
             {{- range .service.portMappings }}
@@ -649,6 +652,7 @@ spec:
             containerPort: {{ .containerPort }}
             # protocol: TCP
             {{- end }}
+          {{- end }}
           {{- end }}
 
           {{- if .service.livenessProbe }}
@@ -934,7 +938,7 @@ metadata:
       {{- end }}
     {{- end }}
 spec:
-  {{- if not .autoscaling.enabled }}
+  {{- if not .autoscaling }}
   replicas: {{ .replicaCount }}
   {{- end }}
   selector:
@@ -971,7 +975,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .serviceAccount.create }}
+      {{- if .serviceAccount }}
       serviceAccountName: {{ $appName }}-{{ lower .name }}
       {{- else }}
       serviceAccountName: default
@@ -1090,6 +1094,7 @@ spec:
                 {{- end }}
               {{- end }}
             {{- end }}
+          {{- if .service }}
           {{- if .service.create }}
           ports:
             {{- range .service.portMappings }}
@@ -1098,8 +1103,9 @@ spec:
             # protocol: TCP
             {{- end }}
           {{- end }}
+          {{- end }}
 
-          {{- if .service.livenessProbe }}
+          --
             {{- if .service.livenessProbe.enabled }}
           livenessProbe:
               {{- if eq .service.livenessProbe.type "http" }}

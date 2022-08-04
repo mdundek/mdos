@@ -52,7 +52,7 @@ app.kubernetes.io/instance: {{ .Values.appInternalName }}
 {{/*
 Create the name of the service account to use
 {{- define "stateless-helm.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
+{{- if .Values.serviceAccount }}
 {{- default (include "stateless-helm.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}

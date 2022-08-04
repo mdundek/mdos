@@ -2,7 +2,7 @@
 {{- $appName := lower $.Values.appInternalName }}
 {{- range .Values.appComponents }}
 {{- $appComponentName := lower .name -}}
-{{- if .autoscaling.enabled }}
+{{- if .autoscaling }}
 ---
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
