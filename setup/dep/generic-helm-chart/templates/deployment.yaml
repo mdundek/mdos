@@ -176,6 +176,7 @@ spec:
           {{- end }}
           {{- end }}
 
+          {{- if .service }}
           {{- if .service.livenessProbe }}
             {{- if .service.livenessProbe.enabled }}
           livenessProbe:
@@ -246,6 +247,7 @@ spec:
             failureThreshold: {{ .service.readinessProbe.failureThreshold }}
               {{- end }}
             {{- end }}
+          {{- end }}
           {{- end }}
 
           {{- if .resources }}
@@ -655,6 +657,7 @@ spec:
           {{- end }}
           {{- end }}
 
+          {{- if .service }}
           {{- if .service.livenessProbe }}
             {{- if .service.livenessProbe.enabled }}
           livenessProbe:
@@ -725,6 +728,7 @@ spec:
             failureThreshold: {{ .service.readinessProbe.failureThreshold }}
               {{- end }}
             {{- end }}
+          {{- end }}
           {{- end }}
 
           {{- if .resources }}
@@ -1105,7 +1109,8 @@ spec:
           {{- end }}
           {{- end }}
 
-          --
+          {{- if .service }}
+          {{- if .service.livenessProbe }}
             {{- if .service.livenessProbe.enabled }}
           livenessProbe:
               {{- if eq .service.livenessProbe.type "http" }}
@@ -1140,7 +1145,7 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
-
+          
           {{- if .service.readinessProbe }}
             {{- if .service.readinessProbe.enabled }}
           readinessProbe:
@@ -1175,6 +1180,7 @@ spec:
             failureThreshold: {{ .service.readinessProbe.failureThreshold }}
               {{- end }}
             {{- end }}
+          {{- end }}
           {{- end }}
 
           {{- if .resources }}
