@@ -29,7 +29,7 @@ export default class Delete extends Command {
 		
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);

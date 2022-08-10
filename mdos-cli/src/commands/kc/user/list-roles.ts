@@ -29,7 +29,7 @@ export default class ListRoles extends Command {
 		
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
@@ -40,7 +40,7 @@ export default class ListRoles extends Command {
             let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
             try {
-                const resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get")
+                const resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get", true)
                 
                 const tblData: any[] = [];
                 if(resp.data.clientMappings) {

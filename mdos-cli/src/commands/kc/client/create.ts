@@ -29,7 +29,7 @@ export default class Create extends Command {
 		
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
@@ -41,7 +41,7 @@ export default class Create extends Command {
 
             CliUx.ux.action.start('Creating Keycloak client')
             try {
-                await this.api(`keycloak`, 'post', {
+                await this.api(`keycloak`, 'post', true, {
                     type: 'client',
                     realm: 'mdos',
                     ...mergeFlags(responses, flags),

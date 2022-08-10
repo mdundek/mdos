@@ -22,7 +22,7 @@ export default class CreateRole extends Command {
 		
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
@@ -31,7 +31,7 @@ export default class CreateRole extends Command {
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
             try {
                 // Get all realm Clients
-                const clientResponse = await this.api("keycloak?target=clients&realm=mdos", "get");
+                const clientResponse = await this.api("keycloak?target=clients&realm=mdos", "get", true);
                 if(clientResponse.data.length == 0) {
                     error("There are no clients yet available. Create a client first using the command:");
                     console.log("   mdos kc client create");
@@ -59,7 +59,7 @@ export default class CreateRole extends Command {
                 }
                 
                 // Get existing roles for this client
-                const respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.data.find((o: { id: any }) => o.id == clientResponses.clientUuid).clientId}`, "get")
+                const respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.data.find((o: { id: any }) => o.id == clientResponses.clientUuid).clientId}`, "get", true)
 
                 // Collect / check user role name
                 let roleResponses;
@@ -93,7 +93,7 @@ export default class CreateRole extends Command {
                 // Create client role
                 CliUx.ux.action.start('Creating Keycloak client role')
                 try {
-                    await this.api(`keycloak`, 'post', {
+                    await this.api(`keycloak`, 'post', true, {
                         type: 'client-role',
                         realm: 'mdos',
                         ...mergeFlags({
