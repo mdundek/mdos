@@ -19,13 +19,13 @@ class Keycloak {
     constructor(app) {
         this.app = app;
         
-        this.kcHelmChartPath = "/home/mdundek/workspaces/mdos/setup/dep/keycloak"
-        this.rootDomain = "mdundek.network";
-        this.sslCertFolder = "/etc/letsencrypt/live/mdundek.network";
-        this.kcDbRoot = "/home/mdundek/.mdos/db"
+        this.kcHelmChartPath = process.env.KC_HELM_CHART_DIR;
+        this.rootDomain = process.env.ROOT_DOMAIN;
+        this.sslCertFolder = process.env.SSL_CERT_FOLDER;
+        this.kcDbRoot = process.env.KC_DB_ROOT;
 
-        this.regUser = "mdundek";
-        this.regPass = "li14ebe14";
+        this.regUser = process.env.REG_USER;
+        this.regPass = process.env.REG_PASS;
     }
 
     /**
@@ -559,7 +559,6 @@ console.log(`${clientInst.clientId}_${name}`);
      */
     async getClientSecret(realm, clientId) {
         let accessToken = await this._getAccessToken();
-
         const responseClient = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients?clientId=${clientId}`, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,

@@ -4,8 +4,14 @@ const YAML = require('yaml');
 const fs = require("fs");
 const { terminalCommand } = require("../libs/terminal");
 
+let caCrt;
+if(process.env.RUN_TARGET == "pod") {
+    caCrt = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt');
+} else {
+    caCrt = fs.readFileSync(process.env.K3S_ROOT_CA_PATH);
+}
 axios.defaults.httpsAgent = new https.Agent({
-    rejectUnauthorized: false
+    ca: caCrt
 });
 
 class KubeBase {
@@ -16,10 +22,19 @@ class KubeBase {
      */
      constructor(app) {
         this.app = app;
-        this.K3S_TOKEN="eyJhbGciOiJSUzI1NiIsImtpZCI6IkxmeE9YQU5feTFHZC1UclRxQ1N6bG1nOHNVdE04d0dCcS1HUzhiY2g5ZVkifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJtZG9zLXNvbHV0aW9uIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4iLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjA1ZWI2OWM2LTQyZTktNDJlYS05NDk0LTIwN2QzYmNiNTY3YiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDptZG9zLXNvbHV0aW9uOmRlZmF1bHQifQ.m0MXDDs_HZf0HuXopVE6oHIwDXFcBi4jp1eS9nhBlvuaPilQPFbkuBzoMcodGhmJqdwG3JqzbEN2Q400xzqAM11aUa-T-MG0wmq5FG0hTKcAmnKVLW3OhcisaX8fpdKgKWYd3vB6Mm15jXJ4dBjYIKibnKzFInMPetEFSSNc43Waqfl2r379AIs1uzOgYYkREMBnpDYvQNJ5640JrFuB5Wxi7wxbuajiqnKSrsp4J6F90-ZXZ6Sv8whmkIQAFo9_pbDXDR7Xh5TVG-_crLoMILdzNJM8SskM_uUPd53LkHCJIdsJlJPHjsxKIX-0UFrVCd7Sd_ZzE6gzyTL-1aRx7g";
-        this.K3S_API_SERVER="127.0.0.1:6443";
-        this.K3S_ROOT_CA_PATH="/var/lib/rancher/k3s/server/tls/server-ca.crt";
-        this.HELM_BASE_CMD = `sudo helm --kube-apiserver "https://${this.K3S_API_SERVER}" --kube-ca-file ${this.K3S_ROOT_CA_PATH} --kube-token "${this.K3S_TOKEN}"`
+        if(process.env.RUN_TARGET == "pod") {
+            this.K3S_TOKEN = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/token', 'utf8').toString();
+            this.K3S_API_SERVER = "kubernetes.default.svc";
+            this.K3S_ROOT_CA_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt';
+
+            console.log("-------------- v1 ---------------------");
+        } else {
+            this.K3S_TOKEN = process.env.K3S_TOKEN;
+            this.K3S_API_SERVER = process.env.K3S_API_SERVER;
+            this.K3S_ROOT_CA_PATH = process.env.K3S_ROOT_CA_PATH;
+        }
+
+        this.HELM_BASE_CMD = `${process.env.RUN_TARGET == "pod" ? "" : "sudo " }helm --kube-apiserver "https://${this.K3S_API_SERVER}" --kube-ca-file ${this.K3S_ROOT_CA_PATH} --kube-token "${this.K3S_TOKEN}"`
         
         this.k8sAxiosHeader = {
             headers: { 'Authorization': `Bearer ${this.K3S_TOKEN}` }
@@ -28,12 +43,11 @@ class KubeBase {
             headers: { 'Authorization': `Bearer ${this.K3S_TOKEN}`, 'Content-Type': 'application/strategic-merge-patch+json' }
         };
 
-        this.genericHelmChartPath = "/home/mdundek/workspaces/mdos/setup/dep/generic-helm-chart";
-        this.istiodChartPath = "/home/mdundek/workspaces/mdos/setup/dep/istio_helm/istio-control/istio-discovery";
-        
-        this.rootDomain = "mdundek.network";
-        this.regUser = "mdundek";
-        this.regPass = "li14ebe14";
+        this.genericHelmChartPath = process.env.GEN_HELM_PATH_PATH;
+        this.istiodChartPath = process.env.ISTIO_CHART_PATH;
+        this.rootDomain = process.env.ROOT_DOMAIN;
+        this.regUser = process.env.REG_USER;
+        this.regPass = process.env.REG_PASS;
     }
 
     /**

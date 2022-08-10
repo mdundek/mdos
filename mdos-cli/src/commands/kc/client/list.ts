@@ -1,6 +1,6 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
-
+const open = require('open');
 const inquirer = require('inquirer')
 const { info, error, warn, filterQuestions } = require('../../../lib/tools')
 const chalk = require('chalk')
@@ -26,6 +26,21 @@ export default class List extends Command {
         }
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
+
+
+            const kcCookie = this.getConfig("kcCookie");
+            if(!kcCookie) {
+                console.log("opening...");
+                await open('https://mdos-api.mdundek.network/jwt');
+                console.log("opening...");
+            }
+
+
+
+
+
+
+
             try {
                 const response = await this.api("keycloak?target=clients&realm=mdos", "get")
 

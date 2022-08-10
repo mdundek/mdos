@@ -340,6 +340,11 @@ EOF
 fi
 
 if [ "$OIDC_PROVIDER" == "keycloak" ]; then
+    # LOAD OAUTH2 DATA
+    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+    OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+    OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+
     cat <<EOF | kubectl apply -f &>> $LOG_FILE -
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication

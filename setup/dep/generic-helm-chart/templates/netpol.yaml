@@ -14,6 +14,7 @@ metadata:
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
+    app: {{ $appComponentName | quote }}
     mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
     mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}

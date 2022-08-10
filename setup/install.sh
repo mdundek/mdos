@@ -142,7 +142,10 @@ mdos_deploy_app() {
     done < <(kubectl get ns 2>/dev/null)
 
     if [ -z $NS_EXISTS ]; then
-        kubectl create ns $I_NS
+        kubectl create ns $I_NS &>> $LOG_FILE
+        if [ ! -z $1 ]; then
+            kubectl label ns $I_NS istio-injection=enabled &>> $LOG_FILE
+        fi
     fi
 
     unset SECRET_EXISTS
@@ -165,7 +168,7 @@ mdos_deploy_app() {
     fi
 
     STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
-    STATIC_APP_APPEND='{"registry": "registry.'$DOMAIN'","enabled": true,"developement": false,"appInternalName": "'$I_APP'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"IfNotPresent","config": [],"secrets": []}}'
+    STATIC_APP_APPEND='{"registry": "registry.'$DOMAIN'","enabled": true,"developement": false,"appInternalName": "'$I_APP'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
 
     # Make copy of application values file to work with
     cp ./target_values.yaml ./values_merged.yaml
@@ -215,7 +218,7 @@ mdos_deploy_app() {
         --values ./values_merged.yaml \
         -n $I_NS --atomic 1> /dev/null
 
-    rm -rf ./values_merged.yaml
+    # rm -rf ./values_merged.yaml
 }
 
 # ############### EXEC IN POD ################
@@ -269,7 +272,11 @@ dependencies() {
 
                 groupadd docker &>> $LOG_FILE || true
 
-                warn "Docker has been installed. To use docker for non root users, use the following command: usermod -aG docker <USER>"
+                getent passwd | while IFS=: read -r name password uid gid gecos home shell; do
+                    if [ -d "$home" ] && [ "$(stat -c %u "$home")" = "$uid" ] && [ "$home" == "/home/$name" ]; then
+                        usermod -aG docker $name
+                    fi
+                done
             fi
         fi
     fi
@@ -414,6 +421,15 @@ install_k3s() {
     rm -rf $HOME/.kube/config
     cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
     chmod 600 $HOME/.kube/config
+
+    # Add kubectl permissions to all users as well
+    getent passwd | while IFS=: read -r name password uid gid gecos home shell; do
+        if [ -d "$home" ] && [ "$(stat -c %u "$home")" = "$uid" ] && [ "$home" == "/home/$name" ]; then
+            mkdir -p $home/.kube
+            cp /etc/rancher/k3s/k3s.yaml $home/.kube/config
+            chown -R $name:$name $home/.kube
+        fi
+    done
 
     # Install Calico
     kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml &>> $LOG_FILE
@@ -1209,7 +1225,7 @@ EOF
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
-    echo "$KEYCLOAK_VAL" > ./target_values.yaml
+    cat "$KEYCLOAK_VAL" > ./target_values.yaml
 
     mdos_deploy_app &>> $LOG_FILE
     rm -rf ./target_values.yaml
@@ -1274,6 +1290,121 @@ config:
       oauth2-proxy-mdos oauth2-proxy/oauth2-proxy --atomic
 }
 
+# ############################################
+# ############### INSTALL MDOS ###############
+# ############################################
+install_mdos() {
+    kubectl create ns mdos &>> $LOG_FILE
+    kubectl label ns mdos istio-injection=enabled &>> $LOG_FILE
+
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: default
+  namespace: mdos
+  annotations:
+    kubernetes.io/service-account.name: "default"
+type: kubernetes.io/service-account-token
+EOF
+
+    # Admin role
+    while read CROLE_LINE ; do 
+        CROLEBINDING_NAME=`echo "$CROLE_LINE" | cut -d' ' -f 1`
+        if [ "$CROLEBINDING_NAME" == "mdos-admin-role" ]; then
+            CROLE_EXISTS=1
+        fi
+    done < <(kubectl get clusterrole 2>/dev/null)
+    if [ -z $CROLE_EXISTS ]; then
+        cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mdos-admin-role
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'
+EOF
+    fi
+
+    # Admin role binding
+    while read CROLEBINDING_LINE ; do 
+        CROLEBINDING_NAME=`echo "$CROLEBINDING_LINE" | cut -d' ' -f 1`
+        if [ "$CROLEBINDING_NAME" == "mdos-admin-role-binding" ]; then
+            CROLEBINDING_EXISTS=1
+        fi
+    done < <(kubectl get clusterrolebinding 2>/dev/null)
+    if [ -z $CROLEBINDING_EXISTS ]; then
+        cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: scds-admin-role-binding
+roleRef:
+  kind: ClusterRole
+  name: mdos-admin-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: mdos
+EOF
+    fi
+
+    # Deploy keycloak
+    cat ./dep/mdos-api/values.yaml > ./target_values.yaml
+
+    MDOS_ACBM_APP_UUID=$(cat ./target_values.yaml | yq eval '.mdosAcbmAppUUID')
+    MDOS_ACBM_APP_CMP_UUID=$(cat ./target_values.yaml | yq eval '.appComponents[0].mdosAcbmAppCompUUID')
+    MDOS_ACBM_APP_CMP_NAME=$(cat ./target_values.yaml | yq eval '.appComponents[0].name')
+
+    mdos_deploy_app
+    rm -rf ./target_values.yaml
+
+    cat <<EOF | kubectl apply -f -
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: oidc-mdos-ra
+  namespace: mdos
+spec:
+  jwtRules:
+  - issuer: $OIDC_ISSUER_URL
+    jwksUri: $OIDC_JWKS_URI
+  selector:
+    matchLabels:
+      app: mdos-api
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: oidc-mdos-ap
+  namespace: mdos
+spec:
+  action: CUSTOM
+  provider:
+    name: oauth2-proxy-mdos
+  rules:
+  - to:
+    - operation:
+        hosts:
+        - "mdos-api.$DOMAIN"
+  selector:
+    matchLabels:
+      mdosAcbmAppUUID: $MDOS_ACBM_APP_UUID
+      mdosAcbmAppCompUUID: $MDOS_ACBM_APP_CMP_UUID
+      mdosAcbmAppCompName: $MDOS_ACBM_APP_CMP_NAME
+EOF
+}
+
 
 # ###########################################################################################################################
 # ########################################################### MAIN ##########################################################
@@ -1284,18 +1415,22 @@ config:
     function _catch {
         GLOBAL_ERROR=1
         # Rollback
-        echo ""
-        error "An error occured"
-        
+        if [ -z $IN_CLEANUP ]; then
+            echo ""
+            error "An error occured"
+        fi
     }
 
     function _finally {
         # Cleanup
         info "Cleaning up..."
+
+        set +Ee
+        IN_CLEANUP=1
         
         ALL_IMAGES="$(docker images)"
 
-        if [ "$(echo "$ALL_IMAGES" | grep "nginx" | grep "latest")" != "" ]; then
+        if [ "$(echo "$ALL_IMAGES" | grep "nginx" | grep "latest" | awk '{print $1}')" == "nginx" ]; then
             docker rmi nginx:latest &>> $LOG_FILE
         fi
 
@@ -1316,7 +1451,7 @@ config:
             docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
         fi
 
-        if [ "$(echo "$ALL_IMAGES" | grep "postgres" | grep "13.2-alpine")" != "" ]; then
+        if [ "$(echo "$ALL_IMAGES" | grep "postgres" | grep "13.2-alpine" | awk '{print $1}')" != "postgres" ]; then
             docker rmi postgres:13.2-alpine &>> $LOG_FILE
         fi
 
@@ -1466,6 +1601,13 @@ config:
         echo ""
         install_oauth2_proxy
         set_env_step_data "INST_STEP_OAUTH" "1"
+    fi
+
+    # INSTALL MDOS
+    if [ -z $INST_STEP_MDOS ]; then
+        info "Install MDos API server..."
+        install_mdos
+        set_env_step_data "INST_STEP_MDOS" "1"
     fi
 
     # INSTALL MINIO

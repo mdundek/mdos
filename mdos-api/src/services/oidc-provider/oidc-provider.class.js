@@ -31,9 +31,15 @@ exports.OidcProvider = class OidcProvider {
 					throw new Error("Keycloak is not installed");
 				}
 
-				const responses = await this.app.get("kube").getIstiodOidcProviders();
+				let responses = await this.app.get("kube").getIstiodOidcProviders();
 				if(responses.find(o => o.name.toLowerCase() == body.data.name.toLowerCase())) {
 					throw new Conflict("OIDC provider already declared");
+				}
+
+				// Make sure client ID exists
+				responses = await this.app.get("keycloak").getClients(body.realm);
+				if(!responses.find(o => o.clientId == body.data.clientId)) {
+					throw new Unavailable("Keycloak client ID does not exist");
 				}
 
 				await this.app.get("kube").addIstiodOidcProvider(body.data.name);

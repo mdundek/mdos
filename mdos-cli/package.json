@@ -22,7 +22,9 @@
         "@oclif/plugin-plugins": "^2.0.1",
         "axios": "^0.27.2",
         "chalk": "^4.1.2",
-        "inquirer": "^8.2.4"
+        "inquirer": "^8.2.4",
+        "nconf": "^0.12.0",
+        "open": "^8.4.0"
     },
     "devDependencies": {
         "@oclif/test": "^2",

@@ -11,6 +11,7 @@ metadata:
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
+    app: {{ $appComponentName | quote }}
     mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
     mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
@@ -41,6 +42,7 @@ spec:
       labels:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
         {{- if $.Values.isMdosApp }}
+        app: {{ $appComponentName | quote }}
         mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
         mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
         mdosAcbmAppCompName: {{ $appComponentName | quote }}
@@ -58,7 +60,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .serviceAccount }}
+        {{- if .serviceAccount.create }}
       serviceAccountName: {{ $appName }}-{{ lower .name }}
+        {{- else }}
+      serviceAccountName: default
+        {{- end }}
       {{- else }}
       serviceAccountName: default
       {{- end }}
@@ -433,6 +439,7 @@ metadata:
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
+    app: {{ $appComponentName | quote }}
     mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
     mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
@@ -464,6 +471,7 @@ spec:
       labels:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
         {{- if $.Values.isMdosApp }}
+        app: {{ $appComponentName | quote }}
         mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
         mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
         mdosAcbmAppCompName: {{ $appComponentName | quote }}
@@ -481,7 +489,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .serviceAccount }}
+        {{- if .serviceAccount.create }}
       serviceAccountName: {{ $appName }}-{{ lower .name }}
+        {{- else }}
+      serviceAccountName: default
+        {{- end }}
       {{- else }}
       serviceAccountName: default
       {{- end }}
@@ -933,6 +945,7 @@ metadata:
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
+    app: {{ $appComponentName | quote }}
     mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
     mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
@@ -963,6 +976,7 @@ spec:
       labels:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
         {{- if $.Values.isMdosApp }}
+        app: {{ $appComponentName | quote }}
         mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
         mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
         mdosAcbmAppCompName: {{ $appComponentName | quote }}
@@ -980,7 +994,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .serviceAccount }}
+        {{- if .serviceAccount.create }}
       serviceAccountName: {{ $appName }}-{{ lower .name }}
+        {{- else }}
+      serviceAccountName: default
+        {{- end }}
       {{- else }}
       serviceAccountName: default
       {{- end }}
