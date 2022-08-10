@@ -41,11 +41,13 @@ app.get('/jwt', function (req, res) {
         .isKeycloakDeployed()
         .then((keycloakAvailable) => {
             if (!keycloakAvailable) {
-                throw new Unavailable('Keycloak is not installed')
+                res.status(503).send("Keycloak is not installed");
+                return;
             }
 
             if (!req.headers['x-auth-request-access-token']) {
-                throw new Forbidden('Not athenticated')
+                res.status(403).send("Not athenticated");
+                return;
             }
 
             let jwtToken = jwt_decode(req.headers['x-auth-request-access-token'])
@@ -53,7 +55,10 @@ app.get('/jwt', function (req, res) {
             if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.find((r) => r == 'mdos_admin')) {
                 const list = {}
                 const cookieHeader = req.headers?.cookie
-                if (!cookieHeader) throw new Forbidden('Not athenticated')
+                if (!cookieHeader) {
+                    res.status(403).send("Not athenticated");
+                    return;
+                }
 
                 cookieHeader.split(`;`).forEach(function (cookie) {
                     let [name, ...rest] = cookie.split(`=`)
@@ -67,10 +72,15 @@ app.get('/jwt', function (req, res) {
                 let template = fs.readFileSync(__dirname + '/jwt.html', 'utf8')
                 res.send(template.replace('{TOKEN}', list["_oauth2_proxy"]))
             } else {
-                throw new Forbidden('Not authorized')
+                res.status(403).send("Not authorized");
+                return;
             }
         })
 })
+
+app.get('/healthz', function (req, res) {
+    res.send("Healthy");
+});
 
 app.use('/', express.static(app.get('public')))
 
