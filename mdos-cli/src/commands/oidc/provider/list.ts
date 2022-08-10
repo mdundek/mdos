@@ -28,7 +28,7 @@ export default class List extends Command {
 		const { flags } = await this.parse(List)
 
 		try {
-            const resp = await this.api(`oidc-provider`, "get")
+            const resp = await this.api(`oidc-provider`, "get", false)
           
             console.log();
             CliUx.ux.table(resp.data, {

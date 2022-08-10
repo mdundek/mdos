@@ -48,7 +48,7 @@ export default class Add extends Command {
 			// Create new client in Keycloak
 			CliUx.ux.action.start('Creating Keycloak client & OIDC provider')
 			try {
-				await this.api(`oidc-provider`, "post", {
+				await this.api(`oidc-provider`, "post", true, {
 					"type": "keycloak",
 					"realm": "mdos",
 					"data": {

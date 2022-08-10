@@ -21,7 +21,7 @@ export default class List extends Command {
 		
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
@@ -29,7 +29,7 @@ export default class List extends Command {
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
             try {
-                const resp = await this.api(`keycloak?target=users&realm=mdos${flags.clientId ? "&clientId=" + flags.clientId : ""}`, "get")
+                const resp = await this.api(`keycloak?target=users&realm=mdos${flags.clientId ? "&clientId=" + flags.clientId : ""}`, "get", true)
 
                 console.log();
                 CliUx.ux.table(resp.data, {

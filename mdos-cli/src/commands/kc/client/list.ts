@@ -1,6 +1,6 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
-const open = require('open');
+
 const inquirer = require('inquirer')
 const { info, error, warn, filterQuestions } = require('../../../lib/tools')
 const chalk = require('chalk')
@@ -19,30 +19,18 @@ export default class List extends Command {
 		
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
         }
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-
-
-            const kcCookie = this.getConfig("kcCookie");
-            if(!kcCookie) {
-                console.log("opening...");
-                await open('https://mdos-api.mdundek.network/jwt');
-                console.log("opening...");
-            }
-
-
-
-
-
-
+            // We need a valid admin authentication token, get this first
+            await this.validateJwt();
 
             try {
-                const response = await this.api("keycloak?target=clients&realm=mdos", "get")
+                const response = await this.api("keycloak?target=clients&realm=mdos", "get", true)
 
                 console.log();
                 CliUx.ux.table(response.data, {
