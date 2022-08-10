@@ -106,6 +106,36 @@ export default abstract class extends Command {
 	}
 
 	/**
+	 * _collectKeycloakUrl
+	 * @returns 
+	 */
+	async _collectKeycloakUrl() {
+		let KC_URI = this.getConfig("MDOS_KC_URI");
+		if(!KC_URI){
+			const responses = await inquirer.prompt([{
+				type: 'text',
+				name: 'kcUrl',
+				message: 'Please enter the Keycloak base URL:',
+				validate: async (value: { trim: () => { (): any; new(): any; length: number; }; }) => {
+					if(value.trim().length == 0) {
+						return "Mandatory field"
+					}
+					try {
+						await axios.get(`${value}`, {timeout: 2000})
+						return true;
+					} catch (error) {
+						return "URL does not seem to be valid";
+					}
+				},
+			}])
+			KC_URI = responses.kcUrl;
+
+			this.setConfig("MDOS_KC_URI", KC_URI);
+		}
+		return KC_URI;
+	}
+
+	/**
 	 * validateJwt
 	 */
 	async validateJwt() {
@@ -113,7 +143,8 @@ export default abstract class extends Command {
 			return;
 
 		let API_URI = await this._collectApiServerUrl();
-
+		let KC_URI = await this._collectKeycloakUrl();
+		
 		const kcCookie = this.getConfig("JWT_TOKEN");
 		if(!kcCookie) {
 			await open(`${API_URI}/jwt`);
