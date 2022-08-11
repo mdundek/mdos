@@ -1,4 +1,4 @@
-FROM node:16
+FROM node:16-alpine
 
 COPY helm /usr/bin
 RUN chmod a+x /usr/bin/helm
@@ -17,6 +17,8 @@ RUN npm install
 
 # Bundle app source
 COPY . .
+
+RUN rm -rf helm
 
 EXPOSE 3030
 CMD [ "node", "." ]

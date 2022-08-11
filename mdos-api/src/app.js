@@ -12,7 +12,6 @@ const swagger = require('feathers-swagger')
 const configuration = require('@feathersjs/configuration')
 const express = require('@feathersjs/express')
 const socketio = require('@feathersjs/socketio')
-const { Unavailable, Forbidden } = require('@feathersjs/errors')
 
 const middleware = require('./middleware')
 const services = require('./services')

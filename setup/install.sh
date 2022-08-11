@@ -218,7 +218,7 @@ mdos_deploy_app() {
         --values ./values_merged.yaml \
         -n $I_NS --atomic 1> /dev/null
 
-    # rm -rf ./values_merged.yaml
+    rm -rf ./values_merged.yaml
 }
 
 # ############### EXEC IN POD ################
