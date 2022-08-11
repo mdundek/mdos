@@ -8,6 +8,7 @@ const path = require("path");
 const inquirer = require('inquirer')
 const open = require('open');
 const axios = require('axios').default;
+const { info, error, warn, filterQuestions } = require('./lib/tools')
 
 type AxiosConfig = {
 	headers?: any;
@@ -144,12 +145,32 @@ export default abstract class extends Command {
 
 		let API_URI = await this._collectApiServerUrl();
 		let KC_URI = await this._collectKeycloakUrl();
+
+		KC_URI = KC_URI.startsWith("http://") || KC_URI.startsWith("https://")  ? KC_URI.substring(KC_URI.indexOf("//") + 2) : KC_URI;
 		
+		const _validateCookie = async (takeNoAction?: boolean) => {
+			const testResponse = await this.api("jwt", "get", true);
+			if(testResponse.request.host == KC_URI) {
+				if(takeNoAction) {
+					return false;
+				} else {
+					// token expired
+					this.setConfig("JWT_TOKEN", null);
+					warn("Your current token has expired or is invalid. You need to re-authenticate");
+					await this.validateJwt();
+				}
+			} else {
+				if(takeNoAction) {
+					return true;
+				}
+			}
+		}
+
 		const kcCookie = this.getConfig("JWT_TOKEN");
 		if(!kcCookie) {
 			await open(`${API_URI}/jwt`);
 
-			const responses = await inquirer.prompt([{
+			await inquirer.prompt([{
 				type: 'text',
 				name: 'jwtToken',
 				message: 'Please enter the JWT token now once you successfully authenticated yourself:',
@@ -157,14 +178,17 @@ export default abstract class extends Command {
 					if(value.trim().length == 0) {
 						return "Mandatory field"
 					}
-					// TODO: Validate provided token
+					this.setConfig("JWT_TOKEN", value);
+					const validTkn = await _validateCookie(true);
+					if(!validTkn) {
+						this.setConfig("JWT_TOKEN", null);
+						return "Invalid cookie"
+					}
 					return true;
 				},
 			}])
-
-			this.setConfig("JWT_TOKEN", responses.jwtToken);
 		} else {
-			// TODO: Validate existing token
+			_validateCookie();
 		}
 	}
 }
