@@ -181,6 +181,10 @@ spec:
       mdosAcbmAppCompUUID: $MDOS_ACBM_APP_CMP_UUID
       mdosAcbmAppCompName: $MDOS_ACBM_APP_CMP_NAME
 EOF
+
+    POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api-mdos-api" | grep "Running" | cut -d' ' -f 1)
+    kubectl logs $POD_NAME -n mdos --follow
+
 fi
 
 
