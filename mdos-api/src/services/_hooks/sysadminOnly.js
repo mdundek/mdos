@@ -3,6 +3,10 @@ const jwt_decode = require('jwt-decode')
 
 module.exports = function () {
     return async (context) => {
+        // Is auth disabled?
+        if(process.env.NO_ADMIN_AUTH == "true")
+            return context;
+
         if (!context.params.headers['x-auth-request-access-token']) {
             throw new errors.Forbidden('You are not authenticated');
         }

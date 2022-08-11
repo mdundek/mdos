@@ -1,8 +1,8 @@
-
+const sysadmin_role_check = require('../_hooks/sysadminOnly');
 
 module.exports = {
   before: {
-    all: [],
+    all: [sysadmin_role_check()],
     find: [],
     get: [],
     create: [],
