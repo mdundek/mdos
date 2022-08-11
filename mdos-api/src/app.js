@@ -34,7 +34,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(favicon(path.join(app.get('public'), 'favicon.ico')))
 // Host the public folder
 
-app.get('/jwt', oidcCookieRoute);
+app.get('/jwt', oidcCookieRoute.bind(this, app));
 
 app.get('/healthz', function (req, res) {
     res.send("Healthy");

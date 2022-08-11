@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 
-module.exports = (req, res) => {
+module.exports = (app, req, res) => {
     app.get('keycloak')
         .isKeycloakDeployed()
         .then((keycloakAvailable) => {
