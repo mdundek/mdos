@@ -29,13 +29,18 @@ export default class RemoveRole extends Command {
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        await this.validateJwt();
+        try {
+            await this.validateJwt();
+        } catch (error) {
+            this.showError(error);
+			process.exit(1);
+        }
 		
 		let nsResponse
         try {
             nsResponse = await this.api(`kube?target=namespaces`, 'get')
         } catch (err) {
-            error("Mdos API server is unavailable");
+            this.showError(err);
 			process.exit(1);
         }
 

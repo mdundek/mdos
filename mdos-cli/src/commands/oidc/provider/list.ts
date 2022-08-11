@@ -29,7 +29,12 @@ export default class List extends Command {
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        await this.validateJwt();
+        try {
+            await this.validateJwt();
+        } catch (error) {
+            this.showError(error);
+			process.exit(1);
+        }
 
 		try {
             const resp = await this.api(`oidc-provider`, "get")
@@ -46,7 +51,8 @@ export default class List extends Command {
             })
             console.log();
         } catch (error) {
-            console.log(error);
+            this.showError(error);
+            process.exit(1);
         }
 	}
 }

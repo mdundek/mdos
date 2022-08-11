@@ -22,7 +22,12 @@ export default class Deploy extends Command {
 
     // Make sure we have a valid oauth2 cookie token
     // otherwise, collect it
-    await this.validateJwt();
+    try {
+      await this.validateJwt();
+    } catch (error) {
+      this.showError(error);
+      process.exit(1);
+    }
 
     const name = flags.name ?? 'world'
     this.log(`hello ${name} from /home/mdundek/workspaces/mdos-cli/src/commands/deploy.ts`)

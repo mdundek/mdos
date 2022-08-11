@@ -19,13 +19,18 @@ export default class List extends Command {
 		
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        await this.validateJwt();
-
+        try {
+            await this.validateJwt();
+        } catch (error) {
+            this.showError(error);
+			process.exit(1);
+        }
+        
 		let nsResponse
         try {
             nsResponse = await this.api(`kube?target=namespaces`, 'get')
         } catch (err) {
-            error("Mdos API server is unavailable");
+            this.showError(err);
 			process.exit(1);
         }
 
@@ -55,7 +60,8 @@ export default class List extends Command {
                 })
                 console.log();
             } catch (error) {
-                console.log(error);
+                this.showError(error);
+                process.exit(1);
             }
 		} else {
 			warn("Keycloak is not installed");

@@ -8,7 +8,7 @@ const path = require("path");
 const inquirer = require('inquirer')
 const open = require('open');
 const axios = require('axios').default;
-const { info, error, warn, filterQuestions } = require('./lib/tools')
+const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage } = require('./lib/tools')
 
 type AxiosConfig = {
 	headers?: any;
@@ -191,5 +191,13 @@ export default abstract class extends Command {
 		} else {
 			await _validateCookie();
 		}
+	}
+
+	/**
+	 * showError
+	 * @param error 
+	 */
+	showError(error: (arg0: any) => void) {
+		error(extractErrorMessage(error));
 	}
 }

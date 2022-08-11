@@ -40,7 +40,12 @@ export default class Add extends Command {
 
 		// Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        await this.validateJwt();
+        try {
+            await this.validateJwt();
+        } catch (error) {
+            this.showError(error);
+			process.exit(1);
+        }
 
 		let q = filterQuestions(Add.questions, "oidc", flags);
         const oidcResponses = q.length > 0 ? await inquirer.prompt(q) : {}
@@ -63,6 +68,7 @@ export default class Add extends Command {
 				CliUx.ux.action.stop()
 			} catch (error) {
 				CliUx.ux.action.stop('error')
+				this.showError(error);
 				process.exit(1);
 			}
 		} else {

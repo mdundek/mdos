@@ -29,13 +29,18 @@ export default class ListRoles extends Command {
 		
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        await this.validateJwt();
+        try {
+            await this.validateJwt();
+        } catch (error) {
+            this.showError(error);
+			process.exit(1);
+        }
         
 		let nsResponse
         try {
             nsResponse = await this.api(`kube?target=namespaces`, 'get')
         } catch (err) {
-            error("Mdos API server is unavailable");
+            this.showError(err);
 			process.exit(1);
         }
 
@@ -43,42 +48,43 @@ export default class ListRoles extends Command {
             let q = filterQuestions(ListRoles.questions, "user", flags);
             let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
+            let resp: { data: { clientMappings: { [x: string]: { mappings: { name: any; id: any }[] } } } };
             try {
-                const resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get")
-                
-                const tblData: any[] = [];
-                if(resp.data.clientMappings) {
-                    (Object.keys(resp.data.clientMappings) as (keyof typeof resp.data.clientMappings)[]).forEach((key) => {
-                        resp.data.clientMappings[key].mappings.forEach((cm: { name: any; id: any }) => {
-                            tblData.push({
-                                client: key,
-                                uuid: cm.id,
-                                name: cm.name
-                            });
-                        });
-                    });
-                }
-               
-                console.log();
-                CliUx.ux.table(tblData, {
-                    clientId: {
-                        header: 'CLIENT',
-                        minWidth: 20,
-                        get: row => row.client
-                    },
-                    realm: {
-                        header: 'ROLE NAME',
-                        minWidth: 20,
-                        get: row => row.name
-                    }
-                }, {
-                    printLine: this.log.bind(this)
-                })
-                console.log();
+                resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get")
             } catch (error) {
-                console.log(error);
+                this.showError(error);
+                process.exit(1);
             }
 
+            const tblData: any[] = [];
+            if(resp.data.clientMappings) {
+                (Object.keys(resp.data.clientMappings) as (keyof typeof resp.data.clientMappings)[]).forEach((key) => {
+                    resp.data.clientMappings[key].mappings.forEach((cm: { name: any; id: any }) => {
+                        tblData.push({
+                            client: key,
+                            uuid: cm.id,
+                            name: cm.name
+                        });
+                    });
+                });
+            }
+            
+            console.log();
+            CliUx.ux.table(tblData, {
+                clientId: {
+                    header: 'CLIENT',
+                    minWidth: 20,
+                    get: row => row.client
+                },
+                realm: {
+                    header: 'ROLE NAME',
+                    minWidth: 20,
+                    get: row => row.name
+                }
+            }, {
+                printLine: this.log.bind(this)
+            })
+            console.log();
 		} else {
 			warn("Keycloak is not installed");
 			process.exit(1);

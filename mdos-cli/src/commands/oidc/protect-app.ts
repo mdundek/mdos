@@ -29,7 +29,12 @@ export default class ProtectApp extends Command {
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        await this.validateJwt();
+        try {
+            await this.validateJwt();
+        } catch (error) {
+            this.showError(error);
+			process.exit(1);
+        }
 
 		let q = filterQuestions(ProtectApp.questions, "<group>", flags);
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
