@@ -24,7 +24,8 @@ export default abstract class extends Command {
 		nconf.file({ file: path.join(os.homedir(), ".mdos", "cli.json") });
 		super(argv, config);
 
-		this.authMode = "none"
+		this.authMode = nconf.get("auth_mode")
+		if(!this.authMode) this.authMode = "oidc"
 	}
 
 	/**
