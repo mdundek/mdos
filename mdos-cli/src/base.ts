@@ -194,6 +194,46 @@ export default abstract class extends Command {
 	}
 
 	/**
+	 * collectClientId
+	 * @param flags 
+	 */
+	async collectClientId(flags: any) {
+		// Get all realm Clients
+		const clientResponse = await this.api("keycloak?target=clients&realm=mdos", "get");
+		if(clientResponse.data.length == 0) {
+			error("There are no clients yet available. Create a client first using the command:");
+			console.log("   mdos kc client create");
+			process.exit(1);
+		}
+
+		// Select target client
+		let clientResponses: {
+			clientId: any; clientUuid: any , clientName: any
+		};
+		if(flags.clientId) {
+			const targetClient = clientResponse.data.find((o: { clientId: string }) => o.clientId == flags.clientId)
+			if(!targetClient) {
+				error("Could not find client ID: " + flags.clientId);
+				process.exit(1);
+			}
+			clientResponses = {clientId: targetClient.clientId, clientUuid: targetClient.id, clientName: targetClient.clientName};
+		} else {
+			clientResponses = await inquirer.prompt([{
+				name: 'clientUuid',
+				message: 'select a Client ID to create a Role for',
+				type: 'list',
+				choices: clientResponse.data.map((o: { clientId: any; id: any }) => {
+					return { name: o.clientId, value: o.id }
+				}),
+			}])
+			const targetClient = clientResponse.data.find((o: { id: any; }) => o.id == clientResponses.clientUuid)
+			clientResponses.clientId = targetClient.clientId
+			clientResponses.clientName = targetClient.clientName
+		}
+		return clientResponses;
+	}
+
+	/**
 	 * showError
 	 * @param error 
 	 */

@@ -48,6 +48,12 @@ export default class Create extends Command {
             let q = filterQuestions(Create.questions, "client", flags);
             let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
+            const clientResponse = await this.api("keycloak?target=clients&realm=mdos", "get");
+            if(clientResponse.data.find((o: any) => responses.clientId)) {
+                error("Client ID already eexists");
+                process.exit(1);
+            }
+
             CliUx.ux.action.start('Creating Keycloak client')
             try {
                 await this.api(`keycloak`, 'post', {

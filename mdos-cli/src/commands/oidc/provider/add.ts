@@ -51,8 +51,14 @@ export default class Add extends Command {
         const oidcResponses = q.length > 0 ? await inquirer.prompt(q) : {}
 
 		if(oidcResponses.target == "keycloak client") {
-			q = filterQuestions(Add.questions, "kc_oidc", flags);
-            let responses = q.length > 0 ? await inquirer.prompt(q) : {}
+			// Get client id & uuid
+            let clientResponse;
+            try {
+                clientResponse = await this.collectClientId(flags);
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
 
 			// Create new client in Keycloak
 			CliUx.ux.action.start('Creating Keycloak client & OIDC provider')
@@ -61,8 +67,8 @@ export default class Add extends Command {
 					"type": "keycloak",
 					"realm": "mdos",
 					"data": {
-						...mergeFlags(responses, flags),
-						"name": `kc-${responses.clientId}`
+						...mergeFlags(clientResponse, flags),
+						"name": `kc-${clientResponse.clientId}`
 					}
 				});
 				CliUx.ux.action.stop()

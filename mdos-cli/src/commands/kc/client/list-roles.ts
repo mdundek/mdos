@@ -45,11 +45,11 @@ export default class ListRoles extends Command {
         }
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            let q = filterQuestions(ListRoles.questions, "kc_client_groups", flags);
-            let responses = q.length > 0 ? await inquirer.prompt(q) : {}
-
             try {
-                const response = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${flags.clientId ? flags.clientId : responses.clientId}`, "get")
+                // Get client id & uuid
+                const clientResponse = await this.collectClientId(flags);
+
+                const response = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${flags.clientId ? flags.clientId : clientResponse.clientId}`, "get")
 
                 console.log();
                 CliUx.ux.table(response.data, {
