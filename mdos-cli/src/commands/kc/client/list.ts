@@ -17,9 +17,13 @@ export default class List extends Command {
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(List)
 		
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
+
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
+            nsResponse = await this.api(`kube?target=namespaces`, 'get')
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
@@ -27,10 +31,8 @@ export default class List extends Command {
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
             // We need a valid admin authentication token, get this first
-            await this.validateJwt();
-
             try {
-                const response = await this.api("keycloak?target=clients&realm=mdos", "get", true)
+                const response = await this.api("keycloak?target=clients&realm=mdos", "get")
 
                 console.log();
                 CliUx.ux.table(response.data, {

@@ -27,8 +27,12 @@ export default class List extends Command {
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(List)
 
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
+
 		try {
-            const resp = await this.api(`oidc-provider`, "get", false)
+            const resp = await this.api(`oidc-provider`, "get")
           
             console.log();
             CliUx.ux.table(resp.data, {

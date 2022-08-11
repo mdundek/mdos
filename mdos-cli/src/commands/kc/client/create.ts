@@ -26,10 +26,14 @@ export default class Create extends Command {
 
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Create)
+
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
 		
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
+            nsResponse = await this.api(`kube?target=namespaces`, 'get')
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
@@ -41,7 +45,7 @@ export default class Create extends Command {
 
             CliUx.ux.action.start('Creating Keycloak client')
             try {
-                await this.api(`keycloak`, 'post', true, {
+                await this.api(`keycloak`, 'post', {
                     type: 'client',
                     realm: 'mdos',
                     ...mergeFlags(responses, flags),

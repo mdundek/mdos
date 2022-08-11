@@ -59,12 +59,12 @@ export default abstract class extends Command {
 	 * @param body 
 	 * @returns 
 	 */
-	async api(endpoint: string, method: string, adminOnly: boolean, body?: any) {
+	async api(endpoint: string, method: string, body?: any) {
 		let API_URI = await this._collectApiServerUrl();
 
 		// Set oauth2 cookie if necessary
 		const axiosConfig: AxiosConfig = {};
-		if(adminOnly && this.authMode != "none") {
+		if(this.authMode != "none") {
 			const kcCookie = this.getConfig("JWT_TOKEN");
 			axiosConfig.headers = { Cookie: `_oauth2_proxy=${kcCookie};` }
 		}
@@ -188,7 +188,7 @@ export default abstract class extends Command {
 				},
 			}])
 		} else {
-			_validateCookie();
+			await _validateCookie();
 		}
 	}
 }

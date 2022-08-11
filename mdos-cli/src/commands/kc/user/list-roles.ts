@@ -27,9 +27,13 @@ export default class ListRoles extends Command {
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(ListRoles)
 		
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
+        
 		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get', false)
+            nsResponse = await this.api(`kube?target=namespaces`, 'get')
         } catch (err) {
             error("Mdos API server is unavailable");
 			process.exit(1);
@@ -40,7 +44,7 @@ export default class ListRoles extends Command {
             let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
             try {
-                const resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get", true)
+                const resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get")
                 
                 const tblData: any[] = [];
                 if(resp.data.clientMappings) {

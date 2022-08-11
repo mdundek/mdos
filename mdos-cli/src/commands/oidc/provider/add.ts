@@ -38,6 +38,10 @@ export default class Add extends Command {
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Add)
 
+		// Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
+
 		let q = filterQuestions(Add.questions, "oidc", flags);
         const oidcResponses = q.length > 0 ? await inquirer.prompt(q) : {}
 
@@ -48,7 +52,7 @@ export default class Add extends Command {
 			// Create new client in Keycloak
 			CliUx.ux.action.start('Creating Keycloak client & OIDC provider')
 			try {
-				await this.api(`oidc-provider`, "post", true, {
+				await this.api(`oidc-provider`, "post", {
 					"type": "keycloak",
 					"realm": "mdos",
 					"data": {
