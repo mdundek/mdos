@@ -27,6 +27,10 @@ export default class ProtectApp extends Command {
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(ProtectApp)
 
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
+
 		let q = filterQuestions(ProtectApp.questions, "<group>", flags);
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 	}

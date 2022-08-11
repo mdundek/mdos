@@ -18,6 +18,10 @@ export default class List extends Command {
 
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(List)
+
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
 		
 		let nsResponse
         try {
@@ -29,7 +33,7 @@ export default class List extends Command {
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
             try {
-                const resp = await this.api(`keycloak?target=users&realm=mdos${flags.clientId ? "&clientId=" + flags.clientId : ""}`, "get", true)
+                const resp = await this.api(`keycloak?target=users&realm=mdos${flags.clientId ? "&clientId=" + flags.clientId : ""}`, "get")
 
                 console.log();
                 CliUx.ux.table(resp.data, {

@@ -27,6 +27,10 @@ export default class Remove extends Command {
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Remove)
 
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        await this.validateJwt();
+
 		let q = filterQuestions(Remove.questions, "<group>", flags);
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 	}

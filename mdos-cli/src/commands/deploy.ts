@@ -1,4 +1,5 @@
-import {Command, Flags} from '@oclif/core'
+import {Flags} from '@oclif/core'
+import Command from '../base'
 
 export default class Deploy extends Command {
   static description = 'describe the command here'
@@ -18,6 +19,10 @@ export default class Deploy extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(Deploy)
+
+    // Make sure we have a valid oauth2 cookie token
+    // otherwise, collect it
+    await this.validateJwt();
 
     const name = flags.name ?? 'world'
     this.log(`hello ${name} from /home/mdundek/workspaces/mdos-cli/src/commands/deploy.ts`)

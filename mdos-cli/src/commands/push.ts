@@ -1,4 +1,5 @@
-import {Command, Flags} from '@oclif/core'
+import {Flags} from '@oclif/core'
+import Command from '../base'
 
 export default class Push extends Command {
   static description = 'describe the command here'
