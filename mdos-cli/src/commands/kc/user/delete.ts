@@ -11,6 +11,7 @@ export default class Delete extends Command {
 	// ******* FLAGS *******
 	static flags = {
 		username: Flags.string({ char: 'u', description: 'Keycloak username to delete' }),
+        force: Flags.boolean({ char: 'f', description: 'Do not ask for comfirmation' }),
 	}
 	// ***** QUESTIONS *****
     static questions = [
@@ -62,14 +63,30 @@ export default class Delete extends Command {
                 process.exit(1);
             }
             
-            CliUx.ux.action.start('Deleting Keycloak user')
-            try {
-                await this.api(`keycloak/${targetUser.id}?target=users&realm=mdos`, 'delete')
-                CliUx.ux.action.stop()
-            } catch (error) {
-                CliUx.ux.action.stop('error')
-                this.showError(error);
-                process.exit(1);
+            // Confirm?
+            let confirmed = false
+            if(flags.force) {
+                confirmed = true
+            } else {
+                const confirmResponse = await inquirer.prompt([{
+                    name: 'confirm',
+                    message: 'You are about to delete a OIDC provider, are you sure you wish to prosceed?',
+                    type: 'confirm',
+                    default: false
+                }])
+                confirmed = confirmResponse.confirm
+            }
+            
+            if(confirmed) {
+                CliUx.ux.action.start('Deleting Keycloak user')
+                try {
+                    await this.api(`keycloak/${targetUser.id}?target=users&realm=mdos`, 'delete')
+                    CliUx.ux.action.stop()
+                } catch (error) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(error);
+                    process.exit(1);
+                }
             }
 
 		} else {

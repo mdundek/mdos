@@ -44,7 +44,31 @@ class Kube extends KubeBase {
             // Write back to ConfigMap object
             istioConfigMap.data.mesh = YAML.stringify(istioMeshYaml);
 
-            await this.replaceConfigMap("istio-system", "istio", istioConfigMap);
+            // Create values.yaml json file
+            let valuesManifestJson = {
+                meshConfig: {
+                    extensionProviders: istioMeshYaml.extensionProviders
+                }
+            };
+
+            // Deploy updated istiod
+            try {
+                fs.writeFileSync('./values.yaml', YAML.stringify(valuesManifestJson));
+                await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`);
+            } finally {
+                if (fs.existsSync("./values.yaml")) {
+                    fs.unlinkSync("./values.yaml");
+                }
+            }
+
+            // Restart istiod pod
+            try {
+                const istioPods = await this.getPods("istio-system");
+                const istiodPodName = istioPods.items.find(p => p.metadata.labels.app == "istiod").metadata.name;
+                await this.deletePod("istio-system", istiodPodName);
+            } catch(error) {
+                throw error;
+            }
         } catch (error) {
             console.log(error);
             throw error;
@@ -187,6 +211,13 @@ config:
                 await this.createNamespace({name: "oauth2-proxy"});
             await this.helmInstall("oauth2-proxy", data.name, oauthData, "oauth2-proxy/oauth2-proxy", "6.0.1");
         }
+    }
+
+    /**
+     * uninstallOauth2Proxy
+     */
+     async uninstallOauth2Proxy(name) {
+        await this.helmUninstall("oauth2-proxy", name);
     }
 }
 

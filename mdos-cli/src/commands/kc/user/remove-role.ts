@@ -13,6 +13,7 @@ export default class RemoveRole extends Command {
 		username: Flags.string({ char: 'u', description: 'Keycloak username' }),
         clientId: Flags.string({ char: 'c', description: 'Keycloak client ID' }),
         role: Flags.string({ char: 'r', description: 'Role name to remove' }),
+        force: Flags.boolean({ char: 'f', description: 'Do not ask for comfirmation' }),
 	}
 	// ***** QUESTIONS *****
     static questions = [
@@ -132,14 +133,30 @@ export default class RemoveRole extends Command {
                 targetRole = roleResponse.role;
             }
 
-            CliUx.ux.action.start('Removing Keycloak user role')
-            try {
-                await this.api(`keycloak/${targetRole.id}?target=user-roles&realm=mdos&clientUuid=${clientResponses.clientUuid}&userUuid=${targetUser.id}&roleName=${targetRole.name}`, 'delete')
-                CliUx.ux.action.stop()
-            } catch (error) {
-                CliUx.ux.action.stop('error')
-                this.showError(error);
-                process.exit(1);
+            // Confirm?
+            let confirmed = false
+            if(flags.force) {
+                confirmed = true
+            } else {
+                const confirmResponse = await inquirer.prompt([{
+                    name: 'confirm',
+                    message: 'You are about to delete a OIDC provider, are you sure you wish to prosceed?',
+                    type: 'confirm',
+                    default: false
+                }])
+                confirmed = confirmResponse.confirm
+            }
+            
+            if(confirmed) {
+                CliUx.ux.action.start('Removing Keycloak user role')
+                try {
+                    await this.api(`keycloak/${targetRole.id}?target=user-roles&realm=mdos&clientUuid=${clientResponses.clientUuid}&userUuid=${targetUser.id}&roleName=${targetRole.name}`, 'delete')
+                    CliUx.ux.action.stop()
+                } catch (error) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(error);
+                    process.exit(1);
+                }
             }
 		} else {
 			warn("Keycloak is not installed");

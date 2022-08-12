@@ -11,6 +11,7 @@ export default class Delete extends Command {
 	// ******* FLAGS *******
 	static flags = {
 		clientId: Flags.string({ char: 'c', description: 'Keycloak client ID to remove' }),
+        force: Flags.boolean({ char: 'f', description: 'Do not ask for comfirmation' }),
 	}
 	// ***** QUESTIONS *****
     static questions = []
@@ -61,7 +62,7 @@ export default class Delete extends Command {
             } else {
                 clientResponse = await inquirer.prompt([{
                     name: 'clientId',
-                    message: 'select a client from which to remove a role from',
+                    message: 'Select a client from which to remove a role from',
                     type: 'list',
                     choices: respClients.data.map((o) => {
                         return { name: o.clientId, value: o.clientId }
@@ -70,14 +71,30 @@ export default class Delete extends Command {
                 clientResponse.clientUuid = respClients.data.find(c => c.clientId == clientResponse.clientId).id;
             }
 
-            CliUx.ux.action.start('Deleting Keycloak client')
-            try {
-                await this.api(`keycloak/${clientResponse.clientUuid}?target=clients&realm=mdos`, 'delete')
-                CliUx.ux.action.stop()
-            } catch (error) {
-                CliUx.ux.action.stop('error')
-                this.showError(error);
-                process.exit(1);
+            // Confirm?
+            let confirmed = false
+            if(flags.force) {
+                confirmed = true
+            } else {
+                const confirmResponse = await inquirer.prompt([{
+                    name: 'confirm',
+                    message: 'You are about to delete a OIDC provider, are you sure you wish to prosceed?',
+                    type: 'confirm',
+                    default: false
+                }])
+                confirmed = confirmResponse.confirm
+            }
+            
+            if(confirmed) {
+                CliUx.ux.action.start('Deleting Keycloak client')
+                try {
+                    await this.api(`keycloak/${clientResponse.clientUuid}?target=clients&realm=mdos`, 'delete')
+                    CliUx.ux.action.stop()
+                } catch (error) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(error);
+                    process.exit(1);
+                }
             }
 		} else {
 			warn("Keycloak is not installed");

@@ -12,6 +12,7 @@ export default class DeleteRole extends Command {
 	static flags = {
 		clientId: Flags.string({ char: 'c', description: 'Keycloak client ID' }),
         role: Flags.string({ char: 'r', description: 'Client role to delete' }),
+        force: Flags.boolean({ char: 'f', description: 'Do not ask for comfirmation' }),
 	}
 	// ***** QUESTIONS *****
     static questions = []
@@ -104,14 +105,30 @@ export default class DeleteRole extends Command {
                 targetRole = roleResponse.role
             }
 
-            CliUx.ux.action.start('Deleting Keycloak client role')
-            try {
-                await this.api(`keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
-                CliUx.ux.action.stop()
-            } catch (error) {
-                CliUx.ux.action.stop('error')
-                this.showError(error);
-                process.exit(1);
+            // Confirm?
+            let confirmed = false
+            if(flags.force) {
+                confirmed = true
+            } else {
+                const confirmResponse = await inquirer.prompt([{
+                    name: 'confirm',
+                    message: 'You are about to delete a OIDC provider, are you sure you wish to prosceed?',
+                    type: 'confirm',
+                    default: false
+                }])
+                confirmed = confirmResponse.confirm
+            }
+            
+            if(confirmed) {
+                CliUx.ux.action.start('Deleting Keycloak client role')
+                try {
+                    await this.api(`keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
+                    CliUx.ux.action.stop()
+                } catch (error) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(error);
+                    process.exit(1);
+                }
             }
 
 		} else {

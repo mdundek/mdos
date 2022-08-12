@@ -26,15 +26,13 @@ class KubeBase {
             this.K3S_TOKEN = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/token', 'utf8').toString();
             this.K3S_API_SERVER = "kubernetes.default.svc";
             this.K3S_ROOT_CA_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt';
-
-            console.log("-------------- v1 ---------------------");
         } else {
             this.K3S_TOKEN = process.env.K3S_TOKEN;
             this.K3S_API_SERVER = process.env.K3S_API_SERVER;
             this.K3S_ROOT_CA_PATH = process.env.K3S_ROOT_CA_PATH;
         }
 
-        this.HELM_BASE_CMD = `${process.env.RUN_TARGET == "pod" ? "" : "sudo " }helm --kube-apiserver "https://${this.K3S_API_SERVER}" --kube-ca-file ${this.K3S_ROOT_CA_PATH} --kube-token "${this.K3S_TOKEN}"`
+        this.HELM_BASE_CMD = `helm --kube-apiserver "https://${this.K3S_API_SERVER}" --kube-ca-file ${this.K3S_ROOT_CA_PATH} --kube-token "${this.K3S_TOKEN}"`
         
         this.k8sAxiosHeader = {
             headers: { 'Authorization': `Bearer ${this.K3S_TOKEN}` }
@@ -245,8 +243,8 @@ class KubeBase {
      * helmUninstall
      * @param {*} chartName 
      */
-    async helmUninstall(chartName) {
-        // this.HELM_BASE_CMD
+    async helmUninstall(namespace, chartName) {
+        await terminalCommand(`${this.HELM_BASE_CMD} delete ${chartName} -n ${namespace}`);
     }
 
     /**
