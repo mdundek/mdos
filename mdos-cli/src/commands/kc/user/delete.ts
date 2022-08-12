@@ -10,17 +10,17 @@ export default class Delete extends Command {
 
 	// ******* FLAGS *******
 	static flags = {
-		// username: Flags.string({ char: 'u', description: 'Keycloak admin username' }),
+		username: Flags.string({ char: 'u', description: 'Keycloak username to delete' }),
 	}
 	// ***** QUESTIONS *****
     static questions = [
-        // {
-        //     group: "<group>",
-        //     type: 'text',
-        //     name: 'username',
-        //     message: 'What admin username would you like to configure for Keycloak?',
-        //     validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
-        // }
+        {
+            group: "user",
+            type: 'text',
+            name: 'username',
+            message: 'Enter Keycloak username to delete',
+            validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
+        }
     ]
     // ***********************
 
@@ -45,8 +45,32 @@ export default class Delete extends Command {
         }
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            let q = filterQuestions(Delete.questions, "<group>", flags);
+            let q = filterQuestions(Delete.questions, "user", flags);
             let responses = q.length > 0 ? await inquirer.prompt(q) : {}
+            
+            let allUsers
+            try {
+                allUsers = await this.api("keycloak?target=users&realm=mdos", "get");
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
+           
+            const targetUser = allUsers.data.find((u: { username: any }) => u.username == responses.username)
+            if(!targetUser) {
+                error("Username not found");
+                process.exit(1);
+            }
+            
+            CliUx.ux.action.start('Deleting Keycloak user')
+            try {
+                await this.api(`keycloak/${targetUser.id}?target=users&realm=mdos`, 'delete')
+                CliUx.ux.action.stop()
+            } catch (error) {
+                CliUx.ux.action.stop('error')
+                this.showError(error);
+                process.exit(1);
+            }
 
 		} else {
 			warn("Keycloak is not installed");

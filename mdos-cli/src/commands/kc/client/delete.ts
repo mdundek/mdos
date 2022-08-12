@@ -10,18 +10,10 @@ export default class Delete extends Command {
 
 	// ******* FLAGS *******
 	static flags = {
-		// username: Flags.string({ char: 'u', description: 'Keycloak admin username' }),
+		clientId: Flags.string({ char: 'c', description: 'Keycloak client ID to remove' }),
 	}
 	// ***** QUESTIONS *****
-    static questions = [
-        // {
-        //     group: "<group>",
-        //     type: 'text',
-        //     name: 'username',
-        //     message: 'What admin username would you like to configure for Keycloak?',
-        //     validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
-        // }
-    ]
+    static questions = []
     // ***********************
 
 	public async run(): Promise<void> {
@@ -45,9 +37,48 @@ export default class Delete extends Command {
         }
 
         if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            let q = filterQuestions(Delete.questions, "<group>", flags);
-            let responses = q.length > 0 ? await inquirer.prompt(q) : {}
+            // Get existing clients
+            let respClients: { data: any[] }
+            try {
+                respClients = await this.api(`keycloak?target=clients&realm=mdos`, "get")
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
 
+			// Collect target client
+            let clientResponse: { clientUuid: any; clientId: any }
+            if(flags.clientId) {
+                const targetClient = respClients.data.find(c => c.clientId == flags.clientId)
+                if(!targetClient) {
+                    error("Client not found");
+                    process.exit(1);
+                }
+                clientResponse = {
+                    clientUuid: targetClient.id,
+                    clientId: flags.clientId
+                }
+            } else {
+                clientResponse = await inquirer.prompt([{
+                    name: 'clientId',
+                    message: 'select a client from which to remove a role from',
+                    type: 'list',
+                    choices: respClients.data.map((o) => {
+                        return { name: o.clientId, value: o.clientId }
+                    }),
+                }])
+                clientResponse.clientUuid = respClients.data.find(c => c.clientId == clientResponse.clientId).id;
+            }
+
+            CliUx.ux.action.start('Deleting Keycloak client')
+            try {
+                await this.api(`keycloak/${clientResponse.clientUuid}?target=clients&realm=mdos`, 'delete')
+                CliUx.ux.action.stop()
+            } catch (error) {
+                CliUx.ux.action.stop('error')
+                this.showError(error);
+                process.exit(1);
+            }
 		} else {
 			warn("Keycloak is not installed");
 			process.exit(1);

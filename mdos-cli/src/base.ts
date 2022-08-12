@@ -74,6 +74,8 @@ export default abstract class extends Command {
 			return await axios.post(`${API_URI}/${endpoint}`, body, axiosConfig);
 		} else if(method == "get") {
 			return await axios.get(`${API_URI}/${endpoint}`, axiosConfig);
+		} else if(method == "delete") {
+			return await axios.delete(`${API_URI}/${endpoint}`, axiosConfig);
 		}
 	}
 
@@ -237,7 +239,7 @@ export default abstract class extends Command {
 	 * showError
 	 * @param error 
 	 */
-	showError(error: (arg0: any) => void) {
-		error(extractErrorMessage(error));
+	showError(err: (arg0: any) => void) {
+		error(extractErrorMessage(err));
 	}
 }

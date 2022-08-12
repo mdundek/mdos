@@ -95,3 +95,44 @@ get_full_path() {
     fi
     cd $_CPWD
 }
+
+k8s_ns_scope_exist() {
+    local __resultvar=$1
+    ELM_TYPE=$2
+    ELM_NAME=$3
+    ELM_NS=$4
+    # Admin role
+    unset CMD_LINE
+    while read CMD_LINE ; do 
+        K8S_NAME=`echo "$CMD_LINE" | cut -d' ' -f 1`
+        if [ "$K8S_NAME" == "mdos-admin-role" ]; then
+            ELM_EXISTS=1
+        fi
+    done < <(kubectl get $ELM_TYPE -n $ELM_NS 2>/dev/null)
+
+    if [ -z $ELM_EXISTS ]; then
+        eval $__resultvar=""
+    else
+        eval $__resultvar="1"
+    fi
+}
+
+k8s_cluster_scope_exist() {
+    local __resultvar=$1
+    ELM_TYPE=$2
+    ELM_NAME=$3
+    # Admin role
+    unset CMD_LINE
+    while read CMD_LINE ; do 
+        K8S_NAME=`echo "$CMD_LINE" | cut -d' ' -f 1`
+        if [ "$K8S_NAME" == "mdos-admin-role" ]; then
+            ELM_EXISTS=1
+        fi
+    done < <(kubectl get $ELM_TYPE 2>/dev/null)
+
+    if [ -z $ELM_EXISTS ]; then
+        eval $__resultvar=""
+    else
+        eval $__resultvar="1"
+    fi
+}

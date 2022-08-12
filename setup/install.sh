@@ -1294,9 +1294,14 @@ config:
 # ############### INSTALL MDOS ###############
 # ############################################
 install_mdos() {
-    kubectl create ns mdos &>> $LOG_FILE
-    kubectl label ns mdos istio-injection=enabled &>> $LOG_FILE
+    k8s_cluster_scope_exist ELM_EXISTS ns "mdos"
+    if [ -z $ELM_EXISTS ]; then
+        kubectl create ns mdos &>> $LOG_FILE
+        kubectl label ns mdos istio-injection=enabled &>> $LOG_FILE
+    fi
 
+    k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
+    if [ -z $ELM_EXISTS ]; then
 cat <<EOF | kubectl create -f -
 apiVersion: v1
 kind: Secret
@@ -1309,13 +1314,8 @@ type: kubernetes.io/service-account-token
 EOF
 
     # Admin role
-    while read CROLE_LINE ; do 
-        CROLEBINDING_NAME=`echo "$CROLE_LINE" | cut -d' ' -f 1`
-        if [ "$CROLEBINDING_NAME" == "mdos-admin-role" ]; then
-            CROLE_EXISTS=1
-        fi
-    done < <(kubectl get clusterrole 2>/dev/null)
-    if [ -z $CROLE_EXISTS ]; then
+    k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"
+    if [ -z $ELM_EXISTS ]; then
         cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1336,13 +1336,8 @@ EOF
     fi
 
     # Admin role binding
-    while read CROLEBINDING_LINE ; do 
-        CROLEBINDING_NAME=`echo "$CROLEBINDING_LINE" | cut -d' ' -f 1`
-        if [ "$CROLEBINDING_NAME" == "mdos-admin-role-binding" ]; then
-            CROLEBINDING_EXISTS=1
-        fi
-    done < <(kubectl get clusterrolebinding 2>/dev/null)
-    if [ -z $CROLEBINDING_EXISTS ]; then
+    k8s_cluster_scope_exist ELM_EXISTS clusterrolebinding "mdos-admin-role-binding"
+    if [ -z $ELM_EXISTS ]; then
         cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

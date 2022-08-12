@@ -57,7 +57,13 @@ export default class AddRole extends Command {
             }
             
             // Get all Client roles
-            const respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
+            let respClientRoles;
+            try {
+                respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
             if(respClientRoles.data.length == 0) {
                 error("There are no roles asssociated to this client yet. Create a client role first using the command:");
                 console.log("   mdos kc client create-role");
@@ -90,7 +96,14 @@ export default class AddRole extends Command {
             let userResponses = q.length > 0 ? await inquirer.prompt(q) : {}
 
             const targetUsername = flags.username ? flags.username : userResponses.username;
-            const allUsers = await this.api("keycloak?target=users&realm=mdos", "get");
+
+            let allUsers;
+            try {
+                allUsers = await this.api("keycloak?target=users&realm=mdos", "get");
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
             const targetUser = allUsers.data.find((u: { username: any }) => u.username == targetUsername)
             if(!targetUser) {
                 error("Username not found");
@@ -98,7 +111,13 @@ export default class AddRole extends Command {
             }
 
             // Make sure this user does not already have this role associated
-            const userRolesResponse = await this.api(`keycloak?target=user-roles&realm=mdos&username=${targetUser.username}`, "get")
+            let userRolesResponse;
+            try {
+                userRolesResponse = await this.api(`keycloak?target=user-roles&realm=mdos&username=${targetUser.username}`, "get")
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
             const existingMappingsForClient = userRolesResponse.data.clientMappings ? userRolesResponse.data.clientMappings[clientResponse.clientName] : null;
             if(existingMappingsForClient && existingMappingsForClient.mappings.find((m: { name: any }) => m.name == roleResponses.roleName)) {
                 warn("User already has this client role");

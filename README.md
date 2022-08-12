@@ -9,33 +9,6 @@ MDos is a application runtime platform, it's aim is to greatly simplify the proc
 * [Minio S3](docs/minio.md)
 
 
-## CLI Suggestions (admin)
+## TODO
 
-### OIDC provider management
-
-> Add new oidc provider config to cluster
-
-- mdos oidc-provider add (KC client, Google, Github...)
-- mdos oidc-provider remove
-
-### User management (Keycloak only)
-
-> To be defined & tested, roles vs groups
-
-- mdos oidc-user add (linked to client)
-- mdos oidc-user edit (roles / groups)
-- mdos oidc-user remove
-
-
-## CLI Suggestions (none admin)
-
-### Configure kubeconfig
-
-- mdos setup kubeconfig (reeequires RBAC rules for production, start with admin kubeconfig and no auth)
-
-### Generate applications & components
-
-- mdos generate application
-- mdos generate component
-- mdos build
-- mdos deploy
+### 

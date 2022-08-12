@@ -320,6 +320,30 @@ class Keycloak {
     }
 
     /**
+     * deleteClient
+     * @param {*} realm 
+     * @param {*} clientUuid 
+     */
+    async deleteClient(realm, clientUuid) {
+        let accessToken = await this._getAccessToken()
+
+        const allclients = await this.getClients(realm)
+        const clientInst = allclients.find((o) => o.id == clientUuid)
+
+        if (!clientInst) throw new NotFound('Client UUID not found')
+
+        await axios.delete(
+            `https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientUuid}`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            }
+        )
+    }
+
+    /**
      * createClientRole
      * @param {*} realm
      * @param {*} clientUuid
@@ -354,6 +378,25 @@ class Keycloak {
             // console.log(error);
             throw error
         }
+    }
+
+    /**
+     * removeClientRole
+     * @param {*} realm 
+     * @param {*} clientUuid 
+     * @param {*} name 
+     */
+    async removeClientRole(realm, clientUuid, name) {
+        let accessToken = await this._getAccessToken()
+        await axios.delete(
+            `https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientUuid}/roles/${name}`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            }
+        )
     }
 
     /**
@@ -555,6 +598,25 @@ class Keycloak {
     }
 
     /**
+     * deleteUser
+     * @param {*} realm 
+     * @param {*} userId 
+     */
+    async deleteUser(realm, userId) {
+        let accessToken = await this._getAccessToken()
+
+        await axios.delete(
+            `https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            }
+        ) 
+    }
+
+    /**
      * getClientSecret
      * @param {*} realm
      * @param {*} clientId
@@ -604,6 +666,34 @@ class Keycloak {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                 },
+            }
+        )
+    }
+
+    /**
+     * removeClientRoleBindingFromUser
+     * @param {*} realm 
+     * @param {*} clientUuid 
+     * @param {*} userUuid 
+     * @param {*} roleUuid 
+     * @param {*} roleName 
+     */
+    async removeClientRoleBindingFromUser(realm, clientUuid, userUuid, roleName, roleUuid) {
+        let accessToken = await this._getAccessToken()
+        await axios.delete(
+            `https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${userUuid}/role-mappings/clients/${clientUuid}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                data: [
+                    {
+                        id: roleUuid,
+                        name: roleName,
+                    },
+                ]
             }
         )
     }
