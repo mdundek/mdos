@@ -13,9 +13,9 @@ This architecture allows you to compose quite complex applications to suit most 
 ### Project layout
 
 A MDos application project layout is composed of one or more folders, each one representing an application component.  
-At the root of the application folder is a `values.yaml` file that holds all runtime configuration parameters for the application and it's components:  
+At the root of the application folder is a `values.yaml` file that holds all runtime configuration parameters for the application and it's components:
 
-``` title="Project structure"
+```title="Project structure"
 my-application/
 ├── backend
 │   └── Dockerfile
@@ -28,14 +28,13 @@ In this example we have an application named `my-application`, that is composed 
 Each component has it's own Dockerfile.  
 At the `application` level, there is also a `values.yaml` config file that holds all runtime configuration parameters for the application:
 
-``` yaml linenums="1"
-mdosAcbmAppUUID: 8c259ee5-d70f-409b-8eea-3f410e385d0f
-mdosBundleName: my-ns
-appName: my-app    
+```yaml linenums="1"
+appUUID: 8c259ee5-d70f-409b-8eea-3f410e385d0f
+tenantName: my-ns
+appName: my-app
 appComponents:
-
   - name: backend
-    mdosAcbmAppCompUUID: 552be6bf-4a8d-4003-aeb2-9999a535c299
+    appCompUUID: 552be6bf-4a8d-4003-aeb2-9999a535c299
     replicaCount: 1
     # Your image name and tag
     image:
@@ -77,7 +76,7 @@ appComponents:
     #     - 27017
     #   svcPort: 80
     #   tls: []
-    
+
     # Configuration parameters
     config:
       enabled: false
@@ -112,7 +111,7 @@ appComponents:
       #     ldlSync: false
       #     sourcePath: /mdos/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
       #     type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)
-      # hostpathVolumes: 
+      # hostpathVolumes:
       #   - name: host-data-volume
       #     mountPath: /tmp
       #     hostPath: /mdos/content-volumes/app1
@@ -126,7 +125,7 @@ appComponents:
     #   memory: 128Mi
 
   - name: frontend
-    mdosAcbmAppCompUUID: 5515dedf-9c1e-4afb-9f20-5238bfbd5256
+    appCompUUID: 5515dedf-9c1e-4afb-9f20-5238bfbd5256
     replicaCount: 1
     # Your image name and tag
     image:
@@ -168,7 +167,7 @@ appComponents:
     #     - 27017
     #   svcPort: 80
     #   tls: []
-    
+
     # Configuration parameters
     config:
       enabled: false
@@ -203,7 +202,7 @@ appComponents:
       #     ldlSync: false
       #     sourcePath: /mdos/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)
       #     type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)
-      # hostpathVolumes: 
+      # hostpathVolumes:
       #   - name: host-data-volume
       #     mountPath: /tmp
       #     hostPath: /mdos/content-volumes/app1

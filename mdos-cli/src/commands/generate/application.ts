@@ -4,30 +4,79 @@ import Command from '../../base'
 const inquirer = require('inquirer')
 const { info, error, warn, filterQuestions } = require('../../lib/tools')
 const chalk = require('chalk')
+const fs = require('fs')
+const path = require('path')
+const YAML = require('yaml')
 
 export default class Application extends Command {
 	static description = 'describe the command here'
 
 	// ******* FLAGS *******
 	static flags = {
-		// username: Flags.string({ char: 'u', description: 'Keycloak admin username' }),
+		tenantName: Flags.string({ char: 't', description: 'A tenant name that this application belongs to' }),
+		applicationName: Flags.string({ char: 'n', description: 'An application name' }),
 	}
 	// ***** QUESTIONS *****
     static questions = [
-        // {
-        //     group: "<group>",
-        //     type: 'text',
-        //     name: 'username',
-        //     message: 'What admin username would you like to configure for Keycloak?',
-        //     validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
-        // }
+		{
+            group: "application",
+            type: 'text',
+            name: 'applicationName',
+            message: 'Enter a application name:',
+            validate: (value: { trim: () => { (): any; new(): any; length: number } }) => {
+				if(value.trim().length == 0)
+					return "Mandatory field"
+				if (fs.existsSync(path.join(process.cwd(), value))) {
+					return "A folder with this name already exists in this directory"
+				}
+				return true
+			}
+        }, {
+            group: "application",
+            type: 'text',
+            name: 'tenantName',
+            message: 'Enter a tenant name that this application belongs to:',
+            validate: (value: { trim: () => { (): any; new(): any; length: number } }) => {
+				if(value.trim().length == 0)
+					return "Mandatory field"
+				return true
+			}
+        }
     ]
     // ***********************
 
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Application)
 
-		let q = await inquirer.prompt(filterQuestions(Application.questions, "<group>", flags));
+		// Collect info
+		let q = filterQuestions(Application.questions, "application", flags);
 		let responses = q.length > 0 ? await inquirer.prompt(q) : {}
+
+		// Make sure app folder does not exist yet
+		const mdosAppFile = path.join(process.cwd(), flags.applicationName ? flags.applicationName : responses.applicationName)
+		if (fs.existsSync(mdosAppFile)) {
+			warn("A folder with this name already exists in this directory");
+			process.exit(1);
+		}
+
+		// Create app folder
+		try {
+			fs.mkdirSync(mdosAppFile, { recursive: true });
+		} catch (error) {
+			this.showError(error)
+			process.exit(1);
+		}
+
+		// Create mdos.yaml file
+		try {
+			fs.writeFileSync(path.join(mdosAppFile, "mdos.yaml"), YAML.stringify({
+				tenantName: flags.tenantName ? flags.tenantName : responses.tenantName,
+				appName: flags.applicationName ? flags.applicationName : responses.applicationName,
+				components: []
+			}));
+		} catch (error) {
+			this.showError(error)
+			process.exit(1);
+		}
 	}
 }

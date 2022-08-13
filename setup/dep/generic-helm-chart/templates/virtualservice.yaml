@@ -1,7 +1,7 @@
 {{- if .Values.enabled }}
 {{- $appName := lower $.Values.appName }}
 {{- range .Values.appComponents }}
-{{- $appCompUUID := .mdosAcbmAppCompUUID }}
+{{- $appCompUUID := .appCompUUID }}
 {{- $appCompName := lower .name }}
 {{- if .virtualService }}
 {{- range .virtualService }}
@@ -18,10 +18,10 @@ metadata:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
     app: {{ $appCompName | quote }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ $appCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appCompName | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
     {{- end }}
 spec:
   hosts:
@@ -102,10 +102,10 @@ spec:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
       {{- if $.Values.isMdosApp }}
-      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+      appUUID: {{ $.Values.appUUID | quote }}
+      appCompUUID: {{ $appCompUUID | quote }}
       mdosAcbmAppCompName: {{ $appCompName | quote }}
-      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
       {{- end }}
 ---
 apiVersion: security.istio.io/v1beta1
@@ -131,10 +131,10 @@ spec:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
       {{- if $.Values.isMdosApp }}
-      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ $appCompUUID | quote }}
+      appUUID: {{ $.Values.appUUID | quote }}
+      appCompUUID: {{ $appCompUUID | quote }}
       mdosAcbmAppCompName: {{ $appCompName | quote }}
-      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
       {{- end }}
   {{- end }}
 {{- end }}

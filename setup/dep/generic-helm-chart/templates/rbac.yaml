@@ -7,8 +7,8 @@ metadata:
   labels:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
     {{- end }}
 rules:
 - apiGroups: [""]

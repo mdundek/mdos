@@ -1,33 +1,51 @@
 const chalk = require('chalk');
 
 /**
+ * context
+ * @param {*} text 
+ * @param {*} skipLineBefore 
+ * @param {*} skipLineAFter 
+ */
+ const context = (text, skipLineBefore, skipLineAFter) => {
+	if(!skipLineBefore) console.log();
+	console.log(chalk.gray(text));
+	if(!skipLineAFter) console.log();
+}
+
+/**
  * info
  * @param {*} text 
+ * @param {*} skipLineBefore 
+ * @param {*} skipLineAFter 
  */
-const info = (text) => {
-	console.log();
+const info = (text, skipLineBefore, skipLineAFter) => {
+	if(!skipLineBefore) console.log();
 	console.log(chalk.yellow.underline("INFO"), ":", chalk.gray(text));
-	console.log();
+	if(!skipLineAFter) console.log();
 }
 
 /**
  * error
  * @param {*} text 
+ * @param {*} skipLineBefore 
+ * @param {*} skipLineAFter 
  */
- const error = (text) => {
-	console.log();
+ const error = (text, skipLineBefore, skipLineAFter) => {
+	if(!skipLineBefore) console.log();
 	console.log(chalk.red.underline("ERROR"), ":", chalk.gray(text));
-	console.log();
+	if(!skipLineAFter) console.log();
 }
 
 /**
- * warn
+ * 
  * @param {*} text 
+ * @param {*} skipLineBefore 
+ * @param {*} skipLineAFter 
  */
- const warn = (text) => {
-	console.log();
+ const warn = (text, skipLineBefore, skipLineAFter) => {
+	if(!skipLineBefore) console.log();
 	console.log(chalk.cyan.underline("WARN"), ":", chalk.gray(text));
-	console.log();
+	if(!skipLineAFter) console.log();
 }
 
 /**
@@ -142,6 +160,7 @@ module.exports = {
     info,
 	error,
 	warn,
+	context,
 	filterQuestions,
 	mergeFlags,
 	extractErrorCode,

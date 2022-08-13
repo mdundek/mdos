@@ -132,7 +132,7 @@ check_kube_namespace() {
 # ############### MDOS APP DEPLOY ################
 mdos_deploy_app() {
     I_APP=$(cat ./target_values.yaml | yq eval '.appName')
-    I_NS=$(cat ./target_values.yaml | yq eval '.mdosBundleName')
+    I_NS=$(cat ./target_values.yaml | yq eval '.tenantName')
     unset NS_EXISTS
     while read NS_LINE ; do 
         NS_NAME=`echo "$NS_LINE" | cut -d' ' -f 1`
@@ -1357,8 +1357,8 @@ EOF
     # Deploy keycloak
     cat ./dep/mdos-api/values.yaml > ./target_values.yaml
 
-    MDOS_ACBM_APP_UUID=$(cat ./target_values.yaml | yq eval '.mdosAcbmAppUUID')
-    MDOS_ACBM_APP_CMP_UUID=$(cat ./target_values.yaml | yq eval '.appComponents[0].mdosAcbmAppCompUUID')
+    MDOS_ACBM_APP_UUID=$(cat ./target_values.yaml | yq eval '.appUUID')
+    MDOS_ACBM_APP_CMP_UUID=$(cat ./target_values.yaml | yq eval '.appComponents[0].appCompUUID')
     MDOS_ACBM_APP_CMP_NAME=$(cat ./target_values.yaml | yq eval '.appComponents[0].name')
 
     mdos_deploy_app
@@ -1394,8 +1394,8 @@ spec:
         - "mdos-api.$DOMAIN"
   selector:
     matchLabels:
-      mdosAcbmAppUUID: $MDOS_ACBM_APP_UUID
-      mdosAcbmAppCompUUID: $MDOS_ACBM_APP_CMP_UUID
+      appUUID: $MDOS_ACBM_APP_UUID
+      appCompUUID: $MDOS_ACBM_APP_CMP_UUID
       mdosAcbmAppCompName: $MDOS_ACBM_APP_CMP_NAME
 EOF
 }

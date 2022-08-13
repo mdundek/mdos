@@ -1,10 +1,9 @@
-mdosAcbmAppUUID: 58aac0f8-9e9a-4fc6-8c8f-keycloak
-mdosBundleName: keycloak
+appUUID: 58aac0f8-9e9a-4fc6-8c8f-keycloak
+tenantName: keycloak
 appName: mdos-keycloak
 appComponents:
-
   - name: postgres
-    mdosAcbmAppCompUUID: 335f860d-27e4-4716-957a-keycloak-postgres
+    appCompUUID: 335f860d-27e4-4716-957a-keycloak-postgres
     replicaCount: 1
     image:
       repository: postgres
@@ -42,7 +41,7 @@ appComponents:
       data: {}
     persistence:
       enabled: true
-      hostpathVolumes: 
+      hostpathVolumes:
         - name: host-data-volume
           mountPath: /var/lib/postgresql/data
           hostPath: /home/mdundek/workspaces/mdos/data/keycloak-db
@@ -54,7 +53,7 @@ appComponents:
     skipNetworkIsolation: true
 
   - name: keycloak
-    mdosAcbmAppCompUUID: 6e1edac1-8895-49a2-ba99-keycloak
+    appCompUUID: 6e1edac1-8895-49a2-ba99-keycloak
     replicaCount: 1
     image:
       repository: keycloak
@@ -105,7 +104,7 @@ appComponents:
       data: {}
     persistence:
       enabled: true
-      hostpathVolumes: 
+      hostpathVolumes:
         - name: ssl-fullchain-pem
           mountPath: /etc/x509/https/tls.crt
           hostPath: /etc/letsencrypt/live/yourdomain/fullchain.pem

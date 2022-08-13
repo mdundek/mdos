@@ -1,0 +1,519 @@
+
+{{- $appName := lower .Values.appName -}}
+
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    app: {{ $appComponentName | quote }}
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ .uuid | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+spec:
+  {{- if .replicaCount }}
+  replicas: {{ .replicaCount }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      appUuid: {{ $.Values.uuid | quote }}
+      compUuid: {{ .uuid | quote }}
+      app: {{ $appComponentName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
+  template:
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-= POD =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+    metadata:
+      labels:
+        app: {{ $appComponentName | quote }}
+        appUuid: {{ $.Values.uuid | quote }}
+        compUuid: {{ .uuid | quote }}
+        tenantName: {{ $.Values.tenantName | quote }}
+    spec:
+    {{- with .imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- if .serviceAccount }}
+      serviceAccountName: {{ $appName }}-{{ lower .name }}
+    {{- end }}
+    {{- with $.Values.podSecurityContext }}
+      securityContext:
+      {{- toYaml .podSecurityContext | nindent 8 }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-= INIT CONTAINER =-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+    {{- /* -=-=-=-=-=-=-=-=--=-=-=-=-=-= PRELOAD VOLUMES =-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- $initWaitApps := "" }}
+    {{- range .waitForComponents }}
+      {{- if $initWaitApps }}
+        {{- $initWaitApps = print $initWaitApps  ";" . -}}
+      {{- else }}
+        {{- $initWaitApps = print . -}}
+      {{- end }}
+    {{- end }}
+
+    {{- if $initWaitApps }}
+      initContainers:
+      - name: {{ $appName }}-{{ lower .name }}-init
+        image: {{ $.Values.registry }}/{{ $.Values.initContainer.image }}:{{ $.Values.initContainer.imageTag }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        command: ["/usr/src/ops/waitForDeployment.sh"]
+        env: 
+        - name: APP_UUID_WAIT_LIST
+          value: "{{ $initWaitApps }}"
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=--=--=-=-=-= CONTAINER =-=-=-=-=-=-=--=-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+      containers:
+        - name: {{ $appName }}-{{ lower .name }}
+    {{- with $.Values.securityContext }}
+          securityContext:
+          {{- toYaml .securityContext | nindent 12 }}
+    {{- end }}
+    {{- if .registry }}
+          image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+    {{- else }}
+          image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+    {{- end }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+    {{- if .command }}
+      {{- with .command }}
+          command:
+          {{- toYaml . | nindent 12 }}
+      {{- end }}
+    {{- end }}
+    {{- if .commandArgs }}
+      {{- with .commandArgs }}
+          args:
+          {{- toYaml . | nindent 12 }}
+      {{- end }}
+    {{- end }}
+    {{- if .workingDir }}
+          workingDir: {{ .workingDir }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ENV VARS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+          env:
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .secrets }}
+      {{- range .secrets }}
+        {{- $name := .name }}
+        {{- if eq .type "env" }}
+          {{- range .entries }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ .key }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+
+      {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+      {{- if $.Values.global.secrets }}
+        {{- range $.Values.global.secrets }}
+          {{- $name := .name }}
+
+          {{- /* -=-=-=- ENV VARS -=-=-= */}}
+
+          {{- if eq .type "env" }}
+            {{- if .appComp }}
+              {{- $rangeKey := .key }}
+              {{- range .appComp }}
+                {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ $rangeKey }}
+                {{- end }}
+              {{- end }}
+            {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ .key }}
+                  {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= CONFIG-MAPS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .configs }}
+      {{- range .configs }}
+        {{- $name := .name }}
+        {{- if eq .type "env" }}
+          {{- range .entries }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ .key }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+
+      {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL CONFIG-MAPS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+      {{- if $.Values.global.configs }}
+        {{- range $.Values.global.configs }}
+          {{- $name := .name }}
+
+          {{- /* -=-=-=- ENV VARS -=-=-= */}}
+
+          {{- if eq .type "env" }}
+            {{- if .appComp }}
+              {{- $rangeKey := .key }}
+              {{- range .appComp }}
+                {{- if eq .name $appComponentName }}
+            - name: {{ $rangeKey }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ $rangeKey }}
+                {{- end }}
+              {{- end }}
+            {{- else }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ .key }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= PORTS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+    {{- if .services }}
+      {{- range .services }}
+        {{- $svcName := .name }}
+        {{- if .ports }}
+          ports:
+          {{- range .ports }}
+          - name: {{ $svcName }}-{{ .name }}
+            containerPort: {{ .port }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= LIVELINESS PROBE =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .livenessProbe }}
+          livenessProbe:
+      {{- if eq .livenessProbe.type "http" }}
+            httpGet:
+              path: {{ .livenessProbe.path }}
+              port: {{ .livenessProbe.port }}
+        {{- if .livenessProbe.headers }}
+              httpHeaders:
+          {{- range .livenessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+          {{- end }}
+        {{- end }}
+      {{- else if eq .livenessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .livenessProbe.port }}
+      {{- end }}
+      {{- if .livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds }}
+      {{- end }}
+      {{- if .livenessProbe.periodSeconds }}
+            periodSeconds: {{ .livenessProbe.periodSeconds }}
+      {{- end }}
+      {{- if .livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .livenessProbe.timeoutSeconds }}
+      {{- end }}
+      {{- if .livenessProbe.successThreshold }}
+            successThreshold: {{ .livenessProbe.successThreshold }}
+      {{- end }}
+      {{- if .livenessProbe.failureThreshold }}
+            failureThreshold: {{ .livenessProbe.failureThreshold }}
+      {{- end }}
+    {{- end }}
+          
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= READINESS PROBE =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .readinessProbe }}
+          readinessProbe:
+      {{- if eq .readinessProbe.type "http" }}
+            httpGet:
+              path: {{ .readinessProbe.path }}
+              port: {{ .readinessProbe.port }}
+        {{- if .readinessProbe.headers }}
+              httpHeaders:
+          {{- range .readinessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+          {{- end }}
+        {{- end }}
+      {{- else if eq .readinessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .readinessProbe.port }}
+      {{- end }}
+
+      {{- if .readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds }}
+      {{- end }}
+      {{- if .readinessProbe.periodSeconds }}
+            periodSeconds: {{ .readinessProbe.periodSeconds }}
+      {{- end }}
+      {{- if .readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .readinessProbe.timeoutSeconds }}
+      {{- end }}
+      {{- if .readinessProbe.successThreshold }}
+            successThreshold: {{ .readinessProbe.successThreshold }}
+      {{- end }}
+      {{- if .readinessProbe.failureThreshold }}
+            failureThreshold: {{ .readinessProbe.failureThreshold }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-==-=-=-=-= RESSOURCES =-=-=-=-=-=-=-==-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+    {{- if .resources }}
+          resources:
+          {{- toYaml .resources | nindent 12 }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-==-=-=-=-= VOLUME MOUNTS =-=-=-=-=-=-=-==-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+          volumeMounts:
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= HOSTPATH =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .volumes }}
+      {{- range .volumes }}
+        {{- if .hostPath }}
+            - name: {{ .name | replace "." "-" | replace "_" "-" | quote }}
+              mountPath: {{ .mountPath }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= CONFIG MAPS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .configs }}
+      {{- range .configs }}
+        {{- if eq .type "file" }}
+          {{- $mountPath := lower .mountPath -}}
+          {{- range .entries }}
+            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+              mountPath: "{{ $mountPath }}/{{ .filename }}"
+              subPath: {{ .filename | quote }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL CONFIG MAPS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if $.Values.global.configs }}
+      {{- range $.Values.global.configs }}
+        {{- if eq .type "file" }}
+          {{- $mountPath := lower .mountPath -}}
+
+          {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
+
+          {{- if .appComp }}
+            {{- $entries := .entries }}
+            {{- range .appComp }}
+              {{- if eq .name $appComponentName }}
+                {{- range $entries }}
+            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+              mountPath: "{{ $mountPath }}/{{ .filename }}"
+              subPath: {{ .filename | quote }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- else }}
+
+          {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
+
+            {{- range .entries }}
+              - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+                mountPath: "{{ $mountPath }}/{{ .filename }}"
+                subPath: {{ .filename | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .secrets }}
+      {{- range .secrets }}
+        {{- if eq .type "file" }}
+          {{- $mountPath := lower .mountPath -}}
+          {{- range .entries }}
+            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+              mountPath: "{{ $mountPath }}/{{ .filename }}"
+              subPath: {{ .filename | quote }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if $.Values.global.secrets }}
+      {{- range $.Values.global.secrets }}
+        {{- if eq .type "file" }}
+          {{- $mountPath := lower .mountPath -}}
+
+          {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
+
+          {{- if .appComp }}
+            {{- $entries := .entries }}
+            {{- range .appComp }}
+              {{- if eq .name $appComponentName }}
+                {{- range $entries }}
+            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+              mountPath: "{{ $mountPath }}/{{ .filename }}"
+              subPath: {{ .filename | quote }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- else }}
+
+          {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
+
+            {{- range .entries }}
+              - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+                mountPath: "{{ $mountPath }}/{{ .filename }}"
+                subPath: {{ .filename | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= VOLUMES =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+      volumes:
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= HOSTPATH =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .volumes }}
+      {{- range .volumes }}
+        {{- if .hostPath }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+          hostPath:
+            path: {{ .hostPath }}
+          {{- if .type }}
+            type: {{ .type }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= CONFIG MAPS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .configs }}
+      {{- range .configs }}
+        {{- if eq .type "file" }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL CONFIG MAPS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if $.Values.global.configs }}
+      {{- range $.Values.global.configs }}
+        {{- if eq .type "file" }}
+          {{- if .appComp }}
+            {{- $entries := .entries }}
+            {{- range .appComp }}
+              {{- if eq .name $appComponentName }}
+                {{- range $entries }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- else }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .secrets }}
+      {{- range .secrets }}
+        {{- if eq .type "file" }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if $.Values.global.secrets }}
+      {{- range $.Values.global.secrets }}
+        {{- if eq .type "file" }}
+          {{- if .appComp }}
+            {{- $entries := .entries }}
+            {{- range .appComp }}
+              {{- if eq .name $appComponentName }}
+                {{- range $entries }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- else }}
+        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+          configMap:
+            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}

@@ -1,9 +1,9 @@
-mdosAcbmAppUUID: 58aac0f8-9e9a-4fc6-8c8f-mdos
-mdosBundleName: mdos
+appUUID: 58aac0f8-9e9a-4fc6-8c8f-mdos
+tenantName: mdos
 appName: mdos-api
 appComponents:
   - name: mdos-api
-    mdosAcbmAppCompUUID: 6e1edac1-8895-49a2-ba99-mdos
+    appCompUUID: 6e1edac1-8895-49a2-ba99-mdos
     replicaCount: 1
     image:
       repository: mdos-api
@@ -49,7 +49,7 @@ appComponents:
       data: {}
     persistence:
       enabled: true
-      hostpathVolumes: 
+      hostpathVolumes:
         - name: keycloak-dep-volume
           mountPath: /usr/src/dep/keycloak
           hostPath: /home/mdundek/workspaces/mdos/setup/dep/keycloak
@@ -84,4 +84,3 @@ appComponents:
         httpMatch:
           prefix: /
           port: 443
-        

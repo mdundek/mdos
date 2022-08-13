@@ -1,0 +1,41 @@
+{{- $appName := lower .Values.appName -}}
+
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+  {{- $uuid := lower .uuid -}}
+  {{- if .services }}
+    {{- range .services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-{{ lower .name }}
+  labels:
+    app: {{ $appComponentName | quote }}
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ $uuid | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+spec:
+      {{- if .type }}
+  type: {{ .type }}
+      {{- else }}
+  type: ClusterIP
+      {{- end }}
+  ports:
+      {{- range .ports }}
+    - port: {{ .port }}
+      targetPort: {{ .port }}
+        {{- if .nodePort }}
+      nodePort: {{ .nodePort }}
+        {{- end }}
+      # protocol: TCP
+      name: {{ .name }}
+      {{- end }}
+  selector:
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ $uuid | quote }}
+    app: {{ $appComponentName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}

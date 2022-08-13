@@ -13,10 +13,10 @@ metadata:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
     app: {{ $appComponentName | quote }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
     {{- end }}
 spec:
   scaleTargetRef:

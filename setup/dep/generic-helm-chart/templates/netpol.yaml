@@ -15,16 +15,16 @@ metadata:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
     app: {{ $appComponentName | quote }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
     {{- end }}
 spec:
   podSelector:
     matchLabels:
-      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      appUUID: {{ $.Values.appUUID | quote }}
+      appCompUUID: {{ .appCompUUID | quote }}
       mdosAcbmAppCompName: {{ $appComponentName | quote }}
   {{- if eq .networkIsolation "open" }} # Allow traffic from all pods and all namespaces
   policyTypes:
@@ -36,7 +36,7 @@ spec:
     - from:
       - namespaceSelector:
           matchLabels:
-            kubernetes.io/metadata.name: {{ $.Values.mdosBundleName }}
+            kubernetes.io/metadata.name: {{ $.Values.tenantName }}
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: kube-system
@@ -80,9 +80,9 @@ spec:
       {{- range .allowedAppComponents }}
       - podSelector:
           matchLabels:
-            mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID }}
+            appCompUUID: {{ .appCompUUID }}
             mdosAcbmAppCompName: {{ .mdosAcbmAppCompName }}
-            mdosAcbmAppUUID: {{ .mdosAcbmAppUUID }}
+            appUUID: {{ .appUUID }}
       {{- end }}
       - namespaceSelector:
           matchLabels:

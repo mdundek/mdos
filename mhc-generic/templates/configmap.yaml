@@ -1,0 +1,86 @@
+{{- $appName := lower $.Values.appName }}
+
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+  {{- $uuid := .uuid -}}
+  {{- if .configs }}
+    {{- range .configs }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+  labels:
+    app: {{ $appComponentName | quote }}
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ $uuid | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+data:
+      {{- if eq .type "env" }}
+        {{- range .entries }}
+  {{ .key }}: {{ .value | quote }}
+        {{- end }}
+      {{ else }}
+        {{- range .entries }}
+  {{ .filename }}: |-
+{{ .value | indent 4 }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+
+  {{- if $.Values.global.configs }}
+    {{- range $.Values.global.configs }}
+      {{- if .appComp }}
+        {{- $config := . }}
+        {{- range .appComp }}
+          {{- if eq .name $appComponentName }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
+  labels:
+    app: {{ $appComponentName | quote }}
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ $config.uuid | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+data:
+            {{- if eq $config.type "env" }}
+              {{- range $config.entries }}
+  {{ .key }}: {{ .value | quote }}
+              {{- end }}
+            {{ else }}
+              {{- range $config.entries }}
+  {{ .filename }}: |-
+{{ .value | indent 4 }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- else }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+  labels:
+    app: {{ $appComponentName | quote }}
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ .uuid | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+data:
+        {{- if eq .type "env" }}
+          {{- range .entries }}
+  {{ .key }}: {{ .value | quote }}
+          {{- end }}
+        {{ else }}
+          {{- range .entries }}
+  {{ .filename }}: |-
+{{ .value | indent 4 }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

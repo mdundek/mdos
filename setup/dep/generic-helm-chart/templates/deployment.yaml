@@ -12,10 +12,10 @@ metadata:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
     app: {{ $appComponentName | quote }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
       {{- if $.Values.developement }}
     date: "{{ now | unixEpoch }}"
       {{- end }}
@@ -28,10 +28,10 @@ spec:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
       {{- if $.Values.isMdosApp }}
-      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      appUUID: {{ $.Values.appUUID | quote }}
+      appCompUUID: {{ .appCompUUID | quote }}
       mdosAcbmAppCompName: {{ $appComponentName | quote }}
-      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
       {{- end }}
   template:
     metadata:
@@ -43,10 +43,10 @@ spec:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
         {{- if $.Values.isMdosApp }}
         app: {{ $appComponentName | quote }}
-        mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-        mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+        appUUID: {{ $.Values.appUUID | quote }}
+        appCompUUID: {{ .appCompUUID | quote }}
         mdosAcbmAppCompName: {{ $appComponentName | quote }}
-        mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+        tenantName: {{ $.Values.tenantName | quote }}
           {{- if $.Values.developement }}
         date: "{{ now | unixEpoch }}"
           {{- end }}
@@ -440,10 +440,10 @@ metadata:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
     app: {{ $appComponentName | quote }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
       {{- if $.Values.developement }}
     date: "{{ now | unixEpoch }}"
       {{- end }}
@@ -457,10 +457,10 @@ spec:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
       {{- if $.Values.isMdosApp }}
-      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      appUUID: {{ $.Values.appUUID | quote }}
+      appCompUUID: {{ .appCompUUID | quote }}
       mdosAcbmAppCompName: {{ $appComponentName | quote }}
-      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
       {{- end }}
   template:
     metadata:
@@ -472,10 +472,10 @@ spec:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
         {{- if $.Values.isMdosApp }}
         app: {{ $appComponentName | quote }}
-        mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-        mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+        appUUID: {{ $.Values.appUUID | quote }}
+        appCompUUID: {{ .appCompUUID | quote }}
         mdosAcbmAppCompName: {{ $appComponentName | quote }}
-        mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+        tenantName: {{ $.Values.tenantName | quote }}
           {{- if $.Values.developement }}
         date: "{{ now | unixEpoch }}"
           {{- end }}
@@ -946,10 +946,10 @@ metadata:
     {{- include "stateless-helm.labels" $ | nindent 4 }}
     {{- if $.Values.isMdosApp }}
     app: {{ $appComponentName | quote }}
-    mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-    mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
     mdosAcbmAppCompName: {{ $appComponentName | quote }}
-    mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
       {{- if $.Values.developement }}
     date: "{{ now | unixEpoch }}"
       {{- end }}
@@ -962,10 +962,10 @@ spec:
     matchLabels:
       {{- include "stateless-helm.selectorLabels" $ | nindent 6 }}
       {{- if $.Values.isMdosApp }}
-      mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-      mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+      appUUID: {{ $.Values.appUUID | quote }}
+      appCompUUID: {{ .appCompUUID | quote }}
       mdosAcbmAppCompName: {{ $appComponentName | quote }}
-      mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
       {{- end }}
   template:
     metadata:
@@ -977,10 +977,10 @@ spec:
         {{- include "stateless-helm.selectorLabels" $ | nindent 8 }}
         {{- if $.Values.isMdosApp }}
         app: {{ $appComponentName | quote }}
-        mdosAcbmAppUUID: {{ $.Values.mdosAcbmAppUUID | quote }}
-        mdosAcbmAppCompUUID: {{ .mdosAcbmAppCompUUID | quote }}
+        appUUID: {{ $.Values.appUUID | quote }}
+        appCompUUID: {{ .appCompUUID | quote }}
         mdosAcbmAppCompName: {{ $appComponentName | quote }}
-        mdosBundleName: {{ $.Values.mdosBundleName | quote }}
+        tenantName: {{ $.Values.tenantName | quote }}
           {{- if $.Values.developement }}
         date: "{{ now | unixEpoch }}"
           {{- end }}
