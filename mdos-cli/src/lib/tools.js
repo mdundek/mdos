@@ -182,9 +182,7 @@ const _collectRootDomain = async () => {
 				return true
 			}
 		})
-		this.setConfig("root_domain", response.rootDomain)
 		rootDomain = response.rootDomain
-
 		nconf.set("root_domain", rootDomain);
 		nconf.save(function (err) {
 			if(err) {
@@ -199,13 +197,12 @@ const _collectRootDomain = async () => {
 
 /**
  * s3sync
- * @param {*} sourceDir 
+ * @param {*} tenantName 
  * @param {*} bucket 
- * @returns 
+ * @param {*} sourceDir 
+ * @param {*} userInfo 
  */
-const s3sync = async (sourceDir, bucket) => {
-	const rootDomain = await _collectRootDomain();
-
+const s3sync = async (tenantName, bucket, sourceDir, userInfo) => {
 	// Convenience private function to download file
 	const _dl = (url, destination) => {
 		return new Promise((resolve, reject) => {
@@ -255,9 +252,13 @@ const s3sync = async (sourceDir, bucket) => {
 				CliUx.ux.action.start('Installing Minio CLI')
 				await terminalCommand(`brew install minio/stable/mc`)
 				CliUx.ux.action.stop()
+
+				warn("Minio CLI was installed. Please restart your command for changes to take effect")
+				process.exit(1);
 			} catch (_e) {
+				console.log(_e);
 				CliUx.ux.action.stop("error")
-				error("Please install 'brew' first and try again");
+				error(extractErrorMessage(_e))
 				process.exit(1);
 			}
 		}
@@ -290,48 +291,36 @@ const s3sync = async (sourceDir, bucket) => {
 
 	// If mdos minio alias not set up, do it now
 	if(!mcConfigs.find(s => JSON.parse(s).alias == "mdosminio")) {
-		const responses = await inquirer.prompt([{
-			group: "application",
-			type: 'text',
-			name: 'AccessKey',
-			message: 'Enter the mdos Minio AccessKey:',
-			validate: (value) => {
-				if(value.trim().length == 0)
-					return "Mandatory field"
-				return true
-			}
-		}, {
-			group: "application",
-			type: 'text',
-			name: 'SecretKey',
-			message: 'Enter the mdos Minio SecretKey:',
-			validate: (value) => {
-				if(value.trim().length == 0)
-					return "Mandatory field"
-				return true
-			}
-		}])
-
 		try {
-			await terminalCommand(`${mcBin} config host add mdosminio http://minio.${rootDomain} ${responses.AccessKey} ${responses.SecretKey} --api S3v4`);
+			await terminalCommand(`${mcBin} config host add mdosminio ${userInfo.minioUri} ${userInfo.accessKey} ${userInfo.secretKey} --api S3v4`);
 		} catch (err) {
 			if(extractErrorCode(err) == 500) {
 				error("Invalid credentials");
 			} else {
-				error("Invalid domain:", `http://minio.${rootDomain}`);
+				error("Invalid domain:", userInfo.minioUri);
 			}
 			process.exit(1);
 		}
 	}
 
+	// Make sure bucket exists
+	try {
+		await terminalCommand(`${mcBin} mb mdosminio/${tenantName}/${bucket} --json`);
+	} catch (err) {
+        error("Could not synchronize volume:");
+		error(extractErrorMessage(err))
+        process.exit(1);
+	}
+
 	// Sync now
 	try {
-		CliUx.ux.action.start('Synchronizing volume')
-		await terminalCommand(`${mcBin} mirror ${sourceDir} mdosminio/${bucket} --overwrite --remove`);
+		CliUx.ux.action.start(`Synchronizing volume: ${tenantName}/${bucket}`)
+		await terminalCommand(`${mcBin} mirror ${sourceDir} mdosminio/${tenantName}/${bucket} --overwrite --remove`);
 		CliUx.ux.action.stop()
 	} catch (err) {
 		CliUx.ux.action.stop('error')
-        console.error("Could not synchronize volume");
+        error("Could not synchronize volume:");
+		error(extractErrorMessage(err))
         process.exit(1);
 	}
 }

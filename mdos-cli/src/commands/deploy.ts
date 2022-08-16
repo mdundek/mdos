@@ -2,7 +2,7 @@ import { Flags, CliUx } from '@oclif/core'
 import Command from '../base'
 
 const inquirer = require('inquirer')
-const { info, error, warn, filterQuestions, s3sync } = require('../lib/tools')
+const { info, error, warn, filterQuestions, s3sync, extractErrorMessage } = require('../lib/tools')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
@@ -49,32 +49,39 @@ export default class Deploy extends Command {
 
         
 
-        // Sync folders if any
-        // 1. Call backend to authenticate user and get minio credentials for tenantName (user must have roles "<tenantName>" && "minio-mirror" in Keycloak. If token missing or invalid, open URL to authenticate first)
-        //    INFO: There are tenant wide minio credentials, mapping to s3://<tenantNmae>/* with read/write access rights. Those credentials can be found in the <tenantName> namespace in a secret
-        // 2. Do sync using those tenantName specific credentials
+        // Get credentials for minio for user
+        let userInfo
+        try {
+            userInfo = await this.api("mdos/user-info", "GET")
+        } catch (err) {
+            error(extractErrorMessage(err));
+            process.exit(1);
+        }
 
+        // Sync minio content for volumes
+        for(let component of appYaml.components) {
+            if(component.volumes) {
+                for(let volume of component.volumes) {
+                    if(volume.syncVolume) {
+                        let appYamlPath = path.join(process.cwd(), component.name, volume.name)
+                        await s3sync(appYaml.tenantName, volume.bucket, appYamlPath, userInfo.data);
+                    }
+                }
+            }
+        }
 
-
-
-        const userInfo = await this.api("mdos/user-info", "GET")
-        console.log(userInfo);
-
-
-
-        // await s3sync('/home/mdundek/workspaces/mdos_playgroound/myapp/frontend/syncdir', 'mybucket');
-
-        // CliUx.ux.action.start('Deploying application')
-        // try {
-        //     await this.api(`mdos`, 'post', {
-        //         type: 'deploy',
-        //         values: appYamlBase64
-        //     })
-        //     CliUx.ux.action.stop()
-        // } catch (error) {
-        //     CliUx.ux.action.stop('error')
-        //     this.showError(error);
-        //     process.exit(1);
-        // }
+        // Deploy app
+        CliUx.ux.action.start('Deploying application')
+        try {
+            await this.api(`mdos`, 'post', {
+                type: 'deploy',
+                values: appYamlBase64
+            })
+            CliUx.ux.action.stop()
+        } catch (error) {
+            CliUx.ux.action.stop('error')
+            this.showError(error);
+            process.exit(1);
+        }
     }
 }
