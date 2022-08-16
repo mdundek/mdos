@@ -37,13 +37,22 @@ appComponents:
           value: "li14ebe14"
         - type: env
           key: GEN_HELM_PATH_PATH
-          value: "/usr/src/dep/generic-helm-chart"
+          value: "/usr/src/dep/mhc-generic"
         - type: env
           key: ISTIO_CHART_PATH
           value: "/usr/src/dep/istio_helm/istio-control/istio-discovery"
         - type: env
           key: RUN_TARGET
           value: "pod"
+        - type: env
+          key: MINIO_HOST
+          value: "http://minio.mdundek.network"
+        - type: env
+          key: MINIO_ACCESS_KEY
+          value: "REp9k63uJ6qTe4KRtMsU"
+        - type: env
+          key: MINIO_SECRET_KEY
+          value: "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
     secrets:
       enabled: false
       data: {}
@@ -63,8 +72,8 @@ appComponents:
           hostPath: /home/mdundek/.mdos/db
           type: Directory
         - name: gen-helm-chart-volume
-          mountPath: /usr/src/dep/generic-helm-chart
-          hostPath: /home/mdundek/workspaces/mdos/setup/dep/generic-helm-chart
+          mountPath: /usr/src/dep/mhc-generic
+          hostPath: /home/mdundek/workspaces/mdos/mhc-generic/chart
           type: Directory
         - name: istiod-helm-volume
           mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery

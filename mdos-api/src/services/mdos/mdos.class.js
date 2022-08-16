@@ -1,5 +1,6 @@
 const YAML = require('yaml')
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
+const jwt_decode = require('jwt-decode')
 
 /* eslint-disable no-unused-vars */
 exports.Mdos = class Mdos {
@@ -13,13 +14,16 @@ exports.Mdos = class Mdos {
     }
 
     async get(id, params) {
-       
         if(id == "user-info") {
             if(process.env.NO_ADMIN_AUTH == "true") {
                 return {
-                    accessKey: "",
-                    secretKey: "",
-                    roles: []
+                    accessKey: process.env.MINIO_ACCESS_KEY,
+                    secretKey: process.env.MINIO_SECRET_KEY,
+                    minioUri: process.env.MINIO_HOST,
+                    registry: `registry.${process.env.ROOT_DOMAIN}`,
+                    registryUser: process.env.REG_USER,
+                    registryPassword: process.env.REG_PASS,
+                    roles: [`mdostnt-name-${params.query.tenantName}`, 'mdostnt-volume-sync']
                 }
             } else {
                 if (!params.headers['x-auth-request-access-token']) {
@@ -28,8 +32,12 @@ exports.Mdos = class Mdos {
                 let jwtToken = jwt_decode(params.headers['x-auth-request-access-token'])
                 if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles) {
                     return {
-                        accessKey: "",
-                        secretKey: "",
+                        accessKey: process.env.MINIO_ACCESS_KEY,
+                        secretKey: process.env.MINIO_SECRET_KEY,
+                        minioUri: process.env.MINIO_HOST,
+                        registry: `registry.${process.env.ROOT_DOMAIN}`,
+                        registryUser: process.env.REG_USER,
+                        registryPassword: process.env.REG_PASS,
                         roles: jwtToken.resource_access.mdos.roles
                     }
                 } else {

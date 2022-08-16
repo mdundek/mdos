@@ -16,15 +16,6 @@ export default class Deploy extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Deploy)
 
-        // Make sure we have a valid oauth2 cookie token
-        // otherwise, collect it
-        try {
-            await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
-        }
-
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), "mdos.yaml")
         if (!fs.existsSync(appYamlPath)) {
@@ -46,6 +37,17 @@ export default class Deploy extends Command {
             this.showError(error)
             process.exit(1);
         }
+        
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        try {
+            await this.validateJwt()
+        } catch (error) {
+            this.showError(error)
+            process.exit(1)
+        }
+
+        
 
         // Sync folders if any
         // 1. Call backend to authenticate user and get minio credentials for tenantName (user must have roles "<tenantName>" && "minio-mirror" in Keycloak. If token missing or invalid, open URL to authenticate first)

@@ -21,6 +21,7 @@ RUN npm install
 COPY . .
 
 RUN rm -rf helm
+RUN rm -rf .env
 
 EXPOSE 3030
 CMD [ "node", "." ]
