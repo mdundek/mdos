@@ -2,7 +2,7 @@
 
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
-  {{- $uuid := lower .uuid -}}
+  {{- $uuid := .uuid -}}
   {{- if .services }}
     {{- range .services }}
 ---

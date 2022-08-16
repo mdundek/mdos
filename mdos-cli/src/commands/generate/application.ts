@@ -7,6 +7,9 @@ const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
+import { customAlphabet } from 'nanoid'
+
+const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)
 
 export default class Application extends Command {
 	static description = 'describe the command here'
@@ -72,6 +75,7 @@ export default class Application extends Command {
 			fs.writeFileSync(path.join(mdosAppFile, "mdos.yaml"), YAML.stringify({
 				tenantName: flags.tenantName ? flags.tenantName : responses.tenantName,
 				appName: flags.applicationName ? flags.applicationName : responses.applicationName,
+				uuid: `${nanoid()}-${nanoid()}`,
 				components: []
 			}));
 		} catch (error) {

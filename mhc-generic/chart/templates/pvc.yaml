@@ -1,0 +1,35 @@
+{{- $appName := lower .Values.appName -}}
+
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+  {{- $uuid := .uuid -}}
+
+  {{- if .volumes }}
+    {{- range .volumes }}
+      {{- if not .hostPath }} 
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+  labels:
+    app: {{ $appComponentName | quote }}
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ $uuid | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "local-path"
+      
+  resources:
+    requests:
+        {{- if .size }}
+      storage: {{ .size }}
+        {{- else }}
+      storage: 1Gi
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

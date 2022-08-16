@@ -256,6 +256,7 @@ dependencies() {
             gnupg \
             apache2-utils \
             python3 \
+            unzip \
             lsb-release -y &>> $LOG_FILE
         snap install yq &>> $LOG_FILE
 
@@ -313,7 +314,7 @@ setup_cloudflare_certbot() {
     if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
         question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
         echo ""
-        echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
+        echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN -d *.minio.$DOMAIN --email $CF_EMAIL --agree-tos -n"
         echo ""
 
         yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
@@ -469,6 +470,9 @@ EOF
     # Restart codedns to make sure external dns resolution works
     kubectl -n kube-system rollout restart deployment coredns &>> $LOG_FILE
     sleep 3
+
+    # Install storageclass
+    kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.22/deploy/local-path-storage.yaml
 }
 
 
@@ -589,6 +593,23 @@ spec:
     - "registry.$DOMAIN"
     tls:
       mode: PASSTHROUGH
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: http-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.$DOMAIN"
+    - "*.minio.$DOMAIN"
 EOF
 }
 
@@ -876,7 +897,7 @@ metadata:
   namespace: minio
 spec:
   gateways:
-    - istio-system/http-gateway
+    - istio-system/https-gateway
   hosts:
     - minio-console.$DOMAIN
   http:
@@ -896,7 +917,8 @@ spec:
     gateways:
         - istio-system/http-gateway
     hosts:
-        - minio-backup.$DOMAIN
+        - "minio.$DOMAIN"
+        - "*.minio.$DOMAIN"
     http:
         - name: minio
           route:
@@ -1312,6 +1334,7 @@ metadata:
     kubernetes.io/service-account.name: "default"
 type: kubernetes.io/service-account-token
 EOF
+    fi
 
     # Admin role
     k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"

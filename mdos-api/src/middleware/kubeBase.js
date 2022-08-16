@@ -88,7 +88,7 @@ class KubeBase {
      */
     async hasSecret(namespaceName, secretName) {
         try {
-            await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}/${secretName}`, this.k8sAxiosHeader);
+            await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`, this.k8sAxiosHeader);
             return true;
         } catch (error) {
             return false;
@@ -187,8 +187,10 @@ class KubeBase {
             nsJson.metadata.labels["istio-injection"] = "enabled";
         }
 
+        // Create namespace
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, nsJson, this.k8sAxiosHeader);
         
+        // Create private registry credentials secret
         let secretDataString = `{"auths":{"registry.${this.rootDomain}":{"username":"${this.regUser}","password":"${this.regPass}","auth":"${Buffer.from(`${this.regUser}:${this.regPass}`, 'utf-8').toString('base64')}"}}}`
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, {
             "apiVersion": "v1",
@@ -201,6 +203,23 @@ class KubeBase {
             },
             "type": "kubernetes.io/dockerconfigjson"
         }, this.k8sAxiosHeader);
+
+        // Create minio credentials secret
+        await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, {
+            "apiVersion": "v1",
+            "data": {
+                "MINIO_HOST": Buffer.from(process.env.MINIO_HOST, 'utf-8').toString('base64'),
+                "MINIO_ACCESS_KEY": Buffer.from(process.env.MINIO_ACCESS_KEY, 'utf-8').toString('base64'),
+                "MINIO_SECRET_KEY": Buffer.from(process.env.MINIO_SECRET_KEY, 'utf-8').toString('base64')
+            },
+            "kind": "Secret",
+            "metadata": {
+                "name": "mdos-minio-creds",
+            },
+            "type": "Opaque"
+        }, this.k8sAxiosHeader);
+
+        
     }
 
     /**
@@ -248,11 +267,11 @@ class KubeBase {
     }
 
     /**
-     * genericHelmInstall
+     * mdosGenericHelmInstall
      * @param {*} namespace 
      * @param {*} values 
      */
-    async genericHelmInstall(namespace, values) {
+    async mdosGenericHelmInstall(namespace, values) {
         let nsCreated = await this.hasNamespace(namespace);
         if(!nsCreated) {
             await this.createNamespace({name: namespace, skipSidecar: true});

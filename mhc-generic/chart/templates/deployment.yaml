@@ -1,8 +1,8 @@
-
 {{- $appName := lower .Values.appName -}}
 
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
+  {{- $uuid := .uuid -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,26 +53,56 @@ spec:
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-= INIT CONTAINER =-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
 
-    {{- /* -=-=-=-=-=-=-=-=--=-=-=-=-=-= PRELOAD VOLUMES =-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+    {{- $srcBuckets := "" }}
+    {{- $dstPaths := "" }}
+    {{- $mdosSyncs := "" }}
 
-    {{- $initWaitApps := "" }}
-    {{- range .waitForComponents }}
-      {{- if $initWaitApps }}
-        {{- $initWaitApps = print $initWaitApps  ";" . -}}
-      {{- else }}
-        {{- $initWaitApps = print . -}}
+    {{- range .volumes }}
+      {{- if .syncVolume }}
+        {{- if $srcBuckets }}
+          {{- $srcBuckets = print $srcBuckets  ";" .bucket -}}
+          {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
+          {{- $mdosSyncs = print $srcBuckets  " " .syncVolume -}}
+        {{- else }}
+          {{- $srcBuckets = print .bucket -}}
+          {{- $dstPaths = print .mountPath -}}
+          {{- $mdosSyncs = print .syncVolume -}}
+        {{- end }}
       {{- end }}
     {{- end }}
 
-    {{- if $initWaitApps }}
+    {{- if contains "true" $mdosSyncs }}
       initContainers:
       - name: {{ $appName }}-{{ lower .name }}-init
-        image: {{ $.Values.registry }}/{{ $.Values.initContainer.image }}:{{ $.Values.initContainer.imageTag }}
-        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
-        command: ["/usr/src/ops/waitForDeployment.sh"]
+        image: {{ $.Values.registry }}/mdos-sync-container:latest
+        imagePullPolicy: Always
+        volumeMounts:
+      {{- range .volumes }}
+        {{- if .syncVolume }}
+          - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            mountPath: "{{ .mountPath }}"
+        {{- end }}
+      {{- end }}
         env: 
-        - name: APP_UUID_WAIT_LIST
-          value: "{{ $initWaitApps }}"
+        - name: SYNC_SOURCE_BUCKET
+          value: "{{ $srcBuckets }}"
+        - name: SYNC_TARGET_DIR
+          value: "{{ $dstPaths }}"
+        - name: MINIO_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mdos-minio-creds
+              key: MINIO_HOST
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mdos-minio-creds
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mdos-minio-creds
+              key: MINIO_SECRET_KEY
     {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
@@ -313,14 +343,12 @@ spec:
 
           volumeMounts:
 
-    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= HOSTPATH =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= VOLUMES =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
 
     {{- if .volumes }}
       {{- range .volumes }}
-        {{- if .hostPath }}
-            - name: {{ .name | replace "." "-" | replace "_" "-" | quote }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
               mountPath: {{ .mountPath }}
-        {{- end }}
       {{- end }}
     {{- end }}
 
@@ -330,10 +358,11 @@ spec:
       {{- range .configs }}
         {{- if eq .type "file" }}
           {{- $mountPath := lower .mountPath -}}
+          {{- $name := lower .name -}}
           {{- range .entries }}
-            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .filename | quote }}
+              subPath: {{ .name | quote }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -345,28 +374,26 @@ spec:
       {{- range $.Values.global.configs }}
         {{- if eq .type "file" }}
           {{- $mountPath := lower .mountPath -}}
-
+          {{- $config := . }}
           {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
 
           {{- if .appComp }}
-            {{- $entries := .entries }}
             {{- range .appComp }}
               {{- if eq .name $appComponentName }}
-                {{- range $entries }}
-            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+                {{- range $config.entries }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .filename | quote }}
+              subPath: {{ .name | quote }}
                 {{- end }}
               {{- end }}
             {{- end }}
           {{- else }}
 
           {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
-
             {{- range .entries }}
-              - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+              - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
-                subPath: {{ .filename | quote }}
+                subPath: {{ .name | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -379,10 +406,11 @@ spec:
       {{- range .secrets }}
         {{- if eq .type "file" }}
           {{- $mountPath := lower .mountPath -}}
+          {{- $name := lower .name -}}
           {{- range .entries }}
-            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .filename | quote }}
+              subPath: {{ .name | quote }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -394,6 +422,7 @@ spec:
       {{- range $.Values.global.secrets }}
         {{- if eq .type "file" }}
           {{- $mountPath := lower .mountPath -}}
+           {{- $secret := . }}
 
           {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
 
@@ -402,9 +431,9 @@ spec:
             {{- range .appComp }}
               {{- if eq .name $appComponentName }}
                 {{- range $entries }}
-            - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .filename | quote }}
+              subPath: {{ .name | quote }}
                 {{- end }}
               {{- end }}
             {{- end }}
@@ -413,9 +442,9 @@ spec:
           {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
 
             {{- range .entries }}
-              - name: {{ .name | replace "." "-" | replace "_" "-"  }}
+              - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
-                subPath: {{ .filename | quote }}
+                subPath: {{ .name | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -427,19 +456,28 @@ spec:
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
 
       volumes:
-
-    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= HOSTPATH =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
-
     {{- if .volumes }}
       {{- range .volumes }}
+
+        {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= HOSTPATH =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
         {{- if .hostPath }}
-        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           hostPath:
             path: {{ .hostPath }}
           {{- if .type }}
             type: {{ .type }}
           {{- end }}
         {{- end }}
+
+        {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= PVC =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+        {{- if not .hostPath }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+        {{- end }}
+
       {{- end }}
     {{- end }}
 
@@ -448,7 +486,7 @@ spec:
     {{- if .configs }}
       {{- range .configs }}
         {{- if eq .type "file" }}
-        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
         {{- end }}
@@ -461,18 +499,16 @@ spec:
       {{- range $.Values.global.configs }}
         {{- if eq .type "file" }}
           {{- if .appComp }}
-            {{- $entries := .entries }}
+            {{- $config := . }}
             {{- range .appComp }}
               {{- if eq .name $appComponentName }}
-                {{- range $entries }}
-        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
           configMap:
-            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
-                {{- end }}
+            name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
               {{- end }}
             {{- end }}
           {{- else }}
-        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           {{- end }}
@@ -485,7 +521,7 @@ spec:
     {{- if .secrets }}
       {{- range .secrets }}
         {{- if eq .type "file" }}
-        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
         {{- end }}
@@ -498,20 +534,18 @@ spec:
       {{- range $.Values.global.secrets }}
         {{- if eq .type "file" }}
           {{- if .appComp }}
-            {{- $entries := .entries }}
+            {{- $secret := . }}
             {{- range .appComp }}
               {{- if eq .name $appComponentName }}
-                {{- range $entries }}
-        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
-          configMap:
-            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
-                {{- end }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
               {{- end }}
             {{- end }}
           {{- else }}
-        - name: {{ .name | replace "." "-" | replace "_" "-"  | quote }}
-          configMap:
-            name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          secret:
+            secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           {{- end }}
         {{- end }}
       {{- end }}

@@ -34,68 +34,63 @@ class Keycloak {
         return await this.app.get('kube').hasNamespace('keycloak')
     }
 
-    /**
-     * deployKeycloak
-     * @param {*} data
-     * @returns
-     */
-    async deployKeycloak(data) {
-        try {
-            // Create DB folder if not exist
-            if (fs.existsSync(this.kcDbRoot)) {
-                await terminalCommand(`sudo rm -rf ${this.kcDbRoot}`)
-            }
-            fs.mkdirSync(this.kcDbRoot, { recursive: true })
+    // async deployKeycloak(data) {
+    //     try {
+    //         // Create DB folder if not exist
+    //         if (fs.existsSync(this.kcDbRoot)) {
+    //             await terminalCommand(`sudo rm -rf ${this.kcDbRoot}`)
+    //         }
+    //         fs.mkdirSync(this.kcDbRoot, { recursive: true })
 
-            // Load default values file
-            const kcYamlValues = YAML.parse(fs.readFileSync(this.kcHelmChartPath + '/values.yaml', 'utf8'))
+    //         // Load default values file
+    //         const kcYamlValues = YAML.parse(fs.readFileSync(this.kcHelmChartPath + '/values.yaml', 'utf8'))
 
-            // Update values
-            kcYamlValues.registry = `registry.${this.rootDomain}`
-            kcYamlValues.appName = 'mdos-keycloak'
-            kcYamlValues.appInternalName = 'mdos-keycloak'
+    //         // Update values
+    //         kcYamlValues.registry = `registry.${this.rootDomain}`
+    //         kcYamlValues.appName = 'mdos-keycloak'
+    //         kcYamlValues.appInternalName = 'mdos-keycloak'
 
-            kcYamlValues.appComponents[0].config.data[1].value = data.username
-            kcYamlValues.appComponents[0].config.data[2].value = data.password
-            kcYamlValues.appComponents[0].config.data[3].value = data.username
-            kcYamlValues.appComponents[0].config.data[4].value = data.password
-            kcYamlValues.appComponents[0].persistence.hostpathVolumes[0].hostPath = this.kcDbRoot
-            kcYamlValues.appComponents[0].persistence.hostpathVolumes[1].hostPath = path.join(this.kcHelmChartPath, 'pg-init-scripts')
-            kcYamlValues.appComponents[0].imagePullSecrets = [{ name: 'regcred-local' }]
+    //         kcYamlValues.appComponents[0].config.data[1].value = data.username
+    //         kcYamlValues.appComponents[0].config.data[2].value = data.password
+    //         kcYamlValues.appComponents[0].config.data[3].value = data.username
+    //         kcYamlValues.appComponents[0].config.data[4].value = data.password
+    //         kcYamlValues.appComponents[0].persistence.hostpathVolumes[0].hostPath = this.kcDbRoot
+    //         kcYamlValues.appComponents[0].persistence.hostpathVolumes[1].hostPath = path.join(this.kcHelmChartPath, 'pg-init-scripts')
+    //         kcYamlValues.appComponents[0].imagePullSecrets = [{ name: 'regcred-local' }]
 
-            kcYamlValues.appComponents[1].config.data[0].value = data.username
-            kcYamlValues.appComponents[1].config.data[1].value = data.password
-            kcYamlValues.appComponents[1].config.data[2].value = data.username
-            kcYamlValues.appComponents[1].config.data[3].value = data.password
-            kcYamlValues.appComponents[1].persistence.hostpathVolumes[0].hostPath = path.join(this.sslCertFolder, 'fullchain.pem')
-            kcYamlValues.appComponents[1].persistence.hostpathVolumes[1].hostPath = path.join(this.sslCertFolder, 'privkey.pem')
-            kcYamlValues.appComponents[1].imagePullSecrets = [{ name: 'regcred-local' }]
+    //         kcYamlValues.appComponents[1].config.data[0].value = data.username
+    //         kcYamlValues.appComponents[1].config.data[1].value = data.password
+    //         kcYamlValues.appComponents[1].config.data[2].value = data.username
+    //         kcYamlValues.appComponents[1].config.data[3].value = data.password
+    //         kcYamlValues.appComponents[1].persistence.hostpathVolumes[0].hostPath = path.join(this.sslCertFolder, 'fullchain.pem')
+    //         kcYamlValues.appComponents[1].persistence.hostpathVolumes[1].hostPath = path.join(this.sslCertFolder, 'privkey.pem')
+    //         kcYamlValues.appComponents[1].imagePullSecrets = [{ name: 'regcred-local' }]
 
-            // Login docker daemon to local registry
-            await terminalCommand(`echo "${this.regPass}" | sudo docker login registry.${this.rootDomain} --username ${this.regUser} --password-stdin`)
+    //         // Login docker daemon to local registry
+    //         await terminalCommand(`echo "${this.regPass}" | sudo docker login registry.${this.rootDomain} --username ${this.regUser} --password-stdin`)
 
-            // Pull & push images to registry
-            await terminalCommand(`sudo docker pull postgres:13.2-alpine`)
-            await terminalCommand(`sudo docker tag postgres:13.2-alpine registry.${this.rootDomain}/postgres:13.2-alpine`)
-            await terminalCommand(`sudo docker push registry.${this.rootDomain}/postgres:13.2-alpine`)
+    //         // Pull & push images to registry
+    //         await terminalCommand(`sudo docker pull postgres:13.2-alpine`)
+    //         await terminalCommand(`sudo docker tag postgres:13.2-alpine registry.${this.rootDomain}/postgres:13.2-alpine`)
+    //         await terminalCommand(`sudo docker push registry.${this.rootDomain}/postgres:13.2-alpine`)
 
-            await terminalCommand(`sudo docker pull quay.io/keycloak/keycloak:18.0.2`)
-            await terminalCommand(`sudo docker tag quay.io/keycloak/keycloak:18.0.2 registry.${this.rootDomain}/keycloak:18.0.2`)
-            await terminalCommand(`sudo docker push registry.${this.rootDomain}/keycloak:18.0.2`)
+    //         await terminalCommand(`sudo docker pull quay.io/keycloak/keycloak:18.0.2`)
+    //         await terminalCommand(`sudo docker tag quay.io/keycloak/keycloak:18.0.2 registry.${this.rootDomain}/keycloak:18.0.2`)
+    //         await terminalCommand(`sudo docker push registry.${this.rootDomain}/keycloak:18.0.2`)
 
-            // Deploy keycloak
-            await this.app.get('kube').genericHelmInstall('keycloak', kcYamlValues)
+    //         // Deploy keycloak
+    //         await this.app.get('kube').genericHelmInstall('keycloak', kcYamlValues)
 
-            return {
-                kcDomain: `keycloak.${this.rootDomain}`,
-            }
-        } catch (err) {
-            if (fs.existsSync(this.kcDbRoot)) {
-                await terminalCommand(`sudo rm -rf ${this.kcDbRoot}`)
-            }
-            throw err
-        }
-    }
+    //         return {
+    //             kcDomain: `keycloak.${this.rootDomain}`,
+    //         }
+    //     } catch (err) {
+    //         if (fs.existsSync(this.kcDbRoot)) {
+    //             await terminalCommand(`sudo rm -rf ${this.kcDbRoot}`)
+    //         }
+    //         throw err
+    //     }
+    // }
 
     /**
      * _getAccessToken

@@ -47,14 +47,25 @@ export default class AddIngress extends Command {
 			process.exit(1)
 		}
 
-		if(!targetCompYaml.ports || targetCompYaml.ports.length == 0) {
-			warn("You have not declared any usable ports for your application component")
+		if(!targetCompYaml.services || targetCompYaml.services.length == 0) {
+			warn("You have not declared any usable services for your application component")
 			process.exit(1)
 		}
 
+		const allPortsArray = targetCompYaml.services.map((s: { ports: any }) => s.ports).flat();
 		let oidcProviders: any
 
 		let responses = await inquirer.prompt([
+			{
+				type: 'string',
+				name: 'name',
+				message: 'Enter a name for the ingress:',
+				validate: (value: string) => {
+					if(value.trim().length == 0)
+            			return "Mandatory field"
+					return true
+				}
+			},
 			{
 				type: 'string',
 				name: 'host',
@@ -88,7 +99,7 @@ export default class AddIngress extends Command {
 				type: 'list',
 				name: 'port',
 				message: 'What target port should this traffic be redirected to?',
-				choices: targetCompYaml.ports.map((p: { port: any }) => {
+				choices: allPortsArray.map((p: { port: any }) => {
 					return { name: p.port }
 				}),
 			},
@@ -193,6 +204,7 @@ export default class AddIngress extends Command {
 			targetCompYaml.ingress = []
 
 		type Ingress = {
+			name: string,
 			matchHost: string,
 			targetPort: number,
 			trafficType: string,
@@ -204,6 +216,7 @@ export default class AddIngress extends Command {
 		}
 
 		const ing: Ingress = {
+			name: responses.name,
 			matchHost: responses.host,
 			targetPort: responses.port,
 			trafficType: responses.type,

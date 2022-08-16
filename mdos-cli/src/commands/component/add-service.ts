@@ -8,7 +8,7 @@ const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
 
-export default class DeclarePort extends Command {
+export default class AddService extends Command {
     static description = 'describe the command here'
 
     // ******* FLAGS *******
@@ -16,7 +16,7 @@ export default class DeclarePort extends Command {
     // ***********************
 
     public async run(): Promise<void> {
-        const { flags } = await this.parse(DeclarePort)
+        const { flags } = await this.parse(AddService)
 
 		// Detect mdos project yaml file
 		const appYamlPath = path.join(path.dirname(process.cwd()), "mdos.yaml")
@@ -52,8 +52,8 @@ export default class DeclarePort extends Command {
 				name: 'name',
 				message: 'Enter a name for the service to add a port to:',
 				validate: (value: string) => {
-					if(value.trim().length < 4)
-						return "Invalid port"
+					if(value.trim().length == 0)
+            			return "Mandatory field"
 					return true
 				}
 			},
@@ -62,7 +62,7 @@ export default class DeclarePort extends Command {
 				name: 'port',
 				message: 'Specify a port number on which your application needs to be accessible on:',
 				validate: (value: string) => {
-					if(value.trim().length < 4)
+					if(value.trim().length < 2)
 						return "Invalid port"
 					if(this.isPositiveInteger(value)) {
 						return targetCompYaml.ports && targetCompYaml.ports.find((p: { port: number }) => p.port == parseInt(value)) ? "Port already declared" : true

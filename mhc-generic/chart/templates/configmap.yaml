@@ -3,11 +3,11 @@
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
   {{- $uuid := .uuid -}}
-  {{- if .secrets }}
-    {{- range .secrets }}
+  {{- if .configs }}
+    {{- range .configs }}
 ---
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
   labels:
@@ -15,46 +15,44 @@ metadata:
     appUuid: {{ $.Values.uuid | quote }}
     compUuid: {{ $uuid | quote }}
     tenantName: {{ $.Values.tenantName | quote }}
-type: Opaque
-stringData:
+data:
       {{- if eq .type "env" }}
         {{- range .entries }}
   {{ .key }}: {{ .value | quote }}
         {{- end }}
       {{ else }}
         {{- range .entries }}
-  {{ .filename }}: |-
+  {{ .name }}: |-
 {{ .value | indent 4 }}
         {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
 
-  {{- if $.Values.global.secrets }}
-    {{- range $.Values.global.secrets }}
+  {{- if $.Values.global.configs }}
+    {{- range $.Values.global.configs }}
       {{- if .appComp }}
-        {{- $secret := . }}
+        {{- $config := . }}
         {{- range .appComp }}
           {{- if eq .name $appComponentName }}
 ---
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
+  name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
   labels:
     app: {{ $appComponentName | quote }}
     appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ $secret.uuid | quote }}
+    compUuid: {{ $config.uuid | quote }}
     tenantName: {{ $.Values.tenantName | quote }}
-type: Opaque
-stringData:
-            {{- if eq $secret.type "env" }}
-              {{- range $secret.entries }}
+data:
+            {{- if eq $config.type "env" }}
+              {{- range $config.entries }}
   {{ .key }}: {{ .value | quote }}
               {{- end }}
             {{ else }}
-              {{- range $secret.entries }}
-  {{ .filename }}: |-
+              {{- range $config.entries }}
+  {{ .name }}: |-
 {{ .value | indent 4 }}
               {{- end }}
             {{- end }}
@@ -63,7 +61,7 @@ stringData:
       {{- else }}
 ---
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
   labels:
@@ -71,15 +69,14 @@ metadata:
     appUuid: {{ $.Values.uuid | quote }}
     compUuid: {{ .uuid | quote }}
     tenantName: {{ $.Values.tenantName | quote }}
-type: Opaque
-stringData:
+data:
         {{- if eq .type "env" }}
           {{- range .entries }}
   {{ .key }}: {{ .value | quote }}
           {{- end }}
         {{ else }}
           {{- range .entries }}
-  {{ .filename }}: |-
+  {{ .name }}: |-
 {{ .value | indent 4 }}
           {{- end }}
         {{- end }}

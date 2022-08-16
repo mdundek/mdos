@@ -5,7 +5,8 @@ export default class SetConfig extends Command {
     static description = 'Set a specific config on your local CLI environement'
 
     static flags = {
-        auth: Flags.string({ description: 'authentication mode, "none" or "oidc"' })
+        auth: Flags.string({ description: 'authentication mode, "none" or "oidc"' }),
+        backend: Flags.string({ description: 'API backend URI, "http(s)://mdos-api.<domain-name>"' })
     }
 
     public async run(): Promise<void> {
@@ -16,7 +17,11 @@ export default class SetConfig extends Command {
           } else {
             this.setConfig("auth_mode", flags.auth);
           }
-        } else {
+        }
+        else if(flags.backend) {
+          this.setConfig("MDOS_API_URI", flags.backend);
+        }
+        else {
           this.error("Missing or unknown flag value");
         }
     }

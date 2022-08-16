@@ -1,38 +1,78 @@
-import {Flags} from '@oclif/core'
+import { Flags, CliUx } from '@oclif/core'
 import Command from '../base'
 
+const inquirer = require('inquirer')
+const { info, error, warn, filterQuestions, s3sync } = require('../lib/tools')
+const chalk = require('chalk')
+const fs = require('fs')
+const path = require('path')
+const YAML = require('yaml')
+
 export default class Deploy extends Command {
-  static description = 'describe the command here'
+    static description = 'describe the command here'
 
-  static examples = [
-    '<%= config.bin %> <%= command.id %>',
-  ]
+    static flags = {}
 
-  static flags = {
-    // flag with a value (-n, --name=VALUE)
-    name: Flags.string({char: 'n', description: 'name to print'}),
-    // flag with no value (-f, --force)
-    force: Flags.boolean({char: 'f'}),
-  }
+    public async run(): Promise<void> {
+        const { flags } = await this.parse(Deploy)
 
-  static args = [{name: 'file'}]
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        try {
+            await this.validateJwt()
+        } catch (error) {
+            this.showError(error)
+            process.exit(1)
+        }
 
-  public async run(): Promise<void> {
-    const {args, flags} = await this.parse(Deploy)
+        // Detect mdos project yaml file
+        let appYamlPath = path.join(process.cwd(), "mdos.yaml")
+        if (!fs.existsSync(appYamlPath)) {
+            appYamlPath = path.join(path.dirname(process.cwd()), "mdos.yaml")
+            if (!fs.existsSync(appYamlPath)) {
+                error("You don't seem to be in a mdos project folder")
+                process.exit(1)
+            }
+        }
 
-    // Make sure we have a valid oauth2 cookie token
-    // otherwise, collect it
-    try {
-      await this.validateJwt();
-    } catch (error) {
-      this.showError(error);
-      process.exit(1);
+        // Load mdos yaml file
+        let appYamlBase64
+        let appYaml
+        try {
+            const yamlString = fs.readFileSync(appYamlPath, 'utf8')
+            appYaml = YAML.parse(yamlString)
+            appYamlBase64 = Buffer.from(yamlString, 'utf-8').toString('base64')
+        } catch (error) {
+            this.showError(error)
+            process.exit(1);
+        }
+
+        // Sync folders if any
+        // 1. Call backend to authenticate user and get minio credentials for tenantName (user must have roles "<tenantName>" && "minio-mirror" in Keycloak. If token missing or invalid, open URL to authenticate first)
+        //    INFO: There are tenant wide minio credentials, mapping to s3://<tenantNmae>/* with read/write access rights. Those credentials can be found in the <tenantName> namespace in a secret
+        // 2. Do sync using those tenantName specific credentials
+
+
+
+
+        const userInfo = await this.api("mdos/user-info", "GET")
+        console.log(userInfo);
+
+
+
+        // await s3sync('/home/mdundek/workspaces/mdos_playgroound/myapp/frontend/syncdir', 'mybucket');
+
+        // CliUx.ux.action.start('Deploying application')
+        // try {
+        //     await this.api(`mdos`, 'post', {
+        //         type: 'deploy',
+        //         values: appYamlBase64
+        //     })
+        //     CliUx.ux.action.stop()
+        // } catch (error) {
+        //     CliUx.ux.action.stop('error')
+        //     this.showError(error);
+        //     process.exit(1);
+        // }
     }
-
-    const name = flags.name ?? 'world'
-    this.log(`hello ${name} from /home/mdundek/workspaces/mdos-cli/src/commands/deploy.ts`)
-    if (args.file && flags.force) {
-      this.log(`you input --force and --file: ${args.file}`)
-    }
-  }
 }

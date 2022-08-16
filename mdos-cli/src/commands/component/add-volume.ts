@@ -7,6 +7,9 @@ const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
+import { customAlphabet } from 'nanoid'
+
+const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 10)
 
 export default class AddVolume extends Command {
     static description = 'add a volume to your deployed component'
@@ -50,9 +53,19 @@ export default class AddVolume extends Command {
         // Collect data
         let responses = await inquirer.prompt([
             {
+            	type: 'string',
+            	name: 'name',
+            	message: 'Enter a name for this volume folder:',
+            	validate: (value: string) => {
+            		if(value.trim().length == 0)
+            			return "Mandatory field"
+            		return true
+            	}
+            },
+            {
                 type: 'string',
                 name: 'mountpath',
-                message: 'Enter the mount path inside your container for this directory:',
+                message: 'Enter the mount path inside your container:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
@@ -90,21 +103,6 @@ export default class AddVolume extends Command {
                     return true
                 },
                 message: 'Do you want to populate your volume with some static content before the container starts?',
-            },
-            {
-            	type: 'string',
-            	name: 'name',
-            	when: (values: any) => {
-                    if(values.inject)
-                        context("A volume folder will be created inside your component project directory to hold the static files");
-            		return true
-            	},
-            	message: 'Enter a name for this volume folder:',
-            	validate: (value: string) => {
-            		if(value.trim().length == 0)
-            			return "Mandatory field"
-            		return true
-            	}
             }
         ])
 
@@ -115,6 +113,7 @@ export default class AddVolume extends Command {
         type Volume = {
             syncVolume?: boolean,
             name?: string,
+            bucket?: string,
             mountPath: string,
             hostPath?: string
         }
@@ -126,6 +125,7 @@ export default class AddVolume extends Command {
 
         if(responses.inject) {
             vol.syncVolume = true
+            vol.bucket = nanoid()
 
             try {
                 const volumeDirPath = path.join(process.cwd(), responses.name)

@@ -1,0 +1,68 @@
+{{- $appName := lower $.Values.appName }}
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+  {{- $uuid := .uuid -}}
+  {{- if .ingress }}
+    {{- $services := .services }}
+    {{- range .ingress }}
+
+      {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GET TARGET SERVICE NAME =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+      {{- $tgPort := .targetPort }}
+      {{- $svcName := "" }}
+      {{- range $services }}
+        {{- $tmpName := .name }}
+        {{- range .ports }}
+          {{ if eq .port $tgPort }}
+            {{- $svcName = $tmpName -}}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+  labels:
+    app: {{ $appComponentName | quote }}
+    appUuid: {{ $.Values.uuid | quote }}
+    compUuid: {{ $uuid | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+spec:
+  gateways:
+    - istio-system/https-gateway
+  hosts:  
+    - {{ .matchHost | quote -}}
+
+      {{- if eq .trafficType "http" }}
+  http:
+    - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+
+        {{- if .subPath }}
+      match:
+        - uri:
+            prefix: {{ .subPath }}
+      rewrite:
+        uri: /
+        {{- end }}
+      route:
+      - destination:
+          port:
+            number: {{ .targetPort }}
+          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}.{{ $.Release.Namespace }}.svc.cluster.local
+
+      {{- else if or (eq .trafficType "https") (eq .trafficType "tls") }}
+  tls:
+    - match:
+        - sniHosts: 
+          - {{ .matchHost }}
+      route:
+      - destination:
+          port:
+            number: {{ .targetPort }}
+          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}.{{ $.Release.Namespace }}.svc.cluster.local
+      {{- end }}
+
+    {{- end }}
+  {{- end }}
+{{- end }}

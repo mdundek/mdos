@@ -1,4 +1,12 @@
 const chalk = require('chalk');
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
+const { terminalCommand } = require("./terminal");
+const https = require('https'); // or 'https' for https:// URLs
+const nconf = require('nconf');
+const inquirer = require('inquirer')
+const { CliUx } = require('@oclif/core')
 
 /**
  * context
@@ -156,6 +164,178 @@ const _isPositiveInteger = (str) => {
 	return false;
 }
 
+/**
+ * _collectRootDomain
+ * @returns 
+ */
+const _collectRootDomain = async () => {
+	let rootDomain = nconf.get("root_domain")
+	if(!rootDomain) {
+		const response = await inquirer.prompt({
+			group: "application",
+			type: 'text',
+			name: 'rootDomain',
+			message: 'Enter the mdos platform root domain (ex. mycomain.com):',
+			validate: (value) => {
+				if(value.trim().length == 0)
+					return "Mandatory field"
+				return true
+			}
+		})
+		this.setConfig("root_domain", response.rootDomain)
+		rootDomain = response.rootDomain
+
+		nconf.set("root_domain", rootDomain);
+		nconf.save(function (err) {
+			if(err) {
+				console.error("Could not save config file: ");
+				console.log(error);
+				process.exit(1);
+			}
+		});
+	}
+	return rootDomain;
+}
+
+/**
+ * s3sync
+ * @param {*} sourceDir 
+ * @param {*} bucket 
+ * @returns 
+ */
+const s3sync = async (sourceDir, bucket) => {
+	const rootDomain = await _collectRootDomain();
+
+	// Convenience private function to download file
+	const _dl = (url, destination) => {
+		return new Promise((resolve, reject) => {
+			const fileStream = fs.createWriteStream(destination);
+			https.get(url, function(response) {
+				response.pipe(fileStream);
+				fileStream.on("finish", () => {
+					fileStream.close();
+					resolve();
+				});
+			}).on('error', function(err) {
+				fs.unlink(destination);
+				reject(err);
+			});
+		})
+	}
+
+	// Make sure Minio CLI is available
+	let mcBin;
+	if(os.platform() === "linux") {
+		mcBin = path.join(os.homedir(), ".mdos", "mc");
+		if (!fs.existsSync(mcBin)) {
+			try {
+				CliUx.ux.action.start('Downloading Minio CLI')
+				await _dl("https://dl.min.io/client/mc/release/linux-amd64/mc", mcBin);
+				CliUx.ux.action.stop()
+				await terminalCommand(`chmod +x ${mcBin}`)
+			} catch (err) {
+				CliUx.ux.action.stop("error")
+				error("Could not download Minio CLI binary");
+				try { fs.unlink(mcBin); } catch (_e) { }
+				process.exit(1);
+			}
+		}
+	} else if(os.platform() === "darwin") {
+		mcBin = "mc";
+		try {
+			await terminalCommand(`command -v mc`)
+		} catch (_e) {
+			try {
+				await terminalCommand(`command -v brew`)
+			} catch (_e) {
+				error("Please install 'brew' first and try again");
+				process.exit(1);
+			}
+			try {
+				CliUx.ux.action.start('Installing Minio CLI')
+				await terminalCommand(`brew install minio/stable/mc`)
+				CliUx.ux.action.stop()
+			} catch (_e) {
+				CliUx.ux.action.stop("error")
+				error("Please install 'brew' first and try again");
+				process.exit(1);
+			}
+		}
+	} else if(os.platform() === "win32") {
+		mcBin = path.join(os.homedir(), ".mdos", "mc.exe");
+		if (!fs.existsSync(mcBin)) {
+			try {
+				CliUx.ux.action.start('Downloading Minio CLI')
+				await _dl("https://dl.min.io/client/mc/release/windows-amd64/mc.exe", mcBin);
+				CliUx.ux.action.stop()
+			} catch (err) {
+				CliUx.ux.action.stop("error")
+				error("Could not download Minio CLI binary");
+				process.exit(1);
+			}
+		}
+	} else {
+		error("Unsupported platform");
+		process.exit(1);
+	}
+
+	// Get available minio aliases
+	let mcConfigs = null
+	try {
+		mcConfigs = await terminalCommand(`${mcBin} alias list --json`);
+	} catch (err) {
+		error("Could not read Minio aliases");
+		process.exit(1);
+	}
+
+	// If mdos minio alias not set up, do it now
+	if(!mcConfigs.find(s => JSON.parse(s).alias == "mdosminio")) {
+		const responses = await inquirer.prompt([{
+			group: "application",
+			type: 'text',
+			name: 'AccessKey',
+			message: 'Enter the mdos Minio AccessKey:',
+			validate: (value) => {
+				if(value.trim().length == 0)
+					return "Mandatory field"
+				return true
+			}
+		}, {
+			group: "application",
+			type: 'text',
+			name: 'SecretKey',
+			message: 'Enter the mdos Minio SecretKey:',
+			validate: (value) => {
+				if(value.trim().length == 0)
+					return "Mandatory field"
+				return true
+			}
+		}])
+
+		try {
+			await terminalCommand(`${mcBin} config host add mdosminio http://minio.${rootDomain} ${responses.AccessKey} ${responses.SecretKey} --api S3v4`);
+		} catch (err) {
+			if(extractErrorCode(err) == 500) {
+				error("Invalid credentials");
+			} else {
+				error("Invalid domain:", `http://minio.${rootDomain}`);
+			}
+			process.exit(1);
+		}
+	}
+
+	// Sync now
+	try {
+		CliUx.ux.action.start('Synchronizing volume')
+		await terminalCommand(`${mcBin} mirror ${sourceDir} mdosminio/${bucket} --overwrite --remove`);
+		CliUx.ux.action.stop()
+	} catch (err) {
+		CliUx.ux.action.stop('error')
+        console.error("Could not synchronize volume");
+        process.exit(1);
+	}
+}
+
 module.exports = {
     info,
 	error,
@@ -164,5 +344,6 @@ module.exports = {
 	filterQuestions,
 	mergeFlags,
 	extractErrorCode,
-	extractErrorMessage
+	extractErrorMessage,
+	s3sync
 }

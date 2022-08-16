@@ -7,6 +7,9 @@ const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
+import { customAlphabet } from 'nanoid'
+
+const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)
 
 export default class Component extends Command {
 	static description = 'describe the command here'
@@ -83,9 +86,13 @@ export default class Component extends Command {
 		}
 
 		// Generate basic app yaml data
+		if (!appYaml.components)
+			appYaml.components = []
+
 		appYaml.components.push({
 			name: appName,
 			image: appName,
+			uuid: `${nanoid()}-${nanoid()}`,
 			tag: "0.0.1"
 		})
 

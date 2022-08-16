@@ -70,11 +70,11 @@ export default abstract class extends Command {
 			axiosConfig.headers = { Cookie: `_oauth2_proxy=${kcCookie};` }
 		}
 		
-		if(method == "post") {
+		if(method.toLowerCase() == "post") {
 			return await axios.post(`${API_URI}/${endpoint}`, body, axiosConfig);
-		} else if(method == "get") {
+		} else if(method.toLowerCase() == "get") {
 			return await axios.get(`${API_URI}/${endpoint}`, axiosConfig);
-		} else if(method == "delete") {
+		} else if(method.toLowerCase() == "delete") {
 			return await axios.delete(`${API_URI}/${endpoint}`, axiosConfig);
 		}
 	}
