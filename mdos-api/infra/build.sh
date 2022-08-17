@@ -47,68 +47,17 @@ mdos_deploy_app() {
     done < <(kubectl get secret -n $I_NS 2>/dev/null)
 
     if [ -z $SECRET_EXISTS ]; then
-        REG_CREDS=$(echo "$REG_CREDS_B64" | base64 --decode)
-        
         kubectl create secret docker-registry \
             regcred \
             --docker-server=registry.$DOMAIN \
-            --docker-username=$(echo "$REG_CREDS" | cut -d':' -f1) \
-            --docker-password=$(echo "$REG_CREDS" | cut -d':' -f2) \
-            -n $I_NS 1>/dev/null
+            --docker-username=mdundek \
+            --docker-password=li14ebe14 \
+            -n $I_NS
     fi
 
-    STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
-    STATIC_APP_APPEND='{"registry": "registry.'$DOMAIN'","enabled": true,"developement": false,"appInternalName": "'$I_APP'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
-
-    # Make copy of application values file to work with
-    cp ./target_values.yaml ./values_merged.yaml
-
-    # Declare App comp array
-    APP_COMPONENTS=()
-
-    # Load all application components from the file
-    readarray appcomponents < <(cat values_merged.yaml | yq e -o=j -I=0 '.appComponents[]' )
-
-    C_INDEX=0
-    # Iterate over components
-    for appComponent in "${appcomponents[@]}"; do
-        COMP_NAME=$(echo "$appComponent" | jq -r '.name')
-        
-        # Appens what we need to this component
-        COMP_UPD=$(cat values_merged.yaml | yq ".appComponents[$C_INDEX] + $STATIC_COMP_APPEND")
-
-        # Store the updated component in our array
-        APP_COMPONENTS+=("$COMP_UPD")
-
-        # Increment index
-        C_INDEX=$((C_INDEX+1))
-    done
-
-    C_INDEX=0
-    # Iterate over components
-    for appComponent in "${appcomponents[@]}"; do
-        echo "$(cat values_merged.yaml | yq 'del(.appComponents[0])')" > ./values_merged.yaml
-
-        # Increment index
-        C_INDEX=$((C_INDEX+1))
-    done
-
-    # Put it all back together
-    for appComponent in "${APP_COMPONENTS[@]}"; do
-        APP_COMP_JSON=$(echo "$appComponent" | yq -o=json -I=0 '.')
-
-        VALUES_UPD=$(cat values_merged.yaml | yq ".appComponents += $APP_COMP_JSON")
-        echo "$VALUES_UPD" > values_merged.yaml
-    done
-
-    VALUES_UPD=$(cat values_merged.yaml | yq ". += $STATIC_APP_APPEND")
-    echo "$VALUES_UPD" > values_merged.yaml
-
-    helm upgrade --install $I_APP ../../setup/dep/generic-helm-chart \
-        --values ./values_merged.yaml \
-        -n $I_NS --atomic 1> /dev/null
-
-    rm -rf ./values_merged.yaml
+    helm upgrade --install $I_APP ../../setup/dep/mhc-generic/chart \
+        --values ./target_values.yaml \
+        -n $I_NS --atomic
 }
 
 cd ..
@@ -131,27 +80,28 @@ fi
 cd ./infra
 
 if [ ! -z $DO_DEPLOY ]; then
+    DOMAIN=mdundek.network
     OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
 
-    helm uninstall mdos-api -n mdos
+    helm uninstall mdos -n mdos
 
     # Deploy keycloak
-    cat ../../setup/dep/mdos-api/values.yaml > ./target_values.yaml
+    cat ./values.yaml > ./target_values.yaml
 
-    MDOS_ACBM_APP_UUID=$(cat ./target_values.yaml | yq eval '.appUUID')
-    MDOS_ACBM_APP_CMP_UUID=$(cat ./target_values.yaml | yq eval '.appComponents[0].appCompUUID')
-    MDOS_ACBM_APP_CMP_NAME=$(cat ./target_values.yaml | yq eval '.appComponents[0].name')
+    # MDOS_ACBM_APP_UUID=$(cat ./target_values.yaml | yq eval '.appUUID')
+    # MDOS_ACBM_APP_CMP_UUID=$(cat ./target_values.yaml | yq eval '.appComponents[0].appCompUUID')
+    # MDOS_ACBM_APP_CMP_NAME=$(cat ./target_values.yaml | yq eval '.appComponents[0].name')
 
     mdos_deploy_app
     rm -rf ./target_values.yaml
 
-    cat <<EOF | kubectl apply -f -
+    cat <<EOF | kubectl create -f -
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
-  name: oidc-mdos-ra
+  name: mdos-api-ra
   namespace: mdos
 spec:
   jwtRules:
@@ -159,12 +109,12 @@ spec:
     jwksUri: $OIDC_JWKS_URI
   selector:
     matchLabels:
-      app: mdos-api
+      app: api
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: oidc-mdos-ap
+  name: mdos-api-ap
   namespace: mdos
 spec:
   action: CUSTOM
@@ -177,12 +127,10 @@ spec:
         - "mdos-api.$DOMAIN"
   selector:
     matchLabels:
-      appUUID: $MDOS_ACBM_APP_UUID
-      appCompUUID: $MDOS_ACBM_APP_CMP_UUID
-      mdosAcbmAppCompName: $MDOS_ACBM_APP_CMP_NAME
+      app: api
 EOF
 
-    POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api-mdos-api" | grep "Running" | cut -d' ' -f 1)
+    POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
     kubectl logs $POD_NAME -n mdos --follow
 
 fi
