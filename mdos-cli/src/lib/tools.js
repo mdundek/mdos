@@ -313,9 +313,21 @@ const s3sync = async (tenantName, bucket, sourceDir, userInfo) => {
 	}
 
 	// Sync now
+	let updated = false;
 	try {
 		CliUx.ux.action.start(`Synchronizing volume: ${tenantName}/${bucket}`)
-		await terminalCommand(`${mcBin} mirror ${sourceDir} mdosminio/${tenantName}/${bucket} --overwrite --remove`);
+		const syncResult = await terminalCommand(`${mcBin} mirror ${sourceDir} mdosminio/${tenantName}/${bucket} --overwrite --remove --preserve --json`);
+		const changeDetected = syncResult.find(logLine => {
+			const logLineJson = JSON.parse(logLine)
+			if(logLineJson.key && logLineJson.key != `mdosminio/${tenantName}/${bucket}`) {
+				return true
+			} else if(logLineJson.source) {
+				return true
+			} else {
+				return false
+			}
+		});
+		updated = changeDetected ? true : false
 		CliUx.ux.action.stop()
 	} catch (err) {
 		CliUx.ux.action.stop('error')
@@ -323,6 +335,7 @@ const s3sync = async (tenantName, bucket, sourceDir, userInfo) => {
 		error(extractErrorMessage(err))
         process.exit(1);
 	}
+	return updated
 }
 
 module.exports = {

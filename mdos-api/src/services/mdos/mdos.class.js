@@ -1,5 +1,6 @@
 const YAML = require('yaml')
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
+const jwt_decode = require('jwt-decode')
 
 /* eslint-disable no-unused-vars */
 exports.Mdos = class Mdos {
@@ -12,14 +13,23 @@ exports.Mdos = class Mdos {
         return []
     }
 
+    /**
+     * get
+     * @param {*} id 
+     * @param {*} params 
+     * @returns 
+     */
     async get(id, params) {
-       
         if(id == "user-info") {
             if(process.env.NO_ADMIN_AUTH == "true") {
                 return {
-                    accessKey: "",
-                    secretKey: "",
-                    roles: []
+                    accessKey: process.env.MINIO_ACCESS_KEY,
+                    secretKey: process.env.MINIO_SECRET_KEY,
+                    minioUri: process.env.MINIO_HOST,
+                    registry: `registry.${process.env.ROOT_DOMAIN}`,
+                    registryUser: process.env.REG_USER,
+                    registryPassword: process.env.REG_PASS,
+                    roles: [`mdostnt-name-${params.query.tenantName}`, 'mdostnt-volume-sync']
                 }
             } else {
                 if (!params.headers['x-auth-request-access-token']) {
@@ -28,8 +38,12 @@ exports.Mdos = class Mdos {
                 let jwtToken = jwt_decode(params.headers['x-auth-request-access-token'])
                 if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles) {
                     return {
-                        accessKey: "",
-                        secretKey: "",
+                        accessKey: process.env.MINIO_ACCESS_KEY,
+                        secretKey: process.env.MINIO_SECRET_KEY,
+                        minioUri: process.env.MINIO_HOST,
+                        registry: `registry.${process.env.ROOT_DOMAIN}`,
+                        registryUser: process.env.REG_USER,
+                        registryPassword: process.env.REG_PASS,
                         roles: jwtToken.resource_access.mdos.roles
                     }
                 } else {
@@ -42,6 +56,12 @@ exports.Mdos = class Mdos {
         }
     }
 
+    /**
+     * create
+     * @param {*} data 
+     * @param {*} params 
+     * @returns 
+     */
     async create(data, params) {
         if (data.type == 'deploy') {
             const valuesYaml = YAML.parse(Buffer.from(data.values, 'base64').toString('ascii'));
@@ -69,24 +89,46 @@ exports.Mdos = class Mdos {
                     }
                 }
             }
-
+            
             // Make sure all components have an image pull secret
-            valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`;
+            if(!valuesYaml.registry)
+                valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`;
+            valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`;
+            
             valuesYaml.components = valuesYaml.components.map(component => {
+                // Add registry credentials if necessary
                 if(!component.imagePullSecrets && !component.registry) { // Skip images from public registries or with specific secrets
                     component.imagePullSecrets = [{
                         name: "regcred-local"
                     }]
                 }
+                // Append tenant name for buckets
+                if(component.volumes) {
+                    component.volumes = component.volumes.map(v => {
+                        if(v.syncVolume)
+                            v.bucket = `${valuesYaml.tenantName}/${v.bucket}`;
+                        return v;
+                    });
+                    return component;
+                }
                 return component;
             });
 
-            await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml)
+            // If we need to make sure that the pod gets restarted if already deployed because of a volume sync change
+            if(data.restart) {
+                valuesYaml.forceUpdate = true
+            }
+
+            // Deploy
+            try {
+                await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml)
+            } catch (err) {
+                console.log(err);
+                throw err;
+            }
         }
         return data
     }
-
-    
 
     async update(id, data, params) {
         return data

@@ -167,58 +167,9 @@ mdos_deploy_app() {
             -n $I_NS 1>/dev/null
     fi
 
-    STATIC_COMP_APPEND='{"skipNetworkIsolation": true,"imagePullSecrets": [{"name": "regcred"}],"isDaemonSet": false,"serviceAccount": {"create": false},"podAnnotations": {},"podSecurityContext": {},"securityContext": {},"waitForComponents": [],"logs": {"enabled": false},"autoscaling": {"enabled": false}}'
-    STATIC_APP_APPEND='{"registry": "registry.'$DOMAIN'","enabled": true,"developement": false,"appInternalName": "'$I_APP'","nodeSelector":{},"tolerations":[],"affinity":{},"isMdosApp": true, "global": {"imagePullPolicy":"Always","config": [],"secrets": []}}'
-
-    # Make copy of application values file to work with
-    cp ./target_values.yaml ./values_merged.yaml
-
-    # Declare App comp array
-    APP_COMPONENTS=()
-
-    # Load all application components from the file
-    readarray appcomponents < <(cat values_merged.yaml | yq e -o=j -I=0 '.appComponents[]' )
-
-    C_INDEX=0
-    # Iterate over components
-    for appComponent in "${appcomponents[@]}"; do
-        COMP_NAME=$(echo "$appComponent" | jq -r '.name')
-        
-        # Appens what we need to this component
-        COMP_UPD=$(cat values_merged.yaml | yq ".appComponents[$C_INDEX] + $STATIC_COMP_APPEND")
-
-        # Store the updated component in our array
-        APP_COMPONENTS+=("$COMP_UPD")
-
-        # Increment index
-        C_INDEX=$((C_INDEX+1))
-    done
-
-    C_INDEX=0
-    # Iterate over components
-    for appComponent in "${appcomponents[@]}"; do
-        echo "$(cat values_merged.yaml | yq 'del(.appComponents[0])')" > ./values_merged.yaml
-
-        # Increment index
-        C_INDEX=$((C_INDEX+1))
-    done
-
-    # Put it all back together
-    for appComponent in "${APP_COMPONENTS[@]}"; do
-        APP_COMP_JSON=$(echo "$appComponent" | yq -o=json -I=0 '.')
-
-        VALUES_UPD=$(cat values_merged.yaml | yq ".appComponents += $APP_COMP_JSON")
-        echo "$VALUES_UPD" > values_merged.yaml
-    done
-
-    VALUES_UPD=$(cat values_merged.yaml | yq ". += $STATIC_APP_APPEND")
-    echo "$VALUES_UPD" > values_merged.yaml
-
-    helm upgrade --install $I_APP ./dep/generic-helm-chart \
-        --values ./values_merged.yaml \
+    helm upgrade --install $I_APP ./dep/mhc-generic/chart \
+        --values ./target_values.yaml \
         -n $I_NS --atomic 1> /dev/null
-
-    rm -rf ./values_merged.yaml
 }
 
 # ############### EXEC IN POD ################
@@ -593,23 +544,6 @@ spec:
     - "registry.$DOMAIN"
     tls:
       mode: PASSTHROUGH
----
-apiVersion: networking.istio.io/v1beta1
-kind: Gateway
-metadata:
-  name: http-gateway
-  namespace: istio-system
-spec:
-  selector:
-    istio: ingressgateway
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "*.$DOMAIN"
-    - "*.minio.$DOMAIN"
 EOF
 }
 
@@ -915,7 +849,7 @@ metadata:
     namespace: minio
 spec:
     gateways:
-        - istio-system/http-gateway
+        - istio-system/https-gateway
     hosts:
         - "minio.$DOMAIN"
         - "*.minio.$DOMAIN"
@@ -964,24 +898,20 @@ install_keycloak() {
     KEYCLOAK_VAL=$(cat ./dep/keycloak/values.yaml)
 
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.registry = "registry.'$DOMAIN'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appName = "mdos-keycloak"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appInternalName = "mdos-keycloak"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.mdosRegistry = "registry.'$DOMAIN'"')
 
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[1].value = "'$POSTGRES_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[2].value = "'$POSTGRES_PASSWORD'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[3].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].config.data[4].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[0].hostPath = "'$HOME'/.mdos/keycloak/db"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].persistence.hostpathVolumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[0].imagePullSecrets[0].name = "regcred"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[2].value = "'$POSTGRES_PASSWORD'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[4].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].volumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
 
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[0].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[1].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[2].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].config.data[3].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[0].hostPath = "'$SSL_ROOT'/fullchain.pem"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].persistence.hostpathVolumes[1].hostPath = "'$SSL_ROOT'/privkey.pem"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.appComponents[1].imagePullSecrets[0].name = "regcred"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
 
     collect_api_key() {
         echo ""
@@ -1377,50 +1307,38 @@ subjects:
 EOF
     fi
 
-    # Deploy keycloak
-    cat ./dep/mdos-api/values.yaml > ./target_values.yaml
+    # Deploy mdos-api server
+    MDOS_VALUES="$(cat ./dep/mdos-api/values.yaml)"
 
-    MDOS_ACBM_APP_UUID=$(cat ./target_values.yaml | yq eval '.appUUID')
-    MDOS_ACBM_APP_CMP_UUID=$(cat ./target_values.yaml | yq eval '.appComponents[0].appCompUUID')
-    MDOS_ACBM_APP_CMP_NAME=$(cat ./target_values.yaml | yq eval '.appComponents[0].name')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "registry.'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.mdosRegistry = "registry.'$DOMAIN'"')
+
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
+
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[2].value = "/etc/letsencrypt/live/'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[7].value = "minio.'$DOMAIN'"')
+
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = '$OIDC_ISSUER_URL'')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = '$OIDC_JWKS_URI'')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.host = "mdos-api.'$DOMAIN'"')
+
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$REG_USER'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$REG_PASS'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[2].value = "'$MINIO_ACCESS_KEY'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[3].value = "'$MINIO_SECRET_KEY'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/server-ca.crt)"'"')
+
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/keycloak"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].mountPath = "/etc/letsencrypt/live/'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[3].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[4].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+
+    echo "$MDOS_VALUES" > ./target_values.yaml
 
     mdos_deploy_app
     rm -rf ./target_values.yaml
-
-    cat <<EOF | kubectl apply -f -
-apiVersion: security.istio.io/v1beta1
-kind: RequestAuthentication
-metadata:
-  name: oidc-mdos-ra
-  namespace: mdos
-spec:
-  jwtRules:
-  - issuer: $OIDC_ISSUER_URL
-    jwksUri: $OIDC_JWKS_URI
-  selector:
-    matchLabels:
-      app: mdos-api
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: oidc-mdos-ap
-  namespace: mdos
-spec:
-  action: CUSTOM
-  provider:
-    name: oauth2-proxy-mdos
-  rules:
-  - to:
-    - operation:
-        hosts:
-        - "mdos-api.$DOMAIN"
-  selector:
-    matchLabels:
-      appUUID: $MDOS_ACBM_APP_UUID
-      appCompUUID: $MDOS_ACBM_APP_CMP_UUID
-      mdosAcbmAppCompName: $MDOS_ACBM_APP_CMP_NAME
-EOF
 }
 
 
@@ -1621,18 +1539,18 @@ EOF
         set_env_step_data "INST_STEP_OAUTH" "1"
     fi
 
-    # INSTALL MDOS
-    if [ -z $INST_STEP_MDOS ]; then
-        info "Install MDos API server..."
-        install_mdos
-        set_env_step_data "INST_STEP_MDOS" "1"
-    fi
-
     # INSTALL MINIO
     if [ -z $INST_STEP_MINIO ]; then
         info "Install Minio..."
         echo ""
         install_minio
         set_env_step_data "INST_STEP_MINIO" "1"
+    fi
+
+    # INSTALL MDOS
+    if [ -z $INST_STEP_MDOS ]; then
+        info "Install MDos API server..."
+        install_mdos
+        set_env_step_data "INST_STEP_MDOS" "1"
     fi
 )

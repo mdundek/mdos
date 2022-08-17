@@ -3,7 +3,10 @@ FROM node:16-alpine
 COPY helm /usr/bin
 RUN chmod a+x /usr/bin/helm
 
-RUN apk add curl
+RUN apk add curl wget
+RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc
+RUN chmod +x mc
+RUN mv mc /usr/bin
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -21,6 +24,7 @@ RUN npm install
 COPY . .
 
 RUN rm -rf helm
+RUN rm -rf .env
 
 EXPOSE 3030
 CMD [ "node", "." ]

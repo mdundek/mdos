@@ -16,15 +16,6 @@ export default class Deploy extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Deploy)
 
-        // Make sure we have a valid oauth2 cookie token
-        // otherwise, collect it
-        try {
-            await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
-        }
-
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), "mdos.yaml")
         if (!fs.existsSync(appYamlPath)) {
@@ -46,6 +37,15 @@ export default class Deploy extends Command {
             this.showError(error)
             process.exit(1);
         }
+        
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        try {
+            await this.validateJwt()
+        } catch (error) {
+            this.showError(error)
+            process.exit(1)
+        }
 
         // Get credentials for minio for user
         let userInfo
@@ -57,12 +57,14 @@ export default class Deploy extends Command {
         }
 
         // Sync minio content for volumes
+        let volumeUpdates = false
         for(let component of appYaml.components) {
             if(component.volumes) {
                 for(let volume of component.volumes) {
                     if(volume.syncVolume) {
                         let appYamlPath = path.join(process.cwd(), component.name, volume.name)
-                        await s3sync(appYaml.tenantName, volume.bucket, appYamlPath, userInfo.data);
+                        let volHasUpdates = await s3sync(appYaml.tenantName, volume.bucket, appYamlPath, userInfo.data);
+                        if(volHasUpdates) volumeUpdates = true
                     }
                 }
             }
@@ -73,7 +75,8 @@ export default class Deploy extends Command {
         try {
             await this.api(`mdos`, 'post', {
                 type: 'deploy',
-                values: appYamlBase64
+                values: appYamlBase64,
+                restart: volumeUpdates
             })
             CliUx.ux.action.stop()
         } catch (error) {

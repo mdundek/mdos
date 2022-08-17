@@ -40,16 +40,10 @@ sync_volume () {
     # echo ""
 
     # Do the Job
-    if [ "$(ls -A $CURRENT_SYNC_TARGET_DIR)" ]; then
-        logInfo "Target directory $CURRENT_SYNC_TARGET_DIR is not empty, skip dataSync" "dataSync.checkTargetFolderEmpty" "$CURRENT_SYNC_TARGET_DIR"
-    else
-        logInfo "Target directory $CURRENT_SYNC_TARGET_DIR is empty, start dataSync" "dataSync.checkTargetFolderEmpty" "$CURRENT_SYNC_TARGET_DIR"
-       
-        /usr/src/ops/mc config host add mdosminio http://minio.minio.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --api S3v4
-        /usr/src/ops/mc mirror mdosminio/$CURRENT_SYNC_SOURCE_BUCKET $CURRENT_SYNC_TARGET_DIR --overwrite --remove
+    /usr/src/ops/mc config host add mdosminio http://minio.minio.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --api S3v4
+    /usr/src/ops/mc mirror mdosminio/$CURRENT_SYNC_SOURCE_BUCKET $CURRENT_SYNC_TARGET_DIR --overwrite --remove --preserve
 
-        logInfo "Files successfully synched" "dataSync.checkTargetFolderEmpty" "$CURRENT_SYNC_TARGET_DIR"
-    fi
+    logInfo "Files successfully synched" "dataSync.checkTargetFolderEmpty" "$CURRENT_SYNC_TARGET_DIR"
 }
 
 main() {
