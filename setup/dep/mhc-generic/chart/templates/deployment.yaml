@@ -36,6 +36,9 @@ spec:
         appUuid: {{ $.Values.uuid | quote }}
         compUuid: {{ .uuid | quote }}
         tenantName: {{ $.Values.tenantName | quote }}
+    {{- if $.Values.forceUpdate }}
+        date: "{{ now | unixEpoch }}"
+    {{- end }}
     spec:
     {{- with .imagePullSecrets }}
       imagePullSecrets:
@@ -74,7 +77,7 @@ spec:
     {{- if contains "true" $mdosSyncs }}
       initContainers:
       - name: {{ $appName }}-{{ lower .name }}-init
-        image: {{ $.Values.registry }}/mdos-sync-container:latest
+        image: {{ $.Values.mdosRegistry }}/mdos-sync-container:latest
         imagePullPolicy: Always
         volumeMounts:
       {{- range .volumes }}
@@ -116,10 +119,16 @@ spec:
     {{- end }}
     {{- if .registry }}
           image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
-    {{- else }}
+    {{- else if $.Values.registry }}
           image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+    {{- else }}
+          image: "{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
     {{- end }}
+    {{- if $.Values.global.imagePullPolicy }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+    {{- else }}
+          imagePullPolicy: IfNotPresent
+    {{- end }}
     {{- if .command }}
       {{- with .command }}
           command:
@@ -136,6 +145,78 @@ spec:
           workingDir: {{ .workingDir }}
     {{- end }}
 
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-= LIVELINESS & READINESS =-=-=-=-=-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
+    {{- if .livenessProbe }}
+          livenessProbe:
+      {{- if eq .livenessProbe.type "http" }}
+            httpGet:
+              path: {{ .livenessProbe.path }}
+              port: {{ .livenessProbe.port }}
+        {{- if .livenessProbe.headers }}
+              httpHeaders:
+          {{- range .livenessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+          {{- end }}
+        {{- end }}
+      {{- else if eq .livenessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .livenessProbe.port }}
+      {{- end }}
+      {{- if .livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds }}
+      {{- end }}
+      {{- if .livenessProbe.periodSeconds }}
+            periodSeconds: {{ .livenessProbe.periodSeconds }}
+      {{- end }}
+      {{- if .livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .livenessProbe.timeoutSeconds }}
+      {{- end }}
+      {{- if .livenessProbe.successThreshold }}
+            successThreshold: {{ .livenessProbe.successThreshold }}
+      {{- end }}
+      {{- if .livenessProbe.failureThreshold }}
+            failureThreshold: {{ .livenessProbe.failureThreshold }}
+      {{- end }}
+    {{- end }}
+  
+    {{- if .readinessProbe }}
+          readinessProbe:
+      {{- if eq .readinessProbe.type "http" }}
+            httpGet:
+              path: {{ .readinessProbe.path }}
+              port: {{ .readinessProbe.port }}
+        {{- if .readinessProbe.headers }}
+              httpHeaders:
+          {{- range .readinessProbe.headers }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+          {{- end }}
+        {{- end }}
+      {{- else if eq .readinessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .readinessProbe.port }}
+      {{- end }}
+      {{- if .readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds }}
+      {{- end }}
+      {{- if .readinessProbe.periodSeconds }}
+            periodSeconds: {{ .readinessProbe.periodSeconds }}
+      {{- end }}
+      {{- if .readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .readinessProbe.timeoutSeconds }}
+      {{- end }}
+      {{- if .readinessProbe.successThreshold }}
+            successThreshold: {{ .readinessProbe.successThreshold }}
+      {{- end }}
+      {{- if .readinessProbe.failureThreshold }}
+            failureThreshold: {{ .readinessProbe.failureThreshold }}
+      {{- end }}
+    {{- end }}
+       
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ENV VARS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}

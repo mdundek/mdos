@@ -13,6 +13,12 @@ exports.Mdos = class Mdos {
         return []
     }
 
+    /**
+     * get
+     * @param {*} id 
+     * @param {*} params 
+     * @returns 
+     */
     async get(id, params) {
         if(id == "user-info") {
             if(process.env.NO_ADMIN_AUTH == "true") {
@@ -50,6 +56,12 @@ exports.Mdos = class Mdos {
         }
     }
 
+    /**
+     * create
+     * @param {*} data 
+     * @param {*} params 
+     * @returns 
+     */
     async create(data, params) {
         if (data.type == 'deploy') {
             const valuesYaml = YAML.parse(Buffer.from(data.values, 'base64').toString('ascii'));
@@ -77,24 +89,46 @@ exports.Mdos = class Mdos {
                     }
                 }
             }
-
+            
             // Make sure all components have an image pull secret
-            valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`;
+            if(!valuesYaml.registry)
+                valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`;
+            valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`;
+            
             valuesYaml.components = valuesYaml.components.map(component => {
+                // Add registry credentials if necessary
                 if(!component.imagePullSecrets && !component.registry) { // Skip images from public registries or with specific secrets
                     component.imagePullSecrets = [{
                         name: "regcred-local"
                     }]
                 }
+                // Append tenant name for buckets
+                if(component.volumes) {
+                    component.volumes = component.volumes.map(v => {
+                        if(v.syncVolume)
+                            v.bucket = `${valuesYaml.tenantName}/${v.bucket}`;
+                        return v;
+                    });
+                    return component;
+                }
                 return component;
             });
 
-            await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml)
+            // If we need to make sure that the pod gets restarted if already deployed because of a volume sync change
+            if(data.restart) {
+                valuesYaml.forceUpdate = true
+            }
+
+            // Deploy
+            try {
+                await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml)
+            } catch (err) {
+                console.log(err);
+                throw err;
+            }
         }
         return data
     }
-
-    
 
     async update(id, data, params) {
         return data

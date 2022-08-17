@@ -1,0 +1,1 @@
+helm upgrade --install mdos-api /home/mdundek/workspaces/mdos/mhc-generic/chart --values ./deploy.yaml -n mdos --atomic

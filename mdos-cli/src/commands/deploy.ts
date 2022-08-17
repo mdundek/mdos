@@ -47,8 +47,6 @@ export default class Deploy extends Command {
             process.exit(1)
         }
 
-        
-
         // Get credentials for minio for user
         let userInfo
         try {
@@ -59,12 +57,14 @@ export default class Deploy extends Command {
         }
 
         // Sync minio content for volumes
+        let volumeUpdates = false
         for(let component of appYaml.components) {
             if(component.volumes) {
                 for(let volume of component.volumes) {
                     if(volume.syncVolume) {
                         let appYamlPath = path.join(process.cwd(), component.name, volume.name)
-                        await s3sync(appYaml.tenantName, volume.bucket, appYamlPath, userInfo.data);
+                        let volHasUpdates = await s3sync(appYaml.tenantName, volume.bucket, appYamlPath, userInfo.data);
+                        if(volHasUpdates) volumeUpdates = true
                     }
                 }
             }
@@ -75,7 +75,8 @@ export default class Deploy extends Command {
         try {
             await this.api(`mdos`, 'post', {
                 type: 'deploy',
-                values: appYamlBase64
+                values: appYamlBase64,
+                restart: volumeUpdates
             })
             CliUx.ux.action.stop()
         } catch (error) {

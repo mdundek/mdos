@@ -1,0 +1,42 @@
+{{- $appName := lower $.Values.appName }}
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+  {{- $uuid := .uuid -}}
+  {{- if .oidc }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-ra
+spec:
+  jwtRules:
+  - issuer: {{ .oidc.issuer }}
+    jwksUri: {{ .oidc.jwksUri }}
+  selector:
+    matchLabels:
+      appUuid: {{ $.Values.uuid | quote }}
+      compUuid: {{ $uuid | quote }}
+      app: {{ $appComponentName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-ap
+spec:
+  action: CUSTOM
+  provider:
+    name: {{ .oidc.provider | quote }}
+  rules:
+  - to:
+    - operation:
+        hosts:
+        - {{ .oidc.host | quote }}
+  selector:
+    matchLabels:
+      appUuid: {{ $.Values.uuid | quote }}
+      compUuid: {{ $uuid | quote }}
+      app: {{ $appComponentName | quote }}
+      tenantName: {{ $.Values.tenantName | quote }}
+  {{- end }}
+{{- end }}
