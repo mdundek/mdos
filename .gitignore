@@ -5,3 +5,4 @@ setup/cloudflare.ini
 setup/deprecated/*
 **/node_modules
 setup/dep/mdos-api/mdos-api.tar.gz
+**/.DS_Store
