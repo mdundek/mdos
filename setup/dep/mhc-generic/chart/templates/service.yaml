@@ -11,10 +11,10 @@ kind: Service
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ lower .name }}
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ $uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ $uuid }}
+    tenantName: {{ $.Values.tenantName }}
 spec:
       {{- if .type }}
   type: {{ .type }}
@@ -32,10 +32,10 @@ spec:
       name: {{ .name }}
       {{- end }}
   selector:
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ $uuid | quote }}
-    app: {{ $appComponentName | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ $uuid }}
+    app: {{ $appComponentName }}
+    tenantName: {{ $.Values.tenantName }}
     {{- end }}
   {{- end }}
 {{- end }}

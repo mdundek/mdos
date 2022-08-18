@@ -11,10 +11,10 @@ kind: ConfigMap
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ $uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ $uuid }}
+    tenantName: {{ $.Values.tenantName }}
 data:
       {{- if eq .type "env" }}
         {{- range .entries }}
@@ -41,10 +41,10 @@ kind: ConfigMap
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ $config.uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ $config.uuid }}
+    tenantName: {{ $.Values.tenantName }}
 data:
             {{- if eq $config.type "env" }}
               {{- range $config.entries }}
@@ -65,10 +65,10 @@ kind: ConfigMap
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ .uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ .uuid }}
+    tenantName: {{ $.Values.tenantName }}
 data:
         {{- if eq .type "env" }}
           {{- range .entries }}

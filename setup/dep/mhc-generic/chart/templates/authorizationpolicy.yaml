@@ -9,30 +9,30 @@ kind: RequestAuthentication
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-ra
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ .uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ .uuid }}
+    tenantName: {{ $.Values.tenantName }}
 spec:
   jwtRules:
   - issuer: {{ .oidc.issuer }}
     jwksUri: {{ .oidc.jwksUri }}
   selector:
     matchLabels:
-      appUuid: {{ $.Values.uuid | quote }}
+      appUuid: {{ $.Values.uuid }}
       compUuid: {{ $uuid | quote }}
-      app: {{ $appComponentName | quote }}
-      tenantName: {{ $.Values.tenantName | quote }}
+      app: {{ $appComponentName }}
+      tenantName: {{ $.Values.tenantName }}
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-ap
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ .uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ .uuid }}
+    tenantName: {{ $.Values.tenantName }}
 spec:
   action: CUSTOM
   provider:
@@ -44,9 +44,9 @@ spec:
         - {{ .oidc.host | quote }}
   selector:
     matchLabels:
-      appUuid: {{ $.Values.uuid | quote }}
-      compUuid: {{ $uuid | quote }}
-      app: {{ $appComponentName | quote }}
-      tenantName: {{ $.Values.tenantName | quote }}
+      appUuid: {{ $.Values.uuid }}
+      compUuid: {{ $uuid }}
+      app: {{ $appComponentName }}
+      tenantName: {{ $.Values.tenantName }}
   {{- end }}
 {{- end }}
