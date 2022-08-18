@@ -14,7 +14,7 @@ components:
     services:
       - name: http
         ports:
-          - name: port-3030
+          - name: http-3030
             port: 3030
     ingress:
       - name: ingress
