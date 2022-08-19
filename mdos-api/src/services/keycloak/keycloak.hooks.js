@@ -1,7 +1,7 @@
 // const sysadmin_role_check = require('../_hooks/sysadminOnly');
 const aclDataFindFilter = require('../_hooks/aclAfterfindFilters');
-const aclDataCreate = require('../_hooks/aclAfterCreate');
-const aclDataDelete = require('../_hooks/aclAfterDelete');
+const aclDataCreate = require('../_hooks/aclCreate');
+const aclDataDelete = require('../_hooks/aclDelete');
 
 module.exports = {
   before: {
