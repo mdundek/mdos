@@ -85,7 +85,7 @@ if [ ! -z $DO_DEPLOY ]; then
     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
 
-    helm uninstall mdos -n mdos
+    helm uninstall mdos -n mdos --atomic
 
     # Deploy keycloak
     cat ./values.yaml > ./target_values.yaml
@@ -97,38 +97,38 @@ if [ ! -z $DO_DEPLOY ]; then
     mdos_deploy_app
     rm -rf ./target_values.yaml
 
-    cat <<EOF | kubectl create -f -
-apiVersion: security.istio.io/v1beta1
-kind: RequestAuthentication
-metadata:
-  name: mdos-api-ra
-  namespace: mdos
-spec:
-  jwtRules:
-  - issuer: $OIDC_ISSUER_URL
-    jwksUri: $OIDC_JWKS_URI
-  selector:
-    matchLabels:
-      app: api
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: mdos-api-ap
-  namespace: mdos
-spec:
-  action: CUSTOM
-  provider:
-    name: kc-mdos
-  rules:
-  - to:
-    - operation:
-        hosts:
-        - "mdos-api.$DOMAIN"
-  selector:
-    matchLabels:
-      app: api
-EOF
+#     cat <<EOF | kubectl create -f -
+# apiVersion: security.istio.io/v1beta1
+# kind: RequestAuthentication
+# metadata:
+#   name: mdos-api-ra
+#   namespace: mdos
+# spec:
+#   jwtRules:
+#   - issuer: $OIDC_ISSUER_URL
+#     jwksUri: $OIDC_JWKS_URI
+#   selector:
+#     matchLabels:
+#       app: api
+# ---
+# apiVersion: security.istio.io/v1beta1
+# kind: AuthorizationPolicy
+# metadata:
+#   name: mdos-api-ap
+#   namespace: mdos
+# spec:
+#   action: CUSTOM
+#   provider:
+#     name: kc-mdos
+#   rules:
+#   - to:
+#     - operation:
+#         hosts:
+#         - "mdos-api.$DOMAIN"
+#   selector:
+#     matchLabels:
+#       app: api
+# EOF
 
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
     kubectl logs $POD_NAME -n mdos --follow

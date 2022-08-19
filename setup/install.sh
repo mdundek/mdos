@@ -1122,31 +1122,49 @@ install_keycloak() {
             -H "Authorization: Bearer $KC_TOKEN" \
             --data-raw '{"type":"password","value":"'$KEYCLOAK_PASS'","temporary":false}'
 
-        # Create mdos admin role
-        gen_api_token
-        curl -s -k --request POST \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            -d '{"id": "mdos-admin", "name": "mdos-admin", "clientRole": true}' \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles
+        # -=-=-=-=-=- Create client roles -=-=-=-=-=-
+        createMdosRole() {
+            # Create mdos admin role
+            gen_api_token
+            curl -s -k --request POST \
+                -H "Accept: application/json" \
+                -H "Content-Type:application/json" \
+                -H "Authorization: Bearer $KC_TOKEN" \
+                -d '{"id": "'$1'", "name": "'$1'", "clientRole": true}' \
+                https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles
 
-        # Get mdos admin role UUID
-        ROLE_UUID=$(curl -s -k --request GET \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$CLIENT_UUID/roles/mdos-admin | jq '.id' | sed 's/[\"]//g')
+            # Create client role mapping for mdos admin user
+            if [ ! -z $2 ]; then
+                gen_api_token
 
-        # Create client role mapping for mdos admin user
-        gen_api_token
-        curl -s -k --request POST \
-            -H "Accept: application/json" \
-            -H "Content-Type:application/json" \
-            -H "Authorization: Bearer $KC_TOKEN" \
-            -d '[{"id":"'$ROLE_UUID'","name":"mdos-admin"}]' \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/users/$MDOS_USER_UUID/role-mappings/clients/$MDOS_CLIENT_UUID
-            
+                # Get mdos admin role UUID
+                ROLE_UUID=$(curl -s -k --request GET \
+                    -H "Accept: application/json" \
+                    -H "Content-Type:application/json" \
+                    -H "Authorization: Bearer $KC_TOKEN" \
+                    https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$CLIENT_UUID/roles/$1 | jq '.id' | sed 's/[\"]//g')
+
+                curl -s -k --request POST \
+                    -H "Accept: application/json" \
+                    -H "Content-Type:application/json" \
+                    -H "Authorization: Bearer $KC_TOKEN" \
+                    -d '[{"id":"'$ROLE_UUID'","name":"'$1'"}]' \
+                    https://keycloak.$DOMAIN/admin/realms/$REALM/users/$2/role-mappings/clients/$MDOS_CLIENT_UUID
+            fi
+        }
+
+        # Create all roles, assign admin role to admin user for mdos client
+        createMdosRole "admin" $MDOS_USER_UUID
+        createMdosRole "create-clients"
+        createMdosRole "list-clients"
+        createMdosRole "delete-clients"
+        createMdosRole "create-users"
+        createMdosRole "list-users"
+        createMdosRole "delete-users"
+        createMdosRole "create-roles"
+        createMdosRole "delete-roles"
+        createMdosRole "assign-roles"
+
         # Create secret with credentials
         cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1

@@ -19,8 +19,17 @@ exports.Keycloak = class Keycloak {
 			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
 				throw new Unavailable("Keycloak realm does not exists");
 			}
-
-			return await this.app.get("keycloak").getClients(params.query.realm);
+			const clients = await this.app.get("keycloak").getClients(params.query.realm);
+			return clients.filter(c => ![  
+				"realm-management",
+				"broker",
+				"mdos",
+				"account",
+				"account-console",
+				"admin-cli",
+				"security-admin-console",
+				"cs"
+			].includes(c.clientId));
 		}
 		else if(params.query.target == "client-roles") {
 			// Make sure realm exists
@@ -35,7 +44,11 @@ exports.Keycloak = class Keycloak {
 				throw new Unavailable("Keycloak client does not exists");
 			}
 
-			return await this.app.get("keycloak").getClientRoles(params.query.realm, params.query.clientId);
+			const clientRoles = await this.app.get("keycloak").getClientRoles(params.query.realm, params.query.clientId);
+			if(params.query.filterProtected == "true") 
+				return clientRoles.filter(cr => ["uma_protection", "admin", "k8s-read", "k8s-write", "s3-read", "s3-write"].indexOf(cr.name) == -1);
+			else
+				return clientRoles.filter(cr => !["uma_protection"].includes(cr.name));
 		}
 		else if(params.query.target == "users") {
 			// Make sure realm exists
@@ -52,7 +65,8 @@ exports.Keycloak = class Keycloak {
 				}
 			}
 
-			return await this.app.get("keycloak").getUsers(params.query.realm, params.query.clientId);
+			let users = await this.app.get("keycloak").getUsers(params.query.realm, params.query.clientId);;
+			return users;
 		}
 		else if(params.query.target == "user-roles") {
 			// Make sure realm exists
@@ -61,7 +75,22 @@ exports.Keycloak = class Keycloak {
 				throw new Unavailable("Keycloak realm does not exists");
 			}
 
-			return await this.app.get("keycloak").getUserRoles(params.query.realm, params.query.username);
+
+			let roles = await this.app.get("keycloak").getUserRoles(params.query.realm, params.query.username);
+			const mapping = [];
+			Object.keys(roles.clientMappings).forEach((key) => {
+                roles.clientMappings[key].mappings.forEach((cm) => {
+                    mapping.push({
+                        client: key,
+                        uuid: cm.id,
+                        name: cm.name
+                    });
+                });
+            });
+
+			return mapping.filter(m => ![  
+				"uma_protection"
+			].includes(m.name));
 		}
 	}
 
@@ -96,28 +125,6 @@ exports.Keycloak = class Keycloak {
 
 			// Create keycloak user
 			await this.app.get("keycloak").createUser(body.realm, body.username, body.password, body.email);
-		} 
-		else if (body.type == "client") {
-			// Make sure keycloak is deployed
-			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-			if (!keycloakAvailable) {
-				throw new Error("Keycloak is not installed");
-			}
-
-			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == body.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
-
-			// Make sure client ID does not exist
-			response = await this.app.get("keycloak").getClients(body.realm);
-			if(response.find(o => o.clientId.toLowerCase() == body.clientId.toLowerCase())) {
-				throw new Conflict("Keycloak client ID already exists");
-			}
-
-			// Create keycloak client
-			await this.app.get("keycloak").createClient(body.realm, body.clientId);
 		} 
 		else if (body.type == "client-role") {
 			// Make sure keycloak is deployed
@@ -176,49 +183,6 @@ exports.Keycloak = class Keycloak {
 			// Create keycloak user role binding
 			await this.app.get("keycloak").createClientRoleBindingForUser(body.realm, body.clientUuid, body.userUuid, body.roleUuid, body.roleName);
 		} 
-		// else if (body.type == "deploy") {
-		// 	const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-		// 	if (!keycloakAvailable) {
-		// 		// Deploy Keycloak
-		// 		const respData = await this.app.get("keycloak").deployKeycloak(body);
-		// 		return respData;
-		// 	} else {
-		// 		throw new Error("Keycloak already installed");
-		// 	}
-		// } 
-		// else if (body.type == "deploy-post-setup") {
-		// 	// Make sure keycloak is deployed
-		// 	const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-		// 	if (!keycloakAvailable) {
-		// 		throw new Error("Keycloak is not installed");
-		// 	}
-
-		// 	// TODO: Check if secret already exists. If yes, throw exception
-
-		// 	await this.app.get("kube").createSecret("keycloak", "admin-creds", body.data);
-
-		// 	// Create default realm
-		// 	await this.app.get("keycloak").createRealm("mdos");
-
-		// 	// Create user in mdos realm (same user than master admin)
-		// 	await this.app.get("keycloak").createUser("mdos", data.username, data.password, data.email);
-		// 	const userInst = await this.app.get("keycloak").getUser("mdos", null, data.username);
-
-		// 	// Create client in mdos realm (mdos)
-		// 	await this.app.get("keycloak").createClient("mdos", "mdos");
-		// 	const clientInst = await this.app.get("keycloak").getClient("mdos", "mdos");
-
-		// 	// Create role in mdos client (mdos_admin)
-		// 	await this.app.get("keycloak").createClientRole("mdos", clientInst.id, "mdos_admin");
-		// 	const roleInst = await this.app.get("keycloak").getClientRole("mdos", "mdos", "mdos_admin")
-
-		// 	// Add user to mdos_admin role for mdos client
-		// 	await this.app.get("keycloak").createClientRoleBindingForUser("mdos", clientInst.id, userInst.id, roleInst.id, "mdos_admin");
-
-		// 	// Create OIDC provider for kc client
-		// 	await this.app.get("kube").addIstiodOidcProvider("kc_mdos");
-		// 	await this.app.get("kube").deployOauth2Proxy("keycloak", "mdos", {clientId: "mdos", name: "kc_mdos"});
-		// }
 		return body;	
 	}
 

@@ -138,6 +138,17 @@ class KubeBase {
     }
 
     /**
+     * deleteSecret
+     * @param {*} name 
+     * @param {*} secretName 
+     */
+     async deleteSecret(namespaceName, secretName) {
+        const secretExists = await this.hasSecret(namespaceName, secretName);
+        if(secretExists)
+            await axios.delete(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`, this.k8sAxiosHeader);
+    }
+
+    /**
      * getPods
      * @param {*} namespaceName 
      * @returns 
@@ -204,20 +215,20 @@ class KubeBase {
             "type": "kubernetes.io/dockerconfigjson"
         }, this.k8sAxiosHeader);
 
-        // Create minio credentials secret
-        await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, {
-            "apiVersion": "v1",
-            "data": {
-                "MINIO_HOST": Buffer.from(process.env.MINIO_HOST, 'utf-8').toString('base64'),
-                "MINIO_ACCESS_KEY": Buffer.from(process.env.MINIO_ACCESS_KEY, 'utf-8').toString('base64'),
-                "MINIO_SECRET_KEY": Buffer.from(process.env.MINIO_SECRET_KEY, 'utf-8').toString('base64')
-            },
-            "kind": "Secret",
-            "metadata": {
-                "name": "mdos-minio-creds",
-            },
-            "type": "Opaque"
-        }, this.k8sAxiosHeader);
+        // // Create minio credentials secret
+        // await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, {
+        //     "apiVersion": "v1",
+        //     "data": {
+        //         "MINIO_HOST": Buffer.from(process.env.MINIO_HOST, 'utf-8').toString('base64'),
+        //         "MINIO_ACCESS_KEY": Buffer.from(process.env.MINIO_ACCESS_KEY, 'utf-8').toString('base64'),
+        //         "MINIO_SECRET_KEY": Buffer.from(process.env.MINIO_SECRET_KEY, 'utf-8').toString('base64')
+        //     },
+        //     "kind": "Secret",
+        //     "metadata": {
+        //         "name": "mdos-minio-creds",
+        //     },
+        //     "type": "Opaque"
+        // }, this.k8sAxiosHeader);
 
         
     }

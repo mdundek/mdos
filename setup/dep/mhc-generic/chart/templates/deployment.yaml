@@ -8,10 +8,10 @@ kind: Deployment
 metadata:
   name: {{ $appName }}-{{ lower .name }}
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ .uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ .uuid }}
+    tenantName: {{ $.Values.tenantName }}
 spec:
   {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
@@ -20,10 +20,10 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      appUuid: {{ $.Values.uuid | quote }}
-      compUuid: {{ .uuid | quote }}
-      app: {{ $appComponentName | quote }}
-      tenantName: {{ $.Values.tenantName | quote }}
+      appUuid: {{ $.Values.uuid }}
+      compUuid: {{ .uuid }}
+      app: {{ $appComponentName }}
+      tenantName: {{ $.Values.tenantName }}
   template:
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
@@ -32,10 +32,10 @@ spec:
 
     metadata:
       labels:
-        app: {{ $appComponentName | quote }}
-        appUuid: {{ $.Values.uuid | quote }}
-        compUuid: {{ .uuid | quote }}
-        tenantName: {{ $.Values.tenantName | quote }}
+        app: {{ $appComponentName }}
+        appUuid: {{ $.Values.uuid }}
+        compUuid: {{ .uuid }}
+        tenantName: {{ $.Values.tenantName }}
     {{- if $.Values.forceUpdate }}
         date: "{{ now | unixEpoch }}"
     {{- end }}
@@ -127,7 +127,7 @@ spec:
     {{- if $.Values.global.imagePullPolicy }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
     {{- else }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
     {{- end }}
     {{- if .command }}
       {{- with .command }}
@@ -329,7 +329,7 @@ spec:
         {{- if .ports }}
           ports:
           {{- range .ports }}
-          - name: {{ $svcName }}-{{ .name }}
+          - name: {{ .name }}
             containerPort: {{ .port }}
           {{- end }}
         {{- end }}

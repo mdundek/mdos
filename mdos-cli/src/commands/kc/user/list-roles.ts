@@ -36,58 +36,32 @@ export default class ListRoles extends Command {
 			process.exit(1);
         }
         
-		let nsResponse
+        let q = filterQuestions(ListRoles.questions, "user", flags);
+        let responses = q.length > 0 ? await inquirer.prompt(q) : {}
+
+        let resp;
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
-        } catch (err) {
-            this.showError(err);
-			process.exit(1);
+            resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get")
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
         }
 
-        if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            let q = filterQuestions(ListRoles.questions, "user", flags);
-            let responses = q.length > 0 ? await inquirer.prompt(q) : {}
-
-            let resp: { data: { clientMappings: { [x: string]: { mappings: { name: any; id: any }[] } } } };
-            try {
-                resp = await this.api(`keycloak?target=user-roles&realm=mdos&username=${flags.username ? flags.username : responses.username}`, "get")
-            } catch (error) {
-                this.showError(error);
-                process.exit(1);
+        console.log();
+        CliUx.ux.table(resp.data, {
+            clientId: {
+                header: 'CLIENT',
+                minWidth: 20,
+                get: row => row.client
+            },
+            realm: {
+                header: 'ROLE NAME',
+                minWidth: 20,
+                get: row => row.name
             }
-
-            const tblData: any[] = [];
-            if(resp.data.clientMappings) {
-                (Object.keys(resp.data.clientMappings) as (keyof typeof resp.data.clientMappings)[]).forEach((key) => {
-                    resp.data.clientMappings[key].mappings.forEach((cm: { name: any; id: any }) => {
-                        tblData.push({
-                            client: key,
-                            uuid: cm.id,
-                            name: cm.name
-                        });
-                    });
-                });
-            }
-            
-            console.log();
-            CliUx.ux.table(tblData, {
-                clientId: {
-                    header: 'CLIENT',
-                    minWidth: 20,
-                    get: row => row.client
-                },
-                realm: {
-                    header: 'ROLE NAME',
-                    minWidth: 20,
-                    get: row => row.name
-                }
-            }, {
-                printLine: this.log.bind(this)
-            })
-            console.log();
-		} else {
-			warn("Keycloak is not installed");
-			process.exit(1);
-		}
+        }, {
+            printLine: this.log.bind(this)
+        })
+        console.log();
 	}
 }

@@ -11,7 +11,7 @@ module.exports = function () {
             throw new errors.Forbidden('You are not authenticated');
         }
         let jwtToken = jwt_decode(context.params.headers['x-auth-request-access-token'])
-        if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.find((r) => r == 'mdos_admin')) {
+        if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.find((r) => r == 'admin')) {
             return context;
         } else {
             throw new errors.Forbidden('You are not authorized to access this resource');

@@ -9,6 +9,7 @@ module.exports = (app, req, res) => {
                 res.status(503).send("Keycloak is not installed");
                 return;
             }
+
             const list = {}
             const cookieHeader = req.headers?.cookie
             if (!cookieHeader) {

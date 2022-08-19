@@ -24,10 +24,10 @@ kind: VirtualService
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
   labels:
-    app: {{ $appComponentName | quote }}
-    appUuid: {{ $.Values.uuid | quote }}
-    compUuid: {{ $uuid | quote }}
-    tenantName: {{ $.Values.tenantName | quote }}
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ $uuid }}
+    tenantName: {{ $.Values.tenantName }}
 spec:
   gateways:
     - istio-system/https-gateway
