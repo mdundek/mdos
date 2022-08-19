@@ -150,8 +150,7 @@ exports.Kube = class Kube {
             // Create Minio bucket and credentials
             try {
                 const credentials = await this.app.get('s3').createNamespaceBucket(data.namespace.toLowerCase());
-                await this.app.get('kube').createSecret("minio", `${data.namespace.toLowerCase()}-read`, credentials.readCredentials)
-                await this.app.get('kube').createSecret("minio", `${data.namespace.toLowerCase()}-write`, credentials.writeCredentials)
+                await this.app.get('s3').storeNamespaceCredentials(data.namespace.toLowerCase(), credentials);
             } catch (error) {
                 // Clean up
                 try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
@@ -198,14 +197,13 @@ exports.Kube = class Kube {
             if(clientFound)
 			    await this.app.get("keycloak").deleteClient(params.query.realm, clientFound.id);
 
-            // Delete S3 secrets
-            if (process.env.S3_PROVIDER == 'minio') {
-                // Make non fatal / non blocking
-                try {
-                    await this.app.get('kube').deleteSecret("minio", `${id.toLowerCase()}-read`)
-                    await this.app.get('kube').deleteSecret("minio", `${id.toLowerCase()}-write`)
-                } catch (_e) {}
-            }
+            // Delete S3 secrets & bucket, make non fatal / non blocking
+            try {
+                await this.app.get('s3').deleteNamespaceCredentials(id.toLowerCase());
+            } catch (_e) {}
+            try {
+                await this.app.get('s3').deleteNamespaceBucket(id.toLowerCase());
+            } catch (_e) {}
 
             // Delete namespace
             await this.app.get('kube').deleteNamespace(id.toLowerCase());
