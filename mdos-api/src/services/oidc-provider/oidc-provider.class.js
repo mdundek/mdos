@@ -25,6 +25,9 @@ exports.OidcProvider = class OidcProvider {
 	 */
 	async create(body, params) {
 		if (body.type == "keycloak") {
+			try {
+				
+			
 			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
 			if (!keycloakAvailable) {
 				throw new Error("Keycloak is not installed");
@@ -48,6 +51,10 @@ exports.OidcProvider = class OidcProvider {
 				try { await this.app.get("kube").uninstallOauth2Proxy(body.data.name); } catch (_e) {}
 				throw error;
 			}
+		} catch (error) {
+				console.log(error);
+				throw error
+		}
 		} else {
 			throw new Unavailable("Provider type not implemented yet");
 		}

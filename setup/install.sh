@@ -1155,15 +1155,17 @@ install_keycloak() {
 
         # Create all roles, assign admin role to admin user for mdos client
         createMdosRole "admin" $MDOS_USER_UUID
-        createMdosRole "create-clients"
-        createMdosRole "list-clients"
-        createMdosRole "delete-clients"
+        createMdosRole "create-namespace"
+        createMdosRole "list-namespaces"
+        createMdosRole "delete-namespace"
         createMdosRole "create-users"
         createMdosRole "list-users"
         createMdosRole "delete-users"
         createMdosRole "create-roles"
         createMdosRole "delete-roles"
         createMdosRole "assign-roles"
+        createMdosRole "oidc-create"
+        createMdosRole "oidc-remove"
 
         # Create secret with credentials
         cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -

@@ -3,6 +3,9 @@ FROM node:16-alpine
 COPY helm /usr/bin
 RUN chmod a+x /usr/bin/helm
 
+RUN helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
+RUN helm repo update
+
 RUN apk add curl wget
 RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc
 RUN chmod +x mc

@@ -113,51 +113,46 @@ class Kube extends KubeBase {
             }
         };
 
+        const istioConfigMap = await this.getConfigMap("istio-system", "istio");
+
+        // Get mesh property from ConfigMap
+        const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh);
+        if(!istioMeshYaml.extensionProviders) {
+            istioMeshYaml.extensionProviders = [];
+        }
+
+        // Is this provider already deployed?
+        const existingOauthProvider = istioMeshYaml.extensionProviders.find(p => p.name == istiodData.name);
+        if(existingOauthProvider) {
+            return;
+        }
+        
+        // Add new config
+        istioMeshYaml.extensionProviders.push(istiodData);
+
+        // Create values.yaml json file
+        let valuesManifestJson = {
+            meshConfig: {
+                extensionProviders: istioMeshYaml.extensionProviders
+            }
+        };
+
+        // Deploy updated istiod
         try {
-            const istioConfigMap = await this.getConfigMap("istio-system", "istio");
-
-            // Get mesh property from ConfigMap
-            const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh);
-            if(!istioMeshYaml.extensionProviders) {
-                istioMeshYaml.extensionProviders = [];
+            fs.writeFileSync('./values.yaml', YAML.stringify(valuesManifestJson));
+            await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`);
+        } finally {
+            if (fs.existsSync("./values.yaml")) {
+                fs.unlinkSync("./values.yaml");
             }
+        }
 
-            // Is this provider already deployed?
-            const existingOauthProvider = istioMeshYaml.extensionProviders.find(p => p.name == istiodData.name);
-            if(existingOauthProvider) {
-               return;
-            }
-           
-            // Add new config
-            istioMeshYaml.extensionProviders.push(istiodData);
-
-            // Create values.yaml json file
-            let valuesManifestJson = {
-                meshConfig: {
-                    extensionProviders: istioMeshYaml.extensionProviders
-                }
-            };
-
-            // Deploy updated istiod
-            try {
-                fs.writeFileSync('./values.yaml', YAML.stringify(valuesManifestJson));
-                await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`);
-            } finally {
-                if (fs.existsSync("./values.yaml")) {
-                    fs.unlinkSync("./values.yaml");
-                }
-            }
-
-            // Restart istiod pod
-            try {
-                const istioPods = await this.getPods("istio-system");
-                const istiodPodName = istioPods.items.find(p => p.metadata.labels.app == "istiod").metadata.name;
-                await this.deletePod("istio-system", istiodPodName);
-            } catch(error) {
-                throw error;
-            }
-        } catch (error) {
-            console.log(error);
+        // Restart istiod pod
+        try {
+            const istioPods = await this.getPods("istio-system");
+            const istiodPodName = istioPods.items.find(p => p.metadata.labels.app == "istiod").metadata.name;
+            await this.deletePod("istio-system", istiodPodName);
+        } catch(error) {
             throw error;
         }
     }

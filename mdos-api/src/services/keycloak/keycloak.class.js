@@ -56,7 +56,6 @@ exports.Keycloak = class Keycloak {
 			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
 				throw new Unavailable("Keycloak realm does not exists");
 			}
-
 			if(params.query.clientId) {
 				// Make sure client ID exists
 				response = await this.app.get("keycloak").getClients(params.query.realm);
@@ -64,8 +63,9 @@ exports.Keycloak = class Keycloak {
 					throw new Unavailable("Keycloak client does not exists");
 				}
 			}
-
-			let users = await this.app.get("keycloak").getUsers(params.query.realm, params.query.clientId);;
+			
+			let users = await this.app.get("keycloak").getUsers(params.query.realm, params.query.clientId);
+			
 			return users;
 		}
 		else if(params.query.target == "user-roles") {
@@ -112,13 +112,8 @@ exports.Keycloak = class Keycloak {
 				throw new Unavailable("Keycloak realm does not exists");
 			}
 
-			response = await this.app.get("keycloak").getClients();
-			if(!response.find(o => o.clientId.toLowerCase() == body.clientId.toLowerCase())) {
-				throw new Unavailable("Keycloak client does not exists");
-			}
-
 			// Make sure user ID does not exist
-			response = await this.app.get("keycloak").getUsers(body.realm, body.clientId);
+			response = await this.app.get("keycloak").getUsers(body.realm);
 			if(response.find(o => o.username.toLowerCase() == body.username.toLowerCase() || o.email.toLowerCase() == body.email.toLowerCase())) {
 				throw new Conflict("Keycloak username already exists");
 			}
