@@ -85,7 +85,7 @@ if [ ! -z $DO_DEPLOY ]; then
     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
 
-    helm uninstall mdos -n mdos
+    helm uninstall mdos -n mdos --atomic
 
     # Deploy keycloak
     cat ./values.yaml > ./target_values.yaml

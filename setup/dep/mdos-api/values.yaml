@@ -42,6 +42,8 @@ components:
             value: "pod"
           - key: MINIO_HOST
             value: "https://minio.mydomain.com"
+          - key: S3_PROVIDER
+            value: "minio"
 
     secrets:
       - name: creds

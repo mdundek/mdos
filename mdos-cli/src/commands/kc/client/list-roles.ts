@@ -36,39 +36,26 @@ export default class ListRoles extends Command {
 			process.exit(1);
         }
 		
-		let nsResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
-        } catch (err) {
-            this.showError(err);
-			process.exit(1);
+            // Get client id & uuid
+            const clientResponse = await this.collectClientId(flags);
+
+            const response = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${flags.clientId ? flags.clientId : clientResponse.clientId}`, "get")
+
+            console.log();
+            CliUx.ux.table(response.data, {
+                clientId: {
+                    header: 'NAME',
+                    minWidth: 20,
+                    get: row => row.name
+                }
+            }, {
+                printLine: this.log.bind(this)
+            })
+            console.log();
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
         }
-
-        if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            try {
-                // Get client id & uuid
-                const clientResponse = await this.collectClientId(flags);
-
-                const response = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${flags.clientId ? flags.clientId : clientResponse.clientId}`, "get")
-
-                console.log();
-                CliUx.ux.table(response.data, {
-                    clientId: {
-                        header: 'NAME',
-                        minWidth: 20,
-                        get: row => row.name
-                    }
-                }, {
-                    printLine: this.log.bind(this)
-                })
-                console.log();
-            } catch (error) {
-                this.showError(error);
-                process.exit(1);
-            }
-		} else {
-			warn("Keycloak is not installed");
-			process.exit(1);
-		}
 	}
 }

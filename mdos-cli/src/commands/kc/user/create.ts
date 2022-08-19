@@ -52,34 +52,21 @@ export default class Create extends Command {
 			process.exit(1);
         }
 		
-		let nsResponse
+        let q = filterQuestions(Create.questions, "user", flags);
+        let responses = q.length > 0 ? await inquirer.prompt(q) : {}
+
+        CliUx.ux.action.start('Creating Keycloak user')
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
-        } catch (err) {
-            this.showError(err);
-			process.exit(1);
+            await this.api(`keycloak`, 'post', {
+                type: 'user',
+                realm: 'mdos',
+                ...mergeFlags(responses, flags),
+            })
+            CliUx.ux.action.stop()
+        } catch (error) {
+            CliUx.ux.action.stop('error')
+            this.showError(error);
+            process.exit(1);
         }
-
-        if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            let q = filterQuestions(Create.questions, "user", flags);
-            let responses = q.length > 0 ? await inquirer.prompt(q) : {}
-
-            CliUx.ux.action.start('Creating Keycloak user')
-            try {
-                await this.api(`keycloak`, 'post', {
-                    type: 'user',
-                    realm: 'mdos',
-                    ...mergeFlags(responses, flags),
-                })
-                CliUx.ux.action.stop()
-            } catch (error) {
-                CliUx.ux.action.stop('error')
-                this.showError(error);
-                process.exit(1);
-            }
-		} else {
-			warn("Keycloak is not installed");
-			process.exit(1);
-		}
 	}
 }

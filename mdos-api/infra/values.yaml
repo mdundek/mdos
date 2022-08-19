@@ -41,6 +41,8 @@ components:
             value: "pod"
           - key: MINIO_HOST
             value: "https://minio.mdundek.network"
+          - key: S3_PROVIDER
+            value: "minio"
 
     secrets:
       - name: creds

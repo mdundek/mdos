@@ -30,110 +30,96 @@ export default class DeleteRole extends Command {
 			process.exit(1);
         }
 		
-		let nsResponse
+        // Get existing clients
+        let respClients: { data: any[] }
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
-        } catch (err) {
-            this.showError(err);
-			process.exit(1);
+            respClients = await this.api(`keycloak?target=clients&realm=mdos`, "get")
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
         }
 
-        if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            // Get existing clients
-            let respClients: { data: any[] }
+        // Collect target client
+        let clientResponse: { clientUuid: any; clientId: any }
+        if(flags.clientId) {
+            const targetClient = respClients.data.find(c => c.clientId == flags.clientId)
+            if(!targetClient) {
+                error("Client not found");
+                process.exit(1);
+            }
+            clientResponse = {
+                clientUuid: targetClient.id,
+                clientId: flags.clientId
+            }
+        } else {
+            clientResponse = await inquirer.prompt([{
+                name: 'clientId',
+                message: 'select a client from which to remove a role from',
+                type: 'list',
+                choices: respClients.data.map((o) => {
+                    return { name: o.clientId, value: o.clientId }
+                }),
+            }])
+            clientResponse.clientUuid = respClients.data.find(c => c.clientId == clientResponse.clientId).id;
+        }
+
+        // Get all Client roles
+        let respClientRoles;
+        try {
+            respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}&filterProtected=true`, "get")
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
+        }
+        if(respClientRoles.data.length == 0) {
+            error("There are no deletable roles asssociated to this client");
+            process.exit(1);
+        }
+
+        // Collect client role
+        let targetRole
+        if(flags.role) {
+            targetRole = respClientRoles.data.find((r: { name: string | undefined }) => r.name == flags.role)
+            if(!targetRole) {
+                error("Client role not found");
+                process.exit(1);
+            }
+        } else {
+            const roleResponse = await inquirer.prompt([{
+                name: 'role',
+                message: 'select a role to delete from this client',
+                type: 'list',
+                choices: respClientRoles.data.map((o: { name: any }) => {
+                    return { name: o.name, value: o }
+                }),
+            }])
+            targetRole = roleResponse.role
+        }
+
+        // Confirm?
+        let confirmed = false
+        if(flags.force) {
+            confirmed = true
+        } else {
+            const confirmResponse = await inquirer.prompt([{
+                name: 'confirm',
+                message: 'You are about to delete a OIDC provider, are you sure you wish to prosceed?',
+                type: 'confirm',
+                default: false
+            }])
+            confirmed = confirmResponse.confirm
+        }
+        
+        if(confirmed) {
+            CliUx.ux.action.start('Deleting Keycloak client role')
             try {
-                respClients = await this.api(`keycloak?target=clients&realm=mdos`, "get")
+                await this.api(`keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
+                CliUx.ux.action.stop()
             } catch (error) {
+                CliUx.ux.action.stop('error')
                 this.showError(error);
                 process.exit(1);
             }
-
-			// Collect target client
-            let clientResponse: { clientUuid: any; clientId: any }
-            if(flags.clientId) {
-                const targetClient = respClients.data.find(c => c.clientId == flags.clientId)
-                if(!targetClient) {
-                    error("Client not found");
-                    process.exit(1);
-                }
-                clientResponse = {
-                    clientUuid: targetClient.id,
-                    clientId: flags.clientId
-                }
-            } else {
-                clientResponse = await inquirer.prompt([{
-                    name: 'clientId',
-                    message: 'select a client from which to remove a role from',
-                    type: 'list',
-                    choices: respClients.data.map((o) => {
-                        return { name: o.clientId, value: o.clientId }
-                    }),
-                }])
-                clientResponse.clientUuid = respClients.data.find(c => c.clientId == clientResponse.clientId).id;
-            }
-
-            // Get all Client roles
-            let respClientRoles;
-            try {
-                respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
-            } catch (error) {
-                this.showError(error);
-                process.exit(1);
-            }
-            if(respClientRoles.data.length == 0) {
-                error("There are no roles asssociated to this client");
-                process.exit(1);
-            }
-
-            // Collect client role
-            let targetRole
-            if(flags.role) {
-                targetRole = respClientRoles.data.find((r: { name: string | undefined }) => r.name == flags.role)
-                if(!targetRole) {
-                    error("Client role not found");
-                    process.exit(1);
-                }
-            } else {
-                const roleResponse = await inquirer.prompt([{
-                    name: 'role',
-                    message: 'select a role to delete from this client',
-                    type: 'list',
-                    choices: respClientRoles.data.map((o: { name: any }) => {
-                        return { name: o.name, value: o }
-                    }),
-                }])
-                targetRole = roleResponse.role
-            }
-
-            // Confirm?
-            let confirmed = false
-            if(flags.force) {
-                confirmed = true
-            } else {
-                const confirmResponse = await inquirer.prompt([{
-                    name: 'confirm',
-                    message: 'You are about to delete a OIDC provider, are you sure you wish to prosceed?',
-                    type: 'confirm',
-                    default: false
-                }])
-                confirmed = confirmResponse.confirm
-            }
-            
-            if(confirmed) {
-                CliUx.ux.action.start('Deleting Keycloak client role')
-                try {
-                    await this.api(`keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
-                    CliUx.ux.action.stop()
-                } catch (error) {
-                    CliUx.ux.action.stop('error')
-                    this.showError(error);
-                    process.exit(1);
-                }
-            }
-
-		} else {
-			warn("Keycloak is not installed");
-			process.exit(1);
-		}
+        }
 	}
 }

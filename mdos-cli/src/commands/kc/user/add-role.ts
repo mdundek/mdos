@@ -38,113 +38,100 @@ export default class AddRole extends Command {
 			process.exit(1);
         }
 		
-		let nsResponse
+        // Get client id & uuid
+        let clientResponse: { clientId: any; clientUuid?: any; clientName?: any };
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
-        } catch (err) {
-            this.showError(err);
-			process.exit(1);
+            clientResponse = await this.collectClientId(flags);
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
+        }
+        
+        // Get all Client roles
+        let respClientRoles;
+        try {
+            respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
+        }
+        if(respClientRoles.data.length == 0) {
+            error("There are no roles asssociated to this client yet. Create a client role first using the command:");
+            console.log("   mdos kc client create-role");
+            process.exit(1);
         }
 
-        if (nsResponse.data.find((ns: { metadata: { name: string } }) => ns.metadata.name == 'keycloak')) {
-            // Get client id & uuid
-            let clientResponse;
-            try {
-                clientResponse = await this.collectClientId(flags);
-            } catch (error) {
-                this.showError(error);
+        // Compute target client role
+        let roleResponses: { roleName: any; roleUuid: any };
+        if(flags.role) {
+            const targetRole = respClientRoles.data.find((o: { name: string | undefined; clientRole: boolean }) => o.name == flags.role && o.clientRole == true)
+            if(!targetRole) {
+                error("Could not find role: " + flags.role);
                 process.exit(1);
             }
-            
-            // Get all Client roles
-            let respClientRoles;
-            try {
-                respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
-            } catch (error) {
-                this.showError(error);
-                process.exit(1);
-            }
-            if(respClientRoles.data.length == 0) {
-                error("There are no roles asssociated to this client yet. Create a client role first using the command:");
-                console.log("   mdos kc client create-role");
-                process.exit(1);
-            }
+            roleResponses = {roleUuid: targetRole.id, roleName: targetRole.name};
+        } else {
+            roleResponses = await inquirer.prompt([{
+                name: 'roleUuid',
+                message: 'select a role to add from this client',
+                type: 'list',
+                choices: respClientRoles.data.map((o: { name: any; id: any }) => {
+                    return { name: o.name, value: o.id }
+                }),
+            }])
+            roleResponses.roleName = respClientRoles.data.find((r: { id: any }) => r.id == roleResponses.roleUuid).name
+        }
+        
+        // Select username
+        let q = filterQuestions(AddRole.questions, "user", flags);
+        let userResponses = q.length > 0 ? await inquirer.prompt(q) : {}
 
-            // Compute target client role
-            let roleResponses: { roleName: any; roleUuid: any };
-            if(flags.role) {
-                const targetRole = respClientRoles.data.find((o: { name: string | undefined; clientRole: boolean }) => o.name == flags.role && o.clientRole == true)
-                if(!targetRole) {
-                    error("Could not find role: " + flags.role);
-                    process.exit(1);
-                }
-                roleResponses = {roleUuid: targetRole.id, roleName: targetRole.name};
-            } else {
-                roleResponses = await inquirer.prompt([{
-                    name: 'roleUuid',
-                    message: 'select a role to add from this client',
-                    type: 'list',
-                    choices: respClientRoles.data.map((o: { name: any; id: any }) => {
-                        return { name: o.name, value: o.id }
-                    }),
-                }])
-                roleResponses.roleName = respClientRoles.data.find((r: { id: any }) => r.id == roleResponses.roleUuid).name
-            }
-            
-            // Select username
-            let q = filterQuestions(AddRole.questions, "user", flags);
-            let userResponses = q.length > 0 ? await inquirer.prompt(q) : {}
+        const targetUsername = flags.username ? flags.username : userResponses.username;
 
-            const targetUsername = flags.username ? flags.username : userResponses.username;
+        let allUsers;
+        try {
+            allUsers = await this.api("keycloak?target=users&realm=mdos", "get");
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
+        }
+        const targetUser = allUsers.data.find((u: { username: any }) => u.username == targetUsername)
+        if(!targetUser) {
+            error("Username not found");
+            process.exit(1);
+        }
 
-            let allUsers;
-            try {
-                allUsers = await this.api("keycloak?target=users&realm=mdos", "get");
-            } catch (error) {
-                this.showError(error);
-                process.exit(1);
-            }
-            const targetUser = allUsers.data.find((u: { username: any }) => u.username == targetUsername)
-            if(!targetUser) {
-                error("Username not found");
-			    process.exit(1);
-            }
+        // Make sure this user does not already have this role associated
+        let userRolesResponse;
+        try {
+            userRolesResponse = await this.api(`keycloak?target=user-roles&realm=mdos&username=${targetUser.username}`, "get")
+        } catch (error) {
+            this.showError(error);
+            process.exit(1);
+        }
 
-            // Make sure this user does not already have this role associated
-            let userRolesResponse;
-            try {
-                userRolesResponse = await this.api(`keycloak?target=user-roles&realm=mdos&username=${targetUser.username}`, "get")
-            } catch (error) {
-                this.showError(error);
-                process.exit(1);
-            }
-            const existingMappingsForClient = userRolesResponse.data.clientMappings ? userRolesResponse.data.clientMappings[clientResponse.clientName] : null;
-            if(existingMappingsForClient && existingMappingsForClient.mappings.find((m: { name: any }) => m.name == roleResponses.roleName)) {
-                warn("User already has this client role");
-			    process.exit(1);
-            }
+        const existingMappingsForClient = userRolesResponse.data.filter((cm: { client: any }) => cm.client == clientResponse.clientId)
+        if(existingMappingsForClient.find((m: { name: any }) => m.name == roleResponses.roleName)) {
+            warn("User already has this client role");
+            process.exit(1);
+        }
 
-            // Add role for user now
-            CliUx.ux.action.start('Add role to user')
-            try {
-                await this.api(`keycloak`, 'post', {
-                    type: 'user-role',
-                    realm: 'mdos',
-                    ...clientResponse,
-                    ...roleResponses,
-                    username: targetUser.username,
-                    userUuid: targetUser.id
-                })
-                CliUx.ux.action.stop()
-            } catch (error) {
-                CliUx.ux.action.stop('error')
-                this.showError(error);
-                process.exit(1);
-            }
-
-		} else {
-			warn("Keycloak is not installed");
-			process.exit(1);
-		}
+        // Add role for user now
+        CliUx.ux.action.start('Add role to user')
+        try {
+            await this.api(`keycloak`, 'post', {
+                type: 'user-role',
+                realm: 'mdos',
+                ...clientResponse,
+                ...roleResponses,
+                username: targetUser.username,
+                userUuid: targetUser.id
+            })
+            CliUx.ux.action.stop()
+        } catch (error) {
+            CliUx.ux.action.stop('error')
+            this.showError(error);
+            process.exit(1);
+        }
 	}
 }
