@@ -30,14 +30,14 @@ const userRoleCreateHook = (context, jwtToken) => {
  */
  const userCreateHook = (context, jwtToken) => {
     // If mdos admin or list-user
-    if( !jwtToken.resource_access.mdos || 
-        (
-            !jwtToken.resource_access.mdos.roles.includes("admin") &&
-            !jwtToken.resource_access.mdos.roles.includes("create-users")
-        )
-    ) {
+    // if( !jwtToken.resource_access.mdos || 
+    //     (
+    //         !jwtToken.resource_access.mdos.roles.includes("admin") &&
+    //         !jwtToken.resource_access.mdos.roles.includes("create-users")
+    //     )
+    // ) {
         throw new errors.Forbidden("You are not authorized to create users");
-    }
+    // }
     return context;     
 }
 

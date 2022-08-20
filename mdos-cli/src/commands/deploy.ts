@@ -2,7 +2,7 @@ import { Flags, CliUx } from '@oclif/core'
 import Command from '../base'
 
 const inquirer = require('inquirer')
-const { info, error, warn, filterQuestions, s3sync, extractErrorMessage } = require('../lib/tools')
+const { info, error, warn, filterQuestions, s3sync } = require('../lib/tools')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
@@ -52,7 +52,7 @@ export default class Deploy extends Command {
         try {
             userInfo = await this.api("mdos/user-info", "GET")
         } catch (err) {
-            error(extractErrorMessage(err));
+            this.showError(err);
             process.exit(1);
         }
 

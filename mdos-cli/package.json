@@ -20,6 +20,7 @@
         "@aws-sdk/client-s3": "^3.150.0",
         "@oclif/core": "^1.13.3",
         "@oclif/plugin-help": "^5",
+        "@oclif/plugin-not-found": "^2.3.1",
         "@oclif/plugin-plugins": "^2.0.1",
         "aws-sdk": "^2.1195.0",
         "axios": "^0.27.2",
@@ -55,19 +56,19 @@
         "bin": "mdos",
         "dirname": "mdos",
         "commands": "./dist/commands",
+        "flexibleTaxonomy": true,
+        "hooks": {
+            "command_incomplete": "./dist/hooks/command_incomplete.js"
+        },
         "plugins": [
             "@oclif/plugin-help",
-            "@oclif/plugin-plugins"
+            "@oclif/plugin-not-found"
         ],
         "topicSeparator": " ",
-        "topics": {
-            "hello": {
-                "description": "Say hello to the world and others"
-            }
-        }
+        "topics": {}
     },
     "scripts": {
-        "build": "shx rm -rf dist && tsc -b",
+        "build": "shx rm -rf dist && tsc -b && cp -r ./src/lib ./dist",
         "lint": "eslint . --ext .ts --config .eslintrc",
         "postpack": "shx rm -f oclif.manifest.json",
         "posttest": "yarn lint",
