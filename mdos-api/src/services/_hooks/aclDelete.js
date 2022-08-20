@@ -61,6 +61,42 @@ const jwt_decode = require('jwt-decode')
     return context;
  }
 
+ /**
+ * clientRoleDeleteHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+  const namespaceDeleteHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("delete-namespace")
+    )) {
+        return context;
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden("You are not authorized to delete namespaces");
+ }
+
+  /**
+ * clientRoleDeleteHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+   const oidcProviderDeleteHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("oidc-remove")
+    )) {
+        return context;
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden("You are not authorized to delete oidc providers");
+ }
+
 /**
  * 
  * @returns Export
@@ -91,7 +127,13 @@ module.exports = function () {
         else if(context.path == "keycloak" && context.params.query.target == "client-roles") {
             return await clientRoleDeleteHook(context, jwtToken);
         } 
-
+        else if(context.path == "kube" && context.params.query.target == "tenantNamespace") {
+            return await namespaceDeleteHook(context, jwtToken);
+        }
+        else if(context.path == "oidc-provider" && !context.params.query.target) {
+            return await oidcProviderDeleteHook(context, jwtToken);
+        }
+        
         return context;
     };  
 }

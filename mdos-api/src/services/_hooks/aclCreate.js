@@ -63,6 +63,42 @@ const userRoleCreateHook = (context, jwtToken) => {
 } 
 
 /**
+ * namespaceCreateHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const namespaceCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("create-namespace")
+    )) {
+        return context;
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden("You are not authorized to create namespaces");
+} 
+
+/**
+ * oidcProviderCreateHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const oidcProviderCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("oidc-create")
+    )) {
+        return context;
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden("You are not authorized to create oidc providers");
+} 
+
+/**
  * 
  * @returns Export
  */
@@ -92,7 +128,12 @@ module.exports = function () {
         else if(context.path == "keycloak" && context.data.type == "client-role") {
             return await clientRoleCreateHook(context, jwtToken);
         } 
-
+        else if(context.path == "kube" && context.data.type == "tenantNamespace") {
+            return await namespaceCreateHook(context, jwtToken);
+        } 
+        else if(context.path == "oidc-provider") {
+            return await oidcProviderCreateHook(context, jwtToken);
+        }
         return context;
     };  
 }

@@ -90,6 +90,48 @@ const clientFilterHook = async (context, jwtToken) => {
 }; 
 
 /**
+ * userNamespaceFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const userNamespaceFilterHook = async (context, jwtToken) => {
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("list-namespaces")
+    )) {
+        return context;
+    }
+
+    // filter out to keep only those who are namespace admin
+    context.result = context.result.filter(ns => jwtToken.resource_access[ns.name]);
+    return context;
+}; 
+
+/**
+ * oidcProviderFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const oidcProviderFilterHook = async (context, jwtToken) => {
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("list-namespaces")
+    )) {
+        return context;
+    }
+
+    context.result = context.result.filter(oidc => {
+        let nsName = oidc.name.split("-");
+        nsName.shift();
+        nsName = nsName.join("-");
+        return jwtToken.resource_access[nsName];
+    })
+    return context;
+}; 
+
+/**
  * 
  * @returns Export
  */
@@ -122,8 +164,14 @@ module.exports = function () {
         else if(context.path == "keycloak" && context.params.query.target == "user-roles") {
             return await userRoleFilterHook(context, jwtToken);
         }
+        else if(context.path == "kube" && context.params.query.target == "namespaces") {
+            return await userNamespaceFilterHook(context, jwtToken);
+        }
+        else if(context.path == "oidc-provider" && !context.params.query.target) {
+            return await oidcProviderFilterHook(context, jwtToken);
+        }
         else {
-            console.log(context.params.query);
+            console.log("Unknown: ", context.params.query, context.path);
         }
         return context;
     };  
