@@ -79,7 +79,7 @@ export default class Deploy extends Command {
                 }
             }
         }
-        
+
         // Deploy app
         CliUx.ux.action.start('Deploying application')
         try {
