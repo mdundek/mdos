@@ -199,10 +199,11 @@ const _collectRootDomain = async () => {
  * s3sync
  * @param {*} tenantName 
  * @param {*} bucket 
+ * @param {*} volumeName 
  * @param {*} sourceDir 
- * @param {*} userInfo 
+ * @param {*} targetS3Creds 
  */
-const s3sync = async (tenantName, bucket, sourceDir, userInfo) => {
+const s3sync = async (bucket, volumeName, sourceDir, targetS3Creds) => {
 	// Convenience private function to download file
 	const _dl = (url, destination) => {
 		return new Promise((resolve, reject) => {
@@ -290,36 +291,27 @@ const s3sync = async (tenantName, bucket, sourceDir, userInfo) => {
 	}
 
 	// If mdos minio alias not set up, do it now
-	if(!mcConfigs.find(s => JSON.parse(s).alias == "mdosminio")) {
+	if(!mcConfigs.find(s => JSON.parse(s).alias == `${bucket}-mdosminio`)) {
 		try {
-			await terminalCommand(`${mcBin} config host add mdosminio ${userInfo.minioUri} ${userInfo.accessKey} ${userInfo.secretKey} --api S3v4`);
+			await terminalCommand(`${mcBin} config host add ${bucket}-mdosminio ${targetS3Creds.host} ${targetS3Creds.ACCESS_KEY} ${targetS3Creds.SECRET_KEY} --api S3v4`);
 		} catch (err) {
 			if(extractErrorCode(err) == 500) {
 				error("Invalid credentials");
 			} else {
-				error("Invalid domain:", userInfo.minioUri);
+				error("Invalid domain:", targetS3Creds.host);
 			}
 			process.exit(1);
 		}
 	}
 
-	// Make sure bucket exists
-	try {
-		await terminalCommand(`${mcBin} mb mdosminio/${tenantName}/${bucket} --json`);
-	} catch (err) {
-        error("Could not synchronize volume:");
-		error(extractErrorMessage(err))
-        process.exit(1);
-	}
-
 	// Sync now
 	let updated = false;
 	try {
-		CliUx.ux.action.start(`Synchronizing volume: ${tenantName}/${bucket}`)
-		const syncResult = await terminalCommand(`${mcBin} mirror ${sourceDir} mdosminio/${tenantName}/${bucket} --overwrite --remove --preserve --json`);
+		CliUx.ux.action.start(`Synchronizing volume: ${bucket}/${volumeName}`)
+		const syncResult = await terminalCommand(`${mcBin} mirror ${sourceDir} ${bucket}-mdosminio/${bucket}/${volumeName} --overwrite --remove --preserve --json`);
 		const changeDetected = syncResult.find(logLine => {
 			const logLineJson = JSON.parse(logLine)
-			if(logLineJson.key && logLineJson.key != `mdosminio/${tenantName}/${bucket}`) {
+			if(logLineJson.key && logLineJson.key != `${bucket}/${volumeName}`) {
 				return true
 			} else if(logLineJson.source) {
 				return true
@@ -327,9 +319,11 @@ const s3sync = async (tenantName, bucket, sourceDir, userInfo) => {
 				return false
 			}
 		});
+
 		updated = changeDetected ? true : false
 		CliUx.ux.action.stop()
 	} catch (err) {
+		console.log(error);
 		CliUx.ux.action.stop('error')
         error("Could not synchronize volume:");
 		error(extractErrorMessage(err))
