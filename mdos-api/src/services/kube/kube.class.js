@@ -89,8 +89,10 @@ exports.Kube = class Kube {
 			}
 
             // Create namespace if not exist
+            let nsCreated = false;
             if (!(await this.app.get('kube').hasNamespace(data.namespace.toLowerCase()))) {
                 await this.app.get('kube').createNamespace({name: data.namespace.toLowerCase()})
+                nsCreated = true;
             } else {
                 throw new Conflict('Namespace already exists')
             }
@@ -100,7 +102,8 @@ exports.Kube = class Kube {
                 await this.app.get("keycloak").createClient(data.realm, data.namespace.toLowerCase());
             } catch (error) {
                 // Clean up
-                try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
+                if(nsCreated)
+                    try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
                 throw error;
             }
 
@@ -139,7 +142,9 @@ exports.Kube = class Kube {
                 });
             } catch (error) {
                 // Clean up
-                try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
+                if(nsCreated)
+                    try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
+
                 try {
                     const dClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase());
                     await this.app.get('keycloak').deleteClient(data.realm, dClient.id);
@@ -153,7 +158,9 @@ exports.Kube = class Kube {
                 await this.app.get('s3').storeNamespaceCredentials(data.namespace.toLowerCase(), credentials);
             } catch (error) {
                 // Clean up
-                try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
+                if(nsCreated)
+                    try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
+                    
                 try {
                     const dClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase());
                     await this.app.get('keycloak').deleteClient(data.realm, dClient.id);

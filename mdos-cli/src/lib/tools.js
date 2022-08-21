@@ -311,6 +311,9 @@ const s3sync = async (bucket, volumeName, sourceDir, targetS3Creds) => {
 		const syncResult = await terminalCommand(`${mcBin} mirror ${sourceDir} ${bucket}-mdosminio/${bucket}/${volumeName} --overwrite --remove --preserve --json`);
 		const changeDetected = syncResult.find(logLine => {
 			const logLineJson = JSON.parse(logLine)
+			if(logLineJson.status == "error") {
+				throw new Error(logLineJson.error.message + (logLineJson.error.cause && logLineJson.error.cause.message) ? `: ${logLineJson.error.cause.message}` : "");
+			}
 			if(logLineJson.key && logLineJson.key != `${bucket}/${volumeName}`) {
 				return true
 			} else if(logLineJson.source) {
