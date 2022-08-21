@@ -73,6 +73,8 @@ while [ "$1" != "" ]; do
     shift
 done
 
+S3_PROVIDER="minio"
+
 # SET UP FIREWALL (ufw)
 if command -v ufw >/dev/null; then
     if [ "$(ufw status | grep 'Status: active')" == "" ]; then
@@ -772,13 +774,13 @@ configs:
 # ################### MINIO ##################
 # ############################################
 install_minio() {
-    if [ -z $MINIO_ACCESS_KEY ]; then
-        user_input MINIO_ACCESS_KEY "Specify your ACCESS_KEY:" "REp9k63uJ6qTe4KRtMsU" 
-        set_env_step_data "MINIO_ACCESS_KEY" "$MINIO_ACCESS_KEY"
+    if [ -z $ACCESS_KEY ]; then
+        user_input ACCESS_KEY "Specify your ACCESS_KEY:" "REp9k63uJ6qTe4KRtMsU" 
+        set_env_step_data "ACCESS_KEY" "$ACCESS_KEY"
     fi
-    if [ -z $MINIO_SECRET_KEY ]; then
-        user_input MINIO_SECRET_KEY "Specify your SECRET_KEY:" "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
-        set_env_step_data "MINIO_SECRET_KEY" "$MINIO_SECRET_KEY"
+    if [ -z $SECRET_KEY ]; then
+        user_input SECRET_KEY "Specify your SECRET_KEY:" "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
+        set_env_step_data "SECRET_KEY" "$SECRET_KEY"
     fi
 
     mkdir -p $HOME/.mdos/minio
@@ -817,8 +819,8 @@ install_minio() {
         --set persistence.storageClass=local-path-minio-backup \
         --set mode=standalone \
         --set resources.requests.memory=1Gi \
-        --set rootUser=$MINIO_ACCESS_KEY \
-        --set rootPassword=$MINIO_SECRET_KEY \
+        --set rootUser=$ACCESS_KEY \
+        --set rootPassword=$SECRET_KEY \
         minio/minio \
         -n minio --atomic &>> $LOG_FILE
 
@@ -1155,15 +1157,17 @@ install_keycloak() {
 
         # Create all roles, assign admin role to admin user for mdos client
         createMdosRole "admin" $MDOS_USER_UUID
-        createMdosRole "create-clients"
-        createMdosRole "list-clients"
-        createMdosRole "delete-clients"
+        createMdosRole "create-namespace"
+        createMdosRole "list-namespaces"
+        createMdosRole "delete-namespace"
         createMdosRole "create-users"
         createMdosRole "list-users"
         createMdosRole "delete-users"
         createMdosRole "create-roles"
         createMdosRole "delete-roles"
         createMdosRole "assign-roles"
+        createMdosRole "oidc-create"
+        createMdosRole "oidc-remove"
 
         # Create secret with credentials
         cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
@@ -1335,7 +1339,12 @@ EOF
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[2].value = "/etc/letsencrypt/live/'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[7].value = "minio.'$DOMAIN'"')
+
+    if [ $S3_PROVIDER == "minio" ]; then
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[7].value = "minio.'$DOMAIN'"')
+    fi
+    
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[8].value = "'$S3_PROVIDER'"')
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = '$OIDC_ISSUER_URL'')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = '$OIDC_JWKS_URI'')
@@ -1343,8 +1352,10 @@ EOF
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$REG_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$REG_PASS'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[2].value = "'$MINIO_ACCESS_KEY'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[3].value = "'$MINIO_SECRET_KEY'"')
+
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[2].value = "'$ACCESS_KEY'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[3].value = "'$SECRET_KEY'"')
+    
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/server-ca.crt)"'"')
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/keycloak"')
@@ -1417,7 +1428,7 @@ EOF
             echo "      communicate with the platform (ex. docker)."
             echo ""
 
-            if [ -z $GLOBAL_ERROR ]; then
+            if [ -z $GLOBAL_ERROR ] && [ $S3_PROVIDER == "minio" ]; then
                 info "The following services are available on the platform:"
                 echo "        - registry.$DOMAIN"
                 echo "        - minio-console.$DOMAIN"
@@ -1558,11 +1569,13 @@ EOF
     fi
 
     # INSTALL MINIO
-    if [ -z $INST_STEP_MINIO ]; then
-        info "Install Minio..."
-        echo ""
-        install_minio
-        set_env_step_data "INST_STEP_MINIO" "1"
+    if [ $S3_PROVIDER == "minio" ]; then
+        if [ -z $INST_STEP_MINIO ]; then
+            info "Install Minio..."
+            echo ""
+            install_minio
+            set_env_step_data "INST_STEP_MINIO" "1"
+        fi
     fi
 
     # INSTALL MDOS

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=- LOGGER FUNCTIONS -=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 logInfo() {
     echo '{"level":"info","timestamp":"'"$(date '+%Y-%d-%MT%H:%M:%S.323Z')"'","message":"'$1'","args":[{"source":"'$2'","data":{},"target":"'$3'"}],"errorMessage":"","errorStack":"","service_name":"init-container"}'
 }
@@ -8,22 +9,12 @@ logError() {
     echo '{"level":"error","timestamp":"'"$(date '+%Y-%d-%MT%H:%M:%S.323Z')"'","message":"'$1'","errorJson":{"source":"'$2'","target":"'$3'","step":"DEPLOY","data":{},"code":500,"message":"'$1'","stack":""},"errorStack":"","service_name":"init-container"}'
 }
 
-# ###############################################
-# ###### SYNC ONE VOL AT A TIME FUNCTION ########
-# ###############################################
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=- SYNC ONE VOL AT A TIME FUNCTION -=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 sync_volume () {
     CURRENT_SYNC_SOURCE_BUCKET="${CURRENT_SYNC_SOURCE_BUCKET%/}"
     CURRENT_SYNC_TARGET_DIR="${CURRENT_SYNC_TARGET_DIR%/}"
 
     logInfo "Start volume sync" "$CURRENT_SYNC_SOURCE_BUCKET" "$CURRENT_SYNC_TARGET_DIR"
-
-    # Validation
-    # if [ -d "$CURRENT_SYNC_SOURCE_BUCKET" ]; then
-    #     logInfo "Found source directory to copy" "sync_volume.validate" "$CURRENT_SYNC_SOURCE_BUCKET"
-    # else
-    #     logError "Source directory $CURRENT_SYNC_SOURCE_BUCKET does not exists." "sync_volume.validate" "$CURRENT_SYNC_SOURCE_BUCKET" 
-    #     exit 1
-    # fi
 
     if [ -d "$CURRENT_SYNC_TARGET_DIR" ]; then
         logInfo "Found target directory to copy to" "sync_volume.validate" "$CURRENT_SYNC_TARGET_DIR" 
@@ -40,14 +31,19 @@ sync_volume () {
     # echo ""
 
     # Do the Job
-    /usr/src/ops/mc config host add mdosminio http://minio.minio.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --api S3v4
-    /usr/src/ops/mc mirror mdosminio/$CURRENT_SYNC_SOURCE_BUCKET $CURRENT_SYNC_TARGET_DIR --overwrite --remove --preserve
+    if [ "$S3_PROVIDER" == "minio" ]; then
+        /usr/src/ops/mc config host add mdosminio $S3_INTERNAL_HOST $ACCESS_KEY $SECRET_KEY --api S3v4
+        /usr/src/ops/mc mirror mdosminio/$CURRENT_SYNC_SOURCE_BUCKET $CURRENT_SYNC_TARGET_DIR --overwrite --remove --preserve
 
-    logInfo "Files successfully synched" "dataSync.checkTargetFolderEmpty" "$CURRENT_SYNC_TARGET_DIR"
+        logInfo "Files successfully synched" "dataSync.checkTargetFolderEmpty" "$CURRENT_SYNC_TARGET_DIR"
+    else
+        logInfo "S3 provider $S3_PROVIDER not found" "$CURRENT_SYNC_TARGET_DIR"
+    fi
 }
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=- MAIN -=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 main() {
-    # ############ ENV VARS using concatenation ############
+    # ENV VARS using concatenation
     IFS=';' read -ra DOURCE_DIR_ARRAY <<< "$SYNC_SOURCE_BUCKET"
     IFS=';' read -ra TARGET_DIR_ARRAY <<< "$SYNC_TARGET_DIR"
     ITER=0
@@ -61,6 +57,9 @@ main() {
     done
 }
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=- SCRIPT START -=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 (
     set -Ee
 

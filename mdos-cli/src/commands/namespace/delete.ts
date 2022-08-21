@@ -84,7 +84,7 @@ export default class Delete extends Command {
         }
         
         if(confirmed) {
-            CliUx.ux.action.start('Deleting Keycloak client')
+            CliUx.ux.action.start('Deleting namespace')
             try {
                 await this.api(`kube/${clientResponse.namespace}?target=tenantNamespace&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
                 CliUx.ux.action.stop()

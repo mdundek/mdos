@@ -57,7 +57,6 @@ class Keycloak {
      */
     async getRealms() {
         let accessToken = await this._getAccessToken()
-
         const response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -361,7 +360,10 @@ class Keycloak {
             },
         })
 
-        return response.data
+        return response.data.map(r => {
+            r.clientId = clientId;
+            return r;
+        })
     }
 
     /**

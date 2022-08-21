@@ -143,7 +143,7 @@ const extractErrorMessage = (error) => {
 		errorMsg.push(error.response.data.message);
 	}
 	if(errorMsg.length > 0)
-		return errorMsg.join("\n");
+		return errorMsg.pop();
 	else
 		return "An unknown error occured!"
 }

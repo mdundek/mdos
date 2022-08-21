@@ -142,7 +142,7 @@ export default class RemoveRole extends Command {
         if(confirmed) {
             CliUx.ux.action.start('Removing Keycloak user role')
             try {
-                await this.api(`keycloak/${targetRole.uuid}?target=user-roles&realm=mdos&clientUuid=${clientResponses.clientUuid}&userUuid=${targetUser.id}&roleName=${targetRole.name}`, 'delete')
+                await this.api(`keycloak/${targetRole.uuid}?target=user-roles&realm=mdos&clientUuid=${clientResponses.clientUuid}&userUuid=${targetUser.id}&roleName=${targetRole.name}&clientId=${clientResponses.clientId}`, 'delete')
                 CliUx.ux.action.stop()
             } catch (error) {
                 CliUx.ux.action.stop('error')

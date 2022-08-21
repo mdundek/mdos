@@ -113,7 +113,7 @@ export default class DeleteRole extends Command {
         if(confirmed) {
             CliUx.ux.action.start('Deleting Keycloak client role')
             try {
-                await this.api(`keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
+                await this.api(`keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}&clientId=${clientResponse.clientId}`, 'delete')
                 CliUx.ux.action.stop()
             } catch (error) {
                 CliUx.ux.action.stop('error')
