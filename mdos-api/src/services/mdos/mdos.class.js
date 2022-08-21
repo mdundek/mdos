@@ -21,34 +21,71 @@ exports.Mdos = class Mdos {
      */
     async get(id, params) {
         if(id == "user-info") {
+            let allNs = await this.app.get("kube").getNamespaces();
+            allNs = allNs.map(o => o.metadata.name);
+
+            const userData = {
+                registry: `registry.${process.env.ROOT_DOMAIN}`,
+                registryUser: process.env.REG_USER,
+                registryPassword: process.env.REG_PASS,
+                s3: []
+            };
+
+            // For dev purposes only, used if auth is disabled
             if(process.env.NO_ADMIN_AUTH == "true") {
-                return {
-                    accessKey: process.env.MINIO_ACCESS_KEY,
-                    secretKey: process.env.MINIO_SECRET_KEY,
-                    minioUri: process.env.MINIO_HOST,
-                    registry: `registry.${process.env.ROOT_DOMAIN}`,
-                    registryUser: process.env.REG_USER,
-                    registryPassword: process.env.REG_PASS,
-                    roles: [`mdostnt-name-${params.query.tenantName}`, 'mdostnt-volume-sync']
+                for(let ns of allNs) {
+                    userData.s3.push({
+                        "ACCESS_KEY": process.env.ACCESS_KEY,
+                        "SECRET_KEY": process.env.SECRET_KEY,
+                        "host": process.env.S3_HOST,
+                        "bucket": ns,
+                        "permissions": "write"
+                    });
                 }
-            } else {
+                userData.roles = [`mdostnt-name-${params.query.tenantName}`, 'mdostnt-volume-sync'];
+                return userData;
+            }
+            // For production
+            else {
                 if (!params.headers['x-auth-request-access-token']) {
                     throw new Forbidden('You are not authenticated');
                 }
+
                 let jwtToken = jwt_decode(params.headers['x-auth-request-access-token'])
-                if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles) {
-                    return {
-                        accessKey: process.env.MINIO_ACCESS_KEY,
-                        secretKey: process.env.MINIO_SECRET_KEY,
-                        minioUri: process.env.MINIO_HOST,
-                        registry: `registry.${process.env.ROOT_DOMAIN}`,
-                        registryUser: process.env.REG_USER,
-                        registryPassword: process.env.REG_PASS,
-                        roles: jwtToken.resource_access.mdos.roles
+                userData.roles = jwtToken.resource_access.mdos.roles;
+                
+                for(let ns of allNs) {
+                    if(jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes("admin")) {
+                        const s3creds = await this.app.get("s3").getNamespaceCredentials(ns, "write");
+                        if(s3creds) {
+                            s3creds.bucket = ns;
+                            s3creds.permissions = "write";
+                            userData.s3.push(s3creds);
+                        }
+                    } else if(jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes("admin")){
+                        const s3creds = await this.app.get("s3").getNamespaceCredentials(ns, "write");
+                        if(s3creds) {
+                            s3creds.bucket = ns;
+                            s3creds.permissions = "write";
+                            userData.s3.push(s3creds);
+                        }
+                    } else if(jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes("s3-write")){
+                        const s3creds = await this.app.get("s3").getNamespaceCredentials(ns, "write");
+                        if(s3creds) {
+                            s3creds.bucket = ns;
+                            s3creds.permissions = "write";
+                            userData.s3.push(s3creds);
+                        }
+                    } else if(jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes("s3-read")){
+                        const s3creds = await this.app.get("s3").getNamespaceCredentials(ns, "read");
+                        if(s3creds) {
+                            s3creds.bucket = ns;
+                            s3creds.permissions = "read";
+                            userData.s3.push(s3creds);
+                        }
                     }
-                } else {
-                    throw new Forbidden('You are not authorized to access this resource');
-                }    
+                }
+                return userData;
             }
         }
         else {
@@ -83,9 +120,9 @@ exports.Mdos = class Mdos {
 
                 // If sync volues , make sure we have a minio secret
                 if(valuesYaml.components.find(component => component.volumes.find(v => v.syncVolume))) {
-                    const minioCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, "mdos-minio-creds")
+                    const minioCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, "s3-read")
                     if (!minioCredsFound) {
-                        throw new Conflict("The target namespace seems to be missing the secret named 'mdos-minio-creds'");
+                        throw new Conflict("The target namespace seems to be missing the secret named 's3-read'");
                     }
                 }
             }

@@ -32,7 +32,7 @@ class S3 {
             const aliases = await terminalCommand(`mc alias list --json`)
             if(!aliases.find(a => JSON.parse(a).alias == "mdosminion")){
                 const keycloakSecret = await this.app.get('kube').getSecret('minio', 'minio')
-                await terminalCommand(`mc config host add mdosminio ${process.env.MINIO_HOST} ${keycloakSecret.rootUser} ${keycloakSecret.rootPassword}`)
+                await terminalCommand(`mc config host add mdosminio ${process.env.S3_HOST} ${keycloakSecret.rootUser} ${keycloakSecret.rootPassword}`)
             }
 
             // Create bucket
@@ -94,19 +94,19 @@ class S3 {
 
             // Create user creds write
             const writeCredentials = {
-                MINIO_ACCESS_KEY: nanoid(),
-                MINIO_SECRET_KEY: nanoid(),
+                ACCESS_KEY: nanoid(),
+                SECRET_KEY: nanoid(),
             }
-            await terminalCommand(`mc admin user add mdosminio ${writeCredentials.MINIO_ACCESS_KEY} ${writeCredentials.MINIO_SECRET_KEY}`)
-            await terminalCommand(`mc admin policy set mdosminio ${namespace}-write user=${writeCredentials.MINIO_ACCESS_KEY}`)
+            await terminalCommand(`mc admin user add mdosminio ${writeCredentials.ACCESS_KEY} ${writeCredentials.SECRET_KEY}`)
+            await terminalCommand(`mc admin policy set mdosminio ${namespace}-write user=${writeCredentials.ACCESS_KEY}`)
 
             // Create user creds read
             const readCredentials = {
-                MINIO_ACCESS_KEY: nanoid(),
-                MINIO_SECRET_KEY: nanoid(),
+                ACCESS_KEY: nanoid(),
+                SECRET_KEY: nanoid(),
             }
-            await terminalCommand(`mc admin user add mdosminio ${readCredentials.MINIO_ACCESS_KEY} ${readCredentials.MINIO_SECRET_KEY}`)
-            await terminalCommand(`mc admin policy set mdosminio ${namespace}-read user=${readCredentials.MINIO_ACCESS_KEY}`)
+            await terminalCommand(`mc admin user add mdosminio ${readCredentials.ACCESS_KEY} ${readCredentials.SECRET_KEY}`)
+            await terminalCommand(`mc admin policy set mdosminio ${namespace}-read user=${readCredentials.ACCESS_KEY}`)
 
             return {
                 writeCredentials,
@@ -125,11 +125,28 @@ class S3 {
             const aliases = await terminalCommand(`mc alias list --json`)
             if(!aliases.find(a => JSON.parse(a).alias == "mdosminion")){
                 const keycloakSecret = await this.app.get('kube').getSecret('minio', 'minio')
-                await terminalCommand(`mc config host add mdosminio ${process.env.MINIO_HOST} ${keycloakSecret.rootUser} ${keycloakSecret.rootPassword}`)
+                await terminalCommand(`mc config host add mdosminio ${process.env.S3_HOST} ${keycloakSecret.rootUser} ${keycloakSecret.rootPassword}`)
             }
 
             // Delete bucket
             await terminalCommand(`mc rb --force mdosminio/${namespace}`)
+
+            // Delete minio users and credentials & permissions
+            let regCredsFound = await this.app.get('kube').hasSecret(namespace, `s3-read`);
+            if (regCredsFound) {
+                const creds = await this.app.get('kube').getSecret(namespace, `s3-read`);
+                await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
+                await this.app.get('kube').deleteSecret(namespace, `s3-read`)
+            }
+            await terminalCommand(`mc admin policy remove mdosminio ${namespace}-read`)
+
+            regCredsFound = await this.app.get('kube').hasSecret(namespace, `s3-write`);
+            if (regCredsFound) {
+                const creds = await this.app.get('kube').getSecret(namespace, `s3-write`);
+                await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
+                await this.app.get('kube').deleteSecret(namespace, `s3-write`)
+            }
+            await terminalCommand(`mc admin policy remove mdosminio ${namespace}-write`)
         }
     }
 
@@ -140,8 +157,12 @@ class S3 {
      */
     async storeNamespaceCredentials(namespace, credentials) {
         if (this.s3Provider == 'minio') {
-            await this.app.get('kube').createSecret("minio", `${namespace}-read`, credentials.readCredentials)
-            await this.app.get('kube').createSecret("minio", `${namespace}-write`, credentials.writeCredentials)
+            credentials.readCredentials.S3_PROVIDER = "minio"
+            credentials.readCredentials.S3_INTERNAL_HOST = "http://minio.minio.svc.cluster.local:9000"
+            credentials.writeCredentials.S3_PROVIDER = "minio"
+            credentials.writeCredentials.S3_INTERNAL_HOST = "http://minio.minio.svc.cluster.local:9000"
+            await this.app.get('kube').createSecret(namespace, `s3-read`, credentials.readCredentials)
+            await this.app.get('kube').createSecret(namespace, `s3-write`, credentials.writeCredentials)
         }
     }
 
@@ -152,19 +173,14 @@ class S3 {
      */
     async getNamespaceCredentials(namespace, permissions) {
         if (this.s3Provider == 'minio') {
-
+            const regCredsFound = await this.app.get('kube').hasSecret(namespace, `s3-${permissions}`);
+            if (regCredsFound) {
+                const creds = await this.app.get('kube').getSecret(namespace, `s3-${permissions}`);
+                creds.host = process.env.S3_HOST;
+                return creds;
+            }
         }
-    }
-
-    /**
-     * deleteNamespaceCredentials
-     * @param {*} namespace 
-     */
-    async deleteNamespaceCredentials(namespace) {
-        if (process.env.S3_PROVIDER == 'minio') {
-            await this.app.get('kube').deleteSecret("minio", `${namespace}-read`)
-            await this.app.get('kube').deleteSecret("minio", `${namespace}-write`)
-        }
+        return null;
     }
 }
 

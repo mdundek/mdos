@@ -40,7 +40,7 @@ components:
             value: "/usr/src/dep/istio_helm/istio-control/istio-discovery"
           - key: RUN_TARGET
             value: "pod"
-          - key: MINIO_HOST
+          - key: S3_HOST
             value: "https://minio.mydomain.com"
           - key: S3_PROVIDER
             value: "minio"
@@ -53,9 +53,9 @@ components:
             value: "mdundek"
           - key: REG_PASS
             value: "li14ebe14"
-          - key: MINIO_ACCESS_KEY
+          - key: ACCESS_KEY
             value: "REp9k63uJ6qTe4KRtMsU"
-          - key: MINIO_SECRET_KEY
+          - key: SECRET_KEY
             value: "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
       - name: k3s-ca
         type: file

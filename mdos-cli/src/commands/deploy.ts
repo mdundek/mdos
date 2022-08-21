@@ -56,33 +56,35 @@ export default class Deploy extends Command {
             process.exit(1);
         }
 
+        console.log(JSON.stringify(userInfo.data, null, 4));
+
         // Sync minio content for volumes
-        let volumeUpdates = false
-        for(let component of appYaml.components) {
-            if(component.volumes) {
-                for(let volume of component.volumes) {
-                    if(volume.syncVolume) {
-                        let appYamlPath = path.join(process.cwd(), component.name, volume.name)
-                        let volHasUpdates = await s3sync(appYaml.tenantName, volume.bucket, appYamlPath, userInfo.data);
-                        if(volHasUpdates) volumeUpdates = true
-                    }
-                }
-            }
-        }
+        // let volumeUpdates = false
+        // for(let component of appYaml.components) {
+        //     if(component.volumes) {
+        //         for(let volume of component.volumes) {
+        //             if(volume.syncVolume) {
+        //                 let appYamlPath = path.join(process.cwd(), component.name, volume.name)
+        //                 let volHasUpdates = await s3sync(appYaml.tenantName, volume.bucket, appYamlPath, userInfo.data);
+        //                 if(volHasUpdates) volumeUpdates = true
+        //             }
+        //         }
+        //     }
+        // }
 
         // Deploy app
-        CliUx.ux.action.start('Deploying application')
-        try {
-            await this.api(`mdos`, 'post', {
-                type: 'deploy',
-                values: appYamlBase64,
-                restart: volumeUpdates
-            })
-            CliUx.ux.action.stop()
-        } catch (error) {
-            CliUx.ux.action.stop('error')
-            this.showError(error);
-            process.exit(1);
-        }
+        // CliUx.ux.action.start('Deploying application')
+        // try {
+        //     await this.api(`mdos`, 'post', {
+        //         type: 'deploy',
+        //         values: appYamlBase64,
+        //         restart: volumeUpdates
+        //     })
+        //     CliUx.ux.action.stop()
+        // } catch (error) {
+        //     CliUx.ux.action.stop('error')
+        //     this.showError(error);
+        //     process.exit(1);
+        // }
     }
 }

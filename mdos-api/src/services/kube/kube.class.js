@@ -199,11 +199,10 @@ exports.Kube = class Kube {
 
             // Delete S3 secrets & bucket, make non fatal / non blocking
             try {
-                await this.app.get('s3').deleteNamespaceCredentials(id.toLowerCase());
-            } catch (_e) {}
-            try {
                 await this.app.get('s3').deleteNamespaceBucket(id.toLowerCase());
-            } catch (_e) {}
+            } catch (_e) {
+                console.log(_e);
+            }
 
             // Delete namespace
             await this.app.get('kube').deleteNamespace(id.toLowerCase());

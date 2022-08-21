@@ -63,11 +63,11 @@ spec:
     {{- range .volumes }}
       {{- if .syncVolume }}
         {{- if $srcBuckets }}
-          {{- $srcBuckets = print $srcBuckets  ";" .bucket -}}
+          {{- $srcBuckets = print $srcBuckets  ";" $.Values.tenantName -}}
           {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
           {{- $mdosSyncs = print $srcBuckets  " " .syncVolume -}}
         {{- else }}
-          {{- $srcBuckets = print .bucket -}}
+          {{- $srcBuckets = print $.Values.tenantName -}}
           {{- $dstPaths = print .mountPath -}}
           {{- $mdosSyncs = print .syncVolume -}}
         {{- end }}
@@ -91,21 +91,26 @@ spec:
           value: "{{ $srcBuckets }}"
         - name: SYNC_TARGET_DIR
           value: "{{ $dstPaths }}"
-        - name: MINIO_HOST
+        - name: S3_PROVIDER
           valueFrom:
             secretKeyRef:
-              name: mdos-minio-creds
-              key: MINIO_HOST
-        - name: MINIO_ACCESS_KEY
+              name: s3-read
+              key: S3_PROVIDER  
+        - name: S3_INTERNAL_HOST
           valueFrom:
             secretKeyRef:
-              name: mdos-minio-creds
-              key: MINIO_ACCESS_KEY
-        - name: MINIO_SECRET_KEY
+              name: s3-read
+              key: S3_INTERNAL_HOST
+        - name: ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: mdos-minio-creds
-              key: MINIO_SECRET_KEY
+              name: s3-read
+              key: ACCESS_KEY
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: s3-read
+              key: SECRET_KEY
     {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
