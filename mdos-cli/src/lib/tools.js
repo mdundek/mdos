@@ -308,11 +308,11 @@ const s3sync = async (bucket, volumeName, sourceDir, targetS3Creds) => {
 	let updated = false;
 	try {
 		CliUx.ux.action.start(`Synchronizing volume: ${bucket}/${volumeName}`)
-		const syncResult = await terminalCommand(`${mcBin} mirror ${sourceDir} ${bucket}-mdosminio/${bucket}/${volumeName} --overwrite --remove --preserve --json`);
+		const syncResult = await terminalCommand(`${mcBin} mirror ${sourceDir} ${bucket}-mdosminio/${bucket}/${volumeName} --overwrite --remove --json`);
 		const changeDetected = syncResult.find(logLine => {
 			const logLineJson = JSON.parse(logLine)
 			if(logLineJson.status == "error") {
-				throw new Error(logLineJson.error.message + (logLineJson.error.cause && logLineJson.error.cause.message) ? `: ${logLineJson.error.cause.message}` : "");
+				throw new Error(logLineJson.error.message + ((logLineJson.error.cause && logLineJson.error.cause.message) ? `: ${logLineJson.error.cause.message}` : ""));
 			}
 			if(logLineJson.key && logLineJson.key != `${bucket}/${volumeName}`) {
 				return true
@@ -326,10 +326,10 @@ const s3sync = async (bucket, volumeName, sourceDir, targetS3Creds) => {
 		updated = changeDetected ? true : false
 		CliUx.ux.action.stop()
 	} catch (err) {
-		console.log(error);
+		console.log(err);
 		CliUx.ux.action.stop('error')
-        error("Could not synchronize volume:");
-		error(extractErrorMessage(err))
+        error("Could not synchronize volume:", false, true);
+		context(extractErrorMessage(err), true)
         process.exit(1);
 	}
 	return updated
