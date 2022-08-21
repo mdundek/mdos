@@ -18,12 +18,14 @@ export default class Deploy extends Command {
 
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), "mdos.yaml")
+        let appRootDir = process.cwd()
         if (!fs.existsSync(appYamlPath)) {
             appYamlPath = path.join(path.dirname(process.cwd()), "mdos.yaml")
             if (!fs.existsSync(appYamlPath)) {
                 error("You don't seem to be in a mdos project folder")
                 process.exit(1)
             }
+            appRootDir = path.dirname(process.cwd())
         }
 
         // Load mdos yaml file
@@ -54,7 +56,7 @@ export default class Deploy extends Command {
             this.showError(err);
             process.exit(1);
         }
-        
+
         const targetS3Creds = userInfo.data.s3.find((b: { bucket: any }) => b.bucket == appYaml.tenantName);
         
         // Sync minio content for volumes
@@ -71,9 +73,9 @@ export default class Deploy extends Command {
                             process.exit(1);
                         }
 
-                        let appYamlPath = path.join(process.cwd(), component.name, volume.name)
+                        let volSourcePath = path.join(appRootDir, component.name, volume.name)
 
-                        let volHasUpdates = await s3sync(targetS3Creds.bucket, volume.name, appYamlPath, targetS3Creds)
+                        let volHasUpdates = await s3sync(targetS3Creds.bucket, volume.name, volSourcePath, targetS3Creds)
                         if(volHasUpdates) volumeUpdates = true
                     }
                 }
