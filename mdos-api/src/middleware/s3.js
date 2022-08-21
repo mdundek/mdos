@@ -49,7 +49,7 @@ class S3 {
                                 {
                                     Action: ['s3:ListBucket', 's3:PutObject', 's3:GetObject', 's3:DeleteObject'],
                                     Effect: 'Allow',
-                                    Resource: [`arn:aws:s3:::${namespace}/*", "arn:aws:s3:::${namespace}`],
+                                    Resource: [`"arn:aws:s3:::${namespace}/*`],
                                     Sid: '',
                                 },
                             ],
@@ -76,7 +76,7 @@ class S3 {
                                 {
                                     Action: ['s3:ListBucket', 's3:GetObject'],
                                     Effect: 'Allow',
-                                    Resource: [`arn:aws:s3:::${namespace}/*", "arn:aws:s3:::${namespace}`],
+                                    Resource: [`"arn:aws:s3:::${namespace}/*`],
                                     Sid: '',
                                 },
                             ],

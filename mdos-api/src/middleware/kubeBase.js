@@ -267,16 +267,17 @@ class KubeBase {
      */
     async mdosGenericHelmInstall(namespace, values) {
         let nsCreated = await this.hasNamespace(namespace);
+        let doCreateNs = false;
         if(!nsCreated) {
             await this.createNamespace({name: namespace, skipSidecar: true});
-            nsCreated = true;
+            doCreateNs = true;
         }
 
         try {
             fs.writeFileSync('./values.yaml', YAML.stringify(values));
             await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --atomic`);
         } catch(err) {
-            if(nsCreated) {
+            if(doCreateNs) {
                 try { await this.deleteNamespace(namespace); } catch (error) { }
             }
             throw err;
