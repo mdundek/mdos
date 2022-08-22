@@ -59,7 +59,7 @@ export default class Deploy extends Command {
 
         const targetS3Creds = userInfo.data.s3.find((b: { bucket: any }) => b.bucket == appYaml.tenantName);
         
-        // Sync minio content for volumes
+	// Sync minio content for volumes
         let volumeUpdates = false
         for(let component of appYaml.components) {
             if(component.volumes) {
