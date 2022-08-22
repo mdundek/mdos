@@ -1,13 +1,13 @@
-const sysadmin_role_check = require('../_hooks/sysadminOnly');
+const aclMdos = require('../_hooks/aclMdos');
 
 module.exports = {
   before: {
-    all: [sysadmin_role_check()],
+    all: [],
     find: [],
     get: [],
-    create: [],
-    update: [],
-    patch: [],
+    create: [aclMdos()],
+    update: [aclMdos()],
+    patch: [aclMdos()],
     remove: []
   },
 
