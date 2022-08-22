@@ -49,7 +49,7 @@ class S3 {
                                 {
                                     Action: ['s3:ListBucket', 's3:PutObject', 's3:GetObject', 's3:DeleteObject'],
                                     Effect: 'Allow',
-                                    Resource: [`"arn:aws:s3:::${namespace}/*`],
+                                    Resource: [`arn:aws:s3:::${namespace}/*`],
                                     Sid: '',
                                 },
                             ],
@@ -76,7 +76,7 @@ class S3 {
                                 {
                                     Action: ['s3:ListBucket', 's3:GetObject'],
                                     Effect: 'Allow',
-                                    Resource: [`"arn:aws:s3:::${namespace}/*`],
+                                    Resource: [`arn:aws:s3:::${namespace}/*`],
                                     Sid: '',
                                 },
                             ],
@@ -119,7 +119,14 @@ class S3 {
      * deleteNamespaceBucket
      * @param {*} namespace 
      */
-    async deleteNamespaceBucket(namespace) {
+    async deleteNamespaceBucket(namespace, nsExists) {
+        if(nsExists == undefined || nsExists == null) {
+            if (!(await this.app.get('kube').hasNamespace(namespace))) {
+                nsExists = false;
+            } else {
+                nsExists = true;
+            }
+        }
         if (this.s3Provider == 'minio') {
             // Make sure admin alias is created
             const aliases = await terminalCommand(`mc alias list --json`)
@@ -132,21 +139,34 @@ class S3 {
             await terminalCommand(`mc rb --force mdosminio/${namespace}`)
 
             // Delete minio users and credentials & permissions
-            let regCredsFound = await this.app.get('kube').hasSecret(namespace, `s3-read`);
-            if (regCredsFound) {
-                const creds = await this.app.get('kube').getSecret(namespace, `s3-read`);
-                await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
-                await this.app.get('kube').deleteSecret(namespace, `s3-read`)
-            }
-            await terminalCommand(`mc admin policy remove mdosminio ${namespace}-read`)
+            if(nsExists) {
+                let regCredsFound = await this.app.get('kube').hasSecret(namespace, `s3-read`);
+                if (regCredsFound) {
+                    const creds = await this.app.get('kube').getSecret(namespace, `s3-read`);
+                    await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
+                    await this.app.get('kube').deleteSecret(namespace, `s3-read`)
+                }
+                await terminalCommand(`mc admin policy remove mdosminio ${namespace}-read`)
 
-            regCredsFound = await this.app.get('kube').hasSecret(namespace, `s3-write`);
-            if (regCredsFound) {
-                const creds = await this.app.get('kube').getSecret(namespace, `s3-write`);
-                await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
-                await this.app.get('kube').deleteSecret(namespace, `s3-write`)
+                regCredsFound = await this.app.get('kube').hasSecret(namespace, `s3-write`);
+                if (regCredsFound) {
+                    const creds = await this.app.get('kube').getSecret(namespace, `s3-write`);
+                    await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
+                    await this.app.get('kube').deleteSecret(namespace, `s3-write`)
+                }
+                await terminalCommand(`mc admin policy remove mdosminio ${namespace}-write`)
             }
-            await terminalCommand(`mc admin policy remove mdosminio ${namespace}-write`)
+            else {
+                const allMinioUsers = await terminalCommand(`mc admin user list mdosminio --json`)
+                for(const minioUserStr of allMinioUsers) {
+                    const minioUser = JSON.parse(minioUserStr);
+                    if(minioUser.policyName == `${namespace}-write` || minioUser.policyName == `${namespace}-read`) {
+                        await terminalCommand(`mc admin user remove mdosminio ${minioUser.accessKey}`)
+                    }
+                }
+                await terminalCommand(`mc admin policy remove mdosminio ${namespace}-read`)
+                await terminalCommand(`mc admin policy remove mdosminio ${namespace}-write`)
+            }
         }
     }
 
