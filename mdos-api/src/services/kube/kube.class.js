@@ -196,8 +196,10 @@ exports.Kube = class Kube {
 			}
 
 			// Make sure namespace exists
+            let nsExists = true;
             if (!(await this.app.get('kube').hasNamespace(id.toLowerCase()))) {
-                throw new NotFound('Namespace does not exist')
+                nsExists = false;
+                // throw new NotFound('Namespace does not exist')
             }
 
             // Delete keycloak client
@@ -206,13 +208,14 @@ exports.Kube = class Kube {
 
             // Delete S3 secrets & bucket, make non fatal / non blocking
             try {
-                await this.app.get('s3').deleteNamespaceBucket(id.toLowerCase());
+                await this.app.get('s3').deleteNamespaceBucket(id.toLowerCase(), nsExists);
             } catch (_e) {
                 console.log(_e);
             }
 
             // Delete namespace
-            await this.app.get('kube').deleteNamespace(id.toLowerCase());
+            if(nsExists)
+                await this.app.get('kube').deleteNamespace(id.toLowerCase());
 		}
 		return { id };
     }

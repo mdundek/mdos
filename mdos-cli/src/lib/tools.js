@@ -291,17 +291,15 @@ const s3sync = async (bucket, volumeName, sourceDir, targetS3Creds) => {
 	}
 
 	// If mdos minio alias not set up, do it now
-	if(!mcConfigs.find(s => JSON.parse(s).alias == `${bucket}-mdosminio`)) {
-		try {
-			await terminalCommand(`${mcBin} config host add ${bucket}-mdosminio ${targetS3Creds.host} ${targetS3Creds.ACCESS_KEY} ${targetS3Creds.SECRET_KEY} --api S3v4`);
-		} catch (err) {
-			if(extractErrorCode(err) == 500) {
-				error("Invalid credentials");
-			} else {
-				error("Invalid domain:", targetS3Creds.host);
-			}
-			process.exit(1);
+	try {
+		await terminalCommand(`${mcBin} config host set ${bucket}-mdosminio ${targetS3Creds.host} ${targetS3Creds.ACCESS_KEY} ${targetS3Creds.SECRET_KEY} --api S3v4`);
+	} catch (err) {
+		if(extractErrorCode(err) == 500) {
+			error("Invalid credentials");
+		} else {
+			error("Invalid domain:", targetS3Creds.host);
 		}
+		process.exit(1);
 	}
 
 	// Sync now
