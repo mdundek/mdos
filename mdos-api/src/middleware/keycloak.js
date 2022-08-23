@@ -53,6 +53,24 @@ class Keycloak {
     }
 
     /**
+     * getUserAccessToken
+     * @param {*} realm 
+     * @param {*} username 
+     * @param {*} password 
+     * @returns 
+     */
+    async getUserAccessToken(realm, username, password) {
+        const kcAuthResponse = await terminalCommand(`curl -s -k -X POST \
+            "https://keycloak.${this.rootDomain}/realms/${realm}/protocol/openid-connect/token" \
+            -H "Content-Type: application/x-www-form-urlencoded"  \
+            -d "grant_type=password" \
+            -d "client_id=admin-cli" \
+            -d "username=${username}"  \
+            -d "password=${password}"`);
+        return JSON.parse(kcAuthResponse[0]);
+    }
+
+    /**
      * getRealms
      */
     async getRealms() {

@@ -86,16 +86,14 @@ components:
           - key: KC_DB_PASSWORD
             value: "admin"
       - name: mdos-ca
-        type: file
+        type: dir
         mountPath: /etc/x509/https
         entries:
-          - name: ssl-fullchain-pem
-            filename: tls.crt
+          - name: tls.crt
             value: |-
               -----BEGIN CERTIFICATE-----
               -----END CERTIFICATE-----
-          - name: ssl-privkey-pem
-            filename: tls.key
+          - name: tls.key
             value: |-
               -----BEGIN CERTIFICATE-----
               -----END CERTIFICATE-----

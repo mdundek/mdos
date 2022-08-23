@@ -20,7 +20,8 @@ data:
         {{- range .entries }}
   {{ .key }}: {{ .value | quote }}
         {{- end }}
-      {{ else }}
+      {{- end }}
+      {{- if or (eq .type "file") (eq .type "dir") }}
         {{- range .entries }}
   {{ .name }}: |-
 {{ .value | indent 4 }}
@@ -50,7 +51,8 @@ data:
               {{- range $config.entries }}
   {{ .key }}: {{ .value | quote }}
               {{- end }}
-            {{ else }}
+            {{- end }}
+            {{- if or (eq $config.type "file") (eq $config.type "dir") }}
               {{- range $config.entries }}
   {{ .name }}: |-
 {{ .value | indent 4 }}
@@ -74,7 +76,8 @@ data:
           {{- range .entries }}
   {{ .key }}: {{ .value | quote }}
           {{- end }}
-        {{ else }}
+        {{- end }}
+        {{- if or (eq .type "file") (eq .type "dir") }}
           {{- range .entries }}
   {{ .name }}: |-
 {{ .value | indent 4 }}

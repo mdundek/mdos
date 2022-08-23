@@ -2,7 +2,8 @@
 
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
-  {{- $uuid := .uuid -}}
+  {{- $uuid := .uuid }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -447,13 +448,17 @@ spec:
     {{- if .configs }}
       {{- range .configs }}
         {{- if eq .type "file" }}
-          {{- $mountPath := lower .mountPath -}}
+          {{- $mountPath := .mountPath -}}
           {{- $name := lower .name -}}
           {{- range .entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
               subPath: {{ .name | quote }}
           {{- end }}
+        {{- end }}
+        {{- if eq .type "dir" }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ lower .name }}
+              mountPath: "{{ .mountPath }}"
         {{- end }}
       {{- end }}
     {{- end }}
@@ -463,10 +468,9 @@ spec:
     {{- if $.Values.global.configs }}
       {{- range $.Values.global.configs }}
         {{- if eq .type "file" }}
-          {{- $mountPath := lower .mountPath -}}
+          {{- $mountPath := .mountPath -}}
           {{- $config := . }}
           {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
-
           {{- if .appComp }}
             {{- range .appComp }}
               {{- if eq .name $appComponentName }}
@@ -478,13 +482,29 @@ spec:
               {{- end }}
             {{- end }}
           {{- else }}
-
           {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
             {{- range .entries }}
               - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
                 subPath: {{ .name | quote }}
             {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if eq .type "dir" }}
+          {{- $mountPath := .mountPath -}}
+          {{- $config := . }}
+          {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
+          {{- if .appComp }}
+            {{- range .appComp }}
+              {{- if eq .name $appComponentName }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
+              mountPath: "{{ $mountPath }}"
+              {{- end }}
+            {{- end }}
+          {{- else }}
+          {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
+              - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
+                mountPath: "{{ $mountPath }}"
           {{- end }}
         {{- end }}
       {{- end }}
@@ -495,13 +515,19 @@ spec:
     {{- if .secrets }}
       {{- range .secrets }}
         {{- if eq .type "file" }}
-          {{- $mountPath := lower .mountPath -}}
+          {{- $mountPath := .mountPath -}}
           {{- $name := lower .name -}}
           {{- range .entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
               subPath: {{ .name | quote }}
           {{- end }}
+        {{- end }}
+        {{- if eq .type "dir" }}
+          {{- $mountPath := .mountPath -}}
+          {{- $name := lower .name -}}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+              mountPath: "{{ $mountPath }}"
         {{- end }}
       {{- end }}
     {{- end }}
@@ -511,11 +537,9 @@ spec:
     {{- if $.Values.global.secrets }}
       {{- range $.Values.global.secrets }}
         {{- if eq .type "file" }}
-          {{- $mountPath := lower .mountPath -}}
+          {{- $mountPath := .mountPath -}}
            {{- $secret := . }}
-
           {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
-
           {{- if .appComp }}
             {{- $entries := .entries }}
             {{- range .appComp }}
@@ -528,14 +552,30 @@ spec:
               {{- end }}
             {{- end }}
           {{- else }}
-
           {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
-
             {{- range .entries }}
               - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
                 subPath: {{ .name | quote }}
             {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if eq .type "dir" }}
+          {{- $mountPath := .mountPath -}}
+           {{- $secret := . }}
+          {{- /* -=-=-=-=-=-= CERTAIN APP COMPS ONLY =-=-=-=-=-= */}}
+          {{- if .appComp }}
+            {{- range .appComp }}
+              {{- if eq .name $appComponentName }}
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
+              mountPath: "{{ $mountPath }}"
+              {{- end }}
+            {{- end }}
+          {{- else }}
+          {{- /* -=-=-=-=-=-= ALL APP COMPS =-=-=-=-=-= */}}
+              - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
+                mountPath: "{{ $mountPath }}"
+                subPath: {{ .name | quote }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -575,10 +615,13 @@ spec:
 
     {{- if .configs }}
       {{- range .configs }}
-        {{- if eq .type "file" }}
+        {{- if or (eq .type "file") (eq .type "dir") }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- if .defaultMode }}
+            defaultMode: {{ .defaultMode }}
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
@@ -587,7 +630,7 @@ spec:
 
     {{- if $.Values.global.configs }}
       {{- range $.Values.global.configs }}
-        {{- if eq .type "file" }}
+        {{- if or (eq .type "file") (eq .type "dir") }}
           {{- if .appComp }}
             {{- $config := . }}
             {{- range .appComp }}
@@ -595,12 +638,18 @@ spec:
         - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
+                {{- if $config.defaultMode }}
+            defaultMode: {{ $config.defaultMode }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- else }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            {{- if .defaultMode }}
+            defaultMode: {{ .defaultMode }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -610,10 +659,13 @@ spec:
 
     {{- if .secrets }}
       {{- range .secrets }}
-        {{- if eq .type "file" }}
+        {{- if or (eq .type "file") (eq .type "dir") }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- if .defaultMode }}
+            defaultMode: {{ .defaultMode }}
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
@@ -622,7 +674,7 @@ spec:
 
     {{- if $.Values.global.secrets }}
       {{- range $.Values.global.secrets }}
-        {{- if eq .type "file" }}
+        {{- if or (eq .type "file") (eq .type "dir") }}
           {{- if .appComp }}
             {{- $secret := . }}
             {{- range .appComp }}
@@ -630,12 +682,18 @@ spec:
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
+                {{- if $secret.defaultMode }}
+            defaultMode: {{ $secret.defaultMode }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- else }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            {{- if .defaultMode }}
+            defaultMode: {{ .defaultMode }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}

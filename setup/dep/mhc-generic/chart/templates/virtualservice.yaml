@@ -29,11 +29,15 @@ metadata:
     compUuid: {{ $uuid }}
     tenantName: {{ $.Values.tenantName }}
 spec:
+    {{- if .gateway }}
+  gateways:
+    - istio-system/{{ .gateway }}
+    {{- else }}
   gateways:
     - istio-system/https-gateway
+    {{- end }}
   hosts:  
     - {{ .matchHost | quote -}}
-
       {{- if eq .trafficType "http" }}
   http:
     - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
@@ -42,8 +46,10 @@ spec:
       match:
         - uri:
             prefix: {{ .subPath }}
+          {{- if not .noRewrite }}
       rewrite:
         uri: /
+          {{- end }}
         {{- end }}
       route:
       - destination:

@@ -544,6 +544,7 @@ spec:
       protocol: HTTPS
     hosts:
     - "registry.$DOMAIN"
+    - "registry-auth.$DOMAIN"
     tls:
       mode: PASSTHROUGH
 EOF
@@ -585,143 +586,15 @@ install_nginx() {
 # ############# INSTALL REGISTRY #############
 # ############################################
 install_registry() {
-    if [ -z $REG_USER ] || [ -z $REG_PASS ]; then
-        echo ""
-        user_input REG_USER "Enter a registry username:"
-        user_input REG_PASS "Enter a registry password:"
-        REG_CREDS_B64=$(echo -n "$REG_USER:$REG_PASS" | base64 -w 0)
-        set_env_step_data "REG_USER" "$REG_USER"
-        set_env_step_data "REG_PASS" "$REG_PASS"
-        set_env_step_data "REG_CREDS_B64" "$REG_CREDS_B64"
-    fi
-
-    # Create credentials file for the registry
-    if [ ! -z $HOME/.mdos/registry/auth/htpasswd ]; then
-        mkdir -p $HOME/.mdos/registry/auth
-        rm -rf $HOME/.mdos/registry/auth/htpasswd
-        htpasswd -Bbn $REG_USER $REG_PASS > $HOME/.mdos/registry/auth/htpasswd
-    fi
-
     # Create kubernetes namespace & secrets for registry
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "mdos-registry"
     if [ -z $NS_EXISTS ]; then
         kubectl create namespace mdos-registry &>> $LOG_FILE
-        k3s kubectl create secret tls certs-secret --cert=$SSL_ROOT/fullchain.pem --key=$SSL_ROOT/privkey.pem -n mdos-registry &>> $LOG_FILE
-        k3s kubectl create secret generic auth-secret --from-file=$HOME/.mdos/registry/auth/htpasswd -n mdos-registry &>> $LOG_FILE
     fi
 
-    # Deploy registry on k3s
-    cat <<EOF | k3s kubectl apply -n mdos-registry -f &>> $LOG_FILE -
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: mdos-registry-v2-pv
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-  - ReadWriteOnce
-  hostPath:
-    path: $HOME/.mdos/registry/data
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: mdos-registry-v2
-  labels:
-    app: mdos-registry-v2
-spec:
-  selector:
-    matchLabels:
-      app: mdos-registry-v2
-  serviceName: mdos-registry-v2
-  updateStrategy:
-    type: RollingUpdate
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: mdos-registry-v2
-    spec:
-      terminationGracePeriodSeconds: 30
-      containers:
-      - name: mdos-registry-v2
-        image: registry:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 5000
-          protocol: TCP
-        volumeMounts:
-        - name: repo-vol
-          mountPath: /var/lib/registry
-        - name: certs-vol
-          mountPath: "/certs"
-          readOnly: true
-        - name: auth-vol
-          mountPath: "/auth"
-          readOnly: true
-        env:
-        - name: REGISTRY_HTTP_ADDR
-          value: "0.0.0.0:5000"
-        - name: REGISTRY_AUTH
-          value: "htpasswd"
-        - name: REGISTRY_AUTH_HTPASSWD_REALM
-          value: "Registry Realm"
-        - name: REGISTRY_AUTH_HTPASSWD_PATH
-          value: "/auth/htpasswd"
-        - name: REGISTRY_HTTP_TLS_CERTIFICATE
-          value: "/certs/tls.crt"
-        - name: REGISTRY_HTTP_TLS_KEY
-          value: "/certs/tls.key"
-      volumes:
-      - name: certs-vol
-        secret:
-          secretName: certs-secret
-      - name: auth-vol
-        secret:
-          secretName: auth-secret
-  volumeClaimTemplates:
-  - metadata:
-      name: repo-vol
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mdos-registry-v2
-spec:
-  selector:
-    app: mdos-registry-v2
-  ports:
-    - port: 5000
-      targetPort: 5000
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: mdos-registry
-spec:
-  hosts:
-    - "registry.$DOMAIN"
-  gateways:
-    - istio-system/https-gateway-mdos
-  tls:
-  - match:
-    - port: 443
-      sniHosts:
-      - "registry.$DOMAIN"
-    route:
-    - destination:
-        host: mdos-registry-v2.mdos-registry.svc.cluster.local
-        port:
-          number: 5000
-EOF
+    # Deploy registry
+    deploy_reg_chart
 
     # Wait untill registry is up and running
     info "Waiting for the registry to come online..."
@@ -759,8 +632,8 @@ EOF
 configs:
   \"registry.$DOMAIN\":
     auth:
-      username: $REG_USER
-      password: $REG_PASS
+      username: $KEYCLOAK_USER
+      password: $KEYCLOAK_PASS
     tls:
       cert_file: $SSL_ROOT/fullchain.pem
       key_file: $SSL_ROOT/privkey.pem
@@ -768,6 +641,68 @@ configs:
 
         systemctl restart k3s &>> $LOG_FILE
     fi
+}
+
+deploy_reg_chart() {
+    REG_VALUES="$(cat ./dep/registry/values.yaml)"
+
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
+
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
+
+    # AUTHENTICATION SCRIPT
+    if [ -z $1 ]; then # No auth
+        echo "#!/bin/sh
+read u p
+exit 0" > ./authentication.sh
+    else # Auth
+        echo '#!/bin/sh
+read u p
+if [ -z "$u" ]; then
+    exit 0
+else
+    BCREDS=$(echo '{ "username": "'$u'", "password": "'$p'" }' | base64 -w 0)
+    RESULT=$(wget -O- --header="Accept-Encoding: gzip, deflate" http://mdos-api-http.mdos:3030/reg-authentication?creds=$BCREDS)
+    if [ $? -ne 0 ]; then
+            exit 1
+    else
+            exit 0
+    fi
+fi
+exit 0' > ./authentication.sh
+    fi
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].configs[1].entries[0].value = "'"$(< ./authentication.sh)"'"')
+    rm -rf ./authentication.sh
+
+    # AUTHORIZATION SCRIPT
+    if [ -z $1 ]; then # No auth
+        echo "#!/bin/sh
+read a
+exit 0" > ./authorization.sh
+    else # auth
+        echo '#!/bin/sh
+read a
+BCREDS=$(echo "$a" | base64 -w 0)
+RESULT=$(wget -O- --header="Accept-Encoding: gzip, deflate" http://mdos-api-http.mdos:3030/reg-authorization?data=$BCREDS)
+if [ $? -ne 0 ]; then
+    exit 1
+else
+    exit 0
+fi
+exit 0' > ./authorization.sh
+    fi
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].configs[1].entries[1].value = "'"$(< ./authorization.sh)"'"')
+    rm -rf ./authorization.sh
+
+    echo "$REG_VALUES" > ./target_values.yaml
+
+    mdos_deploy_app
+    rm -rf ./target_values.yaml
 }
 
 # ############################################
@@ -869,21 +804,6 @@ EOF
 # ################# KEYCLOAK #################
 # ############################################
 install_keycloak() {
-    if [ -z $KEYCLOAK_USER ]; then
-        user_input KEYCLOAK_USER "Enter a admin username for Keycloak:"
-        set_env_step_data "KEYCLOAK_USER" "$KEYCLOAK_USER"
-    fi
-
-    if [ -z $KEYCLOAK_PASS ]; then
-        user_input KEYCLOAK_PASS "Enter a admin password for Keycloak:"
-        set_env_step_data "KEYCLOAK_PASS" "$KEYCLOAK_PASS"
-    fi
-
-    if [ -z $KUBE_ADMIN_EMAIL ]; then
-        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
-        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
-    fi
-
     # Create keycloak namespace & secrets for registry
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "keycloak"
@@ -1185,7 +1105,7 @@ stringData:
 EOF
     }
 
-    echo "${REG_PASS}" | docker login registry.$DOMAIN --username ${REG_USER} --password-stdin &>> $LOG_FILE
+    echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
 
     # Pull & push images to registry
 	docker pull postgres:13.2-alpine &>> $LOG_FILE
@@ -1350,8 +1270,8 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = '$OIDC_JWKS_URI'')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.host = "mdos-api.'$DOMAIN'"')
 
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$REG_USER'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$REG_PASS'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[2].value = "'$ACCESS_KEY'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[3].value = "'$SECRET_KEY'"')
@@ -1534,6 +1454,20 @@ EOF
         set_env_step_data "INST_STEP_PROXY" "1"
     fi
 
+    # COLLECT ADMIN CREDS
+    if [ -z $KEYCLOAK_USER ]; then
+        user_input KEYCLOAK_USER "Enter a admin username for Keycloak:"
+        set_env_step_data "KEYCLOAK_USER" "$KEYCLOAK_USER"
+    fi
+    if [ -z $KEYCLOAK_PASS ]; then
+        user_input KEYCLOAK_PASS "Enter a admin password for Keycloak:"
+        set_env_step_data "KEYCLOAK_PASS" "$KEYCLOAK_PASS"
+    fi
+    if [ -z $KUBE_ADMIN_EMAIL ]; then
+        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
+        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
+    fi
+
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
         info "Install Registry..."
@@ -1583,5 +1517,12 @@ EOF
         info "Install MDos API server..."
         install_mdos
         set_env_step_data "INST_STEP_MDOS" "1"
+    fi
+
+    # ENABLE REGISTRY AUTH
+    if [ -z $INST_STEP_REG_AUTH ]; then
+        info "Enabeling MDos registry auth..."
+        deploy_reg_chart 1
+        set_env_step_data "INST_STEP_REG_AUTH" "1"
     fi
 )

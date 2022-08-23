@@ -1,0 +1,143 @@
+tenantName: mdos-registry
+appName: registry
+uuid: KG75-7D58-mdos
+forceUpdate: true
+components:
+  - name: v2
+    uuid: KG75-7D58-registry-v2
+    image: registry
+    tag: latest
+    services:
+      - name: https
+        ports:
+          - name: https-5000
+            port: 5000
+    ingress:
+      - name: ingress
+        gateway: https-gateway-mdos
+        matchHost: registry.<DOMAIN>
+        targetPort: 5000
+        trafficType: https
+    configs:
+      - name: configs
+        type: env
+        entries:
+          - key: REGISTRY_HTTP_ADDR
+            value: "0.0.0.0:5000"
+          - key: REGISTRY_AUTH
+            value: "token"
+          - key: REGISTRY_AUTH_TOKEN_REALM
+            value: "https://registry-auth.<DOMAIN>/auth"
+          - key: REGISTRY_AUTH_TOKEN_SERVICE
+            value: "Docker registry"
+          - key: REGISTRY_AUTH_TOKEN_ISSUER
+            value: "Auth Service"
+          - key: REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE
+            value: "/cert/tls.crt"
+          - key: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: "/cert/tls.crt"
+          - key: REGISTRY_HTTP_TLS_KEY
+            value: "/cert/tls.key"
+          - key: REGISTRY_HTTP_SECRET
+            value: "w87reoqweifgqoe"
+          - key: REGISTRY_STORAGE_DELETE_ENABLED
+            value: "true"
+    secrets:
+      - name: reg-ca
+        type: dir
+        mountPath: /cert
+        entries:
+          - name: tls.crt
+            value: |-
+              -----BEGIN CERTIFICATE-----
+              -----END CERTIFICATE-----
+          - name: tls.key
+            value: |-
+              -----BEGIN PRIVATE KEY-----
+              -----END PRIVATE KEY-----
+    volumes:
+      - name: repo-vol
+        mountPath: /var/lib/registry
+
+  - name: auth
+    uuid: KG75-7D58-registry-auth
+    image: cesanta/docker_auth
+    tag: "1"
+    services:
+      - name: https
+        ports:
+          - name: https-5001
+            port: 5001
+    ingress:
+      - name: ingress
+        gateway: https-gateway-mdos
+        matchHost: registry-auth.<DOMAIN>
+        targetPort: 5001
+        trafficType: https
+    configs:
+      - name: reg-auth-config
+        type: file
+        mountPath: /config
+        entries:
+          - name: auth-config
+            filename: auth_config.yml
+            value: |-
+              server:
+                addr: ":5001"
+                certificate: "/cert/tls.crt"
+                key: "/cert/tls.key"
+              token:
+                issuer: "Auth Service"
+                expiration: 900
+              ext_auth:
+                command: "/acl/authentication.sh"
+                args: ["--flag", "--more", "--flags"]
+              ext_authz:
+                command: "/acl/authorization.sh"
+                args: ["--flag", "--more", "--flags"]
+      - name: auth-scripts
+        type: dir
+        mountPath: /acl
+        defaultMode: 0744
+        entries:
+          - name: authentication.sh
+            value: |-
+              #!/bin/sh
+              read u p
+              if [ -z "$u" ]; then
+                  exit 0
+              else
+                    BCREDS=$(echo '{ "username": "'$u'", "password": "'$p'" }' | base64 -w 0)
+                    RESULT=$(wget -O- --header="Accept-Encoding: gzip, deflate" http://mdos-api-http.mdos:3030/reg-authentication?creds=$BCREDS)
+                    if [ $? -ne 0 ]; then
+                          exit 1
+                    else
+                          exit 0
+                    fi
+              fi
+              exit 0
+          - name: authorization.sh
+            value: |-
+              #!/bin/sh
+              read a
+              BCREDS=$(echo "$a" | base64 -w 0)
+              RESULT=$(wget -O- --header="Accept-Encoding: gzip, deflate" http://mdos-api-http.mdos:3030/reg-authorization?data=$BCREDS)
+              if [ $? -ne 0 ]; then
+                  exit 1
+              else
+                  exit 0
+              fi
+              exit 0
+    secrets:
+      - name: reg-ca
+        type: dir
+        mountPath: /cert
+        entries:
+          - name: tls.crt
+            value: |-
+              -----BEGIN CERTIFICATE-----
+              -----END CERTIFICATE-----
+          - name: tls.key
+            value: |-
+              -----BEGIN PRIVATE KEY-----
+              -----END PRIVATE KEY-----
