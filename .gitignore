@@ -6,3 +6,5 @@ setup/deprecated/*
 **/node_modules
 setup/dep/mdos-api/mdos-api.tar.gz
 **/.DS_Store
+docs/.$architecture.drawio.bkp
+docs/.$architecture.drawio.dtmp
