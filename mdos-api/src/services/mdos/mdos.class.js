@@ -136,7 +136,7 @@ exports.Mdos = class Mdos {
                 // Add registry credentials if necessary
                 if(!component.imagePullSecrets && !component.registry) { // Skip images from public registries or with specific secrets
                     component.imagePullSecrets = [{
-                        name: "regcred-local"
+                        name: "mdos-regcred"
                     }]
                 }
                 // Append tenant name for buckets

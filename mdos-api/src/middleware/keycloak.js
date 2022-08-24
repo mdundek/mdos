@@ -531,9 +531,9 @@ class Keycloak {
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
             },
-        })
-        const userUuid = responseAllUsers.data.find((u) => u.username == userName).id
+        });
 
+        const userUuid = responseAllUsers.data.find((u) => u.username == userName).id
         accessToken = await this._getAccessToken()
 
         await axios.put(
