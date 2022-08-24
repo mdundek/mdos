@@ -46,7 +46,7 @@ exports.Keycloak = class Keycloak {
 
 			const clientRoles = await this.app.get("keycloak").getClientRoles(params.query.realm, params.query.clientId);
 			if(params.query.filterProtected == "true") 
-				return clientRoles.filter(cr => ["uma_protection", "admin", "k8s-read", "k8s-write", "s3-read", "s3-write"].indexOf(cr.name) == -1);
+				return clientRoles.filter(cr => ["uma_protection", "admin", "k8s-read", "k8s-write", "s3-read", "s3-write", "registry-pull", "registry-push"].indexOf(cr.name) == -1);
 			else
 				return clientRoles.filter(cr => !["uma_protection"].includes(cr.name));
 		}

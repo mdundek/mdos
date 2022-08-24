@@ -145,28 +145,28 @@ mdos_deploy_app() {
 
     if [ -z $NS_EXISTS ]; then
         kubectl create ns $I_NS &>> $LOG_FILE
-        if [ ! -z $1 ]; then
+        if [ ! -z $1 ] && [ "$1" == "true" ]; then
             kubectl label ns $I_NS istio-injection=enabled &>> $LOG_FILE
         fi
     fi
 
-    unset SECRET_EXISTS
-    while read SECRET_LINE ; do 
-        NS_NAME=`echo "$SECRET_LINE" | cut -d' ' -f 1`
-        if [ "$NS_NAME" == "regcred" ]; then
-            SECRET_EXISTS=1
-        fi
-    done < <(kubectl get secret -n $I_NS 2>/dev/null)
+    if [ ! -z $2 ] && [ "$2" == "true" ]; then
+        unset SECRET_EXISTS
+        while read SECRET_LINE ; do 
+            NS_NAME=`echo "$SECRET_LINE" | cut -d' ' -f 1`
+            if [ "$NS_NAME" == "regcred" ]; then
+                SECRET_EXISTS=1
+            fi
+        done < <(kubectl get secret -n $I_NS 2>/dev/null)
 
-    if [ -z $SECRET_EXISTS ]; then
-        REG_CREDS=$(echo "$REG_CREDS_B64" | base64 --decode)
-        
-        kubectl create secret docker-registry \
-            regcred \
-            --docker-server=registry.$DOMAIN \
-            --docker-username=$(echo "$REG_CREDS" | cut -d':' -f1) \
-            --docker-password=$(echo "$REG_CREDS" | cut -d':' -f2) \
-            -n $I_NS 1>/dev/null
+        if [ -z $SECRET_EXISTS ]; then
+            kubectl create secret docker-registry \
+                regcred \
+                --docker-server=registry.$DOMAIN \
+                --docker-username=$KEYCLOAK_USER \
+                --docker-password=$KEYCLOAK_PASS \
+                -n $I_NS 1>/dev/null
+        fi
     fi
 
     helm upgrade --install $I_APP ./dep/mhc-generic/chart \
@@ -596,36 +596,28 @@ install_registry() {
     # Deploy registry
     deploy_reg_chart
 
-    # Wait untill registry is up and running
-    info "Waiting for the registry to come online..."
-    ATTEMPTS=0
-    while [ "$(kubectl get pod mdos-registry-v2-0 -n mdos-registry | grep 'Running')" == "" ]; do
-        sleep 3
-        ATTEMPTS=$((ATTEMPTS+1))
-        if [ "$ATTEMPTS" -gt 100 ]; then
-            error "Timeout, the registry did not come online, it is assumed there is a problem. Please check with the command 'kubectl get pod' and 'kubectl describe pod <node name> -n mdos-registry' for more information about the issue"
-            exit 1
-        fi
-    done
-
     # Update docker and K3S registry for self signed cert
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         # Configure self signed cert with local docker deamon
-        mkdir -p /etc/docker/certs.d/registry.$DOMAIN
-        cp $SSL_ROOT/fullchain.pem /etc/docker/certs.d/registry.$DOMAIN/ca.crt
+        if [ ! -d /etc/docker/certs.d/registry.$DOMAIN ]; then
+            mkdir -p /etc/docker/certs.d/registry.$DOMAIN
+            cp $SSL_ROOT/fullchain.pem /etc/docker/certs.d/registry.$DOMAIN/ca.crt
 
-        # Allow self signed cert registry for docker daemon
-        echo "{
+            # Allow self signed cert registry for docker daemon
+            echo "{
 \"insecure-registries\" : [\"registry.$DOMAIN\"]
 }" > ./daemon.json
-        mv ./daemon.json /etc/docker/daemon.json
-        service docker restart &>> $LOG_FILE
+            mv ./daemon.json /etc/docker/daemon.json
+            service docker restart &>> $LOG_FILE
+        fi
 
         # Prepare k3s registry SSL containerd config
         if [ ! -d /etc/rancher/k3s ]; then
             mkdir -p /etc/rancher/k3s
         fi
-        echo "mirrors:
+
+        if [ ! -f /etc/rancher/k3s/registries.yaml ]; then
+            echo "mirrors:
   registry.$DOMAIN:
     endpoint:
     - \"https://registry.$DOMAIN\"
@@ -638,8 +630,8 @@ configs:
       cert_file: $SSL_ROOT/fullchain.pem
       key_file: $SSL_ROOT/privkey.pem
       ca_file: $SSL_ROOT/fullchain.pem" > /etc/rancher/k3s/registries.yaml
-
-        systemctl restart k3s &>> $LOG_FILE
+            systemctl restart k3s &>> $LOG_FILE
+        fi
     fi
 }
 
@@ -655,26 +647,38 @@ deploy_reg_chart() {
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # -=-=-=-=-=-=-=-=-=-=-=- TODO: REMOVE MDOS_URL checks for prod -=-=-=-=-=-=-=-=-=-=-=-
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
     # AUTHENTICATION SCRIPT
     if [ -z $1 ]; then # No auth
         echo "#!/bin/sh
 read u p
 exit 0" > ./authentication.sh
     else # Auth
-        echo '#!/bin/sh
+        cat > ./authentication.sh <<EOL
+#!/bin/sh
 read u p
-if [ -z "$u" ]; then
+if [ -z \"\$u\" ]; then
     exit 0
 else
-    BCREDS=$(echo '{ "username": "'$u'", "password": "'$p'" }' | base64 -w 0)
-    RESULT=$(wget -O- --header="Accept-Encoding: gzip, deflate" http://mdos-api-http.mdos:3030/reg-authentication?creds=$BCREDS)
-    if [ $? -ne 0 ]; then
-            exit 1
+    MDOS_URL=\"http://mdos-api-http.mdos:3030\"
+    MDOS_HEAD=\"\$(wget -S --spider \$MDOS_URL 2>&1 | grep 'HTTP/1.1 200 OK')\"
+    if [ \"\$MDOS_HEAD\" == \"\" ]; then
+        exit 0
     else
-            exit 0
+        BCREDS=\$(echo '{ \"username\": \"'\$u'\", \"password\": \"'\$p'\" }' | base64 -w 0)
+        RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://mdos-api-http.mdos:3030/reg-authentication?creds=\$BCREDS)
+        if [ \$? -ne 0 ]; then
+                exit 1
+        else
+                exit 0
+        fi
     fi
 fi
-exit 0' > ./authentication.sh
+EOL
+
     fi
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].configs[1].entries[0].value = "'"$(< ./authentication.sh)"'"')
     rm -rf ./authentication.sh
@@ -685,23 +689,30 @@ exit 0' > ./authentication.sh
 read a
 exit 0" > ./authorization.sh
     else # auth
-        echo '#!/bin/sh
+        cat > ./authorization.sh <<EOL
+#!/bin/sh
 read a
-BCREDS=$(echo "$a" | base64 -w 0)
-RESULT=$(wget -O- --header="Accept-Encoding: gzip, deflate" http://mdos-api-http.mdos:3030/reg-authorization?data=$BCREDS)
-if [ $? -ne 0 ]; then
-    exit 1
-else
+
+MDOS_URL=\"http://mdos-api-http.mdos:3030\"
+MDOS_HEAD=\"\$(wget -S --spider \$MDOS_URL 2>&1 | grep 'HTTP/1.1 200 OK')\"
+if [ \"\$MDOS_HEAD\" == \"\" ]; then
     exit 0
+else
+    BCREDS=\$(echo \"\$a\" | base64 -w 0)
+    RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://mdos-api-http.mdos:3030/reg-authorization?data=\$BCREDS)
+    if [ \$? -ne 0 ]; then
+        exit 1
+    else
+        exit 0
+    fi
 fi
-exit 0' > ./authorization.sh
+EOL
     fi
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].configs[1].entries[1].value = "'"$(< ./authorization.sh)"'"')
     rm -rf ./authorization.sh
 
-    echo "$REG_VALUES" > ./target_values.yaml
-
-    mdos_deploy_app
+    printf "$REG_VALUES\n" > ./target_values.yaml
+    mdos_deploy_app "false" "false"
     rm -rf ./target_values.yaml
 }
 
@@ -1088,6 +1099,7 @@ install_keycloak() {
         createMdosRole "assign-roles"
         createMdosRole "oidc-create"
         createMdosRole "oidc-remove"
+        createMdosRole "global-registry"
 
         # Create secret with credentials
         cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
@@ -1119,9 +1131,8 @@ EOF
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
-    cat "$KEYCLOAK_VAL" > ./target_values.yaml
-
-    mdos_deploy_app &>> $LOG_FILE
+    printf "$KEYCLOAK_VAL\n" > ./target_values.yaml
+    mdos_deploy_app "false" "true" &>> $LOG_FILE
     rm -rf ./target_values.yaml
 
 	# Configure API key
@@ -1284,9 +1295,8 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[3].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[4].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
 
-    echo "$MDOS_VALUES" > ./target_values.yaml
-
-    mdos_deploy_app
+    printf "$MDOS_VALUES\n" > ./target_values.yaml
+    mdos_deploy_app "true" "true"
     rm -rf ./target_values.yaml
 }
 

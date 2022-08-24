@@ -524,10 +524,8 @@ spec:
           {{- end }}
         {{- end }}
         {{- if eq .type "dir" }}
-          {{- $mountPath := .mountPath -}}
-          {{- $name := lower .name -}}
-            - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
-              mountPath: "{{ $mountPath }}"
+            - name: {{ $appName }}-{{ $appComponentName }}-{{ lower .name }}
+              mountPath: "{{ .mountPath }}"
         {{- end }}
       {{- end }}
     {{- end }}

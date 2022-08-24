@@ -140,6 +140,18 @@ exports.Kube = class Kube {
                     name: "s3-read",
                     clientUuid: tClient.id
                 });
+                await this.app.service("keycloak").create({
+                    type: "client-role",
+                    realm: data.realm,
+                    name: "registry-pull",
+                    clientUuid: tClient.id
+                });
+                await this.app.service("keycloak").create({
+                    type: "client-role",
+                    realm: data.realm,
+                    name: "registry-push",
+                    clientUuid: tClient.id
+                });
             } catch (error) {
                 // Clean up
                 if(nsCreated)
