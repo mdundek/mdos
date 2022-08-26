@@ -1,9 +1,9 @@
 const YAML = require('yaml')
 const { NotFound } = require('@feathersjs/errors')
-const MdosBase = require('./mdos.class.base')
+const MdosCore = require('./mdos.class.core')
 
 /* eslint-disable no-unused-vars */
-exports.Mdos = class Mdos extends MdosBase {
+exports.Mdos = class Mdos extends MdosCore {
     constructor(options, app) {
         super(app);
         this.options = options || {}

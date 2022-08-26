@@ -1,10 +1,12 @@
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
 const nanoid_1 = require("nanoid");
 const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10);
+const KubeCore = require('./kube.class.core')
 
 /* eslint-disable no-unused-vars */
-exports.Kube = class Kube {
+exports.Kube = class Kube extends KubeCore {
     constructor(options, app) {
+        super(app);
         this.options = options || {}
         this.app = app
     }

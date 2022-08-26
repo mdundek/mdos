@@ -1,8 +1,10 @@
-const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors');
+const { BadRequest, Unavailable } = require('@feathersjs/errors');
+const KeycloakCore = require('./keycloak.class.core')
 
 /* eslint-disable no-unused-vars */
-exports.Keycloak = class Keycloak {
+exports.Keycloak = class Keycloak extends KeycloakCore {
 	constructor(options, app) {
+        super(app);
 		this.options = options || {};
 		this.app = app;
 	}
@@ -13,55 +15,35 @@ exports.Keycloak = class Keycloak {
 	 * @returns 
 	 */
 	async find(params) {
+		// Make sure keycloak is installed
+		await this.keycloakInstallCheck();
+		
 		if(params.query.target == "clients") {
 			// Make sure realm exists
-			const response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
-			const clients = await this.app.get("keycloak").getClients(params.query.realm);
-			return clients.filter(c => ![  
-				"realm-management",
-				"broker",
-				"mdos",
-				"account",
-				"account-console",
-				"admin-cli",
-				"security-admin-console",
-				"cs"
-			].includes(c.clientId));
+			await this.realmCheck(params.query.realm);
+
+			// Get all clients except internal once
+			const clients = await this.getClients(params.query.realm);
+			return clients;
 		}
 		else if(params.query.target == "client-roles") {
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(params.query.realm);
 
 			// Make sure client ID exists
-			response = await this.app.get("keycloak").getClients(params.query.realm);
-			if(!response.find(o => o.clientId.toLowerCase() == params.query.clientId.toLowerCase())) {
-				throw new Unavailable("Keycloak client does not exists");
-			}
+			await this.clientIdCheck(params.query.realm, params.query.clientId);
 
-			const clientRoles = await this.app.get("keycloak").getClientRoles(params.query.realm, params.query.clientId);
-			if(params.query.filterProtected == "true") 
-				return clientRoles.filter(cr => ["uma_protection", "admin", "k8s-read", "k8s-write", "s3-read", "s3-write", "registry-pull", "registry-push"].indexOf(cr.name) == -1);
-			else
-				return clientRoles.filter(cr => !["uma_protection"].includes(cr.name));
+			// Get client roles
+			const clientRoles = await this.getClientRoles(params.query.realm, params.query.clientId, params.query.filterProtected);
+			return clientRoles
 		}
 		else if(params.query.target == "users") {
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(params.query.realm);
+
 			if(params.query.clientId) {
 				// Make sure client ID exists
-				response = await this.app.get("keycloak").getClients(params.query.realm);
-				if(!response.find(o => o.clientId.toLowerCase() == params.query.clientId.toLowerCase())) {
-					throw new Unavailable("Keycloak client does not exists");
-				}
+				await this.clientIdCheck(params.query.realm, params.query.clientId);
 			}
 			
 			let users = await this.app.get("keycloak").getUsers(params.query.realm, params.query.clientId);
@@ -70,27 +52,11 @@ exports.Keycloak = class Keycloak {
 		}
 		else if(params.query.target == "user-roles") {
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(params.query.realm);
 
-
-			let roles = await this.app.get("keycloak").getUserRoles(params.query.realm, params.query.username);
-			const mapping = [];
-			Object.keys(roles.clientMappings).forEach((key) => {
-                roles.clientMappings[key].mappings.forEach((cm) => {
-                    mapping.push({
-                        client: key,
-                        uuid: cm.id,
-                        name: cm.name
-                    });
-                });
-            });
-
-			return mapping.filter(m => ![  
-				"uma_protection"
-			].includes(m.name));
+			// Get all user roles
+			let roles = await this.getUserRoles(params.query.realm, params.query.username);
+			return roles;
 		} else {
             throw new BadRequest("Malformed API request");
         }
@@ -103,66 +69,35 @@ exports.Keycloak = class Keycloak {
 	 * @returns 
 	 */
 	async create(body, params) {
+		// Make sure keycloak is installed
+		await this.keycloakInstallCheck();
+
 		if (body.type == "user") {
-			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-			if (!keycloakAvailable) {
-				throw new Error("Keycloak is not installed");
-			}
+			// Make sure realm exists
+			await this.realmCheck(body.realm);
 
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == body.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
-
-			// Make sure user ID does not exist
-			response = await this.app.get("keycloak").getUsers(body.realm);
-			if(response.find(o => o.username.toLowerCase() == body.username.toLowerCase() || o.email.toLowerCase() == body.email.toLowerCase())) {
-				throw new Conflict("Keycloak username already exists");
-			}
+			// Make sure user does not exist
+			await this.userDoesNotExistCheck(body.realm, body.username, body.email);
 
 			// Create keycloak user
 			await this.app.get("keycloak").createUser(body.realm, body.username, body.password, body.email);
 		} 
 		else if (body.type == "client-role") {
-			// Make sure keycloak is deployed
-			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-			if (!keycloakAvailable) {
-				throw new Error("Keycloak is not installed");
-			}
-
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == body.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(body.realm);
 
 			// Make sure client ID exists
-			response = await this.app.get("keycloak").getClients(body.realm);
-			if(!response.find(o => o.id == body.clientUuid)) {
-				throw new Unavailable("Keycloak client ID does not exist");
-			}
+			await this.clientUuidCheck(body.realm, body.clientUuid);
 
 			// Create keycloak client role
 			await this.app.get("keycloak").createClientRole(body.realm, body.clientUuid, body.name);
 		} 
 		else if (body.type == "user-role") {
-			// Make sure keycloak is deployed
-			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-			if (!keycloakAvailable) {
-				throw new Error("Keycloak is not installed");
-			}
-
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == body.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(body.realm);
 
 			// Make sure client ID exists
-			response = await this.app.get("keycloak").getClients(body.realm);
-			if(!response.find(o => o.id == body.clientUuid)) {
-				throw new Unavailable("Keycloak client ID does not exist");
-			}
+			await this.clientUuidCheck(body.realm, body.clientUuid);
 
 			// Make sure Role ID exists for client
 			response = await this.app.get("keycloak").getClientRoles(body.realm, body.clientId);
@@ -171,11 +106,7 @@ exports.Keycloak = class Keycloak {
 			}
 
 			// Make sure user does not already have this client role binding
-			const userRolesResponse = await this.app.get("keycloak").getUserRoles(body.realm, body.username)
-			const existingMappingsForClient = userRolesResponse.clientMappings ? userRolesResponse.clientMappings[body.clientName] : null;
-			if(existingMappingsForClient && existingMappingsForClient.mappings.find((m) => m.name == body.roleName)) {
-				throw new Conflict("Client role is already added for this user");
-			}
+			await this.userDoesNotHaveRoleCheck(body.realm, body.username, body.clientName, body.roleName);
 
 			// Create keycloak user role binding
 			await this.app.get("keycloak").createClientRoleBindingForUser(body.realm, body.clientUuid, body.userUuid, body.roleUuid, body.roleName);
@@ -190,45 +121,30 @@ exports.Keycloak = class Keycloak {
 	 * @returns 
 	 */
 	async remove(id, params) {
+		// Make sure keycloak is installed
+		await this.keycloakInstallCheck();
+
 		if(params.query.target == "clients") {
 			// Make sure realm exists
-			const response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(params.query.realm);
 
 			await this.app.get("keycloak").deleteClient(params.query.realm, id);
 		}
 		else if(params.query.target == "client-roles") {
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(params.query.realm);
 
-			try {
-				await this.app.get("keycloak").removeClientRole(params.query.realm, params.query.clientUuid, id);
-			} catch (error) {
-				console.log(error);
-				throw error;
-			}
-			
+			await this.app.get("keycloak").removeClientRole(params.query.realm, params.query.clientUuid, id);
 		}
 		else if(params.query.target == "users") {
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(params.query.realm);
 
 			await this.app.get("keycloak").deleteUser(params.query.realm, id);
 		}
 		else if(params.query.target == "user-roles") {
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(params.query.realm);
 
 			await this.app.get("keycloak").removeClientRoleBindingFromUser(
 				params.query.realm, 

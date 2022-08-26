@@ -1,8 +1,10 @@
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors');
+const OidcProviderCore = require('./oidc-provider.class.core')
 
 /* eslint-disable no-unused-vars */
-exports.OidcProvider = class OidcProvider {
+exports.OidcProvider = class OidcProvider extends OidcProviderCore {
 	constructor(options, app) {
+        super(app);
 		this.options = options || {};
 		this.app = app;
 	}

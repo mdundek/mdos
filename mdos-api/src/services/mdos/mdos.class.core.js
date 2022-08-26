@@ -2,7 +2,7 @@ const { NotFound, Conflict, Unavailable, Forbidden } = require('@feathersjs/erro
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
 
-class MdosBase {
+class MdosCore {
 
     /**
      * constructor
@@ -171,4 +171,4 @@ class MdosBase {
     }
 }
 
-module.exports = MdosBase
+module.exports = MdosCore
