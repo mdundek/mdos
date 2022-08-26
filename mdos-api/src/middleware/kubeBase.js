@@ -200,9 +200,19 @@ class KubeBase {
 
         // Create namespace
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, nsJson, this.k8sAxiosHeader);
-        
+    }
+
+
+    /**
+     * createRegistrySecret
+     * @param {*} namespaceName 
+     * @param {*} secretName 
+     * @param {*} user 
+     * @param {*} pass 
+     */
+    async createRegistrySecret(namespaceName, secretName, user, pass) {
         // Create private registry credentials secret
-        let secretDataString = `{"auths":{"registry.${this.rootDomain}":{"username":"${this.regUser}","password":"${this.regPass}","auth":"${Buffer.from(`${this.regUser}:${this.regPass}`, 'utf-8').toString('base64')}"}}}`
+        let secretDataString = `{"auths":{"registry.${this.rootDomain}":{"username":"${user}","password":"${pass}","auth":"${Buffer.from(`${user}:${pass}`, 'utf-8').toString('base64')}"}}}`
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, {
             "apiVersion": "v1",
             "data": {
@@ -210,7 +220,7 @@ class KubeBase {
             },
             "kind": "Secret",
             "metadata": {
-                "name": "regcred-local",
+                "name": secretName,
             },
             "type": "kubernetes.io/dockerconfigjson"
         }, this.k8sAxiosHeader);

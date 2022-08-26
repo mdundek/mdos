@@ -6,7 +6,8 @@ const path = require('path')
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
 const { terminalCommand } = require('../libs/terminal')
 const { isBuffer } = require('util')
-const { nanoid } = require('nanoid')
+const nanoid_1 = require("nanoid");
+const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10);
 
 axios.defaults.httpsAgent = new https.Agent({
     rejectUnauthorized: false,
@@ -145,6 +146,11 @@ class S3 {
                     const creds = await this.app.get('kube').getSecret(namespace, `s3-read`);
                     await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
                     await this.app.get('kube').deleteSecret(namespace, `s3-read`)
+                } else {
+                    const allUserArray = await terminalCommand(`mc admin user list mdosminio --json`)
+                    const u = allUserArray.find(uString => JSON.parse(uString).policyName == `${namespace}-read`);
+                    if(u)
+                        await terminalCommand(`mc admin user remove mdosminio ${JSON.parse(u).accessKey}`)
                 }
                 await terminalCommand(`mc admin policy remove mdosminio ${namespace}-read`)
 
@@ -153,6 +159,11 @@ class S3 {
                     const creds = await this.app.get('kube').getSecret(namespace, `s3-write`);
                     await terminalCommand(`mc admin user remove mdosminio ${creds.ACCESS_KEY}`)
                     await this.app.get('kube').deleteSecret(namespace, `s3-write`)
+                } else {
+                    const allUserArray = await terminalCommand(`mc admin user list mdosminio --json`)
+                    const u = allUserArray.find(uString => JSON.parse(uString).policyName == `${namespace}-write`);
+                    if(u)
+                        await terminalCommand(`mc admin user remove mdosminio ${JSON.parse(u).accessKey}`)
                 }
                 await terminalCommand(`mc admin policy remove mdosminio ${namespace}-write`)
             }
@@ -182,7 +193,7 @@ class S3 {
             credentials.writeCredentials.S3_PROVIDER = "minio"
             credentials.writeCredentials.S3_INTERNAL_HOST = "http://minio.minio.svc.cluster.local:9000"
             await this.app.get('kube').createSecret(namespace, `s3-read`, credentials.readCredentials)
-            await this.app.get('kube').createSecret(namespace, `s3-write`, credentials.writeCredentials)
+            // await this.app.get('kube').createSecret(namespace, `s3-write`, credentials.writeCredentials)
         }
     }
 

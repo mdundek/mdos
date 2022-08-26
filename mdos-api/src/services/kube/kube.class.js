@@ -1,4 +1,6 @@
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
+const nanoid_1 = require("nanoid");
+const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10);
 
 /* eslint-disable no-unused-vars */
 exports.Kube = class Kube {
@@ -108,8 +110,9 @@ exports.Kube = class Kube {
             }
 
             // Create roles for clientId
+            let tClient = null;
             try {
-                const tClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase());
+                tClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase());
                 await this.app.service("keycloak").create({
                     type: "client-role",
                     realm: data.realm,
@@ -158,8 +161,8 @@ exports.Kube = class Kube {
                     try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
 
                 try {
-                    const dClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase());
-                    await this.app.get('keycloak').deleteClient(data.realm, dClient.id);
+                    if(tClient)
+                         await this.app.get('keycloak').deleteClient(data.realm, tClient.id);
                 } catch (err) { }
                 throw error;
             }
@@ -174,8 +177,43 @@ exports.Kube = class Kube {
                     try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
                     
                 try {
-                    const dClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase());
-                    await this.app.get('keycloak').deleteClient(data.realm, dClient.id);
+                    if(tClient)
+                        await this.app.get('keycloak').deleteClient(data.realm, tClient.id);
+                } catch (err) { }
+                throw error;
+            }
+
+            // Create SA user for registry and give it registry-pull role
+            const saUser = nanoid().toLowerCase();
+            const saPass = nanoid().toLowerCase();
+            try {
+                await this.app.get("keycloak").createUser(data.realm, saUser, saPass, "");
+                const saUsersObj = await this.app.get("keycloak").getUser(data.realm, null, saUser);
+                const roleObj = await this.app.get("keycloak").getClientRole(data.realm, tClient.clientId, "registry-pull");
+                await this.app.get("keycloak").createClientRoleBindingForUser(data.realm, tClient.id, saUsersObj.id, roleObj.id, "registry-pull");
+            } catch (error) {
+                // Clean up
+                if(nsCreated)
+                try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
+
+                try {
+                    if(tClient)
+                        await this.app.get('keycloak').deleteClient(data.realm, tClient.id);
+                } catch (err) { }
+                throw error;
+            }
+
+            // Create secret ffor registry SA
+            try {
+                await this.app.get('kube').createRegistrySecret(data.namespace.toLowerCase(), "mdos-regcred", saUser, saPass);
+            } catch (error) {
+                // Clean up
+                if(nsCreated)
+                try { await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase()) } catch (err) { }
+
+                try {
+                    if(tClient)
+                        await this.app.get('keycloak').deleteClient(data.realm, tClient.id);
                 } catch (err) { }
                 throw error;
             }
@@ -223,6 +261,20 @@ exports.Kube = class Kube {
                 await this.app.get('s3').deleteNamespaceBucket(id.toLowerCase(), nsExists);
             } catch (_e) {
                 console.log(_e);
+            }
+
+            if(nsExists) {
+                // Delete SA keycloak user
+                try {
+                    const regSaSecret = await this.app.get('kube').getSecret(id.toLowerCase(), 'mdos-regcred')
+                    if(regSaSecret) {
+                        const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username;
+                        const userObj = await this.app.get("keycloak").getUser(params.query.realm, null, username);
+                        await this.app.get("keycloak").deleteUser(params.query.realm, userObj.id);
+                    }
+                } catch (_e) {
+                    console.log(_e);
+                }
             }
 
             // Delete namespace
