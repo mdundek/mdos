@@ -76,15 +76,6 @@ class Kube extends KubeBase {
     }
 
     /**
-     * getIstiodOidcProviders
-     */
-    async getIstiodOidcProviders() {
-        const istioConfigMap = await this.getConfigMap("istio-system", "istio");
-        const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh);
-        return istioMeshYaml.extensionProviders ? istioMeshYaml.extensionProviders : [];
-    }
-
-    /**
      * addIstiodOidcProvider
      */
     async addIstiodOidcProvider(name) {

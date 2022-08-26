@@ -1,6 +1,7 @@
 const YAML = require('yaml')
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
+const axios = require('axios')
 
 /* eslint-disable no-unused-vars */
 exports.Mdos = class Mdos {
@@ -28,6 +29,7 @@ exports.Mdos = class Mdos {
                 registry: `registry.${process.env.ROOT_DOMAIN}`,
                 registryUser: process.env.REG_USER,
                 registryPassword: process.env.REG_PASS,
+                S3Provider: process.env.S3_PROVIDER,
                 s3: []
             };
 
@@ -61,7 +63,7 @@ exports.Mdos = class Mdos {
                             s3creds.bucket = ns;
                             s3creds.permissions = "write";
                             userData.s3.push(s3creds);
-                        }
+                        }                 
                     } else if(jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes("admin")){
                         const s3creds = await this.app.get("s3").getNamespaceCredentials(ns, "write");
                         if(s3creds) {
@@ -112,9 +114,9 @@ exports.Mdos = class Mdos {
             else {
                 // If at least one component does not have an imagePullSecret, we need our private reg pull secret in this namespace
                 if(valuesYaml.components.find(component => !component.imagePullSecrets && !component.registry)) {
-                    const regCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, "regcred-local");
+                    const regCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, "mdos-regcred");
                     if (!regCredsFound) {
-                        throw new Conflict("The target namespace seems to be missing the secret named 'regcred-local'");
+                        throw new Conflict("The target namespace seems to be missing the secret named 'mdos-regcred'");
                     }
                 }
 
@@ -131,8 +133,10 @@ exports.Mdos = class Mdos {
             if(!valuesYaml.registry)
                 valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`;
             valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`;
-            
-            valuesYaml.components = valuesYaml.components.map(component => {
+
+            const oidcProvider = await this.app.get('kube').getOidcProviders();
+
+            for(const component of valuesYaml.components) {
                 // Add registry credentials if necessary
                 if(!component.imagePullSecrets && !component.registry) { // Skip images from public registries or with specific secrets
                     component.imagePullSecrets = [{
@@ -146,10 +150,34 @@ exports.Mdos = class Mdos {
                             v.bucket = `${valuesYaml.tenantName}/${v.bucket}`;
                         return v;
                     });
-                    return component;
                 }
-                return component;
-            });
+
+                // Set port names
+                if(component.services) {
+                    component.services = component.services.map(s => {
+                        s.ports = s.ports.map(p => {
+                            p.name = `http-${p.port}`;
+                            return p;
+                        })
+                        return s;
+                    });
+                }
+                
+                // Resolve OIDC details
+                if(component.oidc && component.oidc.provider) {
+                    const targetProvider = oidcProvider.find(p => p.name == component.oidc.provider);
+                    if(!targetProvider) {
+                        throw new NotFound("Provider not found");
+                    }
+                    if(component.oidc.provider.indexOf("kc-") == 0) {
+                        const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}/realms/mdos/.well-known/openid-configuration`);
+                        component.oidc.issuer = oidcLinks.data.issuer;
+                        component.oidc.jwksUri = oidcLinks.data.jwks_uri;
+                    } else {
+                        throw new Unavailable("Provider not supported");
+                    }
+                }
+            }
 
             // If we need to make sure that the pod gets restarted if already deployed because of a volume sync change
             if(data.restart) {

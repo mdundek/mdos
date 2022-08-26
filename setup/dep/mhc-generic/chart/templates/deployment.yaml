@@ -64,13 +64,13 @@ spec:
     {{- range .volumes }}
       {{- if .syncVolume }}
         {{- if $srcBuckets }}
-          {{-  $bucketSrcPath := printf "%s/%s" $.Values.tenantName .name -}}
+          {{-  $bucketSrcPath := printf "%s/%s/%s" $.Values.tenantName "volumes" .name -}}
 
           {{- $srcBuckets = print $srcBuckets  ";" $bucketSrcPath -}}
           {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
           {{- $mdosSyncs = print $srcBuckets  " " .syncVolume -}}
         {{- else }}
-          {{-  $bucketSrcPath := printf "%s/%s" $.Values.tenantName .name -}}
+          {{-  $bucketSrcPath := printf "%s/%s/%s" $.Values.tenantName "volumes" .name -}}
 
           {{- $srcBuckets = print $bucketSrcPath -}}
           {{- $dstPaths = print .mountPath -}}

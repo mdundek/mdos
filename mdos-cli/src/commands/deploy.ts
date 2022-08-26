@@ -68,7 +68,7 @@ export default class Deploy extends Command {
                         if(!targetS3Creds) {
                             error("There are no available S3 credentials allowing you to sync your volumes");
                             process.exit(1);
-                        } else if(targetS3Creds.peermissions == "read") {
+                        } else if(targetS3Creds.permissions == "read") {
                             error("You do not have sufficient S3 credentials allowing you to sync your volumes");
                             process.exit(1);
                         }
