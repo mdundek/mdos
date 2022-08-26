@@ -9,6 +9,11 @@ exports.Kube = class Kube {
         this.app = app
     }
 
+    /**
+     * find
+     * @param {*} params 
+     * @returns 
+     */
     async find(params) {
         switch (params.query.target) {
             case 'namespaces':
@@ -70,8 +75,7 @@ exports.Kube = class Kube {
                 await this.app.get('kube').createSecret(data.namespace, data.name, data.data)
             }
         }
-
-        if (data.type == 'tenantNamespace') {
+        else if (data.type == 'tenantNamespace') {
             // Make sure keycloak is deployed
 			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
 			if (!keycloakAvailable) {
@@ -217,6 +221,8 @@ exports.Kube = class Kube {
                 } catch (err) { }
                 throw error;
             }
+        } else {
+            throw new BadRequest("Malformed API request");
         }
         return data
     }
@@ -280,7 +286,9 @@ exports.Kube = class Kube {
             // Delete namespace
             if(nsExists)
                 await this.app.get('kube').deleteNamespace(id.toLowerCase());
-		}
+		} else {
+            throw new BadRequest("Malformed API request");
+        }
 		return { id };
     }
 }

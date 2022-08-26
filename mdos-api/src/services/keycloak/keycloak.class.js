@@ -91,7 +91,9 @@ exports.Keycloak = class Keycloak {
 			return mapping.filter(m => ![  
 				"uma_protection"
 			].includes(m.name));
-		}
+		} else {
+            throw new BadRequest("Malformed API request");
+        }
 	}
 
 	/**

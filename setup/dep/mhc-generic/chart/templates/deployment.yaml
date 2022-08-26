@@ -129,7 +129,7 @@ spec:
     {{- end }}
     {{- if .registry }}
           image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
-    {{- else if $.Values.registry }}
+    {{- else if not .publicRegistry }}
           image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
     {{- else }}
           image: "{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
