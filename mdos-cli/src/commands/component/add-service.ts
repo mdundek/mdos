@@ -82,7 +82,6 @@ export default class AddService extends Command {
 		const existingsvc = targetCompYaml.services.find((s: { name: any }) => s.name == svcname)
 		if(existingsvc) {
 			existingsvc.ports.push({
-				name: `port-${port}`,
 				port: port
 			});
 		} else {
@@ -90,7 +89,6 @@ export default class AddService extends Command {
 				name: svcname,
 				ports: [
 					{
-						name: `port-${port}`,
 						port: port
 					}
 				]

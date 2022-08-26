@@ -2,7 +2,7 @@ import { Flags, CliUx } from '@oclif/core'
 import Command from '../base'
 
 const inquirer = require('inquirer')
-const { info, error, warn, filterQuestions, s3sync } = require('../lib/tools')
+const { info, context, error, s3sync, isDockerInstalled, buildPushComponent } = require('../lib/tools')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
@@ -15,6 +15,14 @@ export default class Deploy extends Command {
 
     public async run(): Promise<void> {
         const { flags } = await this.parse(Deploy)
+
+        // Make sure docker is installed
+        const dockerInstalled = await isDockerInstalled();
+        if(!dockerInstalled) {
+            error("To build images, you need to install Docker first:", false, true)
+            context("https://docs.docker.com/engine/install/", true, false);
+            process.exit(1);
+        }
 
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), "mdos.yaml")
@@ -30,7 +38,7 @@ export default class Deploy extends Command {
 
         // Load mdos yaml file
         let appYamlBase64
-        let appYaml: { tenantName: any; components: any }
+        let appYaml: { components: any; registry: any; tenantName: any }
         try {
             const yamlString = fs.readFileSync(appYamlPath, 'utf8')
             appYaml = YAML.parse(yamlString)
@@ -48,6 +56,7 @@ export default class Deploy extends Command {
             this.showError(error)
             process.exit(1)
         }
+
         // Get credentials for minio for user
         let userInfo
         try {
@@ -57,9 +66,21 @@ export default class Deploy extends Command {
             process.exit(1);
         }
 
-        const targetS3Creds = userInfo.data.s3.find((b: { bucket: any }) => b.bucket == appYaml.tenantName);
-        
+         // Build / push application
+        for(let appComp of appYaml.components) {
+            let targetRegistry = null;
+            if(appComp.registry) {
+                targetRegistry = appComp.registry;
+            }
+            else if(!appComp.publicRegistry) {
+                targetRegistry = userInfo.data.registry;
+            }
+         
+            await buildPushComponent(userInfo.data, targetRegistry, appComp, appRootDir);
+        }
+
 	    // Sync minio content for volumes
+        const targetS3Creds = userInfo.data.s3.find((b: { bucket: any }) => b.bucket == appYaml.tenantName);
         let volumeUpdates = false
         for(let component of appYaml.components) {
             if(component.volumes) {
@@ -68,14 +89,14 @@ export default class Deploy extends Command {
                         if(!targetS3Creds) {
                             error("There are no available S3 credentials allowing you to sync your volumes");
                             process.exit(1);
-                        } else if(targetS3Creds.peermissions == "read") {
+                        } else if(targetS3Creds.permissions == "read") {
                             error("You do not have sufficient S3 credentials allowing you to sync your volumes");
                             process.exit(1);
                         }
 
-                        let volSourcePath = path.join(appRootDir, component.name, volume.name)
+                        let volSourcePath = path.join(appRootDir, "volumes", volume.name)
 
-                        let volHasUpdates = await s3sync(targetS3Creds.bucket, volume.name, volSourcePath, targetS3Creds)
+                        let volHasUpdates = await s3sync(userInfo.data.S3Provider, targetS3Creds.bucket, volume.name, volSourcePath, targetS3Creds)
                         if(volHasUpdates) volumeUpdates = true
                     }
                 }

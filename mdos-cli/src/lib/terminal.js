@@ -5,10 +5,10 @@ var shell = require('shelljs');
  * @param {*} command 
  * @returns 
  */
-const terminalCommand = async (command, jsonResponse) => {
+const terminalCommand = async (command, jsonResponse, cwdPath) => {
     return new Promise((resolve, reject) => {
         try {
-            shell.exec(command, { silent: true }, function(code, stdout, stderr) {
+            shell.exec(command, { silent: true, cwd: cwdPath ? cwdPath : process.cwd()}, function(code, stdout, stderr) {
                 if(code == 0){
                     if(jsonResponse) {
                         resolve(JSON.parse(stdout.split("\n").filter(o => o.length > 0)));

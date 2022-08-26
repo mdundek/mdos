@@ -11,6 +11,7 @@ const axios = require('axios').default;
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage } = require('./lib/tools')
 
 type AxiosConfig = {
+	timeout: number;
 	headers?: any;
 };
 
@@ -64,11 +65,14 @@ export default abstract class extends Command {
 		let API_URI = await this._collectApiServerUrl();
 
 		// Set oauth2 cookie if necessary
-		const axiosConfig: AxiosConfig = {};
+		const axiosConfig: AxiosConfig = {
+			timeout: 0
+		};
 		if(this.authMode != "none") {
 			const kcCookie = this.getConfig("JWT_TOKEN");
 			axiosConfig.headers = { Cookie: `_oauth2_proxy=${kcCookie};` }
 		}
+		axiosConfig.timeout = 1000 * 60 * 10
 
 		// ------------------------- INJECT TOKEN FOR TESTING ----------------------
 		if(!axiosConfig.headers)
