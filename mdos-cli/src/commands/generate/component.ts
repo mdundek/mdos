@@ -9,7 +9,7 @@ const path = require('path')
 const YAML = require('yaml')
 import { customAlphabet } from 'nanoid'
 
-const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)
+const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 5)
 
 export default class Component extends Command {
 	static description = 'describe the command here'
@@ -91,7 +91,7 @@ export default class Component extends Command {
 
 		appYaml.components.push({
 			name: appName,
-			image: appName,
+			image: `${appYaml.tenantName}/${appName}`,
 			uuid: `${nanoid()}-${nanoid()}`,
 			tag: "0.0.1"
 		})

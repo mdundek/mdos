@@ -9,7 +9,7 @@ const path = require('path')
 const YAML = require('yaml')
 import { customAlphabet } from 'nanoid'
 
-const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)
+const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 5)
 
 export default class Application extends Command {
 	static description = 'describe the command here'
@@ -78,6 +78,16 @@ export default class Application extends Command {
 				uuid: `${nanoid()}-${nanoid()}`,
 				components: []
 			}));
+		} catch (error) {
+			this.showError(error)
+			process.exit(1);
+		}
+
+		// Create app volumes folder
+		const volumesFolder = path.join(mdosAppFile, "volumes")
+		try {
+			fs.mkdirSync(volumesFolder, { recursive: true });
+			fs.writeFileSync(path.join(volumesFolder, "README.md"), "# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove");
 		} catch (error) {
 			this.showError(error)
 			process.exit(1);

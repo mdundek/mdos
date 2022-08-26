@@ -26,6 +26,9 @@ export default class AddVolume extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(AddVolume)
 
+        // Get volumes base path
+        const volumesPath = path.join(path.dirname(process.cwd()), 'volumes')
+
         // Detect mdos project yaml file
         const appYamlPath = path.join(path.dirname(process.cwd()), 'mdos.yaml')
         if (!fs.existsSync(appYamlPath)) {
@@ -125,10 +128,14 @@ export default class AddVolume extends Command {
 
         if(responses.inject) {
             vol.syncVolume = true
-            vol.bucket = nanoid()
-
+        
             try {
-                const volumeDirPath = path.join(process.cwd(), responses.name)
+                const volumeDirPath = path.join(volumesPath, responses.name)
+                if (fs.existsSync(volumeDirPath)) {
+                    error('This volume already exists');
+                    process.exit(1);
+                }
+
                 fs.mkdirSync(volumeDirPath, { recursive: true });
                 fs.writeFileSync(path.join(volumeDirPath, "README.md"), "Place your volume static data in this folder\n");
             } catch (error) {
