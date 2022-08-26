@@ -24,7 +24,7 @@ exports.Mdos = class Mdos extends MdosCore {
         if (id == 'user-info') {
             return await this.computeUserInfo(params.headers, params.query);
         } else {
-            throw new NotFound('Param not found')
+            throw new BadRequest("Malformed API request");
         }
     }
 

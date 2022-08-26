@@ -441,6 +441,7 @@ class Keycloak {
                 'Content-Type': 'application/json',
             },
         })
+
         if (!clientId) {
             for (let user of response.data) {
                 const clientRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${user.id}/role-mappings`, {

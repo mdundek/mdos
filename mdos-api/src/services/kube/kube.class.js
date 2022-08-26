@@ -17,48 +17,17 @@ exports.Kube = class Kube extends KubeCore {
      * @returns 
      */
     async find(params) {
-        switch (params.query.target) {
-            case 'namespaces':
-                let allNamespaces = await this.app.get('kube').getNamespaces()
-                let allClients = null;
-                if(params.query.includeKcClients) {
-                    const response = await this.app.get("keycloak").getRealms();
-                    if(!response.find(o => o.realm.toLowerCase() == params.query.realm.toLowerCase())) {
-                        throw new Unavailable("Keycloak realm does not exists");
-                    }
-                    allClients = await this.app.get("keycloak").getClients(params.query.realm);
-                }
+        if(params.query.target == 'namespaces') {
+            try {
+                const nsListEnriched = await this.getEnrichedNamespaces(params.query.realm, params.query.includeKcClients);
+                return nsListEnriched;
+            } catch (error) {
+                console.log(error);
+                throw error
+            }
             
-                allNamespaces = allNamespaces.map(ns => {
-                    return {
-                        name: ns.metadata.name,
-                        status: ns.status.phase
-                    }
-                }).filter(ns => ![  "local-path-storage",
-                                    "mdos",
-                                    "oauth2-proxy",
-                                    "keycloak",
-                                    "code-server",
-                                    "minio",
-                                    "mdos-registry",
-                                    "calico-apiserver",
-                                    "calico-system",
-                                    "tigera-operator",
-                                    "kube-node-lease",
-                                    "kube-public",
-                                    "kube-system",
-                                    "default",
-                                    "istio-system"
-                ].includes(ns.name));
-
-                if(allClients) {
-                    allNamespaces = allNamespaces.map(ns => {
-                        ns.kcClient = allClients.find(kcc => kcc.clientId == ns.name) ? true : false;
-                        return ns;
-                    });
-                }
-                
-                return allNamespaces;
+        } else {
+            throw new BadRequest("Malformed API request");
         }
     }
 
@@ -70,6 +39,9 @@ exports.Kube = class Kube extends KubeCore {
     }
 
     async create(data, params) {
+        try {
+            
+       
         if (data.type == 'secret') {
             if (await this.app.get('kube').hasSecret(data.namespace, data.name)) {
                 await this.app.get('kube').replaceSecret(data.namespace, data.name, data.data)
@@ -79,31 +51,16 @@ exports.Kube = class Kube extends KubeCore {
         }
         else if (data.type == 'tenantNamespace') {
             // Make sure keycloak is deployed
-			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-			if (!keycloakAvailable) {
-				throw new Error("Keycloak is not installed");
-			}
-
+			await this.keycloakInstallCheck();
+            
 			// Make sure realm exists
-			let response = await this.app.get("keycloak").getRealms();
-			if(!response.find(o => o.realm.toLowerCase() == data.realm.toLowerCase())) {
-				throw new Unavailable("Keycloak realm does not exists");
-			}
+			await this.realmCheck(data.realm);
 
 			// Make sure client ID does not exist
-			response = await this.app.get("keycloak").getClients(data.realm);
-			if(response.find(o => o.clientId.toLowerCase() == data.namespace.toLowerCase())) {
-				throw new Conflict("Keycloak client ID already exists");
-			}
+            await this.clientDoesNotExistCheck(data.realm, data.namespace);
 
             // Create namespace if not exist
-            let nsCreated = false;
-            if (!(await this.app.get('kube').hasNamespace(data.namespace.toLowerCase()))) {
-                await this.app.get('kube').createNamespace({name: data.namespace.toLowerCase()})
-                nsCreated = true;
-            } else {
-                throw new Conflict('Namespace already exists')
-            }
+            let nsCreated = await this.createNamespace(data.namespace);
 
 			// Create keycloak client
             try {
@@ -119,48 +76,7 @@ exports.Kube = class Kube extends KubeCore {
             let tClient = null;
             try {
                 tClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase());
-                await this.app.service("keycloak").create({
-                    type: "client-role",
-                    realm: data.realm,
-                    name: "admin",
-                    clientUuid: tClient.id
-                });
-                await this.app.service("keycloak").create({
-                    type: "client-role",
-                    realm: data.realm,
-                    name: "k8s-write",
-                    clientUuid: tClient.id
-                });
-                await this.app.service("keycloak").create({
-                    type: "client-role",
-                    realm: data.realm,
-                    name: "k8s-read",
-                    clientUuid: tClient.id
-                });
-                await this.app.service("keycloak").create({
-                    type: "client-role",
-                    realm: data.realm,
-                    name: "s3-write",
-                    clientUuid: tClient.id
-                });
-                await this.app.service("keycloak").create({
-                    type: "client-role",
-                    realm: data.realm,
-                    name: "s3-read",
-                    clientUuid: tClient.id
-                });
-                await this.app.service("keycloak").create({
-                    type: "client-role",
-                    realm: data.realm,
-                    name: "registry-pull",
-                    clientUuid: tClient.id
-                });
-                await this.app.service("keycloak").create({
-                    type: "client-role",
-                    realm: data.realm,
-                    name: "registry-push",
-                    clientUuid: tClient.id
-                });
+                await this.createKeycloakClientRoles(data.realm, tClient.id);
             } catch (error) {
                 // Clean up
                 if(nsCreated)
@@ -193,10 +109,7 @@ exports.Kube = class Kube extends KubeCore {
             const saUser = nanoid().toLowerCase();
             const saPass = nanoid().toLowerCase();
             try {
-                await this.app.get("keycloak").createUser(data.realm, saUser, saPass, "");
-                const saUsersObj = await this.app.get("keycloak").getUser(data.realm, null, saUser);
-                const roleObj = await this.app.get("keycloak").getClientRole(data.realm, tClient.clientId, "registry-pull");
-                await this.app.get("keycloak").createClientRoleBindingForUser(data.realm, tClient.id, saUsersObj.id, roleObj.id, "registry-pull");
+                await this.createKeycloakSaForNamespace(data.realm, tClient.clientId, tClient.id, saUser, saPass);
             } catch (error) {
                 // Clean up
                 if(nsCreated)
@@ -227,6 +140,10 @@ exports.Kube = class Kube extends KubeCore {
             throw new BadRequest("Malformed API request");
         }
         return data
+    } catch (e) {
+            console.log(e);
+            throw e;
+    }
     }
 
     async update(id, data, params) {
@@ -240,24 +157,19 @@ exports.Kube = class Kube extends KubeCore {
     async remove(id, params) {
         if(params.query.target == "tenantNamespace") {
             // Make sure keycloak is deployed
-			const keycloakAvailable = await this.app.get("keycloak").isKeycloakDeployed();
-			if (!keycloakAvailable) {
-				throw new Error("Keycloak is not installed");
-			}
+			await this.keycloakInstallCheck();
+
+			// Make sure realm exists
+			await this.realmCheck(params.query.realm);
 
 			// Lookup keycloak client if exists
-			let response = await this.app.get("keycloak").getRealms();
-            let clientFound = null;
-			if(response.find(o => o.realm.toLowerCase() == params.query.realm)) {
-				response = await this.app.get("keycloak").getClients(params.query.realm);
-                clientFound = response.find(o => o.clientId.toLowerCase() == id.toLowerCase())
-			}
+			let response = await this.app.get("keycloak").getClients(params.query.realm);
+            const clientFound = response.find(o => o.clientId.toLowerCase() == id.toLowerCase())
 
 			// Make sure namespace exists
             let nsExists = true;
             if (!(await this.app.get('kube').hasNamespace(id.toLowerCase()))) {
                 nsExists = false;
-                // throw new NotFound('Namespace does not exist')
             }
 
             // Delete keycloak client
@@ -271,18 +183,9 @@ exports.Kube = class Kube extends KubeCore {
                 console.log(_e);
             }
 
+            // Delete SA keycloak user
             if(nsExists) {
-                // Delete SA keycloak user
-                try {
-                    const regSaSecret = await this.app.get('kube').getSecret(id.toLowerCase(), 'mdos-regcred')
-                    if(regSaSecret) {
-                        const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username;
-                        const userObj = await this.app.get("keycloak").getUser(params.query.realm, null, username);
-                        await this.app.get("keycloak").deleteUser(params.query.realm, userObj.id);
-                    }
-                } catch (_e) {
-                    console.log(_e);
-                }
+                await this.deleteKeycloakSAUser(params.query.realm, id);
             }
 
             // Delete namespace

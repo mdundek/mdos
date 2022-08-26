@@ -1,14 +1,16 @@
 const { NotFound, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
+const CommonCore = require('../common.class.core');
 
-class MdosCore {
+class MdosCore extends CommonCore {
 
     /**
      * constructor
      * @param {*} app 
      */
     constructor(app) {
+        super(app);
         this.app = app;
     }
 

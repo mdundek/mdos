@@ -35,6 +35,9 @@ export default class List extends Command {
             this.showError(error);
             process.exit(1);
         }
+
+        resp.data = resp.data.filter((u: { email: any }) => u.email)
+
         console.log();
         CliUx.ux.table(resp.data, {
             clientId: {
