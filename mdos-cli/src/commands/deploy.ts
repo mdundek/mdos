@@ -103,13 +103,22 @@ export default class Deploy extends Command {
             }
         }
 
+        // Init realtime connection
+        await this.initSocketIo();
+        const processId = await this.socketManager.subscribe((data: any) => {
+            console.log("Incomming:", data);
+        });
+
+        console.log(processId);
+
         // Deploy app
         CliUx.ux.action.start('Deploying application')
         try {
             await this.api(`mdos`, 'post', {
                 type: 'deploy',
                 values: appYamlBase64,
-                restart: volumeUpdates
+                restart: volumeUpdates,
+                processId: processId
             })
             CliUx.ux.action.stop()
         } catch (error) {

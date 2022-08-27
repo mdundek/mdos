@@ -18,6 +18,8 @@
     ],
     "dependencies": {
         "@aws-sdk/client-s3": "^3.150.0",
+        "@feathersjs/feathers": "^4.5.15",
+        "@feathersjs/socketio-client": "^4.5.15",
         "@oclif/core": "^1.13.3",
         "@oclif/plugin-help": "^5",
         "@oclif/plugin-not-found": "^2.3.1",
@@ -32,6 +34,7 @@
         "open": "^8.4.0",
         "s3-sync-client": "^3.0.3",
         "shelljs": "^0.8.5",
+        "socket.io-client": "^2.5.0",
         "yaml": "^2.1.1",
         "zip-a-folder": "^1.1.5"
     },

@@ -33,6 +33,8 @@ export default class List extends Command {
             this.showError(err);
 			process.exit(1);
         }
+
+       
   
         // We need a valid admin authentication token, get this first
         try {

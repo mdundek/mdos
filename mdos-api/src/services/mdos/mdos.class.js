@@ -50,8 +50,16 @@ exports.Mdos = class Mdos extends MdosCore {
                 valuesYaml.forceUpdate = true
             }
 
+            this.app.get("socketManager").emit(data.values.processId, {
+                "foo": "start"
+            });
+
             // Deploy
             await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml)
+
+            this.app.get("socketManager").emit(data.values.processId, {
+                "foo": "done"
+            });
         } else {
             throw new BadRequest("Malformed API request");
         }

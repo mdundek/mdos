@@ -9,6 +9,7 @@ const inquirer = require('inquirer')
 const open = require('open');
 const axios = require('axios').default;
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage } = require('./lib/tools')
+const SocketManager = require("./lib/socket.js");
 
 type AxiosConfig = {
 	timeout: number;
@@ -17,7 +18,13 @@ type AxiosConfig = {
 
 export default abstract class extends Command {
 	authMode: string;
+	socketManager: any;
 
+	/**
+	 * constructor
+	 * @param argv 
+	 * @param config 
+	 */
 	constructor(argv: string[], config: Config) {
 		if (!fs.existsSync(path.join(os.homedir(), ".mdos"))) {
 			fs.mkdirSync(path.join(os.homedir(), ".mdos"));
@@ -29,6 +36,13 @@ export default abstract class extends Command {
 		if(!this.authMode) this.authMode = "oidc"
 	}
 
+	/**
+	 * initSocketIo
+	 */
+	async initSocketIo() {
+		const API_URI = await this._collectApiServerUrl();
+		this.socketManager = new SocketManager(API_URI);
+	}
 	/**
 	 * getConfig
 	 * @param key 
@@ -62,7 +76,7 @@ export default abstract class extends Command {
 	 * @returns 
 	 */
 	async api(endpoint: string, method: string, body?: any) {
-		let API_URI = await this._collectApiServerUrl();
+		const API_URI = await this._collectApiServerUrl();
 
 		// Set oauth2 cookie if necessary
 		const axiosConfig: AxiosConfig = {
