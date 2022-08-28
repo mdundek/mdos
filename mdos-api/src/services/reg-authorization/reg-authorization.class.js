@@ -1,40 +1,99 @@
+const { Forbidden } = require('@feathersjs/errors')
+
+const userRoleStore = {}
+
 /* eslint-disable no-unused-vars */
 exports.RegAuthorization = class RegAuthorization {
-  constructor (options) {
-    this.options = options || {};
-  }
+    constructor(options, app) {
+        this.options = options || {}
+		this.app = app;
+    }
 
-  async find (params) {
-    const credsData = Buffer.from(params.query.data, 'base64').toString('utf8');
+	/**
+	 * find
+	 * @param {*} params 
+	 * @returns 
+	 */
+    async find(params) {
+		const credsData = Buffer.from(params.query.data, 'base64').toString('utf8')
+		const credDataJson = JSON.parse(credsData);
+		let userRoles;
 
-    console.log(credsData);
-    // {"Account":"mdundek","Type":"repository","Name":"ns1/nginx","Service":"Docker registry","IP":"192.169.29.101","Actions":["pull"],"Labels":null}
+		// Get user role mappings
+		if (userRoleStore[credDataJson.Account]) {
+			// User role is buffered
+			userRoles = userRoleStore[credDataJson.Account].roles;
+		} else {
+			// No user role buffer found, getting it now
+			userRoles = await this.app.get('keycloak').getUserRoles('mdos', credDataJson.Account)
+			userRoleStore[credDataJson.Account] = {
+				roles: userRoles,
+				sessionTimeout: setTimeout(function(account) {
+					delete userRoleStore[account];
+				}.bind(this, credDataJson.Account), 60 * 1000)
+			}
+		}
 
-    return "ok";
-  }
+		// If request is registry request
+		if(credDataJson.Type == "repository") {
+			// System admins can do everything
+			if(userRoles.clientMappings.mdos && userRoles.clientMappings.mdos.mappings.find(role => role.name == "admin")) {
+				return "ok";
+			}
 
-  async get (id, params) {
-    return {
-      id, text: `A new message with ID: ${id}!`
-    };
-  }
+			const imgPathArray = credDataJson.Name.split("/");
+			// if image is a system image (root level image)
+			if(imgPathArray.length == 1) {
+				// If user is trying to push an update, reject
+				if(credDataJson.Actions.includes("push")) {
+					throw new Forbidden("Unauthorized");
+				}
+				// Pulling is ok for root level images
+				else {
+					return "ok";
+				}
+			} else {
+				// User is part of private image tenant name & no push request
+				if(userRoles.clientMappings[imgPathArray[0]] && !credDataJson.Actions.includes("push")) {
+					return "ok";
+				}
+				// User is part of private image tenant name & push is request
+				else if(userRoles.clientMappings[imgPathArray[0]] && userRoles.clientMappings[imgPathArray[0]].mappings.find(role => role.name == "registry-push")) {
+					return "ok";
+				}
+				// User does not belong to this tenant name
+				else {
+					throw new Forbidden("Unauthorized");
+				}
+			}
+		} else {
+			throw new Forbidden("Unauthorized");
+		}
+    }
 
-  async create (data, params) {
-    console.log(data);
-    console.log(params);
+    async get(id, params) {
+        return {
+            id,
+            text: `A new message with ID: ${id}!`,
+        }
+    }
 
-    return "ok";
-  }
+    async create(data, params) {
+        console.log(data)
+        console.log(params)
 
-  async update (id, data, params) {
-    return data;
-  }
+        return 'ok'
+    }
 
-  async patch (id, data, params) {
-    return data;
-  }
+    async update(id, data, params) {
+        return data
+    }
 
-  async remove (id, params) {
-    return { id };
-  }
-};
+    async patch(id, data, params) {
+        return data
+    }
+
+    async remove(id, params) {
+        return { id }
+    }
+}
