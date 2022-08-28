@@ -221,6 +221,7 @@ export default abstract class extends Command {
 					return true;
 				},
 			}])
+			console.log()
 		} else {
 			await _validateCookie();
 		}
