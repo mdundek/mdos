@@ -105,26 +105,196 @@ export default class Deploy extends Command {
 
         // Init realtime connection
         await this.initSocketIo();
-        const processId = await this.socketManager.subscribe((data: any) => {
-            console.log("Incomming:", data);
-        });
 
-        console.log(processId);
+        const consoleHandles: any[] = [];
+        let spinning = false
+        const processId = await this.socketManager.subscribe((data: any) => {
+            if(data.raw && data.deployStatus) {
+                if(spinning) {
+                    CliUx.ux.action.stop("scheduled")
+                    spinning = false
+                    console.log()
+                }
+
+                const podNames = Object.keys(data.deployStatus);
+                for(const podName of podNames) {
+                    let logLine;
+
+                    // Pod head line
+                    let lineName = `${podName}-head`
+                    let existingConsole = consoleHandles.find(cObj => cObj.name == lineName);
+                    logLine = chalk.blue.bold(`Pod: ${data.deployStatus[podName].name}`)
+                    if(!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(logLine)
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(logLine);
+                    }
+                    
+                    // Pod phase line
+
+                    // Identify if state is an error
+                    let isError = false
+                    if([
+                        "Failed", 
+                        "Unknown",
+                        "Error"
+                    ].includes(data.deployStatus[podName].phase))
+                        isError = true
+                    
+                    let isSuccess = false
+                    if([
+                        "Running", 
+                        "Succeeded"
+                    ].includes(data.deployStatus[podName].phase))
+                        isSuccess = true
+
+                    if(data.deployStatus[podName].phase) {
+                        lineName = `${podName}-phase`
+                        existingConsole = consoleHandles.find(cObj => cObj.name == lineName);
+                        logLine = `    Phase: ${data.deployStatus[podName].phase}`
+                        if(!existingConsole) {
+                            existingConsole = {
+                                name: lineName,
+                                set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : isSuccess ? chalk.green(logLine) : chalk.cyan.dim(logLine))
+                            }
+                            consoleHandles.push(existingConsole)
+                        } else {
+                            existingConsole.set(isError ? chalk.red(logLine) : isSuccess ? chalk.green(logLine) : chalk.cyan.dim(logLine));
+                        }
+                    }
+
+                    // Process init containers
+                    for(let initContainerStatus of data.deployStatus[podName].initContainerStatuses) {
+                        // Init container head line
+                        lineName = `${podName}-${initContainerStatus.name}-head`
+                        existingConsole = consoleHandles.find(cObj => cObj.name == lineName)
+                        let logLine = chalk.bold.grey(`    Init container: ${initContainerStatus.name}`)
+                        if(!existingConsole) {
+                            existingConsole = {
+                                name: lineName,
+                                set: this.getConsoleLineHandel(logLine)
+                            }
+                            consoleHandles.push(existingConsole)
+                        } else {
+                            existingConsole.set(logLine);
+                        }
+
+                        // Init container state line
+                        lineName = `${podName}-${initContainerStatus.name}-state`
+                        existingConsole = consoleHandles.find(cObj => cObj.name == lineName)
+                        logLine = `        State: ${initContainerStatus.state}${initContainerStatus.reason ? " (" + initContainerStatus.reason + ")" : ""}`
+                        if(!existingConsole) {
+                            existingConsole = {
+                                name: lineName,
+                                set: this.getConsoleLineHandel(logLine)
+                            }
+                            consoleHandles.push(existingConsole)
+                        } else {
+                            existingConsole.set(logLine);
+                        }
+
+                        // Init container state line
+                        lineName = `${podName}-${initContainerStatus.name}-msg`
+                        existingConsole = consoleHandles.find(cObj => cObj.name == lineName)
+                        logLine = `        Details: ${initContainerStatus.message ? initContainerStatus.message : "n/a"}`
+
+                        // Identify if state is an error
+                        let isError = false
+                        if(initContainerStatus.state == "waiting" && [
+                            "ErrImagePull", 
+                            "ImagePullBackOff",
+                            "Error"
+                        ].includes(initContainerStatus.reason ? initContainerStatus.reason : ""))
+                            isError = true
+
+                        if(!existingConsole) {
+                            existingConsole = {
+                                name: lineName,
+                                set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : logLine)
+                            }
+                            consoleHandles.push(existingConsole)
+                        } else {
+                            existingConsole.set(isError ? chalk.red(logLine) : logLine);
+                        }
+                    }
+
+                    // Process containers
+                    for(let containerStatus of data.deployStatus[podName].containerStatuses) {
+                        // Init container head line
+                        lineName = `${podName}-${containerStatus.name}-head`
+                        existingConsole = consoleHandles.find(cObj => cObj.name == lineName)
+                        let logLine = chalk.bold.grey(`    Container: ${containerStatus.name}`)
+                        if(!existingConsole) {
+                            existingConsole = {
+                                name: lineName,
+                                set: this.getConsoleLineHandel(logLine)
+                            }
+                            consoleHandles.push(existingConsole)
+                        } else {
+                            existingConsole.set(logLine);
+                        }
+
+                        // Container state line
+                        lineName = `${podName}-${containerStatus.name}-state`
+                        existingConsole = consoleHandles.find(cObj => cObj.name == lineName)
+                        logLine = `        State: ${containerStatus.state}${containerStatus.reason ? " (" + containerStatus.reason + ")" : ""}`
+                        
+                        // Identify if state is an error
+                        let isError = false
+                        if(containerStatus.state == "waiting" && [
+                            "ErrImagePull", 
+                            "ImagePullBackOff"
+                        ].includes(containerStatus.reason ? containerStatus.reason : ""))
+                            isError = true
+
+                        if(!existingConsole) {
+                            existingConsole = {
+                                name: lineName,
+                                set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : logLine)
+                            }
+                            consoleHandles.push(existingConsole)
+                        } else {
+                            existingConsole.set(isError ? chalk.red(logLine) : logLine);
+                        }
+                    
+                        // Init container state line
+                        lineName = `${podName}-${containerStatus.name}-msg`
+                        existingConsole = consoleHandles.find(cObj => cObj.name == lineName)
+                        logLine = `        Details: ${containerStatus.message ? containerStatus.message : "n/a"}`
+                        if(!existingConsole) {
+                            existingConsole = {
+                                name: lineName,
+                                set: this.getConsoleLineHandel(logLine)
+                            }
+                            consoleHandles.push(existingConsole)
+                        } else {
+                            existingConsole.set(logLine)
+                        }
+                    }
+                }
+            }
+        });
 
         // Deploy app
         CliUx.ux.action.start('Deploying application')
+        spinning = true
         try {
             await this.api(`mdos`, 'post', {
                 type: 'deploy',
                 values: appYamlBase64,
-                restart: volumeUpdates,
+                restart: true,
                 processId: processId
             })
-            CliUx.ux.action.stop()
+            this.socketManager.unsubscribe()
         } catch (error) {
-            CliUx.ux.action.stop('error')
-            this.showError(error);
-            process.exit(1);
+            if(!spinning)
+                CliUx.ux.action.stop('error')
+            this.showError(error)
+            process.exit(1)
         }
     }
 }

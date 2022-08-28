@@ -8,6 +8,7 @@ const nconf = require('nconf');
 const inquirer = require('inquirer')
 const { CliUx } = require('@oclif/core')
 var AdmZip = require("adm-zip");
+const DraftLog = require('draftlog').into(console)
 
 /**
  * context
@@ -523,6 +524,10 @@ const isDockerInstalled = async () => {
 	}
 }
 
+const getConsoleLineHandel = (initialValue) => {
+	return console.draft(initialValue);
+}
+
 module.exports = {
     info,
 	error,
@@ -534,5 +539,6 @@ module.exports = {
 	extractErrorMessage,
 	s3sync,
 	isDockerInstalled,
-	buildPushComponent
+	buildPushComponent,
+	getConsoleLineHandel
 }
