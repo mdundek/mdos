@@ -45,20 +45,23 @@ class KeycloakCore extends CommonCore {
     /**
      * getClients
      * @param {*} realm 
+     * @param {*} includeMdosClient 
      * @returns 
      */
-     async getClients(realm) {
+     async getClients(realm, includeMdosClient) {
         const clients = await this.app.get("keycloak").getClients(realm);
-        return clients.filter(c => ![  
+        const excludeClients = [  
             "realm-management",
             "broker",
-            "mdos",
             "account",
             "account-console",
             "admin-cli",
             "security-admin-console",
             "cs"
-        ].includes(c.clientId));
+        ];
+        if(!includeMdosClient)
+            excludeClients.push("mdos");
+        return clients.filter(c => !excludeClients.includes(c.clientId));
     }
 
     /**
@@ -71,7 +74,7 @@ class KeycloakCore extends CommonCore {
     async getClientRoles(realm, clientId, filterProtected) {
         const clientRoles = await this.app.get("keycloak").getClientRoles(realm, clientId);
         if(filterProtected == "true") 
-            return clientRoles.filter(cr => ["uma_protection", "admin", "k8s-read", "k8s-write", "s3-read", "s3-write", "registry-pull", "registry-push"].indexOf(cr.name) == -1);
+            return clientRoles.filter(cr => ["uma_protection", "admin", "k8s-read", "k8s-write", "s3-read", "s3-write", "registry-push"].indexOf(cr.name) == -1);
         else
             return clientRoles.filter(cr => !["uma_protection"].includes(cr.name));
     }
@@ -85,15 +88,17 @@ class KeycloakCore extends CommonCore {
     async getUserRoles(realm, username) {
         let roles = await this.app.get("keycloak").getUserRoles(realm, username);
         const mapping = [];
-        Object.keys(roles.clientMappings).forEach((key) => {
-            roles.clientMappings[key].mappings.forEach((cm) => {
-                mapping.push({
-                    client: key,
-                    uuid: cm.id,
-                    name: cm.name
+        if(roles.clientMappings) {
+            Object.keys(roles.clientMappings).forEach((key) => {
+                roles.clientMappings[key].mappings.forEach((cm) => {
+                    mapping.push({
+                        client: key,
+                        uuid: cm.id,
+                        name: cm.name
+                    });
                 });
             });
-        });
+        }
 
         return mapping.filter(m => ![  
             "uma_protection"

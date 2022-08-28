@@ -37,7 +37,7 @@ exports.RegAuthorization = class RegAuthorization {
 		// If request is registry request
 		if(credDataJson.Type == "repository") {
 			// System admins can do everything
-			if(userRoles.clientMappings.mdos && userRoles.clientMappings.mdos.mappings.find(role => role.name == "admin")) {
+			if(userRoles.clientMappings && userRoles.clientMappings.mdos && userRoles.clientMappings.mdos.mappings.find(role => role.name == "admin")) {
 				return "ok";
 			}
 
@@ -54,11 +54,11 @@ exports.RegAuthorization = class RegAuthorization {
 				}
 			} else {
 				// User is part of private image tenant name & no push request
-				if(userRoles.clientMappings[imgPathArray[0]] && !credDataJson.Actions.includes("push")) {
+				if(userRoles.clientMappings && userRoles.clientMappings[imgPathArray[0]] && !credDataJson.Actions.includes("push")) {
 					return "ok";
 				}
 				// User is part of private image tenant name & push is request
-				else if(userRoles.clientMappings[imgPathArray[0]] && userRoles.clientMappings[imgPathArray[0]].mappings.find(role => role.name == "registry-push")) {
+				else if(userRoles.clientMappings && userRoles.clientMappings[imgPathArray[0]] && userRoles.clientMappings[imgPathArray[0]].mappings.find(role => role.name == "global-registry")) {
 					return "ok";
 				}
 				// User does not belong to this tenant name

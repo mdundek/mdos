@@ -23,7 +23,7 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
 			await this.realmCheck(params.query.realm);
 
 			// Get all clients except internal once
-			const clients = await this.getClients(params.query.realm);
+			const clients = await this.getClients(params.query.realm, params.query.include_mdos == "true");
 			return clients;
 		}
 		else if(params.query.target == "client-roles") {
@@ -35,7 +35,7 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
 
 			// Get client roles
 			const clientRoles = await this.getClientRoles(params.query.realm, params.query.clientId, params.query.filterProtected);
-			return clientRoles
+			return clientRoles;
 		}
 		else if(params.query.target == "users") {
 			// Make sure realm exists
@@ -100,7 +100,7 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
 			await this.clientUuidCheck(body.realm, body.clientUuid);
 
 			// Make sure Role ID exists for client
-			response = await this.app.get("keycloak").getClientRoles(body.realm, body.clientId);
+			const response = await this.app.get("keycloak").getClientRoles(body.realm, body.clientId);
 			if(!response.find(o => o.id == body.roleUuid)) {
 				throw new Unavailable("Keycloak role ID does not exist for this client ID");
 			}
