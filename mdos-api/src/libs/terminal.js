@@ -25,6 +25,32 @@ const terminalCommand = async (command, jsonResponse) => {
     });
 }
 
+/**
+ * terminalCommandAsync
+ * @param {*} command 
+ * @param {*} onMessage 
+ * @param {*} onError 
+ * @param {*} done 
+ * @returns 
+ */
+const terminalCommandAsync = (command, onMessage, onError, done) => {
+    const child = shell.exec(command, { silent: true, async:true });
+
+    child.on('close', () => {
+        done();
+    });
+    
+    child.stdout.on('data', function(data) {
+        onMessage(data);
+    });
+    child.stderr.on('data', function(data) {
+        onError(data);
+    });
+
+    return child;
+}
+
 module.exports = {
-    terminalCommand
+    terminalCommand,
+    terminalCommandAsync
 }

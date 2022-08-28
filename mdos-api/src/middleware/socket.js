@@ -35,6 +35,7 @@ class SocketManager {
         }
 
         socket.on('heartbeat', (data) => {
+            // Reset session hearbeat monitor timeout
             if(this.sessions[data]) {
                 clearTimeout(this.sessions[data].timeout);
                 this.sessions[data].timeout = setTimeout(function(_processId) {
@@ -46,8 +47,17 @@ class SocketManager {
         socket.on('disconnect', function(_processId) {
             delete this.sessions[_processId];
         }.bind(this, processId));
-
+        
         socket.emit("processId", processId);
+    }
+
+    /**
+     * isClientAlive
+     * @param {*} processId 
+     * @returns 
+     */
+    isClientAlive(processId) {
+        return this.sessions[processId] ? true : false;
     }
 
     /**
@@ -55,7 +65,6 @@ class SocketManager {
      */
     _sessionHeartbeatTimeout(processId) {
         if(this.sessions[processId]) {
-            console.log("disconnect timeout");
             this.sessions[processId].socket.disconnect(true)
         }
     }

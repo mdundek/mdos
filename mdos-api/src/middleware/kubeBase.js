@@ -2,7 +2,7 @@ const axios = require("axios");
 const https = require("https");
 const YAML = require('yaml');
 const fs = require("fs");
-const { terminalCommand } = require("../libs/terminal");
+const { terminalCommand, terminalCommandAsync } = require("../libs/terminal");
 
 let caCrt;
 if(process.env.RUN_TARGET == "pod") {
@@ -159,6 +159,20 @@ class KubeBase {
     }
 
     /**
+     * getApplicationPods
+     * @param {*} namespaceName 
+     * @param {*} appUuid 
+     * @returns 
+     */
+    async getApplicationPods(namespaceName, appUuid) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/pods`);
+        myUrlWithParams.searchParams.append("appUuid", appUuid);
+
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader);
+        return res.data;
+    }
+
+    /**
      * getNamespaces
      * @returns 
      */
@@ -275,7 +289,7 @@ class KubeBase {
      * @param {*} namespace 
      * @param {*} values 
      */
-    async mdosGenericHelmInstall(namespace, values) {
+    async mdosGenericHelmInstall(namespace, values, processId) {
         let nsCreated = await this.hasNamespace(namespace);
         let doCreateNs = false;
         if(!nsCreated) {
@@ -283,19 +297,171 @@ class KubeBase {
             doCreateNs = true;
         }
 
+        fs.writeFileSync('./values.yaml', YAML.stringify(values));
+
         try {
-            fs.writeFileSync('./values.yaml', YAML.stringify(values));
-            await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --atomic`);
-        } catch(err) {
+            await this._asyncChildHelmDeploy(
+                `${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --atomic`, 
+                processId, 
+                values.tenantName,
+                values.uuid
+            );
+        } catch (error) {
             if(doCreateNs) {
-                try { await this.deleteNamespace(namespace); } catch (error) { }
+                try { await this.deleteNamespace(namespace); } catch (_e) { }
             }
-            throw err;
+            throw error;
         } finally {
             if (fs.existsSync("./values.yaml")) {
                 fs.unlinkSync("./values.yaml");
             }
         }
+    }
+
+    /**
+     * _asyncChildHelmDeploy
+     * @param {*} cmd 
+     * @param {*} processId 
+     * @param {*} namespace 
+     * @param {*} appUuid
+     * @returns 
+     */
+    _asyncChildHelmDeploy(cmd, processId, namespace, appUuid) {
+        return new Promise((resolve, reject) => {
+            let hasErrors = false;
+            const errArray = [];
+
+            let checkClientAvailInterval = null;
+            let grabStatusInterval = null;
+
+            const deployedAtDate = new Date().getTime() - 1000;
+
+            // Start async deployment
+            const helmChild = terminalCommandAsync(
+                cmd,
+                // On STDOUT
+                function(_processId, msg) {
+                    this.app.get("socketManager").emit(_processId, {
+                        raw: true,
+                        stdout: msg
+                    });
+                }.bind(this, processId),
+                // On STDERR
+                function(_processId, errMsg) {
+                    this.app.get("socketManager").emit(_processId, {
+                        raw: true,
+                        stderr: errMsg
+                    });
+                    errArray.push(errMsg);
+                    hasErrors = true;
+                }.bind(this, processId),
+                // On DONE
+                function(_processId) {
+                    if(checkClientAvailInterval)
+                        clearInterval(checkClientAvailInterval);
+                    if(grabStatusInterval)
+                        clearInterval(grabStatusInterval);
+                    if(hasErrors) {
+                        reject(errArray)
+                    } else {
+                        resolve();
+                    }
+                }.bind(this, processId)
+            );
+
+            // Make sure client CLI still alive before deployment done, 
+            // otherwise terminate & rollback deployment
+            checkClientAvailInterval = setInterval(function(_processId) {
+                if(!this.app.get("socketManager").isClientAlive(_processId)) {
+                    reject(["Client cancelled"]);
+                    clearInterval(checkClientAvailInterval);
+                    clearInterval(grabStatusInterval);
+                    helmChild.kill();
+                }
+            }.bind(this, processId), 2000);
+
+            const podsCurrentStatus = {};
+
+            // Retrieve all pod status list and send back to
+            // client CLI in case of any changes in statuses
+            grabStatusInterval = setInterval(function(_processId) {
+                // Get all pods for the application Uuid in this namespace
+                this.getApplicationPods(namespace, appUuid).then(function(_processId, podsResponse) {
+                    // Filter out pods to keep only the new once we are trying to deploy
+                    const cPods = podsResponse.items.filter(pod => {
+                        return pod.metadata.creationTimestamp ? (new Date(pod.metadata.creationTimestamp).getTime() >= deployedAtDate) : false;
+                    })
+
+                    let changed = false;
+
+                    // Now iterate over those pods to get detailes status information
+                    for(const podResponse of cPods) {
+                        if(podResponse.status) {
+                            const podLiveStatus = {
+                                name: podResponse.metadata.labels.app,
+                                phase: podResponse.status.phase ? podResponse.status.phase : "n/a",
+                                initContainerStatuses: [],
+                                containerStatuses: [],
+                            }
+
+                            if(podResponse.status.initContainerStatuses) {
+                                for(const containerStatus of podResponse.status.initContainerStatuses.filter(p => p.name != "istio-init")) {
+                                    if(containerStatus.state) {
+                                        const stateKeys = Object.keys(containerStatus.state);
+                                        if(stateKeys.length == 1) {
+                                            const stateName = stateKeys[0];
+                                            podLiveStatus.initContainerStatuses.push({
+                                                name: containerStatus.name,
+                                                state: stateName,
+                                                reason: containerStatus.state[stateName].reason ? containerStatus.state[stateName].reason : null,
+                                                message: containerStatus.state[stateName].message ? containerStatus.state[stateName].message : null
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+
+                            if(podResponse.status.containerStatuses) {
+                                for(const containerStatus of podResponse.status.containerStatuses.filter(p => p.name != "istio-proxy")) {
+                                    if(containerStatus.state) {
+                                        const stateKeys = Object.keys(containerStatus.state);
+                                        if(stateKeys.length == 1) {
+                                            const stateName = stateKeys[0];
+                                            podLiveStatus.containerStatuses.push({
+                                                name: containerStatus.name,
+                                                state: stateName,
+                                                reason: containerStatus.state[stateName].reason ? containerStatus.state[stateName].reason : null,
+                                                message: containerStatus.state[stateName].message ? containerStatus.state[stateName].message : null,
+                                                started: containerStatus.started
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+
+                            if(!podsCurrentStatus[podResponse.metadata.name]) {
+                                podsCurrentStatus[podResponse.metadata.name] = podLiveStatus;
+                                changed = true;
+                            } else if(JSON.stringify(podsCurrentStatus[podResponse.metadata.name]) != JSON.stringify(podLiveStatus)) {
+                                podsCurrentStatus[podResponse.metadata.name] = podLiveStatus;
+                                changed = true;
+                            }
+                        }
+                    }
+
+                    if(changed) {
+                        if(this.app.get("socketManager").isClientAlive(_processId)) {
+                            this.app.get("socketManager").emit(_processId, {
+                                raw: true,
+                                deployStatus: podsCurrentStatus
+                            });
+                        }
+                    }
+                }.bind(this, processId)).catch(function(processId, err) {
+                    console.log("PODS list & status lookup error:", err);
+                }.bind(this, processId))
+            }.bind(this, processId), 2000);
+        });
     }
 }
 
