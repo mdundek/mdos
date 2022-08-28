@@ -489,11 +489,11 @@ const buildPushComponent = async (userInfo, targetRegistry, appComp, root) => {
 		// If mdos registry, login first
 		if(targetRegistry && userInfo.registry == targetRegistry) {
 			if(os.platform() === "linux") {
-				await terminalCommand(`echo "${userInfo.registryPassword}" | docker login --username ${userInfo.registryUser} --password-stdin`);
+				await terminalCommand(`echo "${userInfo.registryPassword}" | docker login ${userInfo.registry} --username ${userInfo.registryUser} --password-stdin`);
 			} else if(os.platform() === "darwin") {
-				await terminalCommand(`echo "${userInfo.registryPassword}" | docker login --username ${userInfo.registryUser} --password-stdin`);
+				await terminalCommand(`echo "${userInfo.registryPassword}" | docker login ${userInfo.registry} --username ${userInfo.registryUser} --password-stdin`);
 			} else if(os.platform() === "win32") {
-				await terminalCommand(`echo | set /p="${userInfo.registryPassword}" | docker login --username ${userInfo.registryUser} --password-stdin`);
+				await terminalCommand(`echo | set /p="${userInfo.registryPassword}" | docker login ${userInfo.registry} --username ${userInfo.registryUser} --password-stdin`);
 			} else {
 				error("Unsupported platform");
 				process.exit(1);

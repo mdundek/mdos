@@ -38,7 +38,7 @@ export default class RemoveRole extends Command {
             this.showError(error);
 			process.exit(1);
         }
-		
+
         let q = filterQuestions(RemoveRole.questions, "user", flags);
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
         
@@ -66,7 +66,7 @@ export default class RemoveRole extends Command {
         // Get existing clients
         let respClients: { data: any[] }
         try {
-            respClients = await this.api(`keycloak?target=clients&realm=mdos`, "get")
+            respClients = await this.api(`keycloak?target=clients&realm=mdos&include_mdos=true`, "get")
         } catch (error) {
             this.showError(error);
             process.exit(1);
