@@ -8,7 +8,7 @@ const path = require("path");
 const inquirer = require('inquirer')
 const open = require('open');
 const axios = require('axios').default;
-const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage } = require('./lib/tools')
+const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage, getConsoleLineHandel } = require('./lib/tools')
 const SocketManager = require("./lib/socket.js");
 
 type AxiosConfig = {
@@ -19,6 +19,7 @@ type AxiosConfig = {
 export default abstract class extends Command {
 	authMode: string;
 	socketManager: any;
+	getConsoleLineHandel: any;
 
 	/**
 	 * constructor
@@ -34,6 +35,8 @@ export default abstract class extends Command {
 
 		this.authMode = nconf.get("auth_mode")
 		if(!this.authMode) this.authMode = "oidc"
+
+		this.getConsoleLineHandel = getConsoleLineHandel;
 	}
 
 	/**
@@ -41,7 +44,11 @@ export default abstract class extends Command {
 	 */
 	async initSocketIo() {
 		const API_URI = await this._collectApiServerUrl();
-		this.socketManager = new SocketManager(API_URI);
+		let kcCookie = null;
+		if(this.authMode != "none") {
+			kcCookie = this.getConfig("JWT_TOKEN");
+		}
+		this.socketManager = new SocketManager(API_URI, kcCookie);
 	}
 	/**
 	 * getConfig
