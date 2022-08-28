@@ -10,12 +10,29 @@ export default class AddRole extends Command {
 
 	// ******* FLAGS *******
 	static flags = {
+        target: Flags.string({ char: 't', description: 'Keycloak client target' }),
 		username: Flags.string({ char: 'u', description: 'Keycloak username to add role for' }),
         clientId: Flags.string({ char: 'c', description: 'Keycloak clientId of the user' }),
         role: Flags.string({ char: 'r', description: 'Keycloak role name to add to this user' }),
 	}
 	// ***** QUESTIONS *****
     static questions = [
+        {
+            group: "roleTarget",
+            type: 'list',
+            name: 'target',
+            message: 'Do you want to add a role from the Mdos admin client or from a tenant client?',
+            choices: [
+                {
+                    name: 'Mdos admin client role',
+                    value: 'mdos',
+                },
+                {
+                    name: 'Tenant client role',
+                    value: 'namespace',
+                },
+            ],
+        },
         {
             group: "user",
             type: 'text',
@@ -37,28 +54,55 @@ export default class AddRole extends Command {
             this.showError(error);
 			process.exit(1);
         }
-		
-        // Get client id & uuid
-        let clientResponse: { clientId: any; clientUuid?: any; clientName?: any };
-        try {
-            clientResponse = await this.collectClientId(flags);
-        } catch (error) {
-            this.showError(error);
-            process.exit(1);
-        }
-        
-        // Get all Client roles
+
+        // Select target client type
+        let q = filterQuestions(AddRole.questions, "roleTarget", flags);
+        let userResponses = q.length > 0 ? await inquirer.prompt(q) : {}
+
         let respClientRoles;
-        try {
-            respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
-        } catch (error) {
-            this.showError(error);
-            process.exit(1);
-        }
-        if(respClientRoles.data.length == 0) {
-            error("There are no roles asssociated to this client yet. Create a client role first using the command:");
-            console.log("   mdos kc client create-role");
-            process.exit(1);
+        let clientResponse: { clientId: any; clientUuid?: any; clientName?: any };
+
+        if(userResponses.target == "namespace") {
+            // Get client id & uuid
+            try {
+                clientResponse = await this.collectClientId(flags);
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
+
+            // Get all Client roles
+            try {
+                respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
+
+            if(respClientRoles.data.length == 0) {
+                error("There are no roles asssociated to this client yet. Create a client role first using the command:");
+                console.log("   mdos kc client create-role");
+                process.exit(1);
+            }
+        } else {
+            // Get all Client roles
+            try {
+                respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=mdos`, "get")
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
+
+            if(respClientRoles.data.length == 0) {
+                error("There are no roles asssociated to this client yet. Create a client role first using the command:");
+                console.log("   mdos kc client create-role");
+                process.exit(1);
+            }
+
+            const mdosIncClientResponse = await this.api("keycloak?target=clients&realm=mdos&include_mdos=true", "get");
+            const targetClient = mdosIncClientResponse.data.find((o: { clientId: string }) => o.clientId == "mdos")
+			
+			clientResponse = {clientId: targetClient.clientId, clientUuid: targetClient.id, clientName: targetClient.clientName};
         }
 
         // Compute target client role
@@ -83,8 +127,8 @@ export default class AddRole extends Command {
         }
         
         // Select username
-        let q = filterQuestions(AddRole.questions, "user", flags);
-        let userResponses = q.length > 0 ? await inquirer.prompt(q) : {}
+        q = filterQuestions(AddRole.questions, "user", flags);
+        userResponses = q.length > 0 ? await inquirer.prompt(q) : {}
 
         const targetUsername = flags.username ? flags.username : userResponses.username;
 
@@ -95,6 +139,7 @@ export default class AddRole extends Command {
             this.showError(error);
             process.exit(1);
         }
+       
         const targetUser = allUsers.data.find((u: { username: any }) => u.username == targetUsername)
         if(!targetUser) {
             error("Username not found");
@@ -109,13 +154,13 @@ export default class AddRole extends Command {
             this.showError(error);
             process.exit(1);
         }
-
+    
         const existingMappingsForClient = userRolesResponse.data.filter((cm: { client: any }) => cm.client == clientResponse.clientId)
         if(existingMappingsForClient.find((m: { name: any }) => m.name == roleResponses.roleName)) {
             warn("User already has this client role");
             process.exit(1);
         }
-
+        
         // Add role for user now
         CliUx.ux.action.start('Add role to user')
         try {
