@@ -35,6 +35,18 @@ const info = (text, skipLineBefore, skipLineAFter) => {
 }
 
 /**
+ * success
+ * @param {*} text 
+ * @param {*} skipLineBefore 
+ * @param {*} skipLineAFter 
+ */
+ const success = (text, skipLineBefore, skipLineAFter) => {
+	if(!skipLineBefore) console.log();
+	console.log(chalk.yellow.underline("SUCCESS"), ":", chalk.gray(text));
+	if(!skipLineAFter) console.log();
+}
+
+/**
  * error
  * @param {*} text 
  * @param {*} skipLineBefore 
@@ -539,6 +551,7 @@ const getConsoleLineHandel = (initialValue) => {
 
 module.exports = {
     info,
+	success,
 	error,
 	warn,
 	context,
