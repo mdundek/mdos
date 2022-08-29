@@ -137,6 +137,13 @@ export default class Deploy extends Command {
                     // Pod phase line
 
                     // Identify if state is an error
+                    let isPending = false
+                    if([
+                        "Pending"
+                    ].includes(data.deployStatus[podName].phase))
+                        isPending = true
+
+                    // Identify if state is an error
                     let isError = false
                     if([
                         "Failed", 
@@ -152,18 +159,29 @@ export default class Deploy extends Command {
                     ].includes(data.deployStatus[podName].phase))
                         isSuccess = true
 
+                    // If success, make sure it's not a false success
+                    let falseSuccess = false
+                    if(isSuccess) {
+                        const notReadyInitContainers = data.deployStatus[podName].initContainerStatuses.find((statusObj: { ready: any }) => !statusObj.ready)
+                        const notReadyContainers = data.deployStatus[podName].containerStatuses.find((statusObj: { started: any }) => !statusObj.started)
+
+                        if(notReadyInitContainers || notReadyContainers) {
+                            falseSuccess = true
+                        }
+                    }
+                
                     if(data.deployStatus[podName].phase) {
                         lineName = `${podName}-phase`
                         existingConsole = consoleHandles.find(cObj => cObj.name == lineName);
-                        logLine = `    Phase: ${data.deployStatus[podName].phase}`
+                        logLine = `    Phase: ${data.deployStatus[podName].phase}${isSuccess && falseSuccess ? " (but not ready)":""}`
                         if(!existingConsole) {
                             existingConsole = {
                                 name: lineName,
-                                set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : isSuccess ? chalk.green(logLine) : chalk.cyan.dim(logLine))
+                                set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : isSuccess && !falseSuccess ? chalk.green(logLine) : isPending ? chalk.grey(logLine) : chalk.yellow.dim(logLine))
                             }
                             consoleHandles.push(existingConsole)
                         } else {
-                            existingConsole.set(isError ? chalk.red(logLine) : isSuccess ? chalk.green(logLine) : chalk.cyan.dim(logLine));
+                            existingConsole.set(isError ? chalk.red(logLine) : isSuccess && !falseSuccess ? chalk.green(logLine) : isPending ? chalk.grey(logLine) : chalk.yellow.dim(logLine));
                         }
                     }
 
@@ -207,6 +225,12 @@ export default class Deploy extends Command {
                         if(initContainerStatus.state == "waiting" && [
                             "ErrImagePull", 
                             "ImagePullBackOff",
+                            "CrashLoopBackOff",
+                            "Error"
+                        ].includes(initContainerStatus.reason ? initContainerStatus.reason : ""))
+                            isError = true
+
+                        if(initContainerStatus.state == "terminated" && [
                             "Error"
                         ].includes(initContainerStatus.reason ? initContainerStatus.reason : ""))
                             isError = true
@@ -247,7 +271,14 @@ export default class Deploy extends Command {
                         let isError = false
                         if(containerStatus.state == "waiting" && [
                             "ErrImagePull", 
-                            "ImagePullBackOff"
+                            "ImagePullBackOff",
+                            "CrashLoopBackOff",
+                            "Error"
+                        ].includes(containerStatus.reason ? containerStatus.reason : ""))
+                            isError = true
+
+                        if(containerStatus.state == "terminated" && [
+                            "Error"
                         ].includes(containerStatus.reason ? containerStatus.reason : ""))
                             isError = true
 
