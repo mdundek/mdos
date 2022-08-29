@@ -144,13 +144,22 @@ const extractErrorMessage = (error, allErrors) => {
 		errorMsg.push(error.response.data.message);
 	}
 
-	if(errorMsg.length > 0)
-		if(allErrors)
+	if(errorMsg.length > 0) {
+		if(allErrors) {
 			return errorMsg.join("\n");
-		else
-			return errorMsg.pop();
-	else
+		}
+		else {
+			let retainedError = "";
+			errorMsg.forEach((msg) => {
+				if(retainedError.length < msg.length)
+					retainedError = msg
+			});
+			return retainedError;
+		}
+	}
+	else {
 		return "An unknown error occured!"
+	}
 }
 
 /**
