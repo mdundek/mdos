@@ -562,11 +562,11 @@ install_nginx() {
         systemctl start nginx &>> $LOG_FILE
     fi
 
-    if [ ! -f /etc/nginx/conf.d/k3s.conf ]; then
-        cp ./dep/proxy/k3s.conf /etc/nginx/conf.d/
+    if [ ! -f /etc/nginx/conf.d/mdos.conf ]; then
+        cp ./dep/proxy/mdos.conf /etc/nginx/conf.d/
 
-        sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/k3s.conf
-        sed -i "s/__NODE_IP__/127.0.0.1/g" /etc/nginx/conf.d/k3s.conf
+        sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s/__NODE_IP__/127.0.0.1/g" /etc/nginx/conf.d/mdos.conf
     fi
 
     # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway

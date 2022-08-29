@@ -97,7 +97,7 @@ class MdosCore extends CommonCore {
         // Create namespace if not exist
         const nsFound = await this.app.get('kube').hasNamespace(valuesYaml.tenantName)
         if (!nsFound) {
-            throw new NotFound("The target namespace does not exist. You need to create it first using the command: mdos namespace create")
+            throw new NotFound(`The namespace "${valuesYaml.tenantName}" does not exist. You need to create it first using the command: mdos namespace create`)
         }
         // If namespace exist, make sure it has the required mdos secrets
         else {
@@ -110,7 +110,7 @@ class MdosCore extends CommonCore {
             }
 
             // If sync volues , make sure we have a minio secret
-            if (valuesYaml.components.find((component) => component.volumes.find((v) => v.syncVolume))) {
+            if (valuesYaml.components.find((component) => component.volumes ? component.volumes.find((v) => v.syncVolume) : false)) {
                 const minioCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, 's3-read')
                 if (!minioCredsFound) {
                     throw new Conflict("The target namespace seems to be missing the secret named 's3-read'")

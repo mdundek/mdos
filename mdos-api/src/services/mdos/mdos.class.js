@@ -1,5 +1,5 @@
 const YAML = require('yaml')
-const { NotFound } = require('@feathersjs/errors')
+const { BadRequest } = require('@feathersjs/errors')
 const MdosCore = require('./mdos.class.core')
 
 /* eslint-disable no-unused-vars */
@@ -42,24 +42,29 @@ exports.Mdos = class Mdos extends MdosCore {
             // Ensure namespace is ready
             await this.prepareNamespaceForDeployment(valuesYaml);
 
+            // Make sure we have at least one component
+            if(!valuesYaml.components || valuesYaml.components.length == 0) {
+                throw new BadRequest("Application has no components");
+            }
+
             // Enrich values data
             valuesYaml = await this.enrichValuesForDeployment(valuesYaml);
 
             // If we need to make sure that the pod gets restarted if already deployed because of a volume sync change
             if (data.restart) {
-                valuesYaml.forceUpdate = true
+                valuesYaml.forceUpdate = true;
             }
 
             // Deploy
-            await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId)
+            await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId);
         } else {
             throw new BadRequest("Malformed API request");
         }
-        return data
+        return data;
     }
 
     async update(id, data, params) {
-        return data
+        return data;
     }
 
     async patch(id, data, params) {

@@ -47,6 +47,12 @@ export default class Deploy extends Command {
             this.showError(error)
             process.exit(1);
         }
+
+        // Make sure there is at least one component
+        if(!appYaml.components || appYaml.components.length == 0) {
+            error("This application does not contain any components")
+            process.exit(1)
+        }
         
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it

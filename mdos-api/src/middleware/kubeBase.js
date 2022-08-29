@@ -166,10 +166,49 @@ class KubeBase {
      */
     async getApplicationPods(namespaceName, appUuid) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/pods`);
-        myUrlWithParams.searchParams.append("appUuid", appUuid);
-
+        myUrlWithParams.searchParams.append("labelSelector", `appUuid=${appUuid}`);
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader);
         return res.data;
+    }
+
+    /**
+     * getApplicationDeployment
+     * @param {*} namespaceName 
+     * @param {*} appUuid 
+     * @returns 
+     */
+     async getApplicationDeployment(namespaceName, appUuid) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments`);
+        myUrlWithParams.searchParams.append("labelSelector", `appUuid=${appUuid}`);
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader);
+        return res.data;
+    }
+
+    /**
+     * deleteDeployment
+     */
+     async deleteDeployment(namespaceName, deploymentName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments/${deploymentName}`, this.k8sAxiosHeader);
+    }
+
+    /**
+     * getApplicationStatefullSets
+     * @param {*} namespaceName 
+     * @param {*} appUuid 
+     * @returns 
+     */
+     async getApplicationStatefullSets(namespaceName, appUuid) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/statefulsets`);
+        myUrlWithParams.searchParams.append("labelSelector", `appUuid=${appUuid}`);
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader);
+        return res.data;
+    }
+
+    /**
+     * deleteStatefullSet
+     */
+     async deleteStatefullSet(namespaceName, statefullsetName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/statefulsets/${statefullsetName}`, this.k8sAxiosHeader);
     }
 
     /**
@@ -215,7 +254,6 @@ class KubeBase {
         // Create namespace
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, nsJson, this.k8sAxiosHeader);
     }
-
 
     /**
      * createRegistrySecret
@@ -329,14 +367,17 @@ class KubeBase {
     _asyncChildHelmDeploy(cmd, processId, namespace, appUuid) {
         return new Promise((resolve, reject) => {
             let hasErrors = false;
-            const errArray = [];
-
+            let wasCanceled = false;
             let checkClientAvailInterval = null;
             let grabStatusInterval = null;
+            const errArray = [];
 
             const deployedAtDate = new Date().getTime() - 1000;
 
-            // Start async deployment
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+            // Start async deployment and monitor outputs
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
             const helmChild = terminalCommandAsync(
                 cmd,
                 // On STDOUT
@@ -363,33 +404,69 @@ class KubeBase {
                         clearInterval(grabStatusInterval);
                     if(hasErrors) {
                         reject(errArray)
+                    } else if(wasCanceled) {
+                        reject(["Deployment canceled by client"]);
                     } else {
                         resolve();
                     }
                 }.bind(this, processId)
             );
 
-            // Make sure client CLI still alive before deployment done, 
-            // otherwise terminate & rollback deployment
-            checkClientAvailInterval = setInterval(function(_processId) {
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+            // Make sure client CLI still alive before deployment
+            // done, otherwise terminate & rollback deployment
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+            checkClientAvailInterval = setInterval(function(_processId, _namespace, _appUuid, _deployedAtDate, _helmChild) {
                 if(!this.app.get("socketManager").isClientAlive(_processId)) {
-                    reject(["Client cancelled"]);
+                    wasCanceled = true;
                     clearInterval(checkClientAvailInterval);
                     clearInterval(grabStatusInterval);
-                    helmChild.kill();
+                    _helmChild.kill('SIGINT'); 
+
+                    // In case of crash loop backoff errors, killing the HELM process is sometimes not enougth.
+                    // We also need to delete the deployments / statefullsets. Therefore, we wait 3 seconds, 
+                    // get deployments associated to this appUuid and delete it manually if still hannging around
+                    setTimeout(function(__namespace, __appUuid, __deployedAtDate) {
+                        // Make sure deployments get deleted
+                        this.getApplicationDeployment(__namespace, __appUuid).then(function(___namespace, deploymentResult) {
+                            // Make sure we dont target existing previous deployments
+                            const fDeployments = deploymentResult.items.filter(dep => {
+                                return dep.metadata.creationTimestamp ? (new Date(dep.metadata.creationTimestamp).getTime() >= __deployedAtDate) : false;
+                            });
+                            // Now delete if any left
+                            for(deployment of fDeployments) {
+                                this.deleteDeployment(___namespace, deployment.metadata.name).then(() => {}).catch((_e) => {});
+                            };
+                        }.bind(this, __namespace)).catch((_e) => { });
+                        // Make sure statefullsets get deleted
+                        this.getApplicationStatefullSets(__namespace, __appUuid).then(function(___namespace, statefullSetsResult) {
+                            // Make sure we dont target existing previous deployments
+                            const fStatefullSets = statefullSetsResult.items.filter(sts => {
+                                return sts.metadata.creationTimestamp ? (new Date(sts.metadata.creationTimestamp).getTime() >= __deployedAtDate) : false;
+                            });
+                            // Now delete if any left
+                            for(statefullset of fStatefullSets) {
+                                this.deleteStatefullSet(___namespace, statefullset.metadata.name).then(() => {}).catch((_e) => {});
+                            };
+                        }.bind(this, __namespace)).catch((_e) => { })
+                    }.bind(this, _namespace, _appUuid, _deployedAtDate), 3000);
+
                 }
-            }.bind(this, processId), 2000);
+            }.bind(this, processId, namespace, appUuid, deployedAtDate, helmChild), 1000);
 
-            const podsCurrentStatus = {};
-
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
             // Retrieve all pod status list and send back to
             // client CLI in case of any changes in statuses
-            grabStatusInterval = setInterval(function(_processId) {
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+            const podsCurrentStatus = {};
+            grabStatusInterval = setInterval(function(_processId, _namespace, _appUuid, _deployedAtDate) {
                 // Get all pods for the application Uuid in this namespace
-                this.getApplicationPods(namespace, appUuid).then(function(_processId, podsResponse) {
+                this.getApplicationPods(_namespace, _appUuid).then(function(_processId, podsResponse) {
                     // Filter out pods to keep only the new once we are trying to deploy
                     const cPods = podsResponse.items.filter(pod => {
-                        return pod.metadata.creationTimestamp ? (new Date(pod.metadata.creationTimestamp).getTime() >= deployedAtDate) : false;
+                        return pod.metadata.creationTimestamp ? (new Date(pod.metadata.creationTimestamp).getTime() >= _deployedAtDate) : false;
                     })
 
                     let changed = false;
@@ -404,7 +481,9 @@ class KubeBase {
                                 containerStatuses: [],
                             }
 
+                            // First, init containers if any
                             if(podResponse.status.initContainerStatuses) {
+                                // Ignore istio-init container
                                 for(const containerStatus of podResponse.status.initContainerStatuses.filter(p => p.name != "istio-init")) {
                                     if(containerStatus.state) {
                                         const stateKeys = Object.keys(containerStatus.state);
@@ -414,14 +493,17 @@ class KubeBase {
                                                 name: containerStatus.name,
                                                 state: stateName,
                                                 reason: containerStatus.state[stateName].reason ? containerStatus.state[stateName].reason : null,
-                                                message: containerStatus.state[stateName].message ? containerStatus.state[stateName].message : null
+                                                message: containerStatus.state[stateName].message ? containerStatus.state[stateName].message : null,
+                                                ready: containerStatus.ready
                                             });
                                         }
                                     }
                                 }
                             }
 
+                            // Now all other containers
                             if(podResponse.status.containerStatuses) {
+                                // Ignore istio-proxy container
                                 for(const containerStatus of podResponse.status.containerStatuses.filter(p => p.name != "istio-proxy")) {
                                     if(containerStatus.state) {
                                         const stateKeys = Object.keys(containerStatus.state);
@@ -432,13 +514,15 @@ class KubeBase {
                                                 state: stateName,
                                                 reason: containerStatus.state[stateName].reason ? containerStatus.state[stateName].reason : null,
                                                 message: containerStatus.state[stateName].message ? containerStatus.state[stateName].message : null,
-                                                started: containerStatus.started
+                                                ready: containerStatus.ready,
+                                                started: containerStatus.started ? containerStatus.started : false
                                             });
                                         }
                                     }
                                 }
                             }
 
+                            // Save current status data in memory for later comparison
                             if(!podsCurrentStatus[podResponse.metadata.name]) {
                                 podsCurrentStatus[podResponse.metadata.name] = podLiveStatus;
                                 changed = true;
@@ -449,6 +533,7 @@ class KubeBase {
                         }
                     }
 
+                    // Status has changed, broadcast to CLI
                     if(changed) {
                         if(this.app.get("socketManager").isClientAlive(_processId)) {
                             this.app.get("socketManager").emit(_processId, {
@@ -460,7 +545,7 @@ class KubeBase {
                 }.bind(this, processId)).catch(function(processId, err) {
                     console.log("PODS list & status lookup error:", err);
                 }.bind(this, processId))
-            }.bind(this, processId), 2000);
+            }.bind(this, processId, namespace, appUuid, deployedAtDate), 2000);
         });
     }
 }
