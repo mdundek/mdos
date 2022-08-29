@@ -158,6 +158,17 @@ class KubeBase {
         return res.data;
     }
 
+    
+    /**
+     * getPodLogs
+     */
+    async getPodLogs(namespaceName, podName, containerName) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/pods/${podName}/log`);
+        myUrlWithParams.searchParams.append("container", containerName);
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader);
+        return res.data;
+    }
+
     /**
      * getApplicationPods
      * @param {*} namespaceName 
@@ -339,10 +350,11 @@ class KubeBase {
 
         try {
             await this._asyncChildHelmDeploy(
-                `${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --atomic`, 
+                `${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --timeout 10m0s --atomic`, 
                 processId, 
                 values.tenantName,
-                values.uuid
+                values.uuid,
+                values.appName
             );
         } catch (error) {
             if(doCreateNs) {
@@ -364,7 +376,7 @@ class KubeBase {
      * @param {*} appUuid
      * @returns 
      */
-    _asyncChildHelmDeploy(cmd, processId, namespace, appUuid) {
+    _asyncChildHelmDeploy(cmd, processId, namespace, appUuid, appName) {
         return new Promise((resolve, reject) => {
             let hasErrors = false;
             let wasCanceled = false;
@@ -397,19 +409,29 @@ class KubeBase {
                     hasErrors = true;
                 }.bind(this, processId),
                 // On DONE
-                function(_processId) {
+                function(_processId, _namespace, _appUuid, _appName, _deployedAtDate) {
                     if(checkClientAvailInterval)
                         clearInterval(checkClientAvailInterval);
                     if(grabStatusInterval)
                         clearInterval(grabStatusInterval);
                     if(hasErrors) {
-                        reject(errArray)
+                        reject(errArray);
                     } else if(wasCanceled) {
                         reject(["Deployment canceled by client"]);
                     } else {
-                        resolve();
+                        // Success, we get the pod logs and send them over to client for final display
+                        this._getAppLogs(null, _namespace, _appUuid, _appName, _deployedAtDate).then(function(__processId, allAppLogs) {
+                            this._broadcastToClient(__processId, {
+                                raw: true,
+                                appLogs: allAppLogs
+                            });
+                            resolve();
+                        }.bind(this, _processId)).catch(function(err) {
+                            console.log("ERROR", err);
+                            resolve();
+                        });
                     }
-                }.bind(this, processId)
+                }.bind(this, processId, namespace, appUuid, appName, deployedAtDate)
             );
 
             // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -417,7 +439,7 @@ class KubeBase {
             // done, otherwise terminate & rollback deployment
             // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-            checkClientAvailInterval = setInterval(function(_processId, _namespace, _appUuid, _deployedAtDate, _helmChild) {
+            checkClientAvailInterval = setInterval(function(_processId, _namespace, _appUuid, _appName, _deployedAtDate, _helmChild) {
                 if(!this.app.get("socketManager").isClientAlive(_processId)) {
                     wasCanceled = true;
                     clearInterval(checkClientAvailInterval);
@@ -427,7 +449,7 @@ class KubeBase {
                     // In case of crash loop backoff errors, killing the HELM process is sometimes not enougth.
                     // We also need to delete the deployments / statefullsets. Therefore, we wait 3 seconds, 
                     // get deployments associated to this appUuid and delete it manually if still hannging around
-                    setTimeout(function(__namespace, __appUuid, __deployedAtDate) {
+                    setTimeout(function(__namespace, __appUuid, __appName, __deployedAtDate) {
                         // Make sure deployments get deleted
                         this.getApplicationDeployment(__namespace, __appUuid).then(function(___namespace, deploymentResult) {
                             // Make sure we dont target existing previous deployments
@@ -450,29 +472,31 @@ class KubeBase {
                                 this.deleteStatefullSet(___namespace, statefullset.metadata.name).then(() => {}).catch((_e) => {});
                             };
                         }.bind(this, __namespace)).catch((_e) => { })
-                    }.bind(this, _namespace, _appUuid, _deployedAtDate), 3000);
+                    }.bind(this, _namespace, _appUuid, _appName, _deployedAtDate), 3000);
 
                 }
-            }.bind(this, processId, namespace, appUuid, deployedAtDate, helmChild), 1000);
+            }.bind(this, processId, namespace, appUuid, appName, deployedAtDate, helmChild), 1000);
 
-            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
             // Retrieve all pod status list and send back to
             // client CLI in case of any changes in statuses
-            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+            // Also collect latest pod logs to return to user
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
             const podsCurrentStatus = {};
-            grabStatusInterval = setInterval(function(_processId, _namespace, _appUuid, _deployedAtDate) {
+            grabStatusInterval = setInterval(function(_processId, _namespace, _appUuid, _appName, _deployedAtDate) {
                 // Get all pods for the application Uuid in this namespace
-                this.getApplicationPods(_namespace, _appUuid).then(function(_processId, podsResponse) {
+                this.getApplicationPods(_namespace, _appUuid).then(function(__processId, __namespace, __appUuid, __appName, __deployedAtDate, podsResponse) {
                     // Filter out pods to keep only the new once we are trying to deploy
                     const cPods = podsResponse.items.filter(pod => {
-                        return pod.metadata.creationTimestamp ? (new Date(pod.metadata.creationTimestamp).getTime() >= _deployedAtDate) : false;
+                        return pod.metadata.creationTimestamp ? (new Date(pod.metadata.creationTimestamp).getTime() >= __deployedAtDate) : false;
                     })
 
                     let changed = false;
 
                     // Now iterate over those pods to get detailes status information
                     for(const podResponse of cPods) {
+                        // Process Pod status
                         if(podResponse.status) {
                             const podLiveStatus = {
                                 name: podResponse.metadata.labels.app,
@@ -533,20 +557,84 @@ class KubeBase {
                         }
                     }
 
+                    // Collect logs
+                    this._getAppLogs(cPods, __namespace, __appUuid, __appName, __deployedAtDate).then(function(___processId, allAppLogs) {
+                        this._broadcastToClient(___processId, {
+                            raw: true,
+                            appLogs: allAppLogs
+                        });
+                    }.bind(this, __processId)).catch(function(err) {
+                        console.log("ERROR", err);
+                    });
+                   
                     // Status has changed, broadcast to CLI
                     if(changed) {
-                        if(this.app.get("socketManager").isClientAlive(_processId)) {
-                            this.app.get("socketManager").emit(_processId, {
-                                raw: true,
-                                deployStatus: podsCurrentStatus
-                            });
-                        }
+                        this._broadcastToClient(__processId, {
+                            raw: true,
+                            deployStatus: podsCurrentStatus
+                        });
                     }
-                }.bind(this, processId)).catch(function(processId, err) {
+                }.bind(this, _processId, _namespace, _appUuid, _appName, _deployedAtDate)).catch(function(processId, err) {
                     console.log("PODS list & status lookup error:", err);
-                }.bind(this, processId))
-            }.bind(this, processId, namespace, appUuid, deployedAtDate), 2000);
+                }.bind(this, _processId))
+            }.bind(this, processId, namespace, appUuid, appName, deployedAtDate), 2000);
         });
+    }
+
+    /**
+     * _broadcastToClient
+     */
+    _broadcastToClient(processId, data) {
+        if(this.app.get("socketManager").isClientAlive(processId)) {
+            this.app.get("socketManager").emit(processId, data);
+        }
+    }
+
+    /**
+     * _getAppLogs
+     */
+    async _getAppLogs(cPods, namespace, appUuid, appName, deployedAtDate) {
+        let appLogs = {};
+        if(!cPods){
+            const appPodResponse = await this.getApplicationPods(namespace, appUuid);
+           
+            // Filter out pods to keep only the new once we are trying to deploy
+            cPods = appPodResponse.items.filter(pod => {
+                return pod.metadata.creationTimestamp ? (new Date(pod.metadata.creationTimestamp).getTime() >= deployedAtDate) : false;
+            });
+        }
+           
+        if(cPods.length == 0)
+            return appLogs;
+
+        for(const podResponse of cPods) {
+            // Now get pod logs
+            const logObjects = await this._getAppPodLogs(namespace, appUuid, appName, podResponse);
+            appLogs = {...appLogs, ...logObjects};
+        }
+        return appLogs;
+    }
+
+    /**
+     * _getAppPodLogs
+     */
+    async _getAppPodLogs(namespace, appUuid, appName, podResponse) {
+        const podLogs = {};
+        if(podResponse.status.phase != "Pending") {
+            const initContainerNames = podResponse.spec.initContainers.map(c => c.name).filter(n => n != "istio-init");
+            const containerNames = podResponse.spec.containers.map(c => c.name).filter(n => n != "istio-proxy");
+
+            for(let icname of initContainerNames) {
+                const logs = await this.getPodLogs(namespace, podResponse.metadata.name, icname);
+                podLogs[`${appName}::${podResponse.metadata.labels.app}::${icname}`] = logs;
+            }
+
+            for(let cname of containerNames) {
+                const logs = await this.getPodLogs(namespace, podResponse.metadata.name, cname);
+                podLogs[`${appName}::${podResponse.metadata.labels.app}::${cname}`] = logs;
+            }
+        }
+        return podLogs;
     }
 }
 

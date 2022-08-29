@@ -1,5 +1,5 @@
 const YAML = require('yaml')
-const { BadRequest } = require('@feathersjs/errors')
+const { BadRequest, GeneralError } = require('@feathersjs/errors')
 const MdosCore = require('./mdos.class.core')
 
 /* eslint-disable no-unused-vars */
@@ -56,7 +56,14 @@ exports.Mdos = class Mdos extends MdosCore {
             }
 
             // Deploy
-            await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId);
+            try {
+                await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId);
+            } catch (helmError) {
+                if(Array.isArray(helmError))
+                    throw new GeneralError(helmError.join("\n"));
+                else
+                    throw helmError;
+            }
         } else {
             throw new BadRequest("Malformed API request");
         }
