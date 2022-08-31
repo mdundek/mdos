@@ -167,6 +167,14 @@ class MdosCore extends CommonCore {
                     throw new Unavailable('Provider not supported')
                 }
             }
+
+            // Set default ingress type if not set
+            if (component.ingress) {
+                component.ingress = component.ingress.map((i) => {
+                    if(!i.trafficType) i.trafficType = "http"
+                    return i
+                })
+            }
         }
 
         return valuesYaml;

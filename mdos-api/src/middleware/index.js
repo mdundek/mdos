@@ -2,6 +2,7 @@ const Kube = require("./kube.js");
 const Keycloak = require("./keycloak.js");
 const S3 = require("./s3.js");
 const SocketManager = require("./socket");
+const SchemaValidator = require("./schemaValidator/index");
 
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
@@ -11,4 +12,7 @@ module.exports = function (app) {
   app.set("keycloak", new Keycloak(app));
   app.set("s3", new S3(app));
   app.set("socketManager", new SocketManager(app));
+  app.set("schemaValidator", {
+    v1: new SchemaValidator("v1")
+  });
 }
