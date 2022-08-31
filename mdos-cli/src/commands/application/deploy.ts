@@ -1,8 +1,8 @@
 import { Flags, CliUx } from '@oclif/core'
-import Command from '../base'
+import Command from '../../base'
 
 const inquirer = require('inquirer')
-const { info, success, context, error, s3sync, isDockerInstalled, buildPushComponent } = require('../lib/tools')
+const { info, success, context, error, s3sync, isDockerInstalled, buildPushComponent } = require('../../lib/tools')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
