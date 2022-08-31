@@ -35,11 +35,6 @@ app.use(favicon(path.join(app.get('public'), 'favicon.ico')))
 // Host the public folder
 
 app.get('/jwt', oidcCookieRoute.bind(this, app));
-app.get('/schemaValidatorJson', (app, req, res) => {
-    console.log(req);
-    res.send(app.get("schemaValidator")["v1"].instance.applicationSchema);
-});
-
 app.get('/healthz', function (req, res) {
     res.send("Healthy");
 });

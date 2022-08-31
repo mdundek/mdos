@@ -47,6 +47,15 @@ exports.Mdos = class Mdos extends MdosCore {
                 throw new BadRequest("Application has no components");
             }
 
+            // Validate app schema
+            if(!valuesYaml.schemaVersion || typeof valuesYaml.schemaVersion != "string") {
+                throw new BadRequest("Missing schema version in your manifest (expected property: schemaVersion)");
+            }
+            const validationErrors = this.app.get("schemaValidator")[valuesYaml.schemaVersion].instance.validate(valuesYaml);
+            if(validationErrors.length > 0) {
+                throw new BadRequest(validationErrors.map(e => e.stack).join("\n"));
+            }
+
             // Enrich values data
             valuesYaml = await this.enrichValuesForDeployment(valuesYaml);
 
