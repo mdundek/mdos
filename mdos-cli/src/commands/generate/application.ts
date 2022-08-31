@@ -26,9 +26,11 @@ export default class Application extends Command {
             type: 'text',
             name: 'applicationName',
             message: 'Enter a application name:',
-            validate: (value: { trim: () => { (): any; new(): any; length: number } }) => {
+            validate: (value: string) => {
 				if(value.trim().length == 0)
 					return "Mandatory field"
+				else if(!(/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)))
+					return "Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)"
 				if (fs.existsSync(path.join(process.cwd(), value))) {
 					return "A folder with this name already exists in this directory"
 				}
@@ -39,9 +41,11 @@ export default class Application extends Command {
             type: 'text',
             name: 'tenantName',
             message: 'Enter a tenant name that this application belongs to:',
-            validate: (value: { trim: () => { (): any; new(): any; length: number } }) => {
+            validate: (value: string) => {
 				if(value.trim().length == 0)
 					return "Mandatory field"
+				else if(!(/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)))
+					return "Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)"
 				return true
 			}
         }
