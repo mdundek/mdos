@@ -16,7 +16,7 @@ exports.Kube = class Kube extends KubeCore {
      * @param {*} params 
      * @returns 
      */
-    async find(params) {
+    async find(params, context) {
         if(params.query.target == 'namespaces') {
             try {
                 const nsListEnriched = await this.getEnrichedNamespaces(params.query.realm, params.query.includeKcClients);
@@ -25,7 +25,19 @@ exports.Kube = class Kube extends KubeCore {
                 console.log(error);
                 throw error
             }
-            
+        } else if(params.query.target == 'applications') {
+            try {
+                // Make sure namespace exists
+                if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+                    throw new NotFound("Namespace does not exist");
+                }
+
+                let nsApps = await this.getMdosApplications(params.query.clientId);
+                return nsApps;
+            } catch (error) {
+                console.log(error);
+                throw error
+            }
         } else {
             throw new BadRequest("Malformed API request");
         }
@@ -38,10 +50,13 @@ exports.Kube = class Kube extends KubeCore {
         }
     }
 
+    /**
+     * create
+     * @param {*} data 
+     * @param {*} params 
+     * @returns 
+     */
     async create(data, params) {
-        try {
-            
-       
         if (data.type == 'secret') {
             if (await this.app.get('kube').hasSecret(data.namespace, data.name)) {
                 await this.app.get('kube').replaceSecret(data.namespace, data.name, data.data)
@@ -140,10 +155,6 @@ exports.Kube = class Kube extends KubeCore {
             throw new BadRequest("Malformed API request");
         }
         return data
-    } catch (e) {
-            console.log(e);
-            throw e;
-    }
     }
 
     async update(id, data, params) {
@@ -191,7 +202,15 @@ exports.Kube = class Kube extends KubeCore {
             // Delete namespace
             if(nsExists)
                 await this.app.get('kube').deleteNamespace(id.toLowerCase());
-		} else {
+		}
+        if(params.query.target == "application") {
+            // Make sure namespace exists
+            if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+                throw new NotFound("Namespace does not exist");
+            }
+
+            await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type);
+        } else {
             throw new BadRequest("Malformed API request");
         }
 		return { id };

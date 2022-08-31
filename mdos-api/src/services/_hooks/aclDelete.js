@@ -7,7 +7,7 @@ const jwt_decode = require('jwt-decode')
  * @param {*} jwtToken 
  * @returns 
  */
- const userDeleteHook = (context, jwtToken) => {
+const userDeleteHook = (context, jwtToken) => {
     if( !jwtToken.resource_access.mdos || 
         (
             !jwtToken.resource_access.mdos.roles.includes("admin") &&
@@ -25,7 +25,7 @@ const jwt_decode = require('jwt-decode')
  * @param {*} jwtToken 
  * @returns 
  */
- const userRoleDeleteHook = (context, jwtToken) => {
+const userRoleDeleteHook = (context, jwtToken) => {
     // If mdos admin or list-user
     if(jwtToken.resource_access.mdos && (
         jwtToken.resource_access.mdos.roles.includes("admin") || 
@@ -46,7 +46,7 @@ const jwt_decode = require('jwt-decode')
  * @param {*} jwtToken 
  * @returns 
  */
- const clientRoleDeleteHook = (context, jwtToken) => {
+const clientRoleDeleteHook = (context, jwtToken) => {
     // If mdos admin or list-user
     if(jwtToken.resource_access.mdos && (
         jwtToken.resource_access.mdos.roles.includes("admin") || 
@@ -59,15 +59,15 @@ const jwt_decode = require('jwt-decode')
         throw new errors.Forbidden("You are not authorized to delete client roles");
     }
     return context;
- }
+}
 
- /**
- * clientRoleDeleteHook
+/**
+ * namespaceDeleteHook
  * @param {*} context 
  * @param {*} jwtToken 
  * @returns 
  */
-  const namespaceDeleteHook = (context, jwtToken) => {
+const namespaceDeleteHook = (context, jwtToken) => {
     // If mdos admin or list-user
     if(jwtToken.resource_access.mdos && (
         jwtToken.resource_access.mdos.roles.includes("admin") || 
@@ -77,15 +77,42 @@ const jwt_decode = require('jwt-decode')
     }
     // Otherwise unauthorized
     throw new errors.Forbidden("You are not authorized to delete namespaces");
- }
+}
 
-  /**
- * clientRoleDeleteHook
+/**
+ * applicationDeleteHook
  * @param {*} context 
  * @param {*} jwtToken 
  * @returns 
  */
-   const oidcProviderDeleteHook = (context, jwtToken) => {
+const applicationDeleteHook = (context, jwtToken) => {
+   // If mdos admin or list-user
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("delete-namespace")
+    )) {
+        return context;
+    }
+
+    // If namespace admin or write role
+    if(jwtToken.resource_access[context.params.query.clientId] && (
+        jwtToken.resource_access[context.params.query.clientId].roles.includes("admin") || 
+        jwtToken.resource_access[context.params.query.clientId].roles.includes("k8s-write")
+    )) {
+        return context;
+    }
+    
+    // Otherwise unauthorized
+    throw new errors.Forbidden("You are not authorized to delete applications");
+}
+
+/**
+ * oidcProviderDeleteHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+const oidcProviderDeleteHook = (context, jwtToken) => {
     // If mdos admin or list-user
     if(jwtToken.resource_access.mdos && (
         jwtToken.resource_access.mdos.roles.includes("admin") || 
@@ -95,7 +122,7 @@ const jwt_decode = require('jwt-decode')
     }
     // Otherwise unauthorized
     throw new errors.Forbidden("You are not authorized to delete oidc providers");
- }
+}
 
 /**
  * 
@@ -130,8 +157,14 @@ module.exports = function () {
         else if(context.path == "kube" && context.params.query.target == "tenantNamespace") {
             return await namespaceDeleteHook(context, jwtToken);
         }
+        else if(context.path == "kube" && context.params.query.target == "application") {
+            return await applicationDeleteHook(context, jwtToken);
+        }
         else if(context.path == "oidc-provider" && !context.params.query.target) {
             return await oidcProviderDeleteHook(context, jwtToken);
+        }
+        else {
+            console.log("Unknown: ", context.params.query, context.path);
         }
         
         return context;

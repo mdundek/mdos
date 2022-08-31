@@ -109,6 +109,31 @@ const clientFilterHook = async (context, jwtToken) => {
 }; 
 
 /**
+ * userApplicationsFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+const userApplicationsFilterHook = async (context, jwtToken) => {
+    if(jwtToken.resource_access.mdos && (
+        jwtToken.resource_access.mdos.roles.includes("admin") || 
+        jwtToken.resource_access.mdos.roles.includes("list-namespaces")
+    )) {
+        return context;
+    }
+
+    // filter out to keep only those who are namespace admin
+    context.result = context.result.filter(app => 
+        jwtToken.resource_access[app.namespace] && 
+        (
+            jwtToken.resource_access[app.namespace].roles.includes("admin") || 
+            jwtToken.resource_access[app.namespace].roles.includes("k8s-read") || 
+            jwtToken.resource_access[app.namespace].roles.includes("k8s-write")
+        ));
+    return context;
+};
+
+/**
  * oidcProviderFilterHook
  * @param {*} context 
  * @param {*} jwtToken 
@@ -166,6 +191,9 @@ module.exports = function () {
         }
         else if(context.path == "kube" && context.params.query.target == "namespaces") {
             return await userNamespaceFilterHook(context, jwtToken);
+        }
+        else if(context.path == "kube" && context.params.query.target == "applications") {
+            return await userApplicationsFilterHook(context, jwtToken);
         }
         else if(context.path == "oidc-provider" && !context.params.query.target) {
             return await oidcProviderFilterHook(context, jwtToken);

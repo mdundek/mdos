@@ -1,35 +1,104 @@
-const { NotFound, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
+const { NotFound, Conflict, Unavailable, Forbidden, BadRequest } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
-const CommonCore = require('../common.class.core');
+const CommonCore = require('../common.class.core')
 
 class KubeCore extends CommonCore {
-
     /**
      * constructor
      * @param {*} app
      */
     constructor(app) {
-        super(app);
+        super(app)
         this.app = app
     }
 
     /**
+     * getMdosApplications
+     * @param {*} clientId
+     */
+    async getMdosApplications(clientId) {
+        let nsApps = await this.app.get('kube').getApplicationDeployments(clientId)
+        const apps = []
+        for (const dep of nsApps.items) {
+            if (dep.metadata.annotations && dep.metadata.annotations['meta.helm.sh/release-name']) {
+                if (!apps.find((a) => a.isHelm && a.name == dep.metadata.annotations['meta.helm.sh/release-name'])) {
+                    apps.push({
+                        isHelm: true,
+                        type: 'deployment',
+                        name: dep.metadata.annotations['meta.helm.sh/release-name'],
+                        namespace: clientId,
+                    })
+                } else if (!apps.find((a) => a.name == dep.name)) {
+                    apps.push({
+                        isHelm: false,
+                        type: 'deployment',
+                        name: dep.name,
+                        namespace: clientId,
+                    })
+                }
+            }
+        }
+
+        nsApps = await this.app.get('kube').getApplicationStatefulSets(clientId)
+        for (const dep of nsApps.items) {
+            if (dep.metadata.annotations && dep.metadata.annotations['meta.helm.sh/release-name']) {
+                if (!apps.find((a) => a.isHelm && a.name == dep.metadata.annotations['meta.helm.sh/release-name'])) {
+                    apps.push({
+                        isHelm: true,
+                        type: 'statefulSet',
+                        name: dep.metadata.annotations['meta.helm.sh/release-name'],
+                        namespace: clientId,
+                    })
+                } else if (!apps.find((a) => a.name == dep.name)) {
+                    apps.push({
+                        isHelm: false,
+                        type: 'statefulSet',
+                        name: dep.name,
+                        namespace: clientId,
+                    })
+                }
+            }
+        }
+
+        return apps
+    }
+
+    /**
+     * deleteApplication
+     * @param {*} namespace
+     * @param {*} name
+     * @param {*} isHelm
+     * @param {*} type
+     */
+    async deleteApplication(namespace, name, isHelm, type) {
+        if (isHelm) {
+            await this.app.get('kube').helmUninstall(namespace, name)
+        } else if (type == 'deployment') {
+            await this.app.get('kube').deleteDeployment(namespace, name)
+        } else if (type == 'statefulSet') {
+            await this.app.get('kube').deleteStatefulSet(namespace, name)
+        } else {
+            throw new BadRequest('Application type not recognized')
+        }
+    }
+
+    /**
      * clientDoesNotExistCheck
-     * @param {*} realm 
-     * @param {*} clientId 
+     * @param {*} realm
+     * @param {*} clientId
      */
     async clientDoesNotExistCheck(realm, clientId) {
-        const response = await this.app.get("keycloak").getClients(realm);
-        if(response.find(o => o.clientId.toLowerCase() == clientId.toLowerCase())) {
-            throw new Conflict("Keycloak client ID already exists");
+        const response = await this.app.get('keycloak').getClients(realm)
+        if (response.find((o) => o.clientId.toLowerCase() == clientId.toLowerCase())) {
+            throw new Conflict('Keycloak client ID already exists')
         }
     }
 
     /**
      * getEnrichedNamespaces
-     * @param {*} realm 
-     * @param {*} includeKcClients 
+     * @param {*} realm
+     * @param {*} includeKcClients
      */
     async getEnrichedNamespaces(realm, includeKcClients) {
         let allNamespaces = await this.app.get('kube').getNamespaces()
@@ -57,108 +126,108 @@ class KubeCore extends CommonCore {
                 return ns
             })
         }
-        return allNamespaces;
+        return allNamespaces
     }
 
     /**
      * deleteKeycloakSAUser
-     * @param {*} realm 
-     * @param {*} namespace 
+     * @param {*} realm
+     * @param {*} namespace
      */
     async deleteKeycloakSAUser(realm, namespace) {
         // Delete SA keycloak user
         try {
             const regSaSecret = await this.app.get('kube').getSecret(namespace, 'mdos-regcred')
-            if(regSaSecret) {
-                const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username;
-                const userObj = await this.app.get("keycloak").getUser(realm, null, username);
-                await this.app.get("keycloak").deleteUser(realm, userObj.id);
+            if (regSaSecret) {
+                const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username
+                const userObj = await this.app.get('keycloak').getUser(realm, null, username)
+                await this.app.get('keycloak').deleteUser(realm, userObj.id)
             }
         } catch (_e) {
-            console.log(_e);
+            console.log(_e)
         }
     }
 
     /**
      * createNamespace
-     * @param {*} namespace 
-     * @returns 
+     * @param {*} namespace
+     * @returns
      */
     async createNamespace(namespace) {
         // Create namespace if not exist
-        let nsCreated = false;
+        let nsCreated = false
         if (!(await this.app.get('kube').hasNamespace(namespace.toLowerCase()))) {
-            await this.app.get('kube').createNamespace({name: namespace.toLowerCase()})
-            nsCreated = true;
+            await this.app.get('kube').createNamespace({ name: namespace.toLowerCase() })
+            nsCreated = true
         } else {
             throw new Conflict('Namespace already exists')
         }
-        return nsCreated;
+        return nsCreated
     }
 
     /**
      * createKeycloakClientRoles
-     * @param {*} realm 
-     * @param {*} clientId 
+     * @param {*} realm
+     * @param {*} clientId
      */
     async createKeycloakClientRoles(realm, clientId) {
-        await this.app.service("keycloak").create({
-            type: "client-role",
+        await this.app.service('keycloak').create({
+            type: 'client-role',
             realm: realm,
-            name: "admin",
-            clientUuid: clientId
-        });
-        await this.app.service("keycloak").create({
-            type: "client-role",
+            name: 'admin',
+            clientUuid: clientId,
+        })
+        await this.app.service('keycloak').create({
+            type: 'client-role',
             realm: realm,
-            name: "k8s-write",
-            clientUuid: clientId
-        });
-        await this.app.service("keycloak").create({
-            type: "client-role",
+            name: 'k8s-write',
+            clientUuid: clientId,
+        })
+        await this.app.service('keycloak').create({
+            type: 'client-role',
             realm: realm,
-            name: "k8s-read",
-            clientUuid: clientId
-        });
-        await this.app.service("keycloak").create({
-            type: "client-role",
+            name: 'k8s-read',
+            clientUuid: clientId,
+        })
+        await this.app.service('keycloak').create({
+            type: 'client-role',
             realm: realm,
-            name: "s3-write",
-            clientUuid: clientId
-        });
-        await this.app.service("keycloak").create({
-            type: "client-role",
+            name: 's3-write',
+            clientUuid: clientId,
+        })
+        await this.app.service('keycloak').create({
+            type: 'client-role',
             realm: realm,
-            name: "s3-read",
-            clientUuid: clientId
-        });
-        await this.app.service("keycloak").create({
-            type: "client-role",
+            name: 's3-read',
+            clientUuid: clientId,
+        })
+        await this.app.service('keycloak').create({
+            type: 'client-role',
             realm: realm,
-            name: "registry-pull",
-            clientUuid: clientId
-        });
-        await this.app.service("keycloak").create({
-            type: "client-role",
+            name: 'registry-pull',
+            clientUuid: clientId,
+        })
+        await this.app.service('keycloak').create({
+            type: 'client-role',
             realm: realm,
-            name: "registry-push",
-            clientUuid: clientId
-        });
+            name: 'registry-push',
+            clientUuid: clientId,
+        })
     }
 
     /**
      * createKeycloakSaForNamespace
-     * @param {*} realm 
-     * @param {*} clientId 
-     * @param {*} clientUuid 
-     * @param {*} saUser 
-     * @param {*} saPass 
+     * @param {*} realm
+     * @param {*} clientId
+     * @param {*} clientUuid
+     * @param {*} saUser
+     * @param {*} saPass
      */
     async createKeycloakSaForNamespace(realm, clientId, clientUuid, saUser, saPass) {
-        await this.app.get("keycloak").createUser(realm, saUser, saPass, "");
-        const saUsersObj = await this.app.get("keycloak").getUser(realm, null, saUser);
-        const roleObj = await this.app.get("keycloak").getClientRole(realm, clientId, "registry-pull");
-        await this.app.get("keycloak").createClientRoleBindingForUser(realm, clientUuid, saUsersObj.id, roleObj.id, "registry-pull");
+        await this.app.get('keycloak').createUser(realm, saUser, saPass, '')
+        const saUsersObj = await this.app.get('keycloak').getUser(realm, null, saUser)
+        const roleObj = await this.app.get('keycloak').getClientRole(realm, clientId, 'registry-pull')
+        await this.app.get('keycloak').createClientRoleBindingForUser(realm, clientUuid, saUsersObj.id, roleObj.id, 'registry-pull')
     }
 }
 

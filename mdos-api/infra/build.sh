@@ -7,7 +7,10 @@ while [ "$1" != "" ]; do
     case $1 in
         --deploy|-d )
             DO_DEPLOY=1
-        ;; 
+        ;;
+        --restart|-r )
+            DO_RESTART=1
+        ;;
         --export|-e )
             DO_EXPORT=1
         ;; 
@@ -133,6 +136,14 @@ if [ ! -z $DO_DEPLOY ]; then
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
     kubectl logs $POD_NAME -n mdos --follow
 
+fi
+
+if [ ! -z $DO_RESTART ]; then
+    POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
+    kubectl delete pod $POD_NAME -n mdos
+    sleep 1
+    POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
+    kubectl logs $POD_NAME -n mdos --follow
 fi
 
 
