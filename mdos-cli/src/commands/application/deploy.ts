@@ -73,6 +73,28 @@ export default class Deploy extends Command {
             process.exit(1);
         }
 
+        // Read certificates if any and replace cert paths with actual values
+        for(const component of appYaml.components) {
+            if(component.ingress) {
+                for(const ingress of component.ingress) {
+                    if(ingress.tlsKeyPath) {
+                        if(!fs.existsSync(ingress.tlsKeyPath)) {
+                            error(`File: '${ingress.tlsKeyPath}' not found`)
+                            process.exit(1);
+                        }
+                        ingress.tlsKeyPath = fs.readFileSync(ingress.tlsKeyPath, 'utf8').toString()
+                    }
+                    if(ingress.tlsCrtPath) {
+                        if(!fs.existsSync(ingress.tlsCrtPath)) {
+                            error(`File: '${ingress.tlsCrtPath}' not found`)
+                            process.exit(1);
+                        }
+                        ingress.tlsCrtPath = fs.readFileSync(ingress.tlsCrtPath, 'utf8').toString()
+                    }
+                }
+            }
+        }
+
         // Get credentials for minio for user
         let userInfo
         try {
@@ -91,7 +113,6 @@ export default class Deploy extends Command {
             else if(!appComp.publicRegistry) {
                 targetRegistry = userInfo.data.registry;
             }
-         
             await buildPushComponent(userInfo.data, targetRegistry, appComp, appRootDir);
         }
 
@@ -109,9 +130,7 @@ export default class Deploy extends Command {
                             error("You do not have sufficient S3 credentials allowing you to sync your volumes");
                             process.exit(1);
                         }
-
                         let volSourcePath = path.join(appRootDir, "volumes", volume.name)
-
                         let volHasUpdates = await s3sync(userInfo.data.S3Provider, targetS3Creds.bucket, volume.name, volSourcePath, targetS3Creds)
                         if(volHasUpdates) volumeUpdates = true
                     }
@@ -133,7 +152,6 @@ export default class Deploy extends Command {
                     spinning = false
                     console.log()
                 }
-
                 this.showRealtimeDeploymentDetails(consoleHandles, data.deployStatus);
             } 
             // Incomming container logs
@@ -148,11 +166,10 @@ export default class Deploy extends Command {
         try {
             process.on('SIGINT', () => {
                 error("Deployment interrupted")
-
                 this.showAppLogs(appLogs);
-
                 process.exit(1);
             });
+
             await this.api(`mdos`, 'post', {
                 type: 'deploy',
                 values: appYamlBase64,
@@ -160,16 +177,12 @@ export default class Deploy extends Command {
                 processId: processId
             })
             this.socketManager.unsubscribe()
-
             success("Application deployed");
         } catch (error) {
             if(!spinning)
                 CliUx.ux.action.stop('error')
-            
             this.showError(error)
-
             this.showAppLogs(appLogs);
-
             process.exit(1)
         }
     }
