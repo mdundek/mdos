@@ -63,6 +63,8 @@ export default class AddIngress extends Command {
 				validate: (value: string) => {
 					if(value.trim().length == 0)
             			return "Mandatory field"
+					else if(!(/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)))
+						return "Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)"
 					return true
 				}
 			},
@@ -111,8 +113,6 @@ export default class AddIngress extends Command {
 					name: "http"
 				}, {
 					name: "https"
-				}, {
-					name: "tcp/udp"
 				}],
 			},
 			{
@@ -158,45 +158,45 @@ export default class AddIngress extends Command {
 					return true
 				}
 			},
-			{
-				type: 'confirm',
-				name: 'protectIngress',
-				default: false,
-				message: 'Do you want protect this ingress route?'
-			},
-			{
-				type: 'list',
-				name: 'oidcProvider',
-				when: async (values: any) => {
-					if(values.protectIngress) {
-						try {
-							await this.validateJwt();
-						} catch (error) {
-							this.showError(error);
-							process.exit(1);
-						}
-						try {
-							oidcProviders = await this.api(`oidc-provider`, "get")
-						} catch (error) {
-							this.showError(error);
-							process.exit(1);
-						}
-						if(oidcProviders.data.length == 0) {
-							error("No OIDC providers configured");
-							process.exit(1);
-						}
-					}
-					return values.protectIngress
-				},
-				message: 'Select a OIDC provider to use to protect this ingress route:',
-				choices: async () => {
-					return oidcProviders.data.map((p: { name: any }) => {
-						return {
-							name: p.name
-						}
-					})
-				}
-			},
+			// {
+			// 	type: 'confirm',
+			// 	name: 'protectIngress',
+			// 	default: false,
+			// 	message: 'Do you want protect this ingress route?'
+			// },
+			// {
+			// 	type: 'list',
+			// 	name: 'oidcProvider',
+			// 	when: async (values: any) => {
+			// 		if(values.protectIngress) {
+			// 			try {
+			// 				await this.validateJwt();
+			// 			} catch (error) {
+			// 				this.showError(error);
+			// 				process.exit(1);
+			// 			}
+			// 			try {
+			// 				oidcProviders = await this.api(`oidc-provider`, "get")
+			// 			} catch (error) {
+			// 				this.showError(error);
+			// 				process.exit(1);
+			// 			}
+			// 			if(oidcProviders.data.length == 0) {
+			// 				error("No OIDC providers configured");
+			// 				process.exit(1);
+			// 			}
+			// 		}
+			// 		return values.protectIngress
+			// 	},
+			// 	message: 'Select a OIDC provider to use to protect this ingress route:',
+			// 	choices: async () => {
+			// 		return oidcProviders.data.map((p: { name: any }) => {
+			// 			return {
+			// 				name: p.name
+			// 			}
+			// 		})
+			// 	}
+			// },
 		])
 
 		// Update ingress
@@ -211,7 +211,6 @@ export default class AddIngress extends Command {
 			subPath?: string,
 			tlsKeyPath?: string,
 			tlsCrtPath?: string,
-			oidcProvider?: string,
 			tldMountPath?: string,
 		}
 
@@ -234,9 +233,6 @@ export default class AddIngress extends Command {
 		if(responses.tldMountDir)
 			ing.tldMountPath = responses.tldMountDir	
 
-		if(responses.oidcProvider)
-			ing.oidcProvider = responses.oidcProvider	
-		
 		targetCompYaml.ingress.push(ing);
 
 		appYaml.components = appYaml.components.map(comp => comp.name == compName ? targetCompYaml : comp)

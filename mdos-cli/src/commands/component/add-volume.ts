@@ -62,6 +62,8 @@ export default class AddVolume extends Command {
             	validate: (value: string) => {
             		if(value.trim().length == 0)
             			return "Mandatory field"
+                    else if(!(/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)))
+                        return "Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)"
             		return true
             	}
             },
@@ -116,7 +118,6 @@ export default class AddVolume extends Command {
         type Volume = {
             syncVolume?: boolean,
             name?: string,
-            bucket?: string,
             mountPath: string,
             hostPath?: string
         }
