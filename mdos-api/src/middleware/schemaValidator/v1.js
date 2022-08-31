@@ -85,7 +85,12 @@ class SchemaV1 {
                                             "format": "host-name"
                                         },
                                         "targetPort": {"type": "integer"},
-                                        "trafficType": {"type": "string", "enum": ["http", "https"]}
+                                        "trafficType": {"type": "string", "enum": ["http", "https"]},
+                                        "subPath": {"type": "string"},
+                                        "tlsKeyPath": {"type": "string"},
+                                        "tlsCrtPath": {"type": "string"},
+                                        "oidcProvider": {"type": "string"},
+                                        "tldMountPath": {"type": "string"}
                                     },
                                     "required": ["name", "matchHost", "targetPort"],
                                     "additionalProperties": false
@@ -101,6 +106,7 @@ class SchemaV1 {
                                             "pattern": /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/
                                         },
                                         "mountPath": {"type": "string"},
+                                        "hostPath": {"type": "string"},
                                         "syncVolume": {"type": "boolean"}
                                     },
                                     "required": ["name", "mountPath"],
@@ -127,7 +133,85 @@ class SchemaV1 {
                                 "items": {
                                     "type": "string"
                                 }
-                            }
+                            },
+                            "configs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string", 
+                                            "pattern": /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/
+                                        },
+                                        "type": {"type": "string", "enum": ["env", "file"]},
+                                        "mountPath": {"type": "string"},
+                                        "entries": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string", 
+                                                        "pattern": /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/
+                                                    },
+                                                    "fileName": {
+                                                        "type": "string"
+                                                    },
+                                                    "key": {
+                                                        "type": "string"
+                                                    },
+                                                    "value": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": ["value"],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": ["name", "type", "entries"],
+                                    "additionalProperties": false
+                                }
+                            },
+                            "secrets": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string", 
+                                            "pattern": /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/
+                                        },
+                                        "type": {"type": "string", "enum": ["env", "file"]},
+                                        "mountPath": {"type": "string"},
+                                        "entries": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string", 
+                                                        "pattern": /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/
+                                                    },
+                                                    "fileName": {
+                                                        "type": "string"
+                                                    },
+                                                    "key": {
+                                                        "type": "string"
+                                                    },
+                                                    "value": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": ["value"],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": ["name", "type", "entries"],
+                                    "additionalProperties": false
+                                }
+                            },
                         },
                         "required": ["name", "image", "tag", "uuid"],
                         "additionalProperties": false
