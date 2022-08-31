@@ -54,7 +54,7 @@ export default class Add extends Command {
 			// Get client id & uuid
             let clientResponse;
             try {
-                clientResponse = await this.collectClientId(flags);
+                clientResponse = await this.collectClientId(flags, 'Select a Client ID');
             } catch (error) {
                 this.showError(error);
                 process.exit(1);

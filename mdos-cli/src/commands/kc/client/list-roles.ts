@@ -38,7 +38,7 @@ export default class ListRoles extends Command {
 		
         try {
             // Get client id & uuid
-            const clientResponse = await this.collectClientId(flags);
+            const clientResponse = await this.collectClientId(flags, 'Select a Client ID to list roles for');
 
             const response = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${flags.clientId ? flags.clientId : clientResponse.clientId}`, "get")
 

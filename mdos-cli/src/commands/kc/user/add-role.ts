@@ -65,7 +65,7 @@ export default class AddRole extends Command {
         if(userResponses.target == "namespace") {
             // Get client id & uuid
             try {
-                clientResponse = await this.collectClientId(flags);
+                clientResponse = await this.collectClientId(flags, 'Select a target Client ID');
             } catch (error) {
                 this.showError(error);
                 process.exit(1);

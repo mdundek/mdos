@@ -231,7 +231,7 @@ export default abstract class extends Command {
 	 * collectClientId
 	 * @param flags 
 	 */
-	async collectClientId(flags: any) {
+	async collectClientId(flags: any, question: string) {
 		// Get all realm Clients
 		const clientResponse = await this.api("keycloak?target=clients&realm=mdos", "get");
 		if(clientResponse.data.length == 0) {
@@ -254,7 +254,7 @@ export default abstract class extends Command {
 		} else {
 			clientResponses = await inquirer.prompt([{
 				name: 'clientUuid',
-				message: 'select a Client ID to create a Role for',
+				message: question,
 				type: 'list',
 				choices: clientResponse.data.map((o: { clientId: any; id: any }) => {
 					return { name: o.clientId, value: o.id }
