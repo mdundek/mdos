@@ -73,6 +73,7 @@ export default class Application extends Command {
 		// Create mdos.yaml file
 		try {
 			fs.writeFileSync(path.join(mdosAppFile, "mdos.yaml"), YAML.stringify({
+				schemaVersion: "v1",
 				tenantName: flags.tenantName ? flags.tenantName : responses.tenantName,
 				appName: flags.applicationName ? flags.applicationName : responses.applicationName,
 				uuid: `${nanoid()}-${nanoid()}`,

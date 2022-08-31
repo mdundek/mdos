@@ -38,7 +38,7 @@ export default class Deploy extends Command {
 
         // Load mdos yaml file
         let appYamlBase64
-        let appYaml: { components: any; registry: any; tenantName: any }
+        let appYaml: { schemaVersion: string, components: any; registry: any; tenantName: any }
         try {
             const yamlString = fs.readFileSync(appYamlPath, 'utf8')
             appYaml = YAML.parse(yamlString)
@@ -48,12 +48,12 @@ export default class Deploy extends Command {
             process.exit(1);
         }
 
-        // Make sure there is at least one component
-        if(!appYaml.components || appYaml.components.length == 0) {
-            error("This application does not contain any components")
-            process.exit(1)
+        // Validate app schema
+        if(!appYaml.schemaVersion || typeof appYaml.schemaVersion != "string") {
+            error("Missing schema version in your manifest (expected property: schemaVersion)");
+            process.exit(1);
         }
-        
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
@@ -61,6 +61,16 @@ export default class Deploy extends Command {
         } catch (error) {
             this.showError(error)
             process.exit(1)
+        }
+
+        // Validate application schema
+        const response = await this.api("schema-validator/v1", "put", appYaml);
+        if(response.data.length > 0) {
+            response.data.forEach((errorObj: any) => {
+                error(errorObj.stack, false, true)
+                context(JSON.stringify(errorObj.instance, null, 4), true, true)
+            });
+            process.exit(1);
         }
 
         // Get credentials for minio for user

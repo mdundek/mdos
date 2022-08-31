@@ -107,6 +107,8 @@ export default abstract class extends Command {
 			return await axios.get(`${API_URI}/${endpoint}`, axiosConfig);
 		} else if(method.toLowerCase() == "delete") {
 			return await axios.delete(`${API_URI}/${endpoint}`, axiosConfig);
+		} else if(method.toLowerCase() == "put") {
+			return await axios.put(`${API_URI}/${endpoint}`, body, axiosConfig);
 		}
 	}
 
