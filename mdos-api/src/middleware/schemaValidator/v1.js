@@ -124,9 +124,11 @@ class SchemaV1 {
                                         "type": "string", 
                                         "pattern": /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/
                                     },
-                                    "host": {
-                                        "type": "string",
-                                        "format": "host-name"
+                                    "hosts": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
                                     }
                                 },
                                 "required": ["provider", "host"],
