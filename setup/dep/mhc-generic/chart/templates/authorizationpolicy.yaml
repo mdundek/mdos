@@ -41,7 +41,9 @@ spec:
   - to:
     - operation:
         hosts:
-        - {{ .oidc.host | quote }}
+    {{- range .oidc.hosts }}
+        - {{ . | quote }}
+    {{- end }}
   selector:
     matchLabels:
       appUuid: {{ $.Values.uuid }}
