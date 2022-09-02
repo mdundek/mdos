@@ -100,16 +100,31 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
 			await this.clientUuidCheck(body.realm, body.clientUuid);
 
 			// Make sure Role ID exists for client
-			const response = await this.app.get("keycloak").getClientRoles(body.realm, body.clientId);
-			if(!response.find(o => o.id == body.roleUuid)) {
-				throw new Unavailable("Keycloak role ID does not exist for this client ID");
+			const cRolesResponse = await this.app.get("keycloak").getClientRoles(body.realm, body.clientId);
+			
+			if(body.roles) {
+				// Make sure user does not already have this client role binding
+				for(const roleEntry of body.roles) {
+					if(!cRolesResponse.find(o => o.id == roleEntry.roleUuid)) {
+						throw new Unavailable("Keycloak role ID does not exist for this client ID");
+					}
+					await this.userDoesNotHaveRoleCheck(body.realm, body.username, body.clientId, roleEntry.roleName);
+				}
+				for(const roleEntry of body.roles) {
+					// Create keycloak user role binding
+					await this.app.get("keycloak").createClientRoleBindingForUser(body.realm, body.clientUuid, body.userUuid, roleEntry.roleUuid, roleEntry.roleName);
+				}
+			} else {
+				if(!cRolesResponse.find(o => o.id == body.roleUuid)) {
+					throw new Unavailable("Keycloak role ID does not exist for this client ID");
+				}
+
+				// Make sure user does not already have this client role binding
+				await this.userDoesNotHaveRoleCheck(body.realm, body.username, body.clientId, body.roleName);
+
+				// Create keycloak user role binding
+				await this.app.get("keycloak").createClientRoleBindingForUser(body.realm, body.clientUuid, body.userUuid, body.roleUuid, body.roleName);
 			}
-
-			// Make sure user does not already have this client role binding
-			await this.userDoesNotHaveRoleCheck(body.realm, body.username, body.clientName, body.roleName);
-
-			// Create keycloak user role binding
-			await this.app.get("keycloak").createClientRoleBindingForUser(body.realm, body.clientUuid, body.userUuid, body.roleUuid, body.roleName);
 		} 
 		return body;	
 	}
