@@ -129,6 +129,18 @@ class SchemaV1 {
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
+                                    "paths": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "excludePaths": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
                                     }
                                 },
                                 "required": ["provider", "host"],

@@ -35,6 +35,34 @@ class Keycloak {
     }
 
     /**
+     * logout
+     * @param {*} realm
+     * @param {*} username
+     */
+     async logout(realm, username) {
+        let accessToken = await this._getAccessToken()
+
+        try {
+            const user = await this.getUser(realm, null, username);
+            
+            await axios.post(
+                `https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${user.id}/logout`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+        } catch (error) {
+            console.log(error);
+            throw error
+        }
+    }
+
+    /**
      * _getAccessToken
      * @returns
      */
@@ -400,7 +428,7 @@ class Keycloak {
      * @param {*} realm
      * @param {*} username
      */
-    async getUserRoles(realm, username) {
+    async getUserRoles(realm, username) { 
         let accessToken = await this._getAccessToken()
 
         let response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users?username=${username}`, {

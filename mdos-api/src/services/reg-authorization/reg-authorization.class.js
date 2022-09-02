@@ -1,4 +1,4 @@
-const { Forbidden } = require('@feathersjs/errors')
+const { Forbidden, NotAuthenticated } = require('@feathersjs/errors')
 
 const userRoleStore = {}
 
@@ -17,8 +17,13 @@ exports.RegAuthorization = class RegAuthorization {
     async find(params) {
 		const credsData = Buffer.from(params.query.data, 'base64').toString('utf8')
 		const credDataJson = JSON.parse(credsData);
-		let userRoles;
 
+		let userRoles;
+		// Make sure user is authenticated
+		if(credDataJson.Account.trim().length == 0) {
+			throw new NotAuthenticated("Not authenticated");
+		}
+		
 		// Get user role mappings
 		if (userRoleStore[credDataJson.Account]) {
 			// User role is buffered
@@ -58,7 +63,7 @@ exports.RegAuthorization = class RegAuthorization {
 					return "ok";
 				}
 				// User is part of private image tenant name & push is request
-				else if(userRoles.clientMappings && userRoles.clientMappings[imgPathArray[0]] && userRoles.clientMappings[imgPathArray[0]].mappings.find(role => role.name == "global-registry")) {
+				else if(userRoles.clientMappings && userRoles.clientMappings[imgPathArray[0]] && userRoles.clientMappings[imgPathArray[0]].mappings.find(role => role.name == "registry-push")) {
 					return "ok";
 				}
 				// User does not belong to this tenant name

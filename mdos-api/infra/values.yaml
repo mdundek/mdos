@@ -96,3 +96,5 @@ components:
       provider: kc-mdos
       hosts:
         - mdos-api.mdundek.network
+      excludePaths:
+        - /registry_domain

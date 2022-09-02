@@ -17,7 +17,6 @@ const appDeployHook = (context, jwtToken) => {
     }
 
     const plainValues = YAML.parse(Buffer.from(context.data.values, 'base64').toString('utf8'));
-
     if(!jwtToken.resource_access[plainValues.tenantName]) {
         throw new errors.Forbidden("You are not authorized to deploy applications for this namespace");
     }
@@ -25,7 +24,7 @@ const appDeployHook = (context, jwtToken) => {
     if(!jwtToken.resource_access[plainValues.tenantName].roles.includes("k8s-write") && !jwtToken.resource_access[plainValues.tenantName].roles.includes("admin")) {
         throw new errors.Forbidden("You are not authorized to deploy applications for this namespace");
     }
-    
+
     return context;     
 }
 

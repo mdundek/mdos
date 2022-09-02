@@ -44,6 +44,22 @@ spec:
     {{- range .oidc.hosts }}
         - {{ . | quote }}
     {{- end }}
+
+    {{- /* -=-=-=-=-=- EXCLUDE PATHS -=-=-=-=-= */}}
+    {{- if .oidc.excludePaths }}
+        notPaths:
+      {{- range .oidc.excludePaths }}
+        - {{ . | quote }}
+      {{- end }}
+    {{- end }}
+
+    {{- /* -=-=-=-=-=- INCLUDE PATHS -=-=-=-=-= */}}
+    {{- if .oidc.paths }}
+        paths:
+      {{- range .oidc.paths }}
+        - {{ . | quote }}
+      {{- end }}
+    {{- end }}
   selector:
     matchLabels:
       appUuid: {{ $.Values.uuid }}
