@@ -2,11 +2,12 @@ import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
 
 const inquirer = require('inquirer')
-const { info, success, context, error, s3sync, isDockerInstalled, buildPushComponent } = require('../../lib/tools')
+const { info, success, context, error, s3sync, isDockerInstalled, buildPushComponent, computeApplicationTree } = require('../../lib/tools')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
+var treeify = require('treeify');
 
 export default class List extends Command {
     static description = 'describe the command here'
@@ -39,23 +40,15 @@ export default class List extends Command {
         // List apps
         try {
             const response = await this.api(`kube?target=applications&clientId=${clientResponse.clientId}`, 'get')
+            const treeData = computeApplicationTree(response.data);
 
-            console.log();
-            CliUx.ux.table(response.data, {
-                appName: {
-                    header: 'NAME',
-                    minWidth: 20,
-                    get: row => row.name
-                },
-                helmManaged: {
-                    header: 'IS COMPOSITE APP',
-                    minWidth: 20,
-                    get: row => row.isHelm ? "Yes" : "No"
-                }
-            }, {
-                printLine: this.log.bind(this)
-            })
-            console.log();
+            console.log()
+
+            if(Object.keys(treeData).length == 0) {
+                context("No applications deployed for this tenant", true, true)
+            } else {
+                console.log( treeify.asTree(treeData, true) );
+            }
         } catch (error) {
             CliUx.ux.action.stop('error')
             this.showError(error)

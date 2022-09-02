@@ -36,6 +36,7 @@
         "s3-sync-client": "^3.0.3",
         "shelljs": "^0.8.5",
         "socket.io-client": "^2.5.0",
+        "treeify": "^1.1.0",
         "yaml": "^2.1.1",
         "zip-a-folder": "^1.1.5"
     },
