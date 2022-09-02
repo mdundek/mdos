@@ -23,11 +23,13 @@ class KubeCore extends CommonCore {
         for (const dep of nsApps.items) {
             if (dep.metadata.annotations && dep.metadata.annotations['meta.helm.sh/release-name']) {
                 if (!apps.find((a) => a.isHelm && a.name == dep.metadata.annotations['meta.helm.sh/release-name'])) {
+                    const chartValues = await this.app.get('kube').getHelmChartValues(clientId, dep.metadata.annotations['meta.helm.sh/release-name'])
                     apps.push({
                         isHelm: true,
                         type: 'deployment',
                         name: dep.metadata.annotations['meta.helm.sh/release-name'],
                         namespace: clientId,
+                        values: chartValues
                     })
                 } else if (!apps.find((a) => a.name == dep.name)) {
                     apps.push({

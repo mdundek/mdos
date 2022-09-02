@@ -19,7 +19,7 @@ class OidcProviderCore extends CommonCore {
      * @param {*} name 
      */
     async oidcProviderCheck(name) {
-        let responses = await this.app.get("kube").getIstiodOidcProviders();
+        let responses = await this.app.get("kube").getOidcProviders();
 		if(!responses.find(o => o.name.toLowerCase() == name.toLowerCase())) {
 			throw new Unavailable("OIDC provider not found");
 		}
@@ -31,7 +31,7 @@ class OidcProviderCore extends CommonCore {
      * @param {*} name 
      */
     async ensureProviderNotDeclared(name) {
-        let responses = await this.app.get("kube").getIstiodOidcProviders();
+        let responses = await this.app.get("kube").getOidcProviders();
         if(responses.find(o => o.name.toLowerCase() == name.toLowerCase())) {
             throw new Conflict("OIDC provider already declared");
         }

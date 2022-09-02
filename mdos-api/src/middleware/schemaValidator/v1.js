@@ -143,7 +143,7 @@ class SchemaV1 {
                                         }
                                     }
                                 },
-                                "required": ["provider", "host"],
+                                "required": ["provider", "hosts"],
                                 "additionalProperties": false
                             },
                             "preBuildCmd": {

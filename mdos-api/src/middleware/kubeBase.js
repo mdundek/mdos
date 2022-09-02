@@ -357,6 +357,16 @@ class KubeBase {
     }
 
     /**
+     * getHelmChartValues
+     * @param {*} namespace
+     * @param {*} chartName
+     */
+     async getHelmChartValues(namespace, chartName) {
+        const result = await terminalCommand(`${this.HELM_BASE_CMD} get values ${chartName} -n ${namespace}`)
+        return YAML.parse(result.join("\n"));
+    }
+
+    /**
      * helmUninstall
      * @param {*} chartName
      */
