@@ -26,8 +26,6 @@ class MdosCore extends CommonCore {
 
         const userData = {
             registry: `registry.${process.env.ROOT_DOMAIN}`,
-            registryUser: process.env.REG_USER,
-            registryPassword: process.env.REG_PASS,
             S3Provider: process.env.S3_PROVIDER,
             s3: [],
         }
@@ -52,7 +50,8 @@ class MdosCore extends CommonCore {
             }
 
             let jwtToken = jwt_decode(headers['x-auth-request-access-token'])
-            userData.roles = jwtToken.resource_access.mdos.roles
+
+            userData.roles = jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles ? jwtToken.resource_access.mdos.roles : []
 
             for (let ns of allNs) {
                 if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {

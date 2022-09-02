@@ -21,7 +21,7 @@ class KeycloakCore extends CommonCore {
      async userDoesNotExistCheck(realm, username, email) {
         // Make sure username exists
         const response = await this.app.get("keycloak").getUsers(realm);
-        if(response.find(o => o.username.toLowerCase() == username.toLowerCase() || o.email.toLowerCase() == email.toLowerCase())) {
+        if(response.find(o => o.username.toLowerCase() == username.toLowerCase() || (o.email && o.email.toLowerCase() == email.toLowerCase()))) {
             throw new Conflict("Keycloak username already exists");
         }
     }

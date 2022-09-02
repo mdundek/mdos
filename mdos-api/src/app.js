@@ -34,15 +34,13 @@ app.use(express.urlencoded({ extended: true }))
 app.use(favicon(path.join(app.get('public'), 'favicon.ico')))
 // Host the public folder
 
-app.get('/jwt', oidcCookieRoute.bind(this, app));
-app.get('/jwt_delete', (req, res) => {
-    res.clearCookie("_oauth2_proxy");
-    res.send("You are logged out")
-    res.end()
-});
+app.get('/jwt', oidcCookieRoute.bind(this, app))
 
 app.get('/healthz', function (req, res) {
     res.send("Healthy");
+});
+app.get('/registry_domain', function (req, res) {
+    res.send(`registry.${process.env.ROOT_DOMAIN}`);
 });
 
 app.use('/', express.static(app.get('public')))

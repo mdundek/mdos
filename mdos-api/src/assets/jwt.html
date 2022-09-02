@@ -58,8 +58,13 @@
           word-break: break-all;
         }
       </style>
+      <script>
+        function clearCookies() {
+          document.cookie = "_oauth2_proxy=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        }
+      </script>
     </head>
-    <body>
+    <body onload="clearCookies()">
       <div class="login">
         <h1>User token</h1>
         <div class="token-field">{TOKEN}</div>
