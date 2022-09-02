@@ -74,7 +74,6 @@ export default class Sso extends Command {
                 process.exit(1)
             }
 
-            let targetComponent: any
             // If more than one found, ask which one to use
             if(availComponents.length > 1) {
                 let cTarget = await inquirer.prompt([
@@ -95,14 +94,13 @@ export default class Sso extends Command {
             }
         }
 
-        
-        const availHosts = targetComponent.ingress.filter((i: any)  => {
+        const availHosts = (targetComponent.ingress ? targetComponent.ingress.filter((i: any)  => {
             if(targetComponent.oidc && targetComponent.oidc.hosts) {
                 return !targetComponent.oidc.hosts.find((h: any) => h == i.matchHost)
             } else {
                 return true
             }
-        }).map((i: any)  => i.matchHost)
+        }) : []).map((i: any)  => i.matchHost)
 
         let targetHostname: any
         if(availHosts.length == 0) {
@@ -149,7 +147,7 @@ export default class Sso extends Command {
                 process.exit(1);
             }
             if(oidcProviders.data.length == 0) {
-                error("No OIDC providers configured");
+                error("No OIDC providers configured for this tenant, or you do not have sufficient permissions to see available OIDC providers");
                 process.exit(1);
             }
 
@@ -161,7 +159,8 @@ export default class Sso extends Command {
                     choices: async () => {
                         return oidcProviders.data.map((p: { name: any }) => {
                             return {
-                                name: p.name
+                                name: `${p.name}${p.name.indexOf("kc-") == 0 ? " (Keycloak)" : ""}`,
+                                value: p.name
                             }
                         })
                     }

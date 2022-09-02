@@ -561,6 +561,42 @@ const getConsoleLineHandel = (initialValue) => {
 	return console.draft(initialValue);
 }
 
+/**
+ * computeApplicationTree
+ * @param {*} data 
+ * @returns 
+ */
+const computeApplicationTree = (data) => {
+	let treeData = {}
+	for(const app of data) {
+		if(app.isHelm) {
+			const appNodeName = `${chalk.red("MDos application")}: ${chalk.gray(app.name)}`
+			treeData[appNodeName] = {}
+			for(const component of app.values.components) {
+				const appCompNodeName = `${chalk.blue("Component")}: ${chalk.gray(component.name)}`
+				treeData[appNodeName][appCompNodeName] = {}
+				if(component.ingress && component.ingress.length > 0) {
+					treeData[appNodeName][appCompNodeName]["Ingress:"] = {}
+					for(const ingress of component.ingress) {
+						treeData[appNodeName][appCompNodeName]["Ingress:"][`Host: ${chalk.gray(ingress.matchHost)}`] = null
+					}
+				}
+				if(component.oidc) {
+					const oidcProviderName = `SSO (OIDC Provider '${chalk.gray(component.oidc.provider)}'):`
+					treeData[appNodeName][appCompNodeName][oidcProviderName] = {}
+					for(const host of component.oidc.hosts) {
+						treeData[appNodeName][appCompNodeName][oidcProviderName][`Host: ${chalk.gray(host)}`] = null
+					}
+				}
+			}
+		} else {
+			const appNodeName = `${chalk.red("Application")}: ${chalk.gray(app.name)}`
+			treeData[appNodeName] = null
+		}
+	}
+	return treeData
+}
+
 module.exports = {
     info,
 	success,
@@ -575,5 +611,6 @@ module.exports = {
 	isDockerInstalled,
 	buildPushComponent,
 	getConsoleLineHandel,
-	dockerLogout
+	dockerLogout,
+	computeApplicationTree
 }
