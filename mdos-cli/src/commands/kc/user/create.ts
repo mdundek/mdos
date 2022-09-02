@@ -69,10 +69,101 @@ export default class Create extends Command {
                 ...mergeFlags(responses, flags),
             })
             CliUx.ux.action.stop()
+
+            // Now ask if we want to add user roles
+            await this.addClientRoles(flags, responses.username);
         } catch (error) {
             CliUx.ux.action.stop('error')
             this.showError(error);
             process.exit(1);
         }
 	}
+
+    /**
+     * addClientRoles
+     * @param flags 
+     * @param username 
+     */
+    async addClientRoles(flags: any, username: any) {
+        console.log()
+
+        // Collect data
+        let responses = await inquirer.prompt([
+            {
+				type: 'confirm',
+				name: 'addRoles',
+				default: true,
+				message: 'Do you want to add some client roles to this user'
+            }
+		])
+
+        if(responses.addRoles) {
+            // Get client id & uuid
+            let clientResponse
+            try {
+                clientResponse = await this.collectClientId(flags, 'Select a target Client ID to add roles from');
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
+
+            // Get all Client roles
+            let respClientRoles
+            try {
+                respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, "get")
+            } catch (error) {
+                this.showError(error);
+                process.exit(1);
+            }
+
+            // Target roles
+            responses = await inquirer.prompt([
+                {
+                    type: 'checkbox',
+                    name: 'targetRoles',
+                    message: 'Selectt roles to add',
+                    choices: respClientRoles.data.map((r: { name: any }) => r.name)
+                }
+            ])
+
+            if(responses.targetRoles.length == 0) {
+                warn("No roles added");
+            } else {
+
+                // Build role array
+                const rolesToAdd = respClientRoles.data.filter((r: { name: any }) => responses.targetRoles.includes(r.name)).map((r: { name: any; id: any }) => {
+                    return { roleName: r.name, roleUuid: r.id }
+                })
+
+                // Lookup user
+                let allUsers;
+                try {
+                    allUsers = await this.api("keycloak?target=users&realm=mdos", "get");
+                } catch (error) {
+                    this.showError(error);
+                    process.exit(1);
+                }
+                const targetUser = allUsers.data.find((u: { username: any }) => u.username == username)
+
+                // Add role for user now
+                CliUx.ux.action.start('Add role to user')
+                try {
+                    await this.api(`keycloak`, 'post', {
+                        type: 'user-role',
+                        realm: 'mdos',
+                        ...clientResponse,
+                        roles: rolesToAdd,
+                        username: targetUser.username,
+                        userUuid: targetUser.id
+                    })
+                    CliUx.ux.action.stop()
+                } catch (error) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(error);
+                    process.exit(1);
+                }
+
+            }
+        }
+    }
 }
