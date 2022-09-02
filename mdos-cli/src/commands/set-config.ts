@@ -15,7 +15,7 @@ export default class SetConfig extends Command {
           if(flags.auth != "none" && flags.auth != "oidc") {
             this.error("Unknown auth flag");
           } else {
-            this.setConfig("auth_mode", flags.auth);
+            this.setConfig("AUTH_MODE", flags.auth);
           }
         }
         else if(flags.backend) {

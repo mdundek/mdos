@@ -195,7 +195,7 @@ const _isPositiveInteger = (str) => {
  * @returns 
  */
 const _collectRootDomain = async () => {
-	let rootDomain = nconf.get("root_domain")
+	let rootDomain = nconf.get("ROOT_DOMAIN")
 	if(!rootDomain) {
 		const response = await inquirer.prompt({
 			group: "application",
@@ -209,7 +209,7 @@ const _collectRootDomain = async () => {
 			}
 		})
 		rootDomain = response.rootDomain
-		nconf.set("root_domain", rootDomain);
+		nconf.set("ROOT_DOMAIN", rootDomain);
 		nconf.save(function (err) {
 			if(err) {
 				console.error("Could not save config file: ");
@@ -477,7 +477,7 @@ const s3sync = async (s3Provider, bucket, volumeName, sourceDir, targetS3Creds) 
  * @param {*} componentJson 
  * @param {*} root 
  */
-const buildPushComponent = async (userInfo, targetRegistry, appComp, root) => {
+const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, root) => {
 	// PreBuild scripts?
 	if(appComp.preBuildCmd) {
 		try {
@@ -510,11 +510,11 @@ const buildPushComponent = async (userInfo, targetRegistry, appComp, root) => {
 		// If mdos registry, login first
 		if(targetRegistry && userInfo.registry == targetRegistry) {
 			if(os.platform() === "linux") {
-				await terminalCommand(`echo "${userInfo.registryPassword}" | docker login ${userInfo.registry} --username ${userInfo.registryUser} --password-stdin`);
+				await terminalCommand(`echo "${regCreds.password}" | docker login ${userInfo.registry} --username ${regCreds.username} --password-stdin`);
 			} else if(os.platform() === "darwin") {
-				await terminalCommand(`echo "${userInfo.registryPassword}" | docker login ${userInfo.registry} --username ${userInfo.registryUser} --password-stdin`);
+				await terminalCommand(`echo "${regCreds.password}" | docker login ${userInfo.registry} --username ${regCreds.username} --password-stdin`);
 			} else if(os.platform() === "win32") {
-				await terminalCommand(`echo | set /p="${userInfo.registryPassword}" | docker login ${userInfo.registry} --username ${userInfo.registryUser} --password-stdin`);
+				await terminalCommand(`echo | set /p="${regCreds.password}" | docker login ${userInfo.registry} --username ${regCreds.username} --password-stdin`);
 			} else {
 				error("Unsupported platform");
 				process.exit(1);
@@ -530,6 +530,17 @@ const buildPushComponent = async (userInfo, targetRegistry, appComp, root) => {
 		context(extractErrorMessage(err), true)
         process.exit(1);
 	}
+}
+
+/**
+ * dockerLogout
+ * @param {*} registry 
+ * @returns 
+ */
+const dockerLogout = async (registry) => {
+	try {
+		await terminalCommand(`docker logout ${registry}`);
+	} catch (error) {}
 }
 
 /**
@@ -562,5 +573,6 @@ module.exports = {
 	s3sync,
 	isDockerInstalled,
 	buildPushComponent,
-	getConsoleLineHandel
+	getConsoleLineHandel,
+	dockerLogout
 }

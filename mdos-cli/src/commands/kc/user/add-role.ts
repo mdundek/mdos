@@ -37,7 +37,7 @@ export default class AddRole extends Command {
             group: "user",
             type: 'text',
             name: 'username',
-            message: 'What username do you wish to add a cliet role for?',
+            message: 'What username do you wish to add this client role to?',
             validate: (value: any) => {
                 if(value.trim().length == 0)
                     return `Mandatory field`
@@ -86,8 +86,7 @@ export default class AddRole extends Command {
             }
 
             if(respClientRoles.data.length == 0) {
-                error("There are no roles asssociated to this client yet. Create a client role first using the command:");
-                console.log("   mdos kc client create-role");
+                error("There are no clients available, or you do not have sufficient permissions to retrieve available clients for this task");
                 process.exit(1);
             }
         } else {
@@ -100,8 +99,7 @@ export default class AddRole extends Command {
             }
 
             if(respClientRoles.data.length == 0) {
-                error("There are no roles asssociated to this client yet. Create a client role first using the command:");
-                console.log("   mdos kc client create-role");
+                error("There are no clients available, or you do not have sufficient permissions to retrieve available clients for this task");
                 process.exit(1);
             }
 

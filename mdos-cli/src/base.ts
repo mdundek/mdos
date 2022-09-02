@@ -33,7 +33,7 @@ export default abstract class extends Command {
 		nconf.file({ file: path.join(os.homedir(), ".mdos", "cli.json") });
 		super(argv, config);
 
-		this.authMode = nconf.get("auth_mode")
+		this.authMode = nconf.get("AUTH_MODE")
 		if(!this.authMode) this.authMode = "oidc"
 
 		this.getConsoleLineHandel = getConsoleLineHandel;
@@ -50,6 +50,7 @@ export default abstract class extends Command {
 		}
 		this.socketManager = new SocketManager(API_URI, kcCookie);
 	}
+
 	/**
 	 * getConfig
 	 * @param key 
@@ -57,6 +58,15 @@ export default abstract class extends Command {
 	 */
 	getConfig(key: any) {
 		return nconf.get(key);
+	}
+
+	/**
+	 * getConfig
+	 * @param key 
+	 * @returns 
+	 */
+	getAllConfigs() {
+		return nconf.get();
 	}
 
 	/**
@@ -96,9 +106,9 @@ export default abstract class extends Command {
 		axiosConfig.timeout = 1000 * 60 * 10
 
 		// ------------------------- INJECT TOKEN FOR TESTING ----------------------
-		if(!axiosConfig.headers)
-			axiosConfig.headers = {}
-		axiosConfig.headers["x-auth-request-access-token"] = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJGTmNacDFCdGxlbTdYM3pSV3lBbFV2ckVoWVo2RDJjS3RRREswdlR5a3lZIn0.eyJleHAiOjE2NjA5MjUxNzcsImlhdCI6MTY2MDkyNDg3NywiYXV0aF90aW1lIjoxNjYwOTE2MjUxLCJqdGkiOiI5MzQ4MWM3Yy04ZGZhLTQyOTctOTVmOC04MDgxYzI1NWNmY2MiLCJpc3MiOiJodHRwczovL2tleWNsb2FrLm1kdW5kZWsubmV0d29yay9yZWFsbXMvbWRvcyIsImF1ZCI6WyJjcyIsImFjY291bnQiXSwic3ViIjoiOTFhYTEyYjctMWUxNC00N2ZkLThmZWMtYmM1NjMzZTljYTBlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoibWRvcyIsInNlc3Npb25fc3RhdGUiOiJiNGIyNTNlMy1mNDdjLTRiNzAtYWVlYi03YjcyNWRkNTc3NjMiLCJhY3IiOiIwIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJkZWZhdWx0LXJvbGVzLW1kb3MiXX0sInJlc291cmNlX2FjY2VzcyI6eyJjcyI6eyJyb2xlcyI6WyJ1bWFfcHJvdGVjdGlvbiIsIm1kb3NfYWRtaW4iLCJmb29yb2xlIiwiZm9vYmFyLXJvbGUiXX0sIm1kb3MiOnsicm9sZXMiOlsiYWRtaW4iLCJtZG9zX2FkbWluIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoiYjRiMjUzZTMtZjQ3Yy00YjcwLWFlZWItN2I3MjVkZDU3NzYzIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInByZWZlcnJlZF91c2VybmFtZSI6Im1kdW5kZWsiLCJlbWFpbCI6Im1kdW5kZWtAZ21haWwuY29tIn0.iwf8Kg5-w9dgJZwUYy9T_a4m6BIElJshu-dn2EdeJx-d5pAsn8vkaJMuXqJh-szbOzB5kzk5_yoknct922254TsKvMd491m9qrhkCD-NSnYC1u_ZIKqC0JRt9B7KPl3icqX7zsk52NurAkGlLw2xuHRpDtSLHp9rsRYrPaTGsDQLuqu6jEITraPG1f29yvKqxj9KEtJY4IRLJxIEJg8iV-w7MGmuCm7y_QZw5BQPIu3Ab-9y1whGf3D1SVSynKpN1tvFDTe3GNQQhS0garf7R5wtjnp4_5d9lhDqv5UL6Flnidikh9Tol9ZTF-VNSEbHMPtztc83nHwiW8JHDu7Elg"
+		// if(!axiosConfig.headers)
+		// 	axiosConfig.headers = {}
+		// axiosConfig.headers["x-auth-request-access-token"] = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJGTmNacDFCdGxlbTdYM3pSV3lBbFV2ckVoWVo2RDJjS3RRREswdlR5a3lZIn0.eyJleHAiOjE2NjA5MjUxNzcsImlhdCI6MTY2MDkyNDg3NywiYXV0aF90aW1lIjoxNjYwOTE2MjUxLCJqdGkiOiI5MzQ4MWM3Yy04ZGZhLTQyOTctOTVmOC04MDgxYzI1NWNmY2MiLCJpc3MiOiJodHRwczovL2tleWNsb2FrLm1kdW5kZWsubmV0d29yay9yZWFsbXMvbWRvcyIsImF1ZCI6WyJjcyIsImFjY291bnQiXSwic3ViIjoiOTFhYTEyYjctMWUxNC00N2ZkLThmZWMtYmM1NjMzZTljYTBlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoibWRvcyIsInNlc3Npb25fc3RhdGUiOiJiNGIyNTNlMy1mNDdjLTRiNzAtYWVlYi03YjcyNWRkNTc3NjMiLCJhY3IiOiIwIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJkZWZhdWx0LXJvbGVzLW1kb3MiXX0sInJlc291cmNlX2FjY2VzcyI6eyJjcyI6eyJyb2xlcyI6WyJ1bWFfcHJvdGVjdGlvbiIsIm1kb3NfYWRtaW4iLCJmb29yb2xlIiwiZm9vYmFyLXJvbGUiXX0sIm1kb3MiOnsicm9sZXMiOlsiYWRtaW4iLCJtZG9zX2FkbWluIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoiYjRiMjUzZTMtZjQ3Yy00YjcwLWFlZWItN2I3MjVkZDU3NzYzIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInByZWZlcnJlZF91c2VybmFtZSI6Im1kdW5kZWsiLCJlbWFpbCI6Im1kdW5kZWtAZ21haWwuY29tIn0.iwf8Kg5-w9dgJZwUYy9T_a4m6BIElJshu-dn2EdeJx-d5pAsn8vkaJMuXqJh-szbOzB5kzk5_yoknct922254TsKvMd491m9qrhkCD-NSnYC1u_ZIKqC0JRt9B7KPl3icqX7zsk52NurAkGlLw2xuHRpDtSLHp9rsRYrPaTGsDQLuqu6jEITraPG1f29yvKqxj9KEtJY4IRLJxIEJg8iV-w7MGmuCm7y_QZw5BQPIu3Ab-9y1whGf3D1SVSynKpN1tvFDTe3GNQQhS0garf7R5wtjnp4_5d9lhDqv5UL6Flnidikh9Tol9ZTF-VNSEbHMPtztc83nHwiW8JHDu7Elg"
 		// -------------------------------------------------------------------------
 		
 		if(method.toLowerCase() == "post") {
@@ -203,7 +213,7 @@ export default abstract class extends Command {
 		}
 
 		const kcCookie = this.getConfig("JWT_TOKEN");
-		if(!kcCookie) {
+		if(!kcCookie || kcCookie.length == 0) {
 			await open(`${API_URI}/jwt`);
 
 			await inquirer.prompt([{
@@ -230,6 +240,14 @@ export default abstract class extends Command {
 	}
 
 	/**
+	 * logout
+	 */
+	async logout() {
+		await this.api("logout", "get");
+		this.setConfig("JWT_TOKEN", "");
+	}
+
+	/**
 	 * collectClientId
 	 * @param flags 
 	 */
@@ -237,8 +255,7 @@ export default abstract class extends Command {
 		// Get all realm Clients
 		const clientResponse = await this.api("keycloak?target=clients&realm=mdos", "get");
 		if(clientResponse.data.length == 0) {
-			error("There are no clients yet available. Create a client first using the command:");
-			console.log("   mdos kc client create");
+			error("There are no clients available, or you do not have sufficient permissions to retrieve available clients for this task");
 			process.exit(1);
 		}
 

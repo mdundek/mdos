@@ -12,6 +12,7 @@ export default class Deploy extends Command {
     static description = 'describe the command here'
 
     static flags = {}
+    regCreds: any
 
     public async run(): Promise<void> {
         const { flags } = await this.parse(Deploy)
@@ -113,7 +114,8 @@ export default class Deploy extends Command {
             else if(!appComp.publicRegistry) {
                 targetRegistry = userInfo.data.registry;
             }
-            await buildPushComponent(userInfo.data, targetRegistry, appComp, appRootDir);
+            const regCreds = await this.collectRegistryCredentials()
+            await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir);
         }
 
 	    // Sync minio content for volumes
@@ -408,5 +410,39 @@ export default class Deploy extends Command {
                 console.log();
             })
         }
+    }
+
+    /**
+     * collectRegistryCredentials
+     * @returns 
+     */
+    async collectRegistryCredentials() {
+        if(!this.regCreds) {
+            context("To push your images to the mdos registry, you need to provide your mdos username and password first")
+
+            this.regCreds = await inquirer.prompt([{
+                group: "application",
+                type: 'text',
+                name: 'username',
+                message: 'Username:',
+                validate: (value: { trim: () => { (): any; new(): any; length: number } }) => {
+                    if(value.trim().length == 0)
+                        return "Mandatory field"
+                    return true
+                }
+            }, {
+                group: "application",
+                type: 'text',
+                name: 'password',
+                message: 'Password:',
+                validate: (value: { trim: () => { (): any; new(): any; length: number } }) => {
+                    if(value.trim().length == 0)
+                        return "Mandatory field"
+                    return true
+                }
+            }])
+            console.log()
+        }
+        return this.regCreds
     }
 }
