@@ -261,7 +261,7 @@ export default abstract class extends Command {
 
 		// Select target client
 		let clientResponses: {
-			clientId: any; clientUuid: any , clientName: any
+			clientId: any; clientUuid: any
 		};
 		if(flags.clientId) {
 			const targetClient = clientResponse.data.find((o: { clientId: string }) => o.clientId == flags.clientId)
@@ -269,7 +269,7 @@ export default abstract class extends Command {
 				error("Could not find client ID: " + flags.clientId);
 				process.exit(1);
 			}
-			clientResponses = {clientId: targetClient.clientId, clientUuid: targetClient.id, clientName: targetClient.clientName};
+			clientResponses = {clientId: targetClient.clientId, clientUuid: targetClient.id};
 		} else {
 			clientResponses = await inquirer.prompt([{
 				name: 'clientUuid',
@@ -281,7 +281,6 @@ export default abstract class extends Command {
 			}])
 			const targetClient = clientResponse.data.find((o: { id: any; }) => o.id == clientResponses.clientUuid)
 			clientResponses.clientId = targetClient.clientId
-			clientResponses.clientName = targetClient.clientName
 		}
 		return clientResponses;
 	}

@@ -157,17 +157,18 @@ const extractErrorMessage = (error, allErrors) => {
 	}
 
 	if(errorMsg.length > 0) {
-		if(allErrors) {
-			return errorMsg.join("\n");
-		}
-		else {
-			let retainedError = "";
-			errorMsg.forEach((msg) => {
-				if(retainedError.length < msg.length)
-					retainedError = msg
-			});
-			return retainedError;
-		}
+		return errorMsg.join("\n");
+		// if(allErrors) {
+		// 	return errorMsg.join("\n");
+		// }
+		// else {
+		// 	let retainedError = "";
+		// 	errorMsg.forEach((msg) => {
+		// 		if(retainedError.length < msg.length)
+		// 			retainedError = msg
+		// 	});
+		// 	return retainedError;
+		// }
 	}
 	else {
 		return "An unknown error occured!"
