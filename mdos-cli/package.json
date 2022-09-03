@@ -71,7 +71,16 @@
             "@oclif/plugin-not-found"
         ],
         "topicSeparator": " ",
-        "topics": {}
+        "topics": {
+            "application": { "description": "Manage your applications" },
+            "component": { "description": "Manage your applicationc components" },
+            "generate": { "description": "Scaffold applications and components" },
+            "kc": { "description": "Manage Keycloak users and roles" },
+            "kc:client": { "description": "Manage Keycloak client roles" },
+            "kc:user": { "description": "Assig Keycloak client roles to users" },
+            "namespace": { "description": "Manage your tenant kubernetes namespaces" },
+            "oidc": { "description": "Manage OIDC authentication providers and protect your applications" }
+          }
     },
     "scripts": {
         "build": "shx rm -rf dist && tsc -b && cp -r ./src/lib ./dist",

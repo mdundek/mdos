@@ -1,20 +1,25 @@
-import { Flags, CliUx } from '@oclif/core'
+import { Flags } from '@oclif/core'
 import Command from '../../base'
-
 const inquirer = require('inquirer')
-const { context, info, error, warn, filterQuestions } = require('../../lib/tools')
-const chalk = require('chalk')
+const { error } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
 
+/**
+ * Command
+ */
 export default class AddSecret extends Command {
-    static description = 'describe the command here'
+    static aliases = ['component:add:secret', 'component:secret:add', 'add:component:secret', 'comp:add:secret', 'comp:secret:add', 'add:comp:secret']
+    static description = 'Add a secrets to you components for sensitive environement variables and secret config files'
 
     // ******* FLAGS *******
     static flags = {}
-    // ***********************
+    // *********************
 
+    // *********************
+    // ******* MAIN ********
+    // *********************
     public async run(): Promise<void> {
         const { flags } = await this.parse(AddSecret)
 
@@ -49,10 +54,8 @@ export default class AddSecret extends Command {
                 name: 'name',
                 message: 'Enter a name for this secret asset:',
                 validate: (value: string) => {
-                    if (value.trim().length == 0)
-                        return 'Mandatory field'
-                    else if(!(/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)))
-                        return "Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)"
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
             },
@@ -109,7 +112,7 @@ export default class AddSecret extends Command {
         } else {
             env.mountPath = responses.mountpath
             env.entries.push({
-                name: "mysecret",
+                name: 'mysecret',
                 filename: 'myfile.conf',
                 value: 'some multinene config file\nmore lines here',
             })

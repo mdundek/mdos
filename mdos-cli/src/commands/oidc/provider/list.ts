@@ -1,58 +1,55 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
 
-const inquirer = require('inquirer')
-const { info, error, warn, filterQuestions } = require('../../../lib/tools')
-const chalk = require('chalk')
-
+/**
+ * Command
+ */
 export default class List extends Command {
-	static description = 'describe the command here'
+    static aliases = ['oidc:list', 'oidc:providers:list', 'sso:list', 'sso:provider:list', 'sso:provider:show', 'sso:providers:list', 'sso:providers:show']
+    static description = 'List the deployed OIDC providers for the platform'
 
-	// ******* FLAGS *******
-	static flags = {
-		// username: Flags.string({ char: 'u', description: 'Keycloak admin username' }),
-	}
-	// ***** QUESTIONS *****
-    static questions = [
-        // {
-        //     group: "<group>",
-        //     type: 'text',
-        //     name: 'username',
-        //     message: 'What admin username would you like to configure for Keycloak?',
-        //     validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
-        // }
-    ]
-    // ***********************
+    // ******* FLAGS *******
+    static flags = {
+        // username: Flags.string({ char: 'u', description: 'Keycloak admin username' }),
+    }
+    // *********************
 
-	public async run(): Promise<void> {
-		const { flags } = await this.parse(List)
+    // *********************
+    // ******* MAIN ********
+    // *********************
+    public async run(): Promise<void> {
+        const { flags } = await this.parse(List)
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
-            await this.validateJwt();
+            await this.validateJwt()
         } catch (error) {
-            this.showError(error);
-			process.exit(1);
+            this.showError(error)
+            process.exit(1)
         }
 
-		try {
-            const resp = await this.api(`oidc-provider`, "get")
-          
-            console.log();
-            CliUx.ux.table(resp.data, {
-                clientId: {
-                    header: 'NAME',
-                    minWidth: 20,
-                    get: row => row.name
+        try {
+            const resp = await this.api(`oidc-provider`, 'get')
+
+            console.log()
+            CliUx.ux.table(
+                resp.data,
+                {
+                    clientId: {
+                        header: 'NAME',
+                        minWidth: 20,
+                        get: (row) => row.name,
+                    },
+                },
+                {
+                    printLine: this.log.bind(this),
                 }
-            }, {
-                printLine: this.log.bind(this)
-            })
-            console.log();
+            )
+            console.log()
         } catch (error) {
-            this.showError(error);
-            process.exit(1);
+            this.showError(error)
+            process.exit(1)
         }
-	}
+    }
 }

@@ -1,21 +1,24 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
+const { context, computeApplicationTree } = require('../../lib/tools')
+var treeify = require('treeify')
 
-const inquirer = require('inquirer')
-const { info, success, context, error, s3sync, isDockerInstalled, buildPushComponent, computeApplicationTree } = require('../../lib/tools')
-const chalk = require('chalk')
-const fs = require('fs')
-const path = require('path')
-const YAML = require('yaml')
-var treeify = require('treeify');
-
+/**
+ * Command
+ */
 export default class List extends Command {
-    static description = 'describe the command here'
+    static aliases = ['apps:list', 'app:list', 'list:app', 'list:apps', 'list:application', 'list:applications', 'applications:list']
+    static description = 'List your applications'
 
+    // ******* FLAGS *******
     static flags = {
         clientId: Flags.string({ char: 'c', description: 'Keycloak clientId to look for applications for?' }),
     }
+    // *********************
 
+    // *********************
+    // ******* MAIN ********
+    // *********************
     public async run(): Promise<void> {
         const { flags } = await this.parse(List)
 
@@ -29,25 +32,25 @@ export default class List extends Command {
         }
 
         // Get client id & uuid
-        let clientResponse;
+        let clientResponse
         try {
-            clientResponse = await this.collectClientId(flags, 'What client do you want to list applications for');
+            clientResponse = await this.collectClientId(flags, 'What client do you want to list applications for')
         } catch (error) {
-            this.showError(error);
-            process.exit(1);
+            this.showError(error)
+            process.exit(1)
         }
 
         // List apps
         try {
             const response = await this.api(`kube?target=applications&clientId=${clientResponse.clientId}`, 'get')
-            const treeData = computeApplicationTree(response.data);
+            const treeData = computeApplicationTree(response.data)
 
             console.log()
 
-            if(Object.keys(treeData).length == 0) {
-                context("No applications deployed for this tenant", true, true)
+            if (Object.keys(treeData).length == 0) {
+                context('No applications deployed for this tenant', true, true)
             } else {
-                console.log( treeify.asTree(treeData, true) );
+                console.log(treeify.asTree(treeData, true))
             }
         } catch (error) {
             CliUx.ux.action.stop('error')
