@@ -1,39 +1,43 @@
 const { NotFound, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
-const CommonCore = require('../common.class.core');
+const CommonCore = require('../common.class.core')
 
+/**
+ * OIDC core functions class
+ *
+ * @class KubeCore
+ * @extends {CommonCore}
+ */
 class OidcProviderCore extends CommonCore {
-
     /**
      * constructor
-     * @param {*} app 
+     * @param {*} app
      */
     constructor(app) {
-        super(app);
-        this.app = app;
+        super(app)
+        this.app = app
     }
 
     /**
-     * 
-     * @param {*} name 
+     *
+     * @param {*} name
      */
     async oidcProviderCheck(name) {
-        let responses = await this.app.get("kube").getOidcProviders();
-		if(!responses.find(o => o.name.toLowerCase() == name.toLowerCase())) {
-			throw new Unavailable("OIDC provider not found");
-		}
+        let responses = await this.app.get('kube').getOidcProviders()
+        if (!responses.find((o) => o.name.toLowerCase() == name.toLowerCase())) {
+            throw new Unavailable('OIDC provider not found')
+        }
     }
-    
 
     /**
      * ensureProviderNotDeclared
-     * @param {*} name 
+     * @param {*} name
      */
     async ensureProviderNotDeclared(name) {
-        let responses = await this.app.get("kube").getOidcProviders();
-        if(responses.find(o => o.name.toLowerCase() == name.toLowerCase())) {
-            throw new Conflict("OIDC provider already declared");
+        let responses = await this.app.get('kube').getOidcProviders()
+        if (responses.find((o) => o.name.toLowerCase() == name.toLowerCase())) {
+            throw new Conflict('OIDC provider already declared')
         }
     }
 }

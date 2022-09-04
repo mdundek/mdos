@@ -14,10 +14,17 @@ axios.defaults.httpsAgent = new https.Agent({
     ca: caCrt,
 })
 
+/**
+ * Low level core kube functions
+ *
+ * @class KubeBase
+ */
 class KubeBase {
+    
     /**
-     * constructor
+     * Creates an instance of KubeBase.
      * @param {*} app
+     * @memberof KubeBase
      */
     constructor(app) {
         this.app = app
@@ -48,9 +55,12 @@ class KubeBase {
     }
 
     /**
-     * getConfigMap
+     *
+     *
      * @param {*} namespaceName
      * @param {*} cmName
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getConfigMap(namespaceName, cmName) {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/configmaps/${cmName}`, this.k8sAxiosHeader)
@@ -58,19 +68,24 @@ class KubeBase {
     }
 
     /**
-     * replaceConfigMap
+     *
+     *
      * @param {*} namespaceName
      * @param {*} cmName
      * @param {*} body
+     * @memberof KubeBase
      */
     async replaceConfigMap(namespaceName, cmName, body) {
         await axios.put(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/configmaps/${cmName}`, body, this.k8sAxiosHeader)
     }
 
     /**
-     * getSecret
+     *
+     *
      * @param {*} namespaceName
      * @param {*} secretName
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getSecret(namespaceName, secretName) {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`, this.k8sAxiosHeader)
@@ -81,9 +96,12 @@ class KubeBase {
     }
 
     /**
-     * hasSecret
+     *
+     *
      * @param {*} namespaceName
      * @param {*} secretName
+     * @return {*} 
+     * @memberof KubeBase
      */
     async hasSecret(namespaceName, secretName) {
         try {
@@ -95,10 +113,12 @@ class KubeBase {
     }
 
     /**
-     * createSecret
+     *
+     *
      * @param {*} namespaceName
      * @param {*} secretName
      * @param {*} data
+     * @memberof KubeBase
      */
     async createSecret(namespaceName, secretName, data) {
         for (let param of Object.keys(data)) {
@@ -120,10 +140,12 @@ class KubeBase {
     }
 
     /**
-     * replaceSecret
+     *
+     *
      * @param {*} namespaceName
      * @param {*} secretName
      * @param {*} data
+     * @memberof KubeBase
      */
     async replaceSecret(namespaceName, secretName, data) {
         for (let param of Object.keys(data)) {
@@ -145,9 +167,11 @@ class KubeBase {
     }
 
     /**
-     * deleteSecret
-     * @param {*} name
+     *
+     *
+     * @param {*} namespaceName
      * @param {*} secretName
+     * @memberof KubeBase
      */
     async deleteSecret(namespaceName, secretName) {
         const secretExists = await this.hasSecret(namespaceName, secretName)
@@ -155,9 +179,11 @@ class KubeBase {
     }
 
     /**
-     * getPods
+     *
+     *
      * @param {*} namespaceName
-     * @returns
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getPods(namespaceName) {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/pods`, this.k8sAxiosHeader)
@@ -165,7 +191,13 @@ class KubeBase {
     }
 
     /**
-     * getPodLogs
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} podName
+     * @param {*} containerName
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getPodLogs(namespaceName, podName, containerName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/pods/${podName}/log`)
@@ -175,10 +207,12 @@ class KubeBase {
     }
 
     /**
-     * getApplicationPods
+     *
+     *
      * @param {*} namespaceName
      * @param {*} appUuid
-     * @returns
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getApplicationPods(namespaceName, appUuid) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/pods`)
@@ -188,10 +222,12 @@ class KubeBase {
     }
 
     /**
-     * getApplicationDeployment
+     *
+     *
      * @param {*} namespaceName
      * @param {*} appUuid
-     * @returns
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getApplicationDeployment(namespaceName, appUuid) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments`)
@@ -201,9 +237,11 @@ class KubeBase {
     }
 
     /**
-     * getApplicationDeployment
+     *
+     *
      * @param {*} namespaceName
-     * @returns
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getApplicationDeployments(namespaceName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments`)
@@ -212,17 +250,23 @@ class KubeBase {
     }
 
     /**
-     * deleteDeployment
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} deploymentName
+     * @memberof KubeBase
      */
     async deleteDeployment(namespaceName, deploymentName) {
         await axios.delete(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments/${deploymentName}`, this.k8sAxiosHeader)
     }
 
     /**
-     * getApplicationStatefulSet
+     *
+     *
      * @param {*} namespaceName
      * @param {*} appUuid
-     * @returns
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getApplicationStatefulSet(namespaceName, appUuid) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/statefulsets`)
@@ -232,9 +276,11 @@ class KubeBase {
     }
 
     /**
-     * getApplicationStatefulSets
+     *
+     *
      * @param {*} namespaceName
-     * @returns
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getApplicationStatefulSets(namespaceName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/statefulsets`)
@@ -243,15 +289,21 @@ class KubeBase {
     }
 
     /**
-     * deleteStatefulSet
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} statefullsetName
+     * @memberof KubeBase
      */
     async deleteStatefulSet(namespaceName, statefullsetName) {
         await axios.delete(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/statefulsets/${statefullsetName}`, this.k8sAxiosHeader)
     }
 
     /**
-     * getNamespaces
-     * @returns
+     *
+     *
+     * @return {*} 
+     * @memberof KubeBase
      */
     async getNamespaces() {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, this.k8sAxiosHeader)
@@ -259,7 +311,11 @@ class KubeBase {
     }
 
     /**
-     * hasNamespace
+     *
+     *
+     * @param {*} name
+     * @return {*} 
+     * @memberof KubeBase
      */
     async hasNamespace(name) {
         const res = await this.getNamespaces()
@@ -267,8 +323,10 @@ class KubeBase {
     }
 
     /**
-     * createNamespace
+     *
+     *
      * @param {*} data
+     * @memberof KubeBase
      */
     async createNamespace(data) {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, this.k8sAxiosHeader)
@@ -294,11 +352,13 @@ class KubeBase {
     }
 
     /**
-     * createRegistrySecret
+     *
+     *
      * @param {*} namespaceName
      * @param {*} secretName
      * @param {*} user
      * @param {*} pass
+     * @memberof KubeBase
      */
     async createRegistrySecret(namespaceName, secretName, user, pass) {
         // Create private registry credentials secret
@@ -321,29 +381,35 @@ class KubeBase {
     }
 
     /**
-     * deleteNamespace
+     *
+     *
      * @param {*} namespaceName
+     * @memberof KubeBase
      */
     async deleteNamespace(namespaceName) {
         await axios.delete(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}`, this.k8sAxiosHeader)
     }
 
     /**
-     * deletePod
+     *
+     *
      * @param {*} namespaceName
      * @param {*} podName
+     * @memberof KubeBase
      */
     async deletePod(namespaceName, podName) {
         await axios.delete(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/pods/${podName}`, this.k8sAxiosHeader)
     }
 
     /**
-     * helmInstall
+     *
+     *
      * @param {*} namespace
      * @param {*} chartName
      * @param {*} values
      * @param {*} chart
      * @param {*} version
+     * @memberof KubeBase
      */
     async helmInstall(namespace, chartName, values, chart, version) {
         try {
@@ -357,27 +423,36 @@ class KubeBase {
     }
 
     /**
-     * getHelmChartValues
+     *
+     *
      * @param {*} namespace
      * @param {*} chartName
+     * @return {*} 
+     * @memberof KubeBase
      */
-     async getHelmChartValues(namespace, chartName) {
+    async getHelmChartValues(namespace, chartName) {
         const result = await terminalCommand(`${this.HELM_BASE_CMD} get values ${chartName} -n ${namespace}`)
-        return YAML.parse(result.join("\n"));
+        return YAML.parse(result.join('\n'))
     }
 
     /**
-     * helmUninstall
+     *
+     *
+     * @param {*} namespace
      * @param {*} chartName
+     * @memberof KubeBase
      */
     async helmUninstall(namespace, chartName) {
         await terminalCommand(`${this.HELM_BASE_CMD} delete ${chartName} -n ${namespace} --wait`)
     }
 
     /**
-     * mdosGenericHelmInstall
+     *
+     *
      * @param {*} namespace
      * @param {*} values
+     * @param {*} processId
+     * @memberof KubeBase
      */
     async mdosGenericHelmInstall(namespace, values, processId) {
         let nsCreated = await this.hasNamespace(namespace)
@@ -390,7 +465,13 @@ class KubeBase {
         fs.writeFileSync('./values.yaml', YAML.stringify(values))
 
         try {
-            await this._asyncChildHelmDeploy(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --timeout 10m0s --atomic`, processId, values.tenantName, values.uuid, values.appName)
+            await this._asyncChildHelmDeploy(
+                `${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --timeout 10m0s --atomic`,
+                processId,
+                values.tenantName,
+                values.uuid,
+                values.appName
+            )
         } catch (error) {
             if (doCreateNs) {
                 try {
@@ -406,12 +487,15 @@ class KubeBase {
     }
 
     /**
-     * _asyncChildHelmDeploy
+     *
+     *
      * @param {*} cmd
      * @param {*} processId
      * @param {*} namespace
      * @param {*} appUuid
-     * @returns
+     * @param {*} appName
+     * @return {*} 
+     * @memberof KubeBase
      */
     _asyncChildHelmDeploy(cmd, processId, namespace, appUuid, appName) {
         return new Promise((resolve, reject) => {
@@ -651,7 +735,11 @@ class KubeBase {
     }
 
     /**
-     * _broadcastToClient
+     *
+     *
+     * @param {*} processId
+     * @param {*} data
+     * @memberof KubeBase
      */
     _broadcastToClient(processId, data) {
         if (this.app.get('socketManager').isClientAlive(processId)) {
@@ -660,7 +748,15 @@ class KubeBase {
     }
 
     /**
-     * _getAppLogs
+     *
+     *
+     * @param {*} cPods
+     * @param {*} namespace
+     * @param {*} appUuid
+     * @param {*} appName
+     * @param {*} deployedAtDate
+     * @return {*} 
+     * @memberof KubeBase
      */
     async _getAppLogs(cPods, namespace, appUuid, appName, deployedAtDate) {
         let appLogs = {}
@@ -682,9 +778,16 @@ class KubeBase {
         }
         return appLogs
     }
-
+    
     /**
-     * _getAppPodLogs
+     *
+     *
+     * @param {*} namespace
+     * @param {*} appUuid
+     * @param {*} appName
+     * @param {*} podResponse
+     * @return {*} 
+     * @memberof KubeBase
      */
     async _getAppPodLogs(namespace, appUuid, appName, podResponse) {
         const podLogs = {}

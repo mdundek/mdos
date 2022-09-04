@@ -1,24 +1,29 @@
 const { NotFound, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
-const CommonCore = require('../common.class.core');
+const CommonCore = require('../common.class.core')
 
+/**
+ * MDos core functions class
+ *
+ * @class KubeCore
+ * @extends {CommonCore}
+ */
 class MdosCore extends CommonCore {
-
     /**
      * constructor
-     * @param {*} app 
+     * @param {*} app
      */
     constructor(app) {
-        super(app);
-        this.app = app;
+        super(app)
+        this.app = app
     }
 
     /**
      * computeUserInfo
-     * @param {*} headers 
-     * @param {*} params 
-     * @returns 
+     * @param {*} headers
+     * @param {*} params
+     * @returns
      */
     async computeUserInfo(headers, params) {
         let allNs = await this.app.get('kube').getNamespaces()
@@ -90,7 +95,7 @@ class MdosCore extends CommonCore {
 
     /**
      * prepareNamespaceForDeployment
-     * @param {*} valuesYaml 
+     * @param {*} valuesYaml
      */
     async prepareNamespaceForDeployment(valuesYaml) {
         // Create namespace if not exist
@@ -109,7 +114,7 @@ class MdosCore extends CommonCore {
             }
 
             // If sync volues , make sure we have a minio secret
-            if (valuesYaml.components.find((component) => component.volumes ? component.volumes.find((v) => v.syncVolume) : false)) {
+            if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
                 const minioCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, 's3-read')
                 if (!minioCredsFound) {
                     throw new Conflict("The target namespace seems to be missing the secret named 's3-read'")
@@ -120,8 +125,8 @@ class MdosCore extends CommonCore {
 
     /**
      * enrichValuesForDeployment
-     * @param {*} valuesYaml 
-     * @returns 
+     * @param {*} valuesYaml
+     * @returns
      */
     async enrichValuesForDeployment(valuesYaml) {
         // Specify registry for init containers
@@ -170,13 +175,13 @@ class MdosCore extends CommonCore {
             // Set default ingress type if not set
             if (component.ingress) {
                 component.ingress = component.ingress.map((i) => {
-                    if(!i.trafficType) i.trafficType = "http"
+                    if (!i.trafficType) i.trafficType = 'http'
                     return i
                 })
             }
         }
 
-        return valuesYaml;
+        return valuesYaml
     }
 }
 

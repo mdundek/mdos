@@ -1,16 +1,22 @@
-const SchemaV1 = require("./v1")
+const SchemaV1 = require('./v1')
 
+/**
+ * Validate mdos application schemas
+ *
+ * @class SchemaValidator
+ */
 class SchemaValidator {
-
+    
     /**
-     * constructor
-     * @param {*} version 
+     * Creates an instance of SchemaValidator.
+     * @param {*} version
+     * @memberof SchemaValidator
      */
     constructor(version) {
-        if(version.toLowerCase() == "v1") {
-            this.instance = new SchemaV1();
+        if (version.toLowerCase() == 'v1') {
+            this.instance = new SchemaV1()
         } else {
-            throw new Error(`Schema version unknown: ${version}`);
+            throw new Error(`Schema version unknown: ${version}`)
         }
     }
 }

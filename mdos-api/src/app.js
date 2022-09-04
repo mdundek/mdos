@@ -5,7 +5,7 @@ const helmet = require('helmet')
 const cors = require('cors')
 const fs = require('fs')
 const logger = require('./logger')
-const oidcCookieRoute = require('./routes/oidcCookie');
+const oidcCookieRoute = require('./routes/oidcCookie')
 const feathers = require('@feathersjs/feathers')
 const swagger = require('feathers-swagger')
 const configuration = require('@feathersjs/configuration')
@@ -37,11 +37,11 @@ app.use(favicon(path.join(app.get('public'), 'favicon.ico')))
 app.get('/jwt', oidcCookieRoute.bind(this, app))
 
 app.get('/healthz', function (req, res) {
-    res.send("Healthy");
-});
+    res.send('Healthy')
+})
 app.get('/registry_domain', function (req, res) {
-    res.send(`registry.${process.env.ROOT_DOMAIN}`);
-});
+    res.send(`registry.${process.env.ROOT_DOMAIN}`)
+})
 
 app.use('/', express.static(app.get('public')))
 

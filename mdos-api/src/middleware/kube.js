@@ -1,162 +1,167 @@
-const axios = require("axios");
-const https = require("https");
-const YAML = require('yaml');
-const fs = require("fs");
-const KubeBase = require("./kubeBase");
-const { terminalCommand } = require("../libs/terminal");
+const axios = require('axios')
+const https = require('https')
+const YAML = require('yaml')
+const fs = require('fs')
+const KubeBase = require('./kubeBase')
+const { terminalCommand } = require('../libs/terminal')
 
 axios.defaults.httpsAgent = new https.Agent({
-    rejectUnauthorized: false
-});
+    rejectUnauthorized: false,
+})
 
+/**
+ * Keycloak specific functions
+ *
+ * @class Kube
+ * @extends {KubeBase}
+ */
 class Kube extends KubeBase {
-
+    
     /**
-     * constructor
-     * @param {*} app 
+     * Creates an instance of Kube.
+     * @param {*} app
+     * @memberof Kube
      */
-     constructor(app) {
-        super(app);
+    constructor(app) {
+        super(app)
     }
-
+    
     /**
-     * getOidcProviders
-     * @returns 
+     *
+     *
+     * @return {*} 
+     * @memberof Kube
      */
     async getOidcProviders() {
-        const istioConfigMap = await this.getConfigMap("istio-system", "istio");
-        const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh);
-        return istioMeshYaml.extensionProviders.filter(o => o.name != 'kc-mdos' && o.name != 'kc-cs');
+        const istioConfigMap = await this.getConfigMap('istio-system', 'istio')
+        const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh)
+        return istioMeshYaml.extensionProviders.filter((o) => o.name != 'kc-mdos' && o.name != 'kc-cs')
     }
 
     /**
-     * addOidcProviders
-     * @param {*} data 
+     *
+     *
+     * @param {*} providerName
+     * @memberof Kube
      */
     async removeOidcProviders(providerName) {
         try {
-            const istioConfigMap = await this.getConfigMap("istio-system", "istio");
+            const istioConfigMap = await this.getConfigMap('istio-system', 'istio')
 
             // Get mesh property from ConfigMap
-            const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh);
+            const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh)
             // Remove config if present
-            istioMeshYaml.extensionProviders = istioMeshYaml.extensionProviders.filter(p => p.name != providerName);
+            istioMeshYaml.extensionProviders = istioMeshYaml.extensionProviders.filter((p) => p.name != providerName)
             // Write back to ConfigMap object
-            istioConfigMap.data.mesh = YAML.stringify(istioMeshYaml);
+            istioConfigMap.data.mesh = YAML.stringify(istioMeshYaml)
 
             // Create values.yaml json file
             let valuesManifestJson = {
                 meshConfig: {
-                    extensionProviders: istioMeshYaml.extensionProviders
-                }
-            };
+                    extensionProviders: istioMeshYaml.extensionProviders,
+                },
+            }
 
             // Deploy updated istiod
             try {
-                fs.writeFileSync('./values.yaml', YAML.stringify(valuesManifestJson));
-                await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`);
+                fs.writeFileSync('./values.yaml', YAML.stringify(valuesManifestJson))
+                await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`)
             } finally {
-                if (fs.existsSync("./values.yaml")) {
-                    fs.unlinkSync("./values.yaml");
+                if (fs.existsSync('./values.yaml')) {
+                    fs.unlinkSync('./values.yaml')
                 }
             }
 
             // Restart istiod pod
             try {
-                const istioPods = await this.getPods("istio-system");
-                const istiodPodName = istioPods.items.find(p => p.metadata.labels.app == "istiod").metadata.name;
-                await this.deletePod("istio-system", istiodPodName);
-            } catch(error) {
-                throw error;
+                const istioPods = await this.getPods('istio-system')
+                const istiodPodName = istioPods.items.find((p) => p.metadata.labels.app == 'istiod').metadata.name
+                await this.deletePod('istio-system', istiodPodName)
+            } catch (error) {
+                throw error
             }
         } catch (error) {
-            console.log(error);
-            throw error;
+            console.log(error)
+            throw error
         }
     }
 
     /**
-     * addIstiodOidcProvider
+     *
+     *
+     * @param {*} name
+     * @memberof Kube
      */
     async addIstiodOidcProvider(name) {
         const istiodData = {
-            "name": name,
-            "envoyExtAuthzHttp": {
-                "headersToDownstreamOnDeny": [
-                    "set-cookie",
-                    "content-type"
-                ],
-                "headersToUpstreamOnAllow": [
-                    "authorization",
-                    "cookie",
-                    "path",
-                    "x-auth-request-access-token",
-                    "x-auth-request-groups",
-                    "x-auth-request-email",
-                    "x-forwarded-access-token"
-                ],
-                "includeRequestHeadersInCheck": [
-                    "cookie",
-                    "x-forwarded-access-token"
-                ],
-                "port": 4180,
-                "service": `${name}-oauth2-proxy.oauth2-proxy.svc.cluster.local`
-            }
-        };
+            name: name,
+            envoyExtAuthzHttp: {
+                headersToDownstreamOnDeny: ['set-cookie', 'content-type'],
+                headersToUpstreamOnAllow: ['authorization', 'cookie', 'path', 'x-auth-request-access-token', 'x-auth-request-groups', 'x-auth-request-email', 'x-forwarded-access-token'],
+                includeRequestHeadersInCheck: ['cookie', 'x-forwarded-access-token'],
+                port: 4180,
+                service: `${name}-oauth2-proxy.oauth2-proxy.svc.cluster.local`,
+            },
+        }
 
-        const istioConfigMap = await this.getConfigMap("istio-system", "istio");
+        const istioConfigMap = await this.getConfigMap('istio-system', 'istio')
 
         // Get mesh property from ConfigMap
-        const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh);
-        if(!istioMeshYaml.extensionProviders) {
-            istioMeshYaml.extensionProviders = [];
+        const istioMeshYaml = YAML.parse(istioConfigMap.data.mesh)
+        if (!istioMeshYaml.extensionProviders) {
+            istioMeshYaml.extensionProviders = []
         }
 
         // Is this provider already deployed?
-        const existingOauthProvider = istioMeshYaml.extensionProviders.find(p => p.name == istiodData.name);
-        if(existingOauthProvider) {
-            return;
+        const existingOauthProvider = istioMeshYaml.extensionProviders.find((p) => p.name == istiodData.name)
+        if (existingOauthProvider) {
+            return
         }
-        
+
         // Add new config
-        istioMeshYaml.extensionProviders.push(istiodData);
+        istioMeshYaml.extensionProviders.push(istiodData)
 
         // Create values.yaml json file
         let valuesManifestJson = {
             meshConfig: {
-                extensionProviders: istioMeshYaml.extensionProviders
-            }
-        };
+                extensionProviders: istioMeshYaml.extensionProviders,
+            },
+        }
 
         // Deploy updated istiod
         try {
-            fs.writeFileSync('./values.yaml', YAML.stringify(valuesManifestJson));
-            await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`);
+            fs.writeFileSync('./values.yaml', YAML.stringify(valuesManifestJson))
+            await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`)
         } finally {
-            if (fs.existsSync("./values.yaml")) {
-                fs.unlinkSync("./values.yaml");
+            if (fs.existsSync('./values.yaml')) {
+                fs.unlinkSync('./values.yaml')
             }
         }
 
         // Restart istiod pod
         try {
-            const istioPods = await this.getPods("istio-system");
-            const istiodPodName = istioPods.items.find(p => p.metadata.labels.app == "istiod").metadata.name;
-            await this.deletePod("istio-system", istiodPodName);
-        } catch(error) {
-            throw error;
+            const istioPods = await this.getPods('istio-system')
+            const istiodPodName = istioPods.items.find((p) => p.metadata.labels.app == 'istiod').metadata.name
+            await this.deletePod('istio-system', istiodPodName)
+        } catch (error) {
+            throw error
         }
     }
 
     /**
-     * deployOauth2Proxy
+     *
+     *
+     * @param {*} type
+     * @param {*} realm
+     * @param {*} data
+     * @memberof Kube
      */
     async deployOauth2Proxy(type, realm, data) {
-        if(type == "keycloak") {
-            const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}/realms/${realm}/.well-known/openid-configuration`);
-            const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo");            
-            const clientSecret = await this.app.get("keycloak").getClientSecret(realm, data.clientId);
-            
+        if (type == 'keycloak') {
+            const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}/realms/${realm}/.well-known/openid-configuration`)
+            const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
+            const clientSecret = await this.app.get('keycloak').getClientSecret(realm, data.clientId)
+
             const oauthData = YAML.parse(`service:
     portNumber: 4180
 config:
@@ -190,21 +195,23 @@ config:
         ssl_insecure_skip_verify = true
         standard_logging = true
         upstreams = [ "static://200" ]
-        whitelist_domains = [".${this.rootDomain}"]`);
+        whitelist_domains = [".${this.rootDomain}"]`)
 
             // Deploy oauth2-proxy instance for new provider
-            if(!await this.hasNamespace("oauth2-proxy"))
-                await this.createNamespace({name: "oauth2-proxy"});
-            await this.helmInstall("oauth2-proxy", data.name, oauthData, "oauth2-proxy/oauth2-proxy", "6.0.1");
+            if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
+            await this.helmInstall('oauth2-proxy', data.name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
         }
     }
 
     /**
-     * uninstallOauth2Proxy
+     *
+     *
+     * @param {*} name
+     * @memberof Kube
      */
-     async uninstallOauth2Proxy(name) {
-        await this.helmUninstall("oauth2-proxy", name);
+    async uninstallOauth2Proxy(name) {
+        await this.helmUninstall('oauth2-proxy', name)
     }
 }
 
-module.exports = Kube;
+module.exports = Kube
