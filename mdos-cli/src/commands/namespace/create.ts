@@ -5,9 +5,25 @@ const { error, filterQuestions, mergeFlags } = require('../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Create
+ * @extends {Command}
  */
 export default class Create extends Command {
-    static aliases = ['ns:create', 'create:ns', 'create:namespace', 'client:create', 'create:client', 'ns:add', 'add:ns', 'add:namespace', 'namespaces:add', 'client:add', 'add:client']
+    static aliases = [
+        'ns:create',
+        'create:ns',
+        'create:namespace',
+        'client:create',
+        'create:client',
+        'ns:add',
+        'add:ns',
+        'add:namespace',
+        'namespaces:add',
+        'client:add',
+        'add:client',
+    ]
     static description = 'Create a new namespace / client / tenant'
 
     // ******* FLAGS *******
@@ -25,7 +41,8 @@ export default class Create extends Command {
             message: 'Enter a namespace name to create',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                 return true
             },
         },

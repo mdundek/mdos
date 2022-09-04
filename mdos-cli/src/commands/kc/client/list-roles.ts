@@ -3,9 +3,21 @@ import Command from '../../../base'
 
 /**
  * Command
+ *
+ * @export
+ * @class ListRoles
+ * @extends {Command}
  */
 export default class ListRoles extends Command {
-    static aliases = ['client:list-roles', 'client:list:roles', 'client:show-roles', 'client:show:roles', 'kc:client:list:roles', 'kc:client:show-roles', 'kc:client:show:roles']
+    static aliases = [
+        'client:list-roles',
+        'client:list:roles',
+        'client:show-roles',
+        'client:show:roles',
+        'kc:client:list:roles',
+        'kc:client:show-roles',
+        'kc:client:show:roles',
+    ]
     static description = 'List your custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)'
 
     // ******* FLAGS *******
@@ -33,7 +45,10 @@ export default class ListRoles extends Command {
             // Get client id & uuid
             const clientResponse = await this.collectClientId(flags, 'Select a Client ID to list roles for')
 
-            const response = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${flags.clientId ? flags.clientId : clientResponse.clientId}`, 'get')
+            const response = await this.api(
+                `keycloak?target=client-roles&realm=mdos&clientId=${flags.clientId ? flags.clientId : clientResponse.clientId}`,
+                'get'
+            )
 
             console.log()
             CliUx.ux.table(

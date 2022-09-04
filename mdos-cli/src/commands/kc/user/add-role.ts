@@ -5,6 +5,10 @@ const { error, warn, filterQuestions } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class AddRole
+ * @extends {Command}
  */
 export default class AddRole extends Command {
     static aliases = ['user:add:role', 'kc:user:add:role', 'user:create-role', 'user:create:role', 'kc:user:create:role']
@@ -44,7 +48,8 @@ export default class AddRole extends Command {
             message: 'What username do you wish to add this client role to?',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                 return true
             },
         },
@@ -117,7 +122,9 @@ export default class AddRole extends Command {
         // Compute target client role
         let roleResponses: { roleName: any; roleUuid: any }
         if (flags.role) {
-            const targetRole = respClientRoles.data.find((o: { name: string | undefined; clientRole: boolean }) => o.name == flags.role && o.clientRole == true)
+            const targetRole = respClientRoles.data.find(
+                (o: { name: string | undefined; clientRole: boolean }) => o.name == flags.role && o.clientRole == true
+            )
             if (!targetRole) {
                 error('Could not find role: ' + flags.role)
                 process.exit(1)

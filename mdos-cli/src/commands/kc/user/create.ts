@@ -1,10 +1,14 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
 const inquirer = require('inquirer')
-const {  warn, filterQuestions, mergeFlags } = require('../../../lib/tools')
+const { warn, filterQuestions, mergeFlags } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Create
+ * @extends {Command}
  */
 export default class Create extends Command {
     static aliases = ['user:create', 'user:add', 'kc:user:add']
@@ -27,7 +31,8 @@ export default class Create extends Command {
             message: 'Enter keycloak username',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                 return true
             },
         },

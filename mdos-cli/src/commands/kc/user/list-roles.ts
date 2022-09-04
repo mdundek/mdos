@@ -5,9 +5,21 @@ const { filterQuestions } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class ListRoles
+ * @extends {Command}
  */
 export default class ListRoles extends Command {
-    static aliases = ['user:list-roles', 'user:list:roles', 'user:show-roles', 'user:show:roles', 'kc:user:list:roles', 'kc:user:show-roles', 'kc:user:show:roles']
+    static aliases = [
+        'user:list-roles',
+        'user:list:roles',
+        'user:show-roles',
+        'user:show:roles',
+        'kc:user:list:roles',
+        'kc:user:show-roles',
+        'kc:user:show:roles',
+    ]
     static description = 'List user assigned roles for specific namespaces / clients / tenant'
 
     // ******* FLAGS *******

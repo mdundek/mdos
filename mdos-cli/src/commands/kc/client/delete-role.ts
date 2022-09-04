@@ -5,9 +5,21 @@ const { error } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class DeleteRole
+ * @extends {Command}
  */
 export default class DeleteRole extends Command {
-    static aliases = ['client:delete-role', 'client:delete:role', 'client:remove-role', 'client:remove:role', 'kc:client:delete:role', 'kc:client:remove-role', 'kc:client:remove:role']
+    static aliases = [
+        'client:delete-role',
+        'client:delete:role',
+        'client:remove-role',
+        'client:remove:role',
+        'kc:client:delete:role',
+        'kc:client:remove-role',
+        'kc:client:remove:role',
+    ]
     static description = 'Delete custom roles from your namespace / client / tenant (Used for OIDC authentication and ACL)'
 
     // ******* FLAGS *******
@@ -71,7 +83,10 @@ export default class DeleteRole extends Command {
         // Get all Client roles
         let respClientRoles
         try {
-            respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}&filterProtected=true`, 'get')
+            respClientRoles = await this.api(
+                `keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}&filterProtected=true`,
+                'get'
+            )
         } catch (error) {
             this.showError(error)
             process.exit(1)
@@ -122,7 +137,10 @@ export default class DeleteRole extends Command {
         if (confirmed) {
             CliUx.ux.action.start('Deleting Keycloak client role')
             try {
-                await this.api(`keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}&clientId=${clientResponse.clientId}`, 'delete')
+                await this.api(
+                    `keycloak/${targetRole.name}?target=client-roles&realm=mdos&clientUuid=${clientResponse.clientUuid}&clientId=${clientResponse.clientId}`,
+                    'delete'
+                )
                 CliUx.ux.action.stop()
             } catch (error) {
                 CliUx.ux.action.stop('error')

@@ -8,6 +8,10 @@ const YAML = require('yaml')
 
 /**
  * Command
+ *
+ * @export
+ * @class Sso
+ * @extends {Command}
  */
 export default class Sso extends Command {
     static aliases = ['app:sso', 'app:protect', 'application:protect', 'sso:app', 'protect:app', 'protect:application']
@@ -63,7 +67,9 @@ export default class Sso extends Command {
                 process.exit(1)
             }
             if (!targetComponent.ingress) {
-                error(`The '${componentName}' component does not have a ingress configured yet. Please add an ingress to this component before adding SSO to it`)
+                error(
+                    `The '${componentName}' component does not have a ingress configured yet. Please add an ingress to this component before adding SSO to it`
+                )
                 process.exit(1)
             }
         } else {

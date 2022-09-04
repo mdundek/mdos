@@ -1,11 +1,14 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
-
 const inquirer = require('inquirer')
 const { warn } = require('../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Delete
+ * @extends {Command}
  */
 export default class Delete extends Command {
     static aliases = ['app:delete', 'delete:app', 'delete:application', 'delete:applications', 'applications:delete']
@@ -69,7 +72,12 @@ export default class Delete extends Command {
         // List apps
         CliUx.ux.action.start('Deleting application')
         try {
-            await this.api(`kube/${appToDelResponse.app.name}?target=application&clientId=${clientResponse.clientId}&isHelm=${appToDelResponse.app.isHelm}&type=${appToDelResponse.app.isHelm ? 'na' : appToDelResponse.app.type}`, 'delete')
+            await this.api(
+                `kube/${appToDelResponse.app.name}?target=application&clientId=${clientResponse.clientId}&isHelm=${
+                    appToDelResponse.app.isHelm
+                }&type=${appToDelResponse.app.isHelm ? 'na' : appToDelResponse.app.type}`,
+                'delete'
+            )
             CliUx.ux.action.stop()
         } catch (error) {
             CliUx.ux.action.stop('error')

@@ -3,9 +3,21 @@ import Command from '../../../base'
 
 /**
  * Command
+ *
+ * @export
+ * @class List
+ * @extends {Command}
  */
 export default class List extends Command {
-    static aliases = ['oidc:list', 'oidc:providers:list', 'sso:list', 'sso:provider:list', 'sso:provider:show', 'sso:providers:list', 'sso:providers:show']
+    static aliases = [
+        'oidc:list',
+        'oidc:providers:list',
+        'sso:list',
+        'sso:provider:list',
+        'sso:provider:show',
+        'sso:providers:list',
+        'sso:providers:show',
+    ]
     static description = 'List the deployed OIDC providers for the platform'
 
     // ******* FLAGS *******

@@ -5,9 +5,21 @@ const { error, mergeFlags } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class CreateRole
+ * @extends {Command}
  */
 export default class CreateRole extends Command {
-    static aliases = ['client:create-role', 'client:create:role', 'client:add-role', 'client:add:role', 'kc:client:create:role', 'kc:client:add-role', 'kc:client:add:role']
+    static aliases = [
+        'client:create-role',
+        'client:create:role',
+        'client:add-role',
+        'client:add:role',
+        'kc:client:create:role',
+        'kc:client:add-role',
+        'kc:client:add:role',
+    ]
     static description = 'Create custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)'
 
     // ******* FLAGS *******
@@ -71,8 +83,10 @@ export default class CreateRole extends Command {
                     message: 'Enter the client role name to create',
                     validate: (value: any) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                        else if (respClientRoles.data.find((o: { name: string }) => o.name.toLowerCase() == value.trim().toLowerCase())) return 'Role already exists'
+                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                            return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                        else if (respClientRoles.data.find((o: { name: string }) => o.name.toLowerCase() == value.trim().toLowerCase()))
+                            return 'Role already exists'
 
                         return true
                     },

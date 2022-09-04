@@ -5,6 +5,10 @@ var treeify = require('treeify')
 
 /**
  * Command
+ *
+ * @export
+ * @class List
+ * @extends {Command}
  */
 export default class List extends Command {
     static aliases = ['apps:list', 'app:list', 'list:app', 'list:apps', 'list:application', 'list:applications', 'applications:list']

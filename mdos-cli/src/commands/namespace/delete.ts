@@ -5,9 +5,25 @@ const { error } = require('../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Delete
+ * @extends {Command}
  */
 export default class Delete extends Command {
-    static aliases = ['ns:delete', 'delete:ns', 'delete:namespace', 'client:delete', 'delete:client', 'ns:remove', 'remove:ns', 'remove:namespace', 'namespaces:remove', 'client:remove', 'remove:client']
+    static aliases = [
+        'ns:delete',
+        'delete:ns',
+        'delete:namespace',
+        'client:delete',
+        'delete:client',
+        'ns:remove',
+        'remove:ns',
+        'remove:namespace',
+        'namespaces:remove',
+        'client:remove',
+        'remove:client',
+    ]
     static description = 'Delete a namespace / client / tenant'
 
     // ******* FLAGS *******

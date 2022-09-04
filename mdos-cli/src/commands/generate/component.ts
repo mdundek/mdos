@@ -11,6 +11,10 @@ const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 5)
 
 /**
  * Command
+ *
+ * @export
+ * @class Component
+ * @extends {Command}
  */
 export default class Component extends Command {
     static aliases = ['generate:comp', 'gen:comp', 'create:component', 'create:comp']
@@ -61,7 +65,8 @@ export default class Component extends Command {
                     message: 'Enter a application component name:',
                     validate: (value: string) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                            return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                         if (fs.existsSync(path.join(appRootPath, value))) {
                             return 'A folder with this name already exists for this project'
                         }

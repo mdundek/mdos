@@ -8,6 +8,10 @@ const YAML = require('yaml')
 
 /**
  * Command
+ *
+ * @export
+ * @class AddSecret
+ * @extends {Command}
  */
 export default class AddSecret extends Command {
     static aliases = ['component:add:secret', 'component:secret:add', 'add:component:secret', 'comp:add:secret', 'comp:secret:add', 'add:comp:secret']
@@ -55,7 +59,8 @@ export default class AddSecret extends Command {
                 message: 'Enter a name for this secret asset:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
             },

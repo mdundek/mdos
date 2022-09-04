@@ -3,9 +3,27 @@ import Command from '../../base'
 
 /**
  * Command
+ *
+ * @export
+ * @class List
+ * @extends {Command}
  */
 export default class List extends Command {
-    static aliases = ['ns:list', 'list:ns', 'list:namespace', 'list:namespaces', 'client:list', 'list:client', 'ns:show', 'show:ns', 'show:namespace', 'namespace:show', 'namespaces:show', 'client:show', 'show:client']
+    static aliases = [
+        'ns:list',
+        'list:ns',
+        'list:namespace',
+        'list:namespaces',
+        'client:list',
+        'list:client',
+        'ns:show',
+        'show:ns',
+        'show:namespace',
+        'namespace:show',
+        'namespaces:show',
+        'client:show',
+        'show:client',
+    ]
     static description = 'List namespaces / clients / tenants'
 
     // ******* FLAGS *******

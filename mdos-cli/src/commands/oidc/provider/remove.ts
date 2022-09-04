@@ -5,6 +5,10 @@ const { error, warn } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Remove
+ * @extends {Command}
  */
 export default class Remove extends Command {
     static aliases = ['oidc:delete', 'oidc:provider:delete', 'sso:delete', 'sso:provider:delete', 'sso:provider:remove']

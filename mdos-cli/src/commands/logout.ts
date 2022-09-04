@@ -4,6 +4,10 @@ const { warn, context, dockerLogout } = require('../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Logout
+ * @extends {Command}
  */
 export default class Logout extends Command {
     static description = 'Logout from the platform'

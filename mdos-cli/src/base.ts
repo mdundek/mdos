@@ -16,6 +16,14 @@ type AxiosConfig = {
     headers?: any
 }
 
+/**
+ * oclif command base class
+ *
+ * @export
+ * @abstract
+ * @class
+ * @extends {Command}
+ */
 export default abstract class extends Command {
     authMode: string
     socketManager: any
@@ -23,6 +31,7 @@ export default abstract class extends Command {
 
     /**
      * constructor
+     * 
      * @param argv
      * @param config
      */
@@ -53,6 +62,7 @@ export default abstract class extends Command {
 
     /**
      * getConfig
+     * 
      * @param key
      * @returns
      */
@@ -62,6 +72,7 @@ export default abstract class extends Command {
 
     /**
      * getConfig
+     * 
      * @param key
      * @returns
      */
@@ -71,6 +82,7 @@ export default abstract class extends Command {
 
     /**
      * getConfig
+     * 
      * @param key
      * @param value
      */
@@ -87,6 +99,7 @@ export default abstract class extends Command {
 
     /**
      * api
+     * 
      * @param endpoint
      * @param method
      * @param body
@@ -124,6 +137,7 @@ export default abstract class extends Command {
 
     /**
      * _collectApiServerUrl
+     * 
      * @returns
      */
     async _collectApiServerUrl() {
@@ -156,6 +170,7 @@ export default abstract class extends Command {
 
     /**
      * _collectKeycloakUrl
+     * 
      * @returns
      */
     async _collectKeycloakUrl() {
@@ -254,6 +269,7 @@ export default abstract class extends Command {
 
     /**
      * collectClientId
+     * 
      * @param flags
      */
     async collectClientId(flags: any, question: string) {
@@ -295,6 +311,7 @@ export default abstract class extends Command {
 
     /**
      * showError
+     * 
      * @param error
      */
     showError(err: (arg0: any) => void) {
@@ -303,6 +320,7 @@ export default abstract class extends Command {
 
     /**
      * isPositiveInteger
+     * 
      * @param str
      * @returns
      */

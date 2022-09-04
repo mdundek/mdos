@@ -3,6 +3,10 @@ import Command from '../../../base'
 
 /**
  * Command
+ *
+ * @export
+ * @class List
+ * @extends {Command}
  */
 export default class List extends Command {
     static aliases = ['user:list']

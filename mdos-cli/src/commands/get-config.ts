@@ -4,6 +4,10 @@ const { context } = require('../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class GetConfig
+ * @extends {Command}
  */
 export default class GetConfig extends Command {
     static aliases = ['get:config', 'show:config', 'show-config']

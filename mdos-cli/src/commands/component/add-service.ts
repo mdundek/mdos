@@ -8,9 +8,26 @@ const YAML = require('yaml')
 
 /**
  * Command
+ *
+ * @export
+ * @class AddService
+ * @extends {Command}
  */
 export default class AddService extends Command {
-    static aliases = ['component:add:service', 'component:service:add', 'add:component:service', 'comp:add:service', 'comp:service:add', 'add:comp:service', 'component:add:port', 'component:port:add', 'add:component:port', 'comp:add:port', 'comp:port:add', 'add:comp:port']
+    static aliases = [
+        'component:add:service',
+        'component:service:add',
+        'add:component:service',
+        'comp:add:service',
+        'comp:service:add',
+        'add:comp:service',
+        'component:add:port',
+        'component:port:add',
+        'add:component:port',
+        'comp:add:port',
+        'comp:port:add',
+        'add:comp:port',
+    ]
     static description = 'Expose ports for your application components so that other applications can communicate with your components'
 
     // ******* FLAGS *******
@@ -58,7 +75,8 @@ export default class AddService extends Command {
                 message: 'Enter a name for the service to add a port to:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
             },
@@ -69,7 +87,9 @@ export default class AddService extends Command {
                 validate: (value: string) => {
                     if (value.trim().length < 2) return 'Invalid port'
                     if (this.isPositiveInteger(value)) {
-                        return targetCompYaml.ports && targetCompYaml.ports.find((p: { port: number }) => p.port == parseInt(value)) ? 'Port already declared' : true
+                        return targetCompYaml.ports && targetCompYaml.ports.find((p: { port: number }) => p.port == parseInt(value))
+                            ? 'Port already declared'
+                            : true
                     } else {
                         return 'Invalid port'
                     }

@@ -11,6 +11,10 @@ const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 5)
 
 /**
  * Command
+ *
+ * @export
+ * @class Application
+ * @extends {Command}
  */
 export default class Application extends Command {
     static aliases = ['generate:app', 'gen:app', 'create:application', 'create:app']
@@ -32,7 +36,8 @@ export default class Application extends Command {
             message: 'Enter a application name:',
             validate: (value: string) => {
                 if (value.trim().length == 0) return 'Mandatory field'
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                 if (fs.existsSync(path.join(process.cwd(), value))) {
                     return 'A folder with this name already exists in this directory'
                 }
@@ -46,7 +51,8 @@ export default class Application extends Command {
             message: 'Enter a tenant name that this application belongs to:',
             validate: (value: string) => {
                 if (value.trim().length == 0) return 'Mandatory field'
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                 return true
             },
         },
@@ -99,7 +105,10 @@ export default class Application extends Command {
         const volumesFolder = path.join(mdosAppFile, 'volumes')
         try {
             fs.mkdirSync(volumesFolder, { recursive: true })
-            fs.writeFileSync(path.join(volumesFolder, 'README.md'), '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove')
+            fs.writeFileSync(
+                path.join(volumesFolder, 'README.md'),
+                '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
+            )
         } catch (error) {
             this.showError(error)
             process.exit(1)

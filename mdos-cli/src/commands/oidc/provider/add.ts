@@ -5,6 +5,10 @@ const { warn, filterQuestions, mergeFlags } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Add
+ * @extends {Command}
  */
 export default class Add extends Command {
     static aliases = ['oidc:create', 'oidc:provider:create', 'sso:create', 'sso:provider:create', 'sso:provider:add']
@@ -36,7 +40,8 @@ export default class Add extends Command {
             message: 'Enter a Keycloak client ID (application)?',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                 return true
             },
         },

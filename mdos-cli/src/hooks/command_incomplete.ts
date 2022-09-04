@@ -1,6 +1,12 @@
 import { Hook, toConfiguredId, toStandardizedId } from '@oclif/core'
 const inquirer = require('inquirer')
 
+/**
+ * Command suggestion hook
+ *
+ * @param {*} { config, matches, argv }
+ * @return {*} 
+ */
 const hook: Hook.CommandIncomplete = async function ({ config, matches, argv }) {
     const { command } = await inquirer.prompt([
         {

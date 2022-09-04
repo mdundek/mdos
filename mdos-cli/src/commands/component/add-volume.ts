@@ -8,14 +8,33 @@ const YAML = require('yaml')
 
 /**
  * Command
+ *
+ * @export
+ * @class AddVolume
+ * @extends {Command}
  */
 export default class AddVolume extends Command {
-    static aliases = ['component:add:volume', 'component:volume:add', 'add:component:volume', 'comp:add:volume', 'comp:volume:add', 'add:comp:volume', 'component:add:storage', 'component:storage:add', 'add:component:storage', 'comp:add:storage', 'comp:storage:add', 'add:comp:storage']
+    static aliases = [
+        'component:add:volume',
+        'component:volume:add',
+        'add:component:volume',
+        'comp:add:volume',
+        'comp:volume:add',
+        'add:comp:volume',
+        'component:add:storage',
+        'component:storage:add',
+        'add:component:storage',
+        'comp:add:storage',
+        'comp:storage:add',
+        'add:comp:storage',
+    ]
     static description = 'Persist your data using volumes / storage for your components'
 
     // ******* FLAGS *******
     static flags = {
-        hostpath: Flags.string({ description: 'If set, the volume will be mounted as a host-path volume on this specified host path' }),
+        hostpath: Flags.string({
+            description: 'If set, the volume will be mounted as a host-path volume on this specified host path',
+        }),
         mountpath: Flags.string({ description: 'The mount path inside your container for this volume' }),
         inject: Flags.string({ description: 'If set, the volume will be pre-populated with some files that you specify' }),
         name: Flags.string({ description: 'Name for this volume' }),
@@ -63,7 +82,8 @@ export default class AddVolume extends Command {
                 message: 'Enter a name for this volume folder:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
             },

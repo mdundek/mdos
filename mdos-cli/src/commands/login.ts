@@ -4,6 +4,10 @@ const { context } = require('../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Login
+ * @extends {Command}
  */
 export default class Login extends Command {
     static description = 'Login to the platform'

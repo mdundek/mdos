@@ -2,10 +2,18 @@ const feathers = require('@feathersjs/feathers')
 const socketio = require('@feathersjs/socketio-client')
 const io = require('socket.io-client')
 
+/**
+ * SocketManager
+ *
+ * @class SocketManager
+ */
 class SocketManager {
+   
     /**
-     * constructor
-     * @param {*} app
+     * Creates an instance of SocketManager.
+     * @param {*} serverUrl
+     * @param {*} kcCookie
+     * @memberof SocketManager
      */
     constructor(serverUrl, kcCookie) {
         if (kcCookie) {
@@ -24,10 +32,13 @@ class SocketManager {
         this.app.configure(socketio(this.socket))
     }
 
+    
     /**
-     * subscribe
-     * @param {*} processId
+     * Subscribe to server
+     *
      * @param {*} cb
+     * @return {*} 
+     * @memberof SocketManager
      */
     subscribe(cb) {
         return new Promise(
@@ -58,8 +69,11 @@ class SocketManager {
         )
     }
 
+    
     /**
-     * unsubscribe
+     * Unsubscribe from server
+     *
+     * @memberof SocketManager
      */
     unsubscribe() {
         clearInterval(this.heartbeatInterval)

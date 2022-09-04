@@ -5,6 +5,10 @@ const { error, warn, filterQuestions } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class RemoveRole
+ * @extends {Command}
  */
 export default class RemoveRole extends Command {
     static aliases = ['user:remove:role', 'kc:user:remove:role', 'user:delete-role', 'user:delete:role', 'kc:user:delete:role']
@@ -117,7 +121,9 @@ export default class RemoveRole extends Command {
         // Collect user role
         let targetRole
         if (flags.role) {
-            targetRole = respUserClientRoles.data.filter((rm: { client: any }) => rm.client == clientResponses.clientId).find((rm: { name: string | undefined }) => rm.name == flags.role)
+            targetRole = respUserClientRoles.data
+                .filter((rm: { client: any }) => rm.client == clientResponses.clientId)
+                .find((rm: { name: string | undefined }) => rm.name == flags.role)
             if (!targetRole) {
                 error('Role not found for this user')
                 process.exit(1)
@@ -157,7 +163,10 @@ export default class RemoveRole extends Command {
         if (confirmed) {
             CliUx.ux.action.start('Removing Keycloak user role')
             try {
-                await this.api(`keycloak/${targetRole.uuid}?target=user-roles&realm=mdos&clientUuid=${clientResponses.clientUuid}&userUuid=${targetUser.id}&roleName=${targetRole.name}&clientId=${clientResponses.clientId}`, 'delete')
+                await this.api(
+                    `keycloak/${targetRole.uuid}?target=user-roles&realm=mdos&clientUuid=${clientResponses.clientUuid}&userUuid=${targetUser.id}&roleName=${targetRole.name}&clientId=${clientResponses.clientId}`,
+                    'delete'
+                )
                 CliUx.ux.action.stop()
             } catch (error) {
                 CliUx.ux.action.stop('error')

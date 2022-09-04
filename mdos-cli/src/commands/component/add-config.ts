@@ -8,9 +8,26 @@ const YAML = require('yaml')
 
 /**
  * Command
+ *
+ * @export
+ * @class AddConfig
+ * @extends {Command}
  */
 export default class AddConfig extends Command {
-    static aliases = ['component:add:config', 'component:config:add', 'add:component:config', 'comp:add:config', 'comp:config:add', 'add:comp:config', 'component:add:env', 'component:env:add', 'add:component:env', 'comp:add:env', 'comp:env:add', 'add:comp:env']
+    static aliases = [
+        'component:add:config',
+        'component:config:add',
+        'add:component:config',
+        'comp:add:config',
+        'comp:config:add',
+        'add:comp:config',
+        'component:add:env',
+        'component:env:add',
+        'add:component:env',
+        'comp:add:env',
+        'comp:env:add',
+        'add:comp:env',
+    ]
     static description = 'Configure environement variables and config files for your components'
 
     // ******* FLAGS *******
@@ -55,7 +72,8 @@ export default class AddConfig extends Command {
                 message: 'Enter a name for this configuration asset:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
             },

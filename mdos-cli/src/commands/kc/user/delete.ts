@@ -5,6 +5,10 @@ const { error, filterQuestions } = require('../../../lib/tools')
 
 /**
  * Command
+ *
+ * @export
+ * @class Delete
+ * @extends {Command}
  */
 export default class Delete extends Command {
     static aliases = ['user:delete', 'user:remove', 'kc:user:remove']

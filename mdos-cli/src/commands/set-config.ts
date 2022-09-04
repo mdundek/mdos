@@ -3,10 +3,13 @@ import Command from '../base'
 
 /**
  * Command
+ *
+ * @export
+ * @class SetConfig
+ * @extends {Command}
  */
 export default class SetConfig extends Command {
     static aliases = ['set:config', 'add:config', 'add-config']
-
     static description = 'Set a configutation parameter for your local CLI environement'
 
     // ******* FLAGS *******

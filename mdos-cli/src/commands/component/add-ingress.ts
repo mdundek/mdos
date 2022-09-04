@@ -8,9 +8,20 @@ const YAML = require('yaml')
 
 /**
  * Command
+ *
+ * @export
+ * @class AddIngress
+ * @extends {Command}
  */
 export default class AddIngress extends Command {
-    static aliases = ['component:add:ingress', 'component:ingress:add', 'add:component:ingress', 'comp:add:ingress', 'comp:ingress:add', 'add:comp:ingress']
+    static aliases = [
+        'component:add:ingress',
+        'component:ingress:add',
+        'add:component:ingress',
+        'comp:add:ingress',
+        'comp:ingress:add',
+        'add:comp:ingress',
+    ]
     static description = 'Configure ingress rules to allow external acces to your component ports using hostnames'
 
     // ******* FLAGS *******
@@ -67,7 +78,8 @@ export default class AddIngress extends Command {
                 message: 'Enter a name for the ingress:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
             },

@@ -1,11 +1,15 @@
 var shell = require('shelljs')
 
 /**
- * terminalCommand
+ * Execute a shell command
+ *
  * @param {*} command
- * @returns
+ * @param {*} jsonResponse
+ * @param {*} cwdPath
+ * @return {*} 
  */
 const terminalCommand = async (command, jsonResponse, cwdPath) => {
+    
     return new Promise((resolve, reject) => {
         try {
             shell.exec(command, { silent: true, cwd: cwdPath ? cwdPath : process.cwd() }, function (code, stdout, stderr) {
@@ -24,6 +28,7 @@ const terminalCommand = async (command, jsonResponse, cwdPath) => {
         }
     })
 }
+
 
 module.exports = {
     terminalCommand,

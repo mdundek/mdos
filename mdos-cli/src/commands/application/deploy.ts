@@ -1,6 +1,5 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
-
 const inquirer = require('inquirer')
 const { success, context, error, s3sync, isDockerInstalled, buildPushComponent } = require('../../lib/tools')
 const chalk = require('chalk')
@@ -10,6 +9,10 @@ const YAML = require('yaml')
 
 /**
  * Command
+ *
+ * @export
+ * @class Deploy
+ * @extends {Command}
  */
 export default class Deploy extends Command {
     static aliases = ['app:deploy', 'deploy:app', 'deploy:application', 'deploy:applications', 'applications:deploy']
@@ -256,9 +259,11 @@ export default class Deploy extends Command {
     }
 
     /**
-     * showRealtimeDeploymentDetails
-     * @param consoleHandles
-     * @param deployStatus
+     * Show details of deployment in realtime
+     *
+     * @param {any[]} consoleHandles
+     * @param {*} deployStatus
+     * @memberof Deploy
      */
     showRealtimeDeploymentDetails(consoleHandles: any[], deployStatus: any) {
         const podNames = Object.keys(deployStatus)
@@ -310,11 +315,27 @@ export default class Deploy extends Command {
                 if (!existingConsole) {
                     existingConsole = {
                         name: lineName,
-                        set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : isSuccess && !falseSuccess ? chalk.green(logLine) : isPending ? chalk.grey(logLine) : chalk.yellow.dim(logLine)),
+                        set: this.getConsoleLineHandel(
+                            isError
+                                ? chalk.red(logLine)
+                                : isSuccess && !falseSuccess
+                                ? chalk.green(logLine)
+                                : isPending
+                                ? chalk.grey(logLine)
+                                : chalk.yellow.dim(logLine)
+                        ),
                     }
                     consoleHandles.push(existingConsole)
                 } else {
-                    existingConsole.set(isError ? chalk.red(logLine) : isSuccess && !falseSuccess ? chalk.green(logLine) : isPending ? chalk.grey(logLine) : chalk.yellow.dim(logLine))
+                    existingConsole.set(
+                        isError
+                            ? chalk.red(logLine)
+                            : isSuccess && !falseSuccess
+                            ? chalk.green(logLine)
+                            : isPending
+                            ? chalk.grey(logLine)
+                            : chalk.yellow.dim(logLine)
+                    )
                 }
             }
 
@@ -355,9 +376,16 @@ export default class Deploy extends Command {
 
                 // Identify if state is an error
                 let isError = false
-                if (initContainerStatus.state == 'waiting' && ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(initContainerStatus.reason ? initContainerStatus.reason : '')) isError = true
+                if (
+                    initContainerStatus.state == 'waiting' &&
+                    ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(
+                        initContainerStatus.reason ? initContainerStatus.reason : ''
+                    )
+                )
+                    isError = true
 
-                if (initContainerStatus.state == 'terminated' && ['Error'].includes(initContainerStatus.reason ? initContainerStatus.reason : '')) isError = true
+                if (initContainerStatus.state == 'terminated' && ['Error'].includes(initContainerStatus.reason ? initContainerStatus.reason : ''))
+                    isError = true
 
                 if (!existingConsole) {
                     existingConsole = {
@@ -393,7 +421,11 @@ export default class Deploy extends Command {
 
                 // Identify if state is an error
                 let isError = false
-                if (containerStatus.state == 'waiting' && ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(containerStatus.reason ? containerStatus.reason : '')) isError = true
+                if (
+                    containerStatus.state == 'waiting' &&
+                    ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(containerStatus.reason ? containerStatus.reason : '')
+                )
+                    isError = true
 
                 if (containerStatus.state == 'terminated' && ['Error'].includes(containerStatus.reason ? containerStatus.reason : '')) isError = true
 
@@ -424,9 +456,12 @@ export default class Deploy extends Command {
         }
     }
 
+    
     /**
-     * showAppLogs
-     * @param logs
+     * Print application logs on error or interrupt
+     *
+     * @param {*} logs
+     * @memberof Deploy
      */
     showAppLogs(logs: any) {
         const logKeys = Object.keys(logs)
@@ -448,9 +483,12 @@ export default class Deploy extends Command {
         }
     }
 
+    
     /**
-     * collectRegistryCredentials
-     * @returns
+     * Get the user registry credentials to push to the mdos registry
+     *
+     * @return {*} 
+     * @memberof Deploy
      */
     async collectRegistryCredentials() {
         if (!this.regCreds) {
