@@ -10,23 +10,26 @@ const YAML = require('yaml')
  * Command
  *
  * @export
- * @class AddConfig
+ * @class Config
  * @extends {Command}
  */
-export default class AddConfig extends Command {
+export default class Config extends Command {
     static aliases = [
-        'component:add:config',
-        'component:config:add',
-        'add:component:config',
-        'comp:add:config',
-        'comp:config:add',
-        'add:comp:config',
-        'component:add:env',
-        'component:env:add',
-        'add:component:env',
-        'comp:add:env',
-        'comp:env:add',
-        'add:comp:env',
+        'add:configuration',
+        'add:config',
+        'add:conf',
+        'add:env',
+        'configuration:add',
+        'config:add',
+        'conf:add',
+        'env:add',
+        'generate:configuration',
+        'generate:conf',
+        'generate:env',
+        'configuration:generate',
+        'config:generate',
+        'conf:generate',
+        'env:generate'
     ]
     static description = 'Configure environement variables and config files for your components'
 
@@ -38,7 +41,7 @@ export default class AddConfig extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(AddConfig)
+        const { flags } = await this.parse(Config)
 
         // Detect mdos project yaml file
         const appYamlPath = path.join(path.dirname(process.cwd()), 'mdos.yaml')

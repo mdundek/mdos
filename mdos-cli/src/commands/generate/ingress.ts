@@ -10,17 +10,14 @@ const YAML = require('yaml')
  * Command
  *
  * @export
- * @class AddIngress
+ * @class Ingress
  * @extends {Command}
  */
-export default class AddIngress extends Command {
+export default class Ingress extends Command {
     static aliases = [
-        'component:add:ingress',
-        'component:ingress:add',
-        'add:component:ingress',
-        'comp:add:ingress',
-        'comp:ingress:add',
-        'add:comp:ingress',
+        'add:ingress',
+        'ingress:add',
+        'ingress:generate',
     ]
     static description = 'Configure ingress rules to allow external acces to your component ports using hostnames'
 
@@ -37,7 +34,7 @@ export default class AddIngress extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(AddIngress)
+        const { flags } = await this.parse(Ingress)
 
         // Detect mdos project yaml file
         const appYamlPath = path.join(path.dirname(process.cwd()), 'mdos.yaml')

@@ -10,23 +10,18 @@ const YAML = require('yaml')
  * Command
  *
  * @export
- * @class AddVolume
+ * @class Volume
  * @extends {Command}
  */
-export default class AddVolume extends Command {
+export default class Volume extends Command {
     static aliases = [
-        'component:add:volume',
-        'component:volume:add',
-        'add:component:volume',
-        'comp:add:volume',
-        'comp:volume:add',
-        'add:comp:volume',
-        'component:add:storage',
-        'component:storage:add',
-        'add:component:storage',
-        'comp:add:storage',
-        'comp:storage:add',
-        'add:comp:storage',
+        'add:volume',
+        'volume:add',
+        'add:storage',
+        'storage:add',
+        'volume:generate',
+        'generate:storage',
+        'storage:generate'
     ]
     static description = 'Persist your data using volumes / storage for your components'
 
@@ -45,7 +40,7 @@ export default class AddVolume extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(AddVolume)
+        const { flags } = await this.parse(Volume)
 
         // Get volumes base path
         const volumesPath = path.join(path.dirname(process.cwd()), 'volumes')
