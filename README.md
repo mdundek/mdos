@@ -8,7 +8,7 @@
 
 <div style="display: flex; align-items: center; justify-content: center">
   <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
-    <img src="docs/img/overview.png" style="max-width: 100%">
+    <img src="https://raw.githubusercontent.com/mdundek/mdos/main/docs/img/overview.png" style="max-width: 100%">
   </div>
   <div style="padding-right: 20px;">
     <ul>
