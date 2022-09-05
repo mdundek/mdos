@@ -2,7 +2,7 @@
 **/*.log
 **/.DS_Store
 **/node_modules
-
+mdos-doc/mkdocs/site
 mdos-setup/cloudflare.ini
 mdos-setup/deprecated/*
 mdos-setup/dep/mdos-api
