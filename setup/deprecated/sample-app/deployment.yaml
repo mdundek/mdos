@@ -1,0 +1,80 @@
+cat <<EOF | k3s kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+  labels:
+    istio-injection: enabled
+
+---
+
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5tZHVuZGVrLm5ldHdvcmsiOnsidXNlcm5hbWUiOiJtZHVuZGVrIiwicGFzc3dvcmQiOiJsaTE0ZWJlMTQiLCJhdXRoIjoiYldSMWJtUmxhenBzYVRFMFpXSmxNVFE9In19fQ==
+kind: Secret
+metadata:
+  name: regcred
+  namespace: demo
+type: kubernetes.io/dockerconfigjson
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oidctest-deployment
+  namespace: demo
+  labels:
+    app: oidctest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oidctest
+  template:
+    metadata:
+      labels:
+        app: oidctest
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: oidctest
+        image: registry.mdundek.network/oidc-sample-app:latest
+        ports:
+        - containerPort: 3000
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: oidctest 
+  namespace: demo
+spec:
+  ports:
+  - name: http-oidctest
+    port: 80
+    targetPort: 3000
+  selector:
+    app: oidctest
+
+---
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: oidctest
+  namespace: demo
+spec:
+  hosts:
+  - oidc.mdundek.network
+  gateways:
+  - istio-system/https-gateway
+  http:
+  - route:
+    - destination:
+        port:
+          number: 80
+        host: oidctest
+EOF
