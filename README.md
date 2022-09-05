@@ -4,16 +4,36 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 
 ---
 
+## Overview
+
+<div style="display: flex; align-items: center; justify-content: center">
+  <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
+    <img src="https://raw.githubusercontent.com/mdundek/mdos/main/docs/img/overview.png" style="max-width: 100%">
+  </div>
+  <div style="padding-right: 20px;">
+    <ul>
+      <li>Build & deploy your applications on Kubernetes</li>
+      <li>No Kubernetes skills needed to perform complex workflows</li>
+      <li>Hassle free secure multi-tenant cluster usage and isolation</li>
+      <li>Greatly simplifies complex Kubernetes application deployment patterns</li>
+      <li>Provides tools to deal with hard to solve storage related challanges</li>
+      <li>Protect your applications by delegating authentication to MDos using Oauth2 & OIDC</li>
+      <li>Simply focus on your application RBAC logic by inspecting the user JWT token</li>
+    </ul>
+  </div>
+</div>
+
+---
+
 ## Table of Contents
 
-- [Overview](#overview)
-  - [Why would you want to use it?](#why-would-you-want-to-use-it)
-  - [Features](#features)
-    - [Application specific resource configurations](#1-application-specific-resource-configurations)
-    - [Deploy and debug your applications](#2-deploy-and-debug-your-applications)
-    - [Advanced volume and storage workflows](#3-advanced-volume-and-storage-workflows)
-    - [Multi-tenant based segregation](#4-multi-tenant-based-segregation)
-    - [OIDC / OAuth2 authentication & Application RBAC](#5-oidc--oauth2-authentication--application-rbac)
+- [Why would you want to use it?](#why-would-you-want-to-use-it)
+- [Features](#features)
+  - [Application specific resource configurations](#1-application-specific-resource-configurations)
+  - [Deploy and debug your applications](#2-deploy-and-debug-your-applications)
+  - [Advanced volume and storage workflows](#3-advanced-volume-and-storage-workflows)
+  - [Multi-tenant based segregation](#4-multi-tenant-based-segregation)
+  - [OIDC / OAuth2 authentication & Application RBAC](#5-oidc--oauth2-authentication--application-rbac)
 - [Installation & setup](#overview)
   - [MDos platform](#overview)
     - [Master node & MDos control plane](#overview)
@@ -26,20 +46,8 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
     - [Deploy your hello world application](#overview)
   - [MDos CLI commands](#overview)
     - [Tenants namespaces](#overview)
-      - [Create a new tenant namespace](#overview)
-      - [Delete a tenant namespace](#overview)
-      - [List tenant namespaces](#overview)
     - [Tenant roles](#overview)
-      - [Create tenant roles](#overview)
-      - [List tenant roles](#overview)
-      - [Delete tenant roles](#overview)
-    - [MDos users and user-roles](#overview)
-      - [Create new users](#overview)
-      - [Delete users](#overview)
-      - [List available users](#overview)
-      - [Assign tenant roles to users](#overview)
-      - [List tenant roles for a user](#overview)
-      - [Remove tenant roles for a user](#overview)
+    - [Users and user-roles](#overview)
     - [Manage applications](#overview)
       - [Scaffold a new application workspace](#overview)
       - [Manage applcation components](#overview)
@@ -62,27 +70,6 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
     - [Protect your applications](#overview)
       - [Add OIDC OAuth2 user authentication for your application components](#overview)
       - [Implement Role Based Access Control (RBAC ACL) in your application code](#overview)
-
----
-
-## Overview
-
-<div style="display: flex; align-items: center; justify-content: center">
-  <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
-    <img src="https://raw.githubusercontent.com/mdundek/mdos/main/docs/img/overview.png" style="max-width: 100%">
-  </div>
-  <div style="padding-right: 20px;">
-    <ul>
-      <li>Build & deploy your applications on Kubernetes</li>
-      <li>No Kubernetes skills needed to perform complex workflows</li>
-      <li>Hassle free secure multi-tenant cluster usage and isolation</li>
-      <li>Greatly simplifies complex Kubernetes application deployment patterns</li>
-      <li>Provides tools to deal with hard to solve storage related challanges</li>
-      <li>Protect your applications by delegating authentication to MDos using Oauth2 & OIDC</li>
-      <li>Simply focus on your application RBAC logic by inspecting the user JWT token</li>
-    </ul>
-  </div>
-</div>
 
 ---
 

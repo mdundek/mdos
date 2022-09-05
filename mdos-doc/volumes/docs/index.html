@@ -275,8 +275,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mdos-is-a-kubernetes-based-application-runtime-platform-its-aim-is-to-greatly-simplify-the-process-of-creating-building-and-deploying-applications-on-a-kubernetes-cluster-without-compromising-on-security-and-efficiency" class="md-nav__link">
-    MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency
+  <a href="#table-of-contents" class="md-nav__link">
+    Table of Contents
   </a>
   
 </li>
@@ -286,16 +286,17 @@
     Overview
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#why-would-you-want-to-use-it" class="md-nav__link">
     Why would you want to use it?
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#features" class="md-nav__link">
     Features
   </a>
@@ -335,6 +336,11 @@
   <a href="#5-oidc-oauth2-authentication-application-rbac" class="md-nav__link">
     5. OIDC / OAuth2 authentication &amp; Application RBAC
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -425,8 +431,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mdos-is-a-kubernetes-based-application-runtime-platform-its-aim-is-to-greatly-simplify-the-process-of-creating-building-and-deploying-applications-on-a-kubernetes-cluster-without-compromising-on-security-and-efficiency" class="md-nav__link">
-    MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency
+  <a href="#table-of-contents" class="md-nav__link">
+    Table of Contents
   </a>
   
 </li>
@@ -436,16 +442,17 @@
     Overview
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#why-would-you-want-to-use-it" class="md-nav__link">
     Why would you want to use it?
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#features" class="md-nav__link">
     Features
   </a>
@@ -492,6 +499,11 @@
     </nav>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
     </ul>
   
@@ -508,7 +520,76 @@
 
 
 <h1 id="welcome-to-the-mdos-platform">Welcome to the MDos platform</h1>
-<h3 id="mdos-is-a-kubernetes-based-application-runtime-platform-its-aim-is-to-greatly-simplify-the-process-of-creating-building-and-deploying-applications-on-a-kubernetes-cluster-without-compromising-on-security-and-efficiency">MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency</h3>
+<p>MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#why-would-you-want-to-use-it">Why would you want to use it?</a></li>
+<li><a href="#features">Features</a><ul>
+<li><a href="#1-application-specific-resource-configurations">Application specific resource configurations</a></li>
+<li><a href="#2-deploy-and-debug-your-applications">Deploy and debug your applications</a></li>
+<li><a href="#3-advanced-volume-and-storage-workflows">Advanced volume and storage workflows</a></li>
+<li><a href="#4-multi-tenant-based-segregation">Multi-tenant based segregation</a></li>
+<li><a href="#5-oidc--oauth2-authentication--application-rbac">OIDC / OAuth2 authentication &amp; Application RBAC</a></li>
+</ul>
+</li>
+<li><a href="#overview">Installation &amp; setup</a></li>
+<li><a href="#overview">MDos platform</a><ul>
+<li><a href="#overview">Master node &amp; MDos control plane</a></li>
+<li><a href="#overview">Worker nodes</a></li>
+</ul>
+</li>
+<li><a href="#overview">MDos CLI</a></li>
+<li><a href="#overview">Getting started</a></li>
+<li><a href="#overview">Hello world</a><ul>
+<li><a href="#overview">Create a new tenant namespace</a></li>
+<li><a href="#overview">Scaffold an application and application component</a></li>
+<li><a href="#overview">Deploy your hello world application</a></li>
+</ul>
+</li>
+<li><a href="#overview">MDos CLI commands</a><ul>
+<li><a href="#overview">Tenants namespaces</a></li>
+<li><a href="#overview">Create a new tenant namespace</a></li>
+<li><a href="#overview">Delete a tenant namespace</a></li>
+<li><a href="#overview">List tenant namespaces</a></li>
+<li><a href="#overview">Tenant roles</a></li>
+<li><a href="#overview">Create tenant roles</a></li>
+<li><a href="#overview">List tenant roles</a></li>
+<li><a href="#overview">Delete tenant roles</a></li>
+<li><a href="#overview">MDos users and user roles</a></li>
+<li><a href="#overview">Create new users</a></li>
+<li><a href="#overview">Delete users</a></li>
+<li><a href="#overview">List available users</a></li>
+<li><a href="#overview">Assign tenant roles to users</a></li>
+<li><a href="#overview">List tenant roles for a user</a></li>
+<li><a href="#overview">Remove tenant roles for a user</a></li>
+<li><a href="#overview">Manage applications</a></li>
+<li><a href="#overview">Scaffold a new application workspace</a></li>
+<li><a href="#overview">Manage applcation components</a><ul>
+<li><a href="#overview">Scaffold a new application component</a></li>
+<li><a href="#overview">Configure configurations</a></li>
+<li><a href="#overview">Configure secrets</a></li>
+<li><a href="#overview">Configure service ports</a></li>
+<li><a href="#overview">Configure ingress rules</a></li>
+<li><a href="#overview">Configure volumes &amp; sync data with PODS</a></li>
+</ul>
+</li>
+<li><a href="#overview">Build &amp; Deploy applications</a></li>
+<li><a href="#overview">Delete deployed applications</a></li>
+<li><a href="#overview">List deployed applications</a></li>
+<li><a href="#overview">Configure a OIDC OAuth2 Provider to protect your application components</a></li>
+<li><a href="#overview">OIDC OAuth2 Providers</a></li>
+<li><a href="#overview">Deploy a new OIDC OAuth2 proxy provider</a><ul>
+<li><a href="#overview">Keycloak OIDC</a></li>
+<li><a href="#overview">Google OIDC</a></li>
+</ul>
+</li>
+<li><a href="#overview">List all deployed OIDC OAuth2 proxy providers</a></li>
+<li><a href="#overview">Delete a deployed OIDC OAuth2 proxy provider</a></li>
+</ul>
+</li>
+</ul>
 <hr />
 <h2 id="overview">Overview</h2>
 <div style="display: flex; align-items: center; justify-content: center">
@@ -529,7 +610,7 @@
 </div>
 
 <hr />
-<h2 id="why-would-you-want-to-use-it">Why would you want to use it?</h2>
+<h3 id="why-would-you-want-to-use-it">Why would you want to use it?</h3>
 <p>Let's face it, Kubernetes is great, most probably one of the best Container runtime platforms ever build with almost endless capabilities. It is no surprising that 70% of all companies use Kubernetes in production somewhere in their public / private cloud environement.<br />
 That said, it's complexity is often a deterant, and leads to badly designed deployment scenarios, regularly exposing security threaths as well as miss-usage of certain cluster based capabilities, leading to under-utilization of it's capabilities.  </p>
 <p>Companies often end up provisioning multiple Kubernetes clusters to manage multi-tenant scenarios because properly segregating users and projects in a secure way on a single cluster can be complicated to achieve and maintain.  </p>
@@ -546,7 +627,7 @@ Companies hire developers to build applications that will run on Kubernetes, but
 Financially, this does not make much sense. If every company had to only hire experienced kubernetes developers to get anything done with it, project costs would rapidly spiral out of control, without mentioning the fact that there are not that many skilled kubernetes experts available in the first place.  </p>
 <p><strong>MDos is an attempt to solve some of those complexity issues for developers and companies, letting them focus on developing applications and not about how to get them running securely on Kubernetes.</strong></p>
 <hr />
-<h2 id="features">Features</h2>
+<h3 id="features">Features</h3>
 <p>Those can be split into 5 families:</p>
 <ol>
 <li>Application specific resource configurations</li>
@@ -555,7 +636,7 @@ Financially, this does not make much sense. If every company had to only hire ex
 <li>Multi-tenant based segregation</li>
 <li>OIDC / OAuth2 authentication &amp; Application RBAC</li>
 </ol>
-<h3 id="1-application-specific-resource-configurations">1. Application specific resource configurations</h3>
+<h4 id="1-application-specific-resource-configurations">1. Application specific resource configurations</h4>
 <p>Using the MDos CLI and a unified <code>mdos.yaml</code> application descriptor file, you can build complex Kubernetes deployment senarios without any knowledge of Kubernetes resource definition types such as <code>Deployments</code>, <code>StatefulSets</code>, <code>Pods</code>, <code>Services</code>, <code>PV &amp; PVCs</code>, <code>VirtualServices</code>, <code>Secrets</code>, <code>ConfigMaps</code>, <code>NetworkPolicies</code> ... (just to name a few)<br />
 Therefore, build your applications using higher level artefacts that will translate to lower level Kubernetes resource definitions based on Kubernetes best practices.<br />
 Amongst other things, the MDos CLI allows you to:</p>
@@ -568,26 +649,26 @@ Amongst other things, the MDos CLI allows you to:</p>
 <li>Configure hostname based ingress rules to allow access to your application components from outside of the cluster</li>
 <li>Mount various volume types to your application components</li>
 </ul>
-<h3 id="2-deploy-and-debug-your-applications">2. Deploy and debug your applications</h3>
+<h4 id="2-deploy-and-debug-your-applications">2. Deploy and debug your applications</h4>
 <ul>
 <li>One mdos CLI command to deploy your applications and sync static volumes with your pods</li>
 <li>Get real-time detailed feedback on your deployments, providing valuable feedback on what might go wrong in order to fix it</li>
 <li>Get all application component logs, including init container logs in case of a failed deployment for instant debugging</li>
 <li>Aggregate all application &amp; platform logs in Loki, accessible through a dedicated API (TODO)</li>
 </ul>
-<h3 id="3-advanced-volume-and-storage-workflows">3. Advanced volume and storage workflows</h3>
+<h4 id="3-advanced-volume-and-storage-workflows">3. Advanced volume and storage workflows</h4>
 <ul>
 <li>Synchronize / provision static local data with your application component volumes before they start in Kubernetes</li>
 <li>Provision shared filesystem volumes for your application components (TODO)</li>
 </ul>
-<h3 id="4-multi-tenant-based-segregation">4. Multi-tenant based segregation</h3>
+<h4 id="4-multi-tenant-based-segregation">4. Multi-tenant based segregation</h4>
 <ul>
 <li>A tenant will get a Kubernetes namespace as well as a dedicated Keycloak client (for user management)</li>
 <li>You can create users on the platform and link them to one or more tenants</li>
 <li>Manage user permissions (RBAC) specifcally for each tenant namespace / keycloak client </li>
 <li>Kubernetes namespaces let you take advantage of network and resource segregation mechanisms for each tenant</li>
 </ul>
-<h3 id="5-oidc-oauth2-authentication-application-rbac">5. OIDC / OAuth2 authentication &amp; Application RBAC</h3>
+<h4 id="5-oidc-oauth2-authentication-application-rbac">5. OIDC / OAuth2 authentication &amp; Application RBAC</h4>
 <ul>
 <li>Provision OIDC / OAuth2 based Authentication providers to your cluster ready to use (Keycloak internal or Google only for now)</li>
 <li>Link OIDC / OAuth2 provisioned providers to your application components to protect those resources (no app changes needed)</li>
