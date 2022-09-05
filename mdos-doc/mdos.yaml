@@ -1,0 +1,30 @@
+schemaVersion: v1
+tenantName: mdos-doc
+appName: mdos-doc
+uuid: XA74S-FXCDI
+components:
+  - name: mkdocs
+    image: testspace/mdundek-mkdocs-mdos
+    uuid: E5PLU-TQMBD
+    tag: 1.1.0
+    preBuildCmd:
+      - mkdocs build
+      - rm -rf ../volumes/docs/*
+      - cp -r ./site/* ../volumes/docs
+    volumes:
+      - name: docs
+        mountPath: /usr/share/nginx/html
+        syncVolume: true
+    services:
+      - name: http
+        ports:
+          - port: 80
+    ingress:
+      - name: main
+        matchHost: mkdocs-mdos.mdundek.network
+        targetPort: 80
+        trafficType: http
+    oidc:
+      provider: kc-testspace
+      hosts:
+        - mkdocs-mdos.mdundek.network

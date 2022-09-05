@@ -1,11 +1,11 @@
 **/.env
 **/*.log
-projects/mkdocs/mdos/site
-setup/cloudflare.ini
-setup/deprecated/*
-**/node_modules
-setup/dep/mdos-api/mdos-api.tar.gz
 **/.DS_Store
+**/node_modules
 .DS_Store
+mdos-doc/mkdocs/site
+mdos-setup/cloudflare.ini
+mdos-setup/deprecated/*
+mdos-setup/dep/mdos-api
 docs/.$architecture.drawio.bkp
 docs/.$architecture.drawio.dtmp

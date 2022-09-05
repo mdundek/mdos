@@ -1,0 +1,34 @@
+site_name: MDos
+site_url: https://doc-mdos.mdundek.network/
+theme:
+  name: material
+  palette: 
+    # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night 
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+extra_css:
+  - stylesheets/extra.css
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+nav:
+    - Home: index.md
+    - Install: installation.md
+    - Getting started: getting-started.md
+    - Minio S3: minio.md
+plugins:
+  - external-markdown

@@ -1,0 +1,75 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appInternalName }}
+{{- range .Values.appComponents }}
+{{- $appComponentName := lower .name -}}
+{{- if .service }}
+{{- if .service.create }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isMdosApp }}
+    app: {{ $appComponentName | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+    {{- end }}
+spec:
+  {{- if $.Values.developement }}
+  type: NodePort
+  {{- else }}
+  type: {{ .service.type }}
+  {{- end }}
+  ports:
+    {{- range .service.portMappings }}
+    - port: {{ .port }}
+      targetPort: {{ .containerPort }}
+      {{- if or ($.Values.developement) (.forceNodePort) }}
+      nodePort: {{ .devNodePort }}
+      {{- end }}
+      # protocol: TCP
+      name: http-{{ .port }}
+    {{- end }}
+  selector:
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+{{- end }}
+{{- end }}
+# NodePorts (Needed for internal use cases, such as FTP server in passive mode)
+{{- if .nodePortService }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}-{{ lower .name }}-np
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isMdosApp }}
+    app: {{ $appComponentName | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+    {{- end }}
+spec:
+  type: NodePort
+  ports:
+    {{- range .nodePortService.portMappings }}
+    - port: {{ .port }}
+      targetPort: {{ .containerPort }}
+      nodePort: {{ .nodePort }}
+      # protocol: TCP
+      name: http-{{ .port }}
+    {{- end }}
+  selector:
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

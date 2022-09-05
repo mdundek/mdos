@@ -1,0 +1,29 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appInternalName }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $appName }}-roles
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isMdosApp }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+    {{- end }}
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $appName }}-role-bindings
+subjects:
+- kind: ServiceAccount
+  name: default
+roleRef:
+  kind: Role
+  name: {{ $appName }}-roles
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

@@ -1,0 +1,40 @@
+{{- if .Values.enabled }}
+{{- $appName := lower $.Values.appName }}
+{{- range .Values.appComponents }}
+{{- $appComponentName := lower .name -}}
+{{- if and .config.enabled }}
+{{- $appCompName := .name }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}-{{ lower .name }}
+  labels:
+    {{- include "stateless-helm.labels" $ | nindent 4 }}
+    {{- if $.Values.isMdosApp }}
+    app: {{ $appComponentName | quote }}
+    appUUID: {{ $.Values.appUUID | quote }}
+    appCompUUID: {{ .appCompUUID | quote }}
+    mdosAcbmAppCompName: {{ $appComponentName | quote }}
+    tenantName: {{ $.Values.tenantName | quote }}
+    {{- end }}
+data:
+  {{- range .config.data }}
+  {{ .key }}: {{ .value | quote }}
+  {{- end }}
+  {{- range $.Values.global.config }}
+    {{- if .appComp }}
+      {{- $rangeKey := .key }}
+      {{- $rangeVal := .value }}
+      {{- range .appComp }}
+        {{- if eq .name $appCompName }}
+  {{ $rangeKey }}: {{ $rangeVal | quote }}
+        {{- end }}
+      {{- end }}
+    {{- else }}
+  {{ .key }}: {{ .value | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
