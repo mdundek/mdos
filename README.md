@@ -38,7 +38,7 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
   - [MDos platform](#overview)
     - [Master node & MDos control plane](#overview)
     - [Worker nodes](#overview)
-  - [MDos CLI](#overview)
+  - [Install the MDos CLI](#overview)
 - [Getting started](#overview)
   - [Hello world](#overview)
     - [Create a new tenant namespace](#overview)
@@ -70,6 +70,9 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
     - [Protect your applications](#overview)
       - [Add OIDC OAuth2 user authentication for your application components](#overview)
       - [Implement Role Based Access Control (RBAC ACL) in your application code](#overview)
+  - [Debugging application & accessing logs](#overview)
+    - [Deployment status & log access](#overview)
+    - [Access centralized logs with Loki](#overview)
 
 ---
 
