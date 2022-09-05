@@ -19,7 +19,10 @@ export default class Deploy extends Command {
     static description = 'Deploy an application from the current directory'
 
     // ******* FLAGS *******
-    static flags = {}
+    static flags = {
+        username: Flags.string({ char: 'u', description: 'Registry username' }),
+        password: Flags.string({ char: 'p', description: 'Registry password' }),
+    }
     // *********************
 
     regCreds: any
@@ -132,7 +135,7 @@ export default class Deploy extends Command {
             } else if (!appComp.publicRegistry) {
                 targetRegistry = userInfo.data.registry
             }
-            const regCreds = await this.collectRegistryCredentials()
+            const regCreds = await this.collectRegistryCredentials(flags)
             await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir)
         }
 
@@ -490,12 +493,14 @@ export default class Deploy extends Command {
      * @return {*} 
      * @memberof Deploy
      */
-    async collectRegistryCredentials() {
+    async collectRegistryCredentials(flags: { username: string | undefined; password: string | undefined }) {
         if (!this.regCreds) {
             context('To push your images to the mdos registry, you need to provide your mdos username and password first')
 
-            this.regCreds = await inquirer.prompt([
-                {
+
+            const questions = []
+            if(!flags.username) {
+                questions.push({
                     group: 'application',
                     type: 'text',
                     name: 'username',
@@ -504,8 +509,10 @@ export default class Deploy extends Command {
                         if (value.trim().length == 0) return 'Mandatory field'
                         return true
                     },
-                },
-                {
+                })
+            }
+            if(!flags.password) {
+                questions.push({
                     group: 'application',
                     type: 'text',
                     name: 'password',
@@ -514,9 +521,13 @@ export default class Deploy extends Command {
                         if (value.trim().length == 0) return 'Mandatory field'
                         return true
                     },
-                },
-            ])
-            console.log()
+                })
+            }
+            let responses = {}
+            if(questions.length > 0) {
+                responses = await inquirer.prompt(questions)
+            }
+            this.regCreds = {...flags, ...responses}
         }
         return this.regCreds
     }
