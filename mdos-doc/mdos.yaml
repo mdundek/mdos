@@ -4,7 +4,7 @@ appName: mdos-doc
 uuid: XA74S-FXCDI
 components:
   - name: mkdocs
-    image: testspace/mdundek-mkdocs-mdos
+    image: mdos-doc/mkdocs-mdos
     uuid: E5PLU-TQMBD
     tag: 1.1.0
     preBuildCmd:
