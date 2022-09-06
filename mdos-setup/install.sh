@@ -774,6 +774,7 @@ install_minio() {
         --set resources.requests.memory=1Gi \
         --set rootUser=$ACCESS_KEY \
         --set rootPassword=$SECRET_KEY \
+        --set persistence.enabled=true \
         minio/minio \
         -n minio --atomic &>> $LOG_FILE
 
