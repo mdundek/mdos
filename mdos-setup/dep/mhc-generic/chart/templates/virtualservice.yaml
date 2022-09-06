@@ -13,8 +13,14 @@
       {{- range $services }}
         {{- $tmpName := .name }}
         {{- range .ports }}
-          {{ if eq .port $tgPort }}
-            {{- $svcName = $tmpName -}}
+          {{- if .svcPort }}
+            {{ if eq .svcPort $tgPort }}
+              {{- $svcName = $tmpName -}}
+            {{- end }}
+          {{- else }}
+            {{ if eq .port $tgPort }}
+              {{- $svcName = $tmpName -}}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}

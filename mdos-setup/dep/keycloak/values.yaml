@@ -1,6 +1,6 @@
 registry: registry.mydomain.com
 mdosRegistry: registry.mydomain.com
-tenantName: mdos
+tenantName: keycloak
 appName: keycloak
 uuid: KG75-7D58-keycloak
 forceUpdate: true
@@ -50,12 +50,14 @@ components:
       - name: regcred
     services:
       - name: service
+        type: NodePort
         ports:
-          - name: port-8080
+          - name: http-8080
             port: 8080
             nodePort: 30999
-          - name: port-8443
+          - name: http-8443
             port: 8443
+            svcPort: 443
             nodePort: 30998
     readinessProbe:
       type: http
@@ -72,7 +74,7 @@ components:
           - key: KC_DB
             value: "postgres"
           - key: KC_DB_URL
-            value: "jdbc:postgresql://mdos-keycloak-postgres:5432/keycloak"
+            value: "jdbc:postgresql://keycloak-postgres-http:5432/keycloak"
     secrets:
       - name: creds
         type: env

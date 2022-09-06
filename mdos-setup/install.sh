@@ -142,14 +142,12 @@ mdos_deploy_app() {
             NS_EXISTS=1
         fi
     done < <(kubectl get ns 2>/dev/null)
-
     if [ -z $NS_EXISTS ]; then
         kubectl create ns $I_NS &>> $LOG_FILE
         if [ ! -z $1 ] && [ "$1" == "true" ]; then
             kubectl label ns $I_NS istio-injection=enabled &>> $LOG_FILE
         fi
     fi
-
     if [ ! -z $2 ] && [ "$2" == "true" ]; then
         unset SECRET_EXISTS
         while read SECRET_LINE ; do 
@@ -325,8 +323,17 @@ configure_etc_hosts() {
     if [ "$(cat /etc/hosts | grep registry.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 registry.$DOMAIN" >> /etc/hosts
     fi
+    if [ "$(cat /etc/hosts | grep registry-auth.$DOMAIN)" == "" ]; then
+        echo "127.0.0.1 registry-auth.$DOMAIN" >> /etc/hosts
+    fi
     if [ "$(cat /etc/hosts | grep keycloak.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 keycloak.$DOMAIN" >> /etc/hosts
+    fi
+    if [ "$(cat /etc/hosts | grep mdos-api.$DOMAIN)" == "" ]; then
+        echo "127.0.0.1 mdos-api.$DOMAIN" >> /etc/hosts
+    fi
+    if [ "$(cat /etc/hosts | grep minio.$DOMAIN)" == "" ]; then
+        echo "127.0.0.1 minio.$DOMAIN" >> /etc/hosts
     fi
 }
 
@@ -833,10 +840,10 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.registry = "registry.'$DOMAIN'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.mdosRegistry = "registry.'$DOMAIN'"')
 
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[2].value = "'$POSTGRES_PASSWORD'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[4].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[0].value = "'$POSTGRES_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_PASSWORD'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].volumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
 
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
@@ -880,65 +887,6 @@ install_keycloak() {
             -d "scope=openid" | jq -r '.access_token')
     }
 
-    # setup_keycloak_kubernetes_client() {
-    #     # Create client for kubernetes
-    #     curl -s -k --request POST \
-    #         -H "Accept: application/json" \
-    #         -H "Content-Type:application/json" \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         -d '{"clientId": "kubernetes-cluster", "publicClient": true, "standardFlowEnabled": true, "directGrantsOnly": true, "redirectUris": ["*"], "protocolMappers": [{"name": "groups", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper", "config": {"claim.name" : "groups", "full.path" : "true","id.token.claim" : "true", "access.token.claim" : "true", "userinfo.token.claim" : "true"}}]}' \
-    #         https://keycloak.$DOMAIN/admin/realms/master/clients
-
-    #     # Retrieve client UUID
-    #     CLIENT_UUID=$(curl -s -k --request GET \
-    #         -H "Accept: application/json" \
-    #         -H "Content-Type:application/json" \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         https://keycloak.$DOMAIN/admin/realms/master/clients?clientId=kubernetes-cluster | jq '.[0].id' | sed 's/[\"]//g')
-
-    #     # Create mdos base group for k8s clusters in Keycloak
-    #     curl -s -k --request POST \
-    #         -H "Accept: application/json" \
-    #         -H "Content-Type:application/json" \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         -d '{"name": "mdos"}' \
-    #         https://keycloak.$DOMAIN/admin/realms/master/groups
-
-    #     # Create client roles in Keycloak
-    #     curl -s -k --request POST \
-    #         -H "Accept: application/json" \
-    #         -H "Content-Type:application/json" \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         --data '{"clientRole": true,"name": "mdos-sysadmin"}' \
-    #         https://keycloak.$DOMAIN/admin/realms/master/clients/$CLIENT_UUID/roles
-
-    #     SYSADMIN_ROLE_UUID=$(curl -s -k --request GET \
-    #         -H "Accept: application/json" \
-    #         -H "Content-Type:application/json" \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         https://keycloak.$DOMAIN/admin/realms/master/clients/$CLIENT_UUID/roles/mdos-sysadmin | jq '.id' | sed 's/[\"]//g')
-
-    #     # Update admin email and role
-    #     ADMIN_U_ID=$(curl -s -k --request GET \
-    #         -H "Accept: application/json" \
-    #         -H "Content-Type:application/json" \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         https://keycloak.$DOMAIN/admin/realms/master/users?username=$KEYCLOAK_USER | jq '.[0].id' | sed 's/[\"]//g')
-
-    #     curl -s -k -X PUT \
-    #         https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID \
-    #         -H "Content-Type: application/json"  \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         -d '{"email": "'"$KUBE_ADMIN_EMAIL"'"}'
-
-    #     curl -s -k --request POST \
-    #         -H "Accept: application/json" \
-    #         -H "Content-Type:application/json" \
-    #         -H "Authorization: Bearer $KC_TOKEN" \
-    #         --data '[{"name": "mdos-sysadmin", "id": "'"$SYSADMIN_ROLE_UUID"'"}]' \
-    #         https://keycloak.$DOMAIN/admin/realms/master/users/$ADMIN_U_ID/role-mappings/clients/$CLIENT_UUID
-    # }
-
     setup_keycloak_mdos_realm() {
         # Create mdos realm
         curl -k -s --request POST \
@@ -951,7 +899,7 @@ install_keycloak() {
         # Create mdos client
         gen_api_token
         curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms/$REALm/clients \
+            https://keycloak.$DOMAIN/admin/realms/$REALM/clients \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1137,9 +1085,6 @@ EOF
 	# Configure API key
 	collect_api_key
 
-	# gen_api_token
-	# setup_keycloak_kubernetes_client
-
 	gen_api_token
 	setup_keycloak_mdos_realm
 }
@@ -1198,6 +1143,19 @@ config:
 # ############### INSTALL MDOS ###############
 # ############################################
 install_mdos() {
+    # Build mdos-api image
+    cd ../mdos-api
+    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin
+    cp infra/dep/helm/helm .
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest .
+    rm -rf helm
+    docker push registry.$DOMAIN/mdos-api:latest
+    cd ../mdos-setup/dep/mhc-generic/infra/mdos-sync-container
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-sync-container:latest .
+    docker push registry.$DOMAIN/mdos-sync-container:latest
+    cd ../../../..
+
+    # Now prepare deployment config
     k8s_cluster_scope_exist ELM_EXISTS ns "mdos"
     if [ -z $ELM_EXISTS ]; then
         kubectl create ns mdos &>> $LOG_FILE
@@ -1262,32 +1220,30 @@ EOF
     # Deploy mdos-api server
     MDOS_VALUES="$(cat ./dep/mdos-api/values.yaml)"
 
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "registry.'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.mdosRegistry = "registry.'$DOMAIN'"')
+    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+        K3S_REG_DOMAIN="registry.$DOMAIN"
+        K3S_MINIO_DOMAIN="http://minio.$DOMAIN:9000"
+    else
+        K3S_REG_DOMAIN="registry.$DOMAIN"
+        K3S_MINIO_DOMAIN="https://minio.$DOMAIN"
+    fi
 
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
-
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[2].value = "/etc/letsencrypt/live/'$DOMAIN'"')
-
     if [ $S3_PROVIDER == "minio" ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[7].value = "minio.'$DOMAIN'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[7].value = "'$K3S_MINIO_DOMAIN'"')
     fi
-    
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[8].value = "'$S3_PROVIDER'"')
-
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = '$OIDC_ISSUER_URL'')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = '$OIDC_JWKS_URI'')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.host = "mdos-api.'$DOMAIN'"')
-
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "'$OIDC_ISSUER_URL'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "'$OIDC_JWKS_URI'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
-
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[2].value = "'$ACCESS_KEY'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[3].value = "'$SECRET_KEY'"')
-    
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/server-ca.crt)"'"')
-
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/keycloak"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].mountPath = "/etc/letsencrypt/live/'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
@@ -1295,8 +1251,74 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[4].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
 
     printf "$MDOS_VALUES\n" > ./target_values.yaml
+
     mdos_deploy_app "true" "true"
+
     rm -rf ./target_values.yaml
+}
+
+# ############################################
+# ############ COREDNS DOMAIN CFG ############
+# ############################################
+consigure_core_dns_for_self_signed() {
+    cat <<EOF | k3s kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  $DOMAIN.server: |
+    $DOMAIN {
+        errors
+        health
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+        }
+        hosts /etc/coredns/NodeHosts {
+          ttl 60
+          reload 15s
+          fallthrough
+        }
+        rewrite name registry.$DOMAIN registry-v2-https.mdos-registry.svc.cluster.local
+        rewrite name registry-auth.$DOMAIN registry-auth-https.mdos-registry.svc.cluster.local
+        rewrite name keycloak.$DOMAIN keycloak-keycloak-service.keycloak.svc.cluster.local
+        rewrite name minio.$DOMAIN minio.minio.svc.cluster.local
+        rewrite name mdos-api.$DOMAIN mdos-api-http.mdos.svc.cluster.local
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+EOF
+
+    # Restart the CoreDNS pod
+    unset FOUND_RUNNING_POD
+    while [ -z $FOUND_RUNNING_POD ]; do
+        while read POD_LINE ; do 
+            COREDNS_POD_NAME=`echo "$POD_LINE" | awk 'END {print $1}'`
+            POD_STATUS=`echo "$POD_LINE" | awk 'END {print $3}'`
+            if [ "$POD_STATUS" == "Running" ]; then
+                FOUND_RUNNING_POD=1
+            fi
+        done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
+        sleep 1
+    done
+    kubectl delete pod $COREDNS_POD_NAME -n kube-system
+    unset FOUND_RUNNING_POD
+    while [ -z $FOUND_RUNNING_POD ]; do
+        while read POD_LINE ; do
+            POD_STATUS=`echo "$POD_LINE" | awk 'END {print $3}'`
+            if [ "$POD_STATUS" == "Running" ]; then
+                FOUND_RUNNING_POD=1
+            fi
+        done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
+        sleep 1
+    done
 }
 
 
@@ -1345,7 +1367,7 @@ EOF
             docker rmi quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
         fi
 
-        if [ "$(echo "$ALL_IMAGES" | grep "postgres" | grep "13.2-alpine" | awk '{print $1}')" != "postgres" ]; then
+        if [ "$(echo "$ALL_IMAGES" | grep "postgres" | grep "13.2-alpine" | awk '{print $1}')" != "" ]; then
             docker rmi postgres:13.2-alpine &>> $LOG_FILE
         fi
 
@@ -1357,9 +1379,19 @@ EOF
             echo "      communicate with the platform (ex. docker)."
             echo ""
 
+            info "To talk to your platform from an environement other than this one, you will also need to configure your 'hosts' file in that remote environement with the following resolvers:"
+            echo "      <MDOS_VM_IP> registry.$DOMAIN"
+            echo "      <MDOS_VM_IP> registry-auth.$DOMAIN"
+            echo "      <MDOS_VM_IP> keycloak.$DOMAIN"
+            echo "      <MDOS_VM_IP> minio.$DOMAIN"
+            echo "      <MDOS_VM_IP> mdos-api.$DOMAIN"
+            echo ""
+
             if [ -z $GLOBAL_ERROR ] && [ $S3_PROVIDER == "minio" ]; then
                 info "The following services are available on the platform:"
+                echo "        - mdos-api.$DOMAIN"
                 echo "        - registry.$DOMAIN"
+                echo "        - keycloak.$DOMAIN"
                 echo "        - minio-console.$DOMAIN"
                 echo "        - minio.$DOMAIN"
                 echo ""
@@ -1424,7 +1456,7 @@ EOF
             set_env_step_data "DOMAIN" "$DOMAIN"
         fi
 
-        SSL_ROOT=$HOME/.mdos/ss_cert
+        SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
 
         if [ -z $INST_STEP_SS_CERT ]; then
             info "Generating self signed certificate..."
@@ -1440,6 +1472,11 @@ EOF
         info "Installing K3S..."
         install_k3s
         set_env_step_data "INST_STEP_K3S" "1"
+    fi
+
+    # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
+    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+        consigure_core_dns_for_self_signed
     fi
 
     # INSTALL HELM
@@ -1486,6 +1523,8 @@ EOF
     fi
 
     # INSTALL KEYCLOAK
+    REALM="mdos"
+    CLIENT_ID="mdos"
     if [ -z $INST_STEP_KEYCLOAK ]; then
         info "Install Keycloak..."
         echo ""
@@ -1495,14 +1534,25 @@ EOF
     fi
 
     # LOAD OAUTH2 DATA
-    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
-    OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
-    OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
-    OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
-    COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
-    REALM="mdos"
-    CLIENT_ID="mdos"
-
+    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+        KC_NODEPORT=":30998"
+        OIDC_DISCOVERY=$(curl -k "https://keycloak.${DOMAIN}${KC_NODEPORT}/realms/mdos/.well-known/openid-configuration")
+        OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+        OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+        OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
+        COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+       
+        OIDC_ISSUER_URL=${OIDC_ISSUER_URL//$KC_NODEPORT/}
+        OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
+        OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
+    else
+        OIDC_DISCOVERY=$(curl -k "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+        OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+        OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+        OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
+        COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+    fi
+    
     # INSTALL OAUTH2 PROXY
     if [ -z $INST_STEP_OAUTH ]; then
         info "Install OAuth2 proxy..."

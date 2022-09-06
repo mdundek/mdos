@@ -1,5 +1,4 @@
 registry: registry.mydomain.com
-mdosRegistry: registry.mydomain.com
 tenantName: mdos
 appName: mdos
 uuid: KG75-7D58-mdos
@@ -87,4 +86,7 @@ components:
       issuer: https://keycloak.mydomain.com/realms/mdos
       jwksUri: https://keycloak.mydomain.com/realms/mdos/protocol/openid-connect/certs
       provider: kc-mdos
-      host: mdos-api.mydomain.com
+      hosts:
+        - mdos-api.mydomain.com
+      excludePaths:
+        - /registry_domain

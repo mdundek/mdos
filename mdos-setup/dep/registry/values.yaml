@@ -7,16 +7,18 @@ components:
     uuid: KG75-7D58-registry-v2
     image: registry
     tag: latest
+    publicRegistry: true
     services:
       - name: https
         ports:
           - name: https-5000
             port: 5000
+            svcPort: 443
     ingress:
       - name: ingress
         gateway: https-gateway-mdos
         matchHost: registry.<DOMAIN>
-        targetPort: 5000
+        targetPort: 443
         trafficType: https
     configs:
       - name: configs
@@ -63,16 +65,18 @@ components:
     uuid: KG75-7D58-registry-auth
     image: cesanta/docker_auth
     tag: "1"
+    publicRegistry: true
     services:
       - name: https
         ports:
           - name: https-5001
             port: 5001
+            svcPort: 443
     ingress:
       - name: ingress
         gateway: https-gateway-mdos
         matchHost: registry-auth.<DOMAIN>
-        targetPort: 5001
+        targetPort: 443
         trafficType: https
     configs:
       - name: reg-auth-config

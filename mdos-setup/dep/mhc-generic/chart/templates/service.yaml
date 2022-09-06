@@ -23,8 +23,12 @@ spec:
       {{- end }}
   ports:
       {{- range .ports }}
-    - port: {{ .port }}
-      targetPort: {{ .port }}
+    - targetPort: {{ .port }}
+        {{- if .svcPort }}
+      port: {{ .svcPort }}
+        {{- else }}
+      port: {{ .port }}
+        {{- end }}
         {{- if .nodePort }}
       nodePort: {{ .nodePort }}
         {{- end }}
