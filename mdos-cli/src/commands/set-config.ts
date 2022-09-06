@@ -16,6 +16,7 @@ export default class SetConfig extends Command {
     static flags = {
         auth: Flags.string({ description: 'authentication mode, "none" or "oidc"' }),
         backend: Flags.string({ description: 'API backend URI, "http(s)://mdos-api.<domain-name>"' }),
+        keycloak: Flags.string({ description: 'Keycloak backend URI, "http(s)://keycloak.<domain-name>"' }),
     }
     // *********************
 
@@ -32,6 +33,8 @@ export default class SetConfig extends Command {
             }
         } else if (flags.backend) {
             this.setConfig('MDOS_API_URI', flags.backend)
+        } else if (flags.keycloak) {
+            this.setConfig('MDOS_KC_URI', flags.keycloak)
         } else {
             this.error('Missing or unknown flag value')
         }

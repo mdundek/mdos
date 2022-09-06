@@ -465,7 +465,7 @@ install_istio() {
     echo "meshConfig:
   accessLogFile: /dev/stdout
   extensionProviders:
-  - name: oauth2-proxy-mdos
+  - name: kc-mdos
     envoyExtAuthzHttp:
       service: oauth2-proxy-mdos.oauth2-proxy.svc.cluster.local
       port: 4180
@@ -1137,7 +1137,7 @@ config:
     helm upgrade --install -n oauth2-proxy \
       --version 6.0.1 \
       --values $_DIR/oauth2-proxy-values.yaml \
-      oauth2-proxy-mdos oauth2-proxy/oauth2-proxy --atomic
+      kc-mdos oauth2-proxy/oauth2-proxy --atomic
 }
 
 # ############################################

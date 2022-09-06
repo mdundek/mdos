@@ -17,6 +17,7 @@ export default class GetConfig extends Command {
     static flags = {
         auth: Flags.boolean({ description: 'authentication mode' }),
         backend: Flags.boolean({ description: 'API backend URI' }),
+        keycloak: Flags.boolean({ description: 'Keycloak backend URI' }),
     }
     // *********************
 
@@ -29,6 +30,8 @@ export default class GetConfig extends Command {
             context(this.getConfig('AUTH_MODE'))
         } else if (flags.backend) {
             context(this.getConfig('MDOS_API_URI'))
+        } else if (flags.keycloak) {
+            context(this.getConfig('MDOS_KC_URI'))
         } else {
             const allConfigs = this.getAllConfigs()
             const avKeys: any[] = []
