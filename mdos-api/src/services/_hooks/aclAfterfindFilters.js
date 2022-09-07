@@ -160,9 +160,6 @@ module.exports = function () {
             return context
         if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('You are not authenticated')
 
-        // If no auth enabled, simply return data
-        if (process.env.NO_ADMIN_AUTH == 'true') return context
-
         let jwtToken = jwt_decode(context.params.headers['x-auth-request-access-token'])
 
         // Client find call
