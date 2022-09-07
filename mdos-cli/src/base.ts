@@ -52,7 +52,7 @@ export default abstract class extends Command {
      * initSocketIo
      */
     async initSocketIo() {
-        const API_URI = await this._collectApiServerUrl()
+        const API_URI = this.checkIfDomainSet()
         let kcCookie = null
         if (this.authMode == 'oidc') {
             kcCookie = this.getConfig('OIDC_COOKIE')
@@ -106,7 +106,7 @@ export default abstract class extends Command {
      * @returns
      */
     async api(endpoint: string, method: string, body?: any, skipTokenInjection?: boolean) {
-        const API_URI = await this._collectApiServerUrl()
+        const API_URI = this.checkIfDomainSet()
 
         // Set oauth2 cookie if necessary
         const axiosConfig: AxiosConfig = {
@@ -123,16 +123,15 @@ export default abstract class extends Command {
         // it will not pass the OIDC authentication flow from OAuth2-proxy & Keycloak.
         // This mode should only be used for developement purposes and can not be
         // considered secure
-        const authMode = this.getConfig('AUTH_MODE')
+        const authMode = this.checkIfAuthSet()
         if (!skipTokenInjection && authMode == 'api') {
             const token = this.getConfig('JWT_TOKEN')
-            if(!token || token.length == 0) {
-                error("User is not authenticated. Please login and try again")
-                process.exit(1);
+            if (!token || token.length == 0) {
+                error('User is not authenticated. Please login and try again')
+                process.exit(1)
             }
-            if(!axiosConfig.headers)
-            	axiosConfig.headers = {}
-            axiosConfig.headers["x-auth-request-access-token"] = token
+            if (!axiosConfig.headers) axiosConfig.headers = {}
+            axiosConfig.headers['x-auth-request-access-token'] = token
         }
         // -------------------------------------------------------------------------
         if (method.toLowerCase() == 'post') {
@@ -147,36 +146,31 @@ export default abstract class extends Command {
     }
 
     /**
-     * _collectApiServerUrl
+     * checkIfDomainSet
      *
      * @returns
      */
-    async _collectApiServerUrl() {
+    checkIfDomainSet() {
         let API_URI = this.getConfig('MDOS_API_URI')
         if (!API_URI) {
-            const responses = await inquirer.prompt([
-                {
-                    type: 'text',
-                    name: 'apiUrl',
-                    message: 'Please enter the target MDOS API URI:',
-                    validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
-                        if (value.trim().length == 0) {
-                            return 'Mandatory field'
-                        }
-                        try {
-                            await axios.get(`${value}/healthz`, { timeout: 2000 })
-                            return true
-                        } catch (error) {
-                            return 'URL does not seem to be valid'
-                        }
-                    },
-                },
-            ])
-            API_URI = responses.apiUrl
-
-            this.setConfig('MDOS_API_URI', API_URI)
+            error("Please set your mdos domain name using the command 'mdos set domain <your domain here>'")
+            process.exit(1);
         }
         return API_URI
+    }
+
+    /**
+     * checkIfAuthSet
+     * 
+     * @returns
+     */
+    checkIfAuthSet() {
+        let AUTH_SET = this.getConfig('AUTH_MODE')
+        if (!AUTH_SET) {
+            error("Please set your mdos auth mode using the command 'mdos set auth-mode [oidc|api|none]'")
+            process.exit(1);
+        }
+        return AUTH_SET
     }
 
     /**
@@ -218,12 +212,12 @@ export default abstract class extends Command {
     async validateJwt() {
         if (this.authMode == 'none') return
 
-        let API_URI = await this._collectApiServerUrl()
+        let API_URI = this.checkIfDomainSet()
         let KC_URI = await this._collectKeycloakUrl()
 
         KC_URI = KC_URI.startsWith('http://') || KC_URI.startsWith('https://') ? KC_URI.substring(KC_URI.indexOf('//') + 2) : KC_URI
 
-        const authMode = this.getConfig('AUTH_MODE')
+        const authMode = this.checkIfAuthSet()
         if (authMode == 'oidc') {
             const _validateCookie = async (takeNoAction?: boolean) => {
                 const testResponse = await this.api('jwt', 'get', true)
@@ -272,7 +266,7 @@ export default abstract class extends Command {
             }
         } else {
             const token = this.getConfig('JWT_TOKEN')
-            if(!token || token.length == 0) {
+            if (!token || token.length == 0) {
                 const responses = await inquirer.prompt([
                     {
                         type: 'text',
