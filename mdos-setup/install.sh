@@ -774,6 +774,7 @@ install_minio() {
         --set resources.requests.memory=1Gi \
         --set rootUser=$ACCESS_KEY \
         --set rootPassword=$SECRET_KEY \
+        --set persistence.enabled=true \
         minio/minio \
         -n minio --atomic &>> $LOG_FILE
 
@@ -1023,7 +1024,7 @@ install_keycloak() {
                     -H "Accept: application/json" \
                     -H "Content-Type:application/json" \
                     -H "Authorization: Bearer $KC_TOKEN" \
-                    https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$CLIENT_UUID/roles/$1 | jq '.id' | sed 's/[\"]//g')
+                    https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles/$1 | jq '.id' | sed 's/[\"]//g')
 
                 curl -s -k --request POST \
                     -H "Accept: application/json" \
@@ -1380,20 +1381,43 @@ EOF
             echo ""
 
             info "To talk to your platform from an environement other than this one, you will also need to configure your 'hosts' file in that remote environement with the following resolvers:"
-            echo "      <MDOS_VM_IP> registry.$DOMAIN"
-            echo "      <MDOS_VM_IP> registry-auth.$DOMAIN"
-            echo "      <MDOS_VM_IP> keycloak.$DOMAIN"
-            echo "      <MDOS_VM_IP> minio.$DOMAIN"
             echo "      <MDOS_VM_IP> mdos-api.$DOMAIN"
-            echo ""
-
-            if [ -z $GLOBAL_ERROR ] && [ $S3_PROVIDER == "minio" ]; then
+            echo "      <MDOS_VM_IP> registry.$DOMAIN"
+            echo "      <MDOS_VM_IP> keycloak.$DOMAIN"
+        
+            if [ $S3_PROVIDER == "minio" ]; then
+                echo "      <MDOS_VM_IP> minio-console.$DOMAIN"
+                echo "      <MDOS_VM_IP> minio.$DOMAIN"
+                echo ""
                 info "The following services are available on the platform:"
                 echo "        - mdos-api.$DOMAIN"
                 echo "        - registry.$DOMAIN"
                 echo "        - keycloak.$DOMAIN"
                 echo "        - minio-console.$DOMAIN"
                 echo "        - minio.$DOMAIN"
+                echo ""
+            else
+                echo ""
+                info "The following services are available on the platform:"
+                echo "        - mdos-api.$DOMAIN"
+                echo "        - registry.$DOMAIN"
+                echo "        - keycloak.$DOMAIN"
+                echo ""
+            fi
+        elif [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" != "SELF_SIGNED" ]; then
+            if [ $S3_PROVIDER == "minio" ]; then
+                info "The following services are available on the platform:"
+                echo "        - mdos-api.$DOMAIN"
+                echo "        - registry.$DOMAIN"
+                echo "        - keycloak.$DOMAIN"
+                echo "        - minio-console.$DOMAIN"
+                echo "        - minio.$DOMAIN"
+                echo ""
+            else
+                info "The following services are available on the platform:"
+                echo "        - mdos-api.$DOMAIN"
+                echo "        - registry.$DOMAIN"
+                echo "        - keycloak.$DOMAIN"
                 echo ""
             fi
         fi
