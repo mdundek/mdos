@@ -1,6 +1,5 @@
 // src/base.ts
 import { Command, Config } from '@oclif/core'
-import { copyFileSync } from 'fs'
 const fs = require('fs')
 const nconf = require('nconf')
 const os = require('os')
@@ -297,6 +296,9 @@ export default abstract class extends Command {
                     error(loginResponse.data.error_description)
                     process.exit(1)
                 }
+
+                warn("API authentication is not secure, it is for developement purposes only")
+
                 this.setConfig('JWT_TOKEN', loginResponse.data.access_token)
             }
         }
