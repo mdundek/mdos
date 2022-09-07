@@ -9,7 +9,7 @@ const { error, success } = require('../../lib/tools')
  * @class SetConfig
  * @extends {Command}
  */
-export default class AuthMode extends Command {
+export default class Domain extends Command {
     static aliases = []
     static description = 'Set a configutation parameter for your local CLI environement'
 
@@ -27,8 +27,8 @@ export default class AuthMode extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(AuthMode)
-        const { args } = await this.parse(AuthMode)
+        const { flags } = await this.parse(Domain)
+        const { args } = await this.parse(Domain)
 
         if(!args.domain) {
             error("No auth mode specified")

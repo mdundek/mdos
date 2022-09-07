@@ -36,7 +36,7 @@ export default class GetConfig extends Command {
             const allConfigs = this.getAllConfigs()
             const avKeys: any[] = []
             for (let key of Object.keys(allConfigs)) {
-                if (key != 'JWT_TOKEN') avKeys.push(key)
+                if (key != 'OIDC_COOKIE' && key != 'JWT_TOKEN') avKeys.push(key)
             }
 
             console.log()

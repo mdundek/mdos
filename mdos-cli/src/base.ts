@@ -31,7 +31,7 @@ export default abstract class extends Command {
 
     /**
      * constructor
-     * 
+     *
      * @param argv
      * @param config
      */
@@ -54,15 +54,15 @@ export default abstract class extends Command {
     async initSocketIo() {
         const API_URI = await this._collectApiServerUrl()
         let kcCookie = null
-        if (this.authMode != 'none') {
-            kcCookie = this.getConfig('JWT_TOKEN')
+        if (this.authMode == 'oidc') {
+            kcCookie = this.getConfig('OIDC_COOKIE')
         }
         this.socketManager = new SocketManager(API_URI, kcCookie)
     }
 
     /**
      * getConfig
-     * 
+     *
      * @param key
      * @returns
      */
@@ -72,7 +72,7 @@ export default abstract class extends Command {
 
     /**
      * getConfig
-     * 
+     *
      * @param key
      * @returns
      */
@@ -82,7 +82,7 @@ export default abstract class extends Command {
 
     /**
      * getConfig
-     * 
+     *
      * @param key
      * @param value
      */
@@ -99,31 +99,42 @@ export default abstract class extends Command {
 
     /**
      * api
-     * 
+     *
      * @param endpoint
      * @param method
      * @param body
      * @returns
      */
-    async api(endpoint: string, method: string, body?: any) {
+    async api(endpoint: string, method: string, body?: any, skipTokenInjection?: boolean) {
         const API_URI = await this._collectApiServerUrl()
 
         // Set oauth2 cookie if necessary
         const axiosConfig: AxiosConfig = {
             timeout: 0,
         }
-        if (this.authMode != 'none') {
-            const kcCookie = this.getConfig('JWT_TOKEN')
+        if (this.authMode == 'oidc') {
+            const kcCookie = this.getConfig('OIDC_COOKIE')
             axiosConfig.headers = { Cookie: `_oauth2_proxy=${kcCookie};` }
         }
         axiosConfig.timeout = 1000 * 60 * 10
 
         // ------------------------- INJECT TOKEN FOR TESTING ----------------------
-        // if(!axiosConfig.headers)
-        // 	axiosConfig.headers = {}
-        // axiosConfig.headers["x-auth-request-access-token"] = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJGTmNacDFCdGxlbTdYM3pSV3lBbFV2ckVoWVo2RDJjS3RRREswdlR5a3lZIn0.eyJleHAiOjE2NjA5MjUxNzcsImlhdCI6MTY2MDkyNDg3NywiYXV0aF90aW1lIjoxNjYwOTE2MjUxLCJqdGkiOiI5MzQ4MWM3Yy04ZGZhLTQyOTctOTVmOC04MDgxYzI1NWNmY2MiLCJpc3MiOiJodHRwczovL2tleWNsb2FrLm1kdW5kZWsubmV0d29yay9yZWFsbXMvbWRvcyIsImF1ZCI6WyJjcyIsImFjY291bnQiXSwic3ViIjoiOTFhYTEyYjctMWUxNC00N2ZkLThmZWMtYmM1NjMzZTljYTBlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoibWRvcyIsInNlc3Npb25fc3RhdGUiOiJiNGIyNTNlMy1mNDdjLTRiNzAtYWVlYi03YjcyNWRkNTc3NjMiLCJhY3IiOiIwIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJkZWZhdWx0LXJvbGVzLW1kb3MiXX0sInJlc291cmNlX2FjY2VzcyI6eyJjcyI6eyJyb2xlcyI6WyJ1bWFfcHJvdGVjdGlvbiIsIm1kb3NfYWRtaW4iLCJmb29yb2xlIiwiZm9vYmFyLXJvbGUiXX0sIm1kb3MiOnsicm9sZXMiOlsiYWRtaW4iLCJtZG9zX2FkbWluIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoiYjRiMjUzZTMtZjQ3Yy00YjcwLWFlZWItN2I3MjVkZDU3NzYzIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInByZWZlcnJlZF91c2VybmFtZSI6Im1kdW5kZWsiLCJlbWFpbCI6Im1kdW5kZWtAZ21haWwuY29tIn0.iwf8Kg5-w9dgJZwUYy9T_a4m6BIElJshu-dn2EdeJx-d5pAsn8vkaJMuXqJh-szbOzB5kzk5_yoknct922254TsKvMd491m9qrhkCD-NSnYC1u_ZIKqC0JRt9B7KPl3icqX7zsk52NurAkGlLw2xuHRpDtSLHp9rsRYrPaTGsDQLuqu6jEITraPG1f29yvKqxj9KEtJY4IRLJxIEJg8iV-w7MGmuCm7y_QZw5BQPIu3Ab-9y1whGf3D1SVSynKpN1tvFDTe3GNQQhS0garf7R5wtjnp4_5d9lhDqv5UL6Flnidikh9Tol9ZTF-VNSEbHMPtztc83nHwiW8JHDu7Elg"
+        // INFO: No need to try injevcting your own JWT token here in production mode,
+        // it will not pass the OIDC authentication flow from OAuth2-proxy & Keycloak.
+        // This mode should only be used for developement purposes and can not be
+        // considered secure
+        const authMode = this.getConfig('AUTH_MODE')
+        if (!skipTokenInjection && authMode == 'api') {
+            const token = this.getConfig('JWT_TOKEN')
+            if(!token || token.length == 0) {
+                error("User is not authenticated. Please login and try again")
+                process.exit(1);
+            }
+            if(!axiosConfig.headers)
+            	axiosConfig.headers = {}
+            axiosConfig.headers["x-auth-request-access-token"] = token
+        }
         // -------------------------------------------------------------------------
-
         if (method.toLowerCase() == 'post') {
             return await axios.post(`${API_URI}/${endpoint}`, body, axiosConfig)
         } else if (method.toLowerCase() == 'get') {
@@ -137,7 +148,7 @@ export default abstract class extends Command {
 
     /**
      * _collectApiServerUrl
-     * 
+     *
      * @returns
      */
     async _collectApiServerUrl() {
@@ -170,7 +181,7 @@ export default abstract class extends Command {
 
     /**
      * _collectKeycloakUrl
-     * 
+     *
      * @returns
      */
     async _collectKeycloakUrl() {
@@ -212,50 +223,88 @@ export default abstract class extends Command {
 
         KC_URI = KC_URI.startsWith('http://') || KC_URI.startsWith('https://') ? KC_URI.substring(KC_URI.indexOf('//') + 2) : KC_URI
 
-        const _validateCookie = async (takeNoAction?: boolean) => {
-            const testResponse = await this.api('jwt', 'get', true)
-            if (testResponse.request.host == KC_URI) {
-                if (takeNoAction) {
-                    return false
+        const authMode = this.getConfig('AUTH_MODE')
+        if (authMode == 'oidc') {
+            const _validateCookie = async (takeNoAction?: boolean) => {
+                const testResponse = await this.api('jwt', 'get', true)
+                if (testResponse.request.host == KC_URI) {
+                    if (takeNoAction) {
+                        return false
+                    } else {
+                        // token expired
+                        this.setConfig('OIDC_COOKIE', null)
+                        warn('Your current token has expired or is invalid. You need to re-authenticate')
+                        await this.validateJwt()
+                    }
                 } else {
-                    // token expired
-                    this.setConfig('JWT_TOKEN', null)
-                    warn('Your current token has expired or is invalid. You need to re-authenticate')
-                    await this.validateJwt()
-                }
-            } else {
-                if (takeNoAction) {
-                    return true
+                    if (takeNoAction) {
+                        return true
+                    }
                 }
             }
-        }
 
-        const kcCookie = this.getConfig('JWT_TOKEN')
-        if (!kcCookie || kcCookie.length == 0) {
-            await open(`${API_URI}/jwt`)
+            const kcCookie = this.getConfig('OIDC_COOKIE')
+            if (!kcCookie || kcCookie.length == 0) {
+                await open(`${API_URI}/jwt`)
 
-            await inquirer.prompt([
-                {
-                    type: 'text',
-                    name: 'jwtToken',
-                    message: 'Please enter the JWT token now once you successfully authenticated yourself:',
-                    validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
-                        if (value.trim().length == 0) {
-                            return 'Mandatory field'
-                        }
-                        this.setConfig('JWT_TOKEN', value)
-                        const validTkn = await _validateCookie(true)
-                        if (!validTkn) {
-                            this.setConfig('JWT_TOKEN', null)
-                            return 'Invalid cookie'
-                        }
-                        return true
+                await inquirer.prompt([
+                    {
+                        type: 'text',
+                        name: 'jwtToken',
+                        message: 'Please enter the JWT token now once you successfully authenticated yourself:',
+                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
+                            if (value.trim().length == 0) {
+                                return 'Mandatory field'
+                            }
+                            this.setConfig('OIDC_COOKIE', value)
+                            const validTkn = await _validateCookie(true)
+                            if (!validTkn) {
+                                this.setConfig('OIDC_COOKIE', null)
+                                return 'Invalid cookie'
+                            }
+                            return true
+                        },
                     },
-                },
-            ])
-            console.log()
+                ])
+                console.log()
+            } else {
+                await _validateCookie()
+            }
         } else {
-            await _validateCookie()
+            const token = this.getConfig('JWT_TOKEN')
+            if(!token || token.length == 0) {
+                const responses = await inquirer.prompt([
+                    {
+                        type: 'text',
+                        name: 'username',
+                        message: 'Please enter your username:',
+                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
+                            if (value.trim().length == 0) {
+                                return 'Mandatory field'
+                            }
+                            return true
+                        },
+                    },
+                    {
+                        type: 'password',
+                        name: 'password',
+                        message: 'Please enter your password:',
+                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
+                            if (value.trim().length == 0) {
+                                return 'Mandatory field'
+                            }
+                            return true
+                        },
+                    },
+                ])
+
+                const loginResponse = await this.api('direct-login', 'post', responses, true)
+                if (loginResponse.data.error) {
+                    error(loginResponse.data.error_description)
+                    process.exit(1)
+                }
+                this.setConfig('JWT_TOKEN', loginResponse.data.access_token)
+            }
         }
     }
 
@@ -264,12 +313,13 @@ export default abstract class extends Command {
      */
     async logout() {
         await this.api('logout', 'get')
+        this.setConfig('OIDC_COOKIE', '')
         this.setConfig('JWT_TOKEN', '')
     }
 
     /**
      * collectClientId
-     * 
+     *
      * @param flags
      */
     async collectClientId(flags: any, question: string) {
@@ -311,7 +361,7 @@ export default abstract class extends Command {
 
     /**
      * showError
-     * 
+     *
      * @param error
      */
     showError(err: (arg0: any) => void) {
@@ -320,7 +370,7 @@ export default abstract class extends Command {
 
     /**
      * isPositiveInteger
-     * 
+     *
      * @param str
      * @returns
      */
