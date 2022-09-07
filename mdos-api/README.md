@@ -64,7 +64,7 @@ echo "$TOKEN"
 
 
 
-sudo helm upgrade --install -n keycloak --values ./values.yaml mdos-keycloak /home/mdundek/workspaces/mdos/setup/dep/generic-helm-chart --atomic
+sudo helm upgrade --install -n keycloak --values ./values.yaml mdos-keycloak /home/mdundek/workspaces/mdos/mdos-setup/dep/generic-helm-chart --atomic
 
 
 

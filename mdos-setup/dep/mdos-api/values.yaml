@@ -69,7 +69,7 @@ components:
     volumes:
       - name: keycloak-dep
         mountPath: /usr/src/dep/keycloak
-        hostPath: /home/mdundek/workspaces/mdos/setup/dep/keycloak
+        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/keycloak
       - name: keycloak-db
         mountPath: /usr/src/mdos/db
       - name: crt-volume
@@ -77,10 +77,10 @@ components:
         hostPath: /etc/letsencrypt/live/mydomain.com
       - name: mhc-generic-chart
         mountPath: /usr/src/dep/mhc-generic
-        hostPath: /home/mdundek/workspaces/mdos/setup/dep/mhc-generic/chart
+        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/mhc-generic/chart
       - name: istiod-helm-volume
         mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
-        hostPath: /home/mdundek/workspaces/mdos/setup/dep/istio_helm/istio-control/istio-discovery
+        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
 
     oidc:
       issuer: https://keycloak.mydomain.com/realms/mdos

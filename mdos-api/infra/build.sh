@@ -58,7 +58,7 @@ mdos_deploy_app() {
             -n $I_NS
     fi
 
-    helm upgrade --install $I_APP ../../setup/dep/mhc-generic/chart \
+    helm upgrade --install $I_APP ../../mdos-setup/dep/mhc-generic/chart \
         --values ./target_values.yaml \
         -n $I_NS --atomic
 }
@@ -77,7 +77,7 @@ docker push registry.$DOMAIN/mdos-api:latest
 
 if [ ! -z $DO_EXPORT ]; then
     docker tag registry.$DOMAIN/mdos-api:latest mdos-api:latest
-    docker save mdos-api:latest | gzip > ../setup/dep/mdos-api/mdos-api.tar.gz
+    docker save mdos-api:latest | gzip > ../mdos-setup/dep/mdos-api/mdos-api.tar.gz
 fi
 
 cd ./infra
