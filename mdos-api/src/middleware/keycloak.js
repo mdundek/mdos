@@ -2,7 +2,7 @@ const axios = require('axios')
 const https = require('https')
 const YAML = require('yaml')
 const fs = require('fs')
-const path = require('path')
+const jwt_decode = require('jwt-decode')
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
 const { terminalCommand } = require('../libs/terminal')
 
@@ -732,6 +732,28 @@ class Keycloak {
             ],
         })
     }
+
+    /**
+     * directLogin
+     * 
+     * @param {*} realm 
+     * @param {*} username 
+     * @param {*} password 
+     * @returns 
+     */
+    async directLogin(realm, username, password) {
+        const authResponse = await this.getUserAccessToken(realm, username, password);
+        if(authResponse.access_token) {
+            let jwtToken = jwt_decode(authResponse.access_token)
+            const userRoles = await this.getUserRoles(realm, username)
+            console.log(userRoles);
+        }
+        
+        return authResponse;
+    }
+
+
+    
 }
 
 module.exports = Keycloak

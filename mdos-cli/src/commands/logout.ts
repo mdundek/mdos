@@ -22,8 +22,9 @@ export default class Logout extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Logout)
 
+        const cookie = this.getConfig('OIDC_COOKIE')
         const token = this.getConfig('JWT_TOKEN')
-        if (token && token.length > 0) {
+        if ((cookie && cookie.length > 0) || (token && token.length > 0)) {
             // Login
             try {
                 let regDomain = await this.api('registry_domain', 'GET')

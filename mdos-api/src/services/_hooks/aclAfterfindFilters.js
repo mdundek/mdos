@@ -98,7 +98,6 @@ const userNamespaceFilterHook = async (context, jwtToken) => {
     if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('list-namespaces'))) {
         return context
     }
-
     // filter out to keep only those who are namespace admin
     context.result = context.result.filter((ns) => jwtToken.resource_access[ns.name])
     return context
