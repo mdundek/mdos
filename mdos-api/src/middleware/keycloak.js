@@ -3,6 +3,7 @@ const https = require('https')
 const YAML = require('yaml')
 const fs = require('fs')
 const jwt_decode = require('jwt-decode')
+var jwt = require('jwt-simple')
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
 const { terminalCommand } = require('../libs/terminal')
 
@@ -141,7 +142,6 @@ class Keycloak {
      */
     async createRealm(realm) {
         let accessToken = await this._getAccessToken()
-
         const responseRealm = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -744,16 +744,21 @@ class Keycloak {
     async directLogin(realm, username, password) {
         const authResponse = await this.getUserAccessToken(realm, username, password);
         if(authResponse.access_token) {
-            let jwtToken = jwt_decode(authResponse.access_token)
-            const userRoles = await this.getUserRoles(realm, username)
-            console.log(userRoles);
+            let jwtToken = jwt_decode(authResponse.access_token);
+            if(!jwtToken.resource_access) {
+                jwtToken.resource_access = {};
+                const userRoles = await this.getUserRoles(realm, username)
+                const clients = Object.keys(userRoles.clientMappings);
+                for(const client of clients) {
+                    jwtToken.resource_access[client] = {
+                        roles: userRoles.clientMappings[client].mappings.map(rm => rm.name)
+                    }
+                }
+            }
+            authResponse.access_token = jwt.encode(jwtToken, Buffer.from('fe1a1915a379f3be5394b64d14794932', 'hex'));
         }
-        
         return authResponse;
     }
-
-
-    
 }
 
 module.exports = Keycloak

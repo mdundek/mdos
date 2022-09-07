@@ -144,6 +144,7 @@ class KubeCore extends CommonCore {
                         'kube-system',
                         'default',
                         'istio-system',
+                        'longhorn-system'
                     ].includes(ns.name)
             )
 
