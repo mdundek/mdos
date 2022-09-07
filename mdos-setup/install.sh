@@ -1462,10 +1462,10 @@ EOF
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
-        # if [ -z $DOMAIN ]; then
-        #     user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
-        #     set_env_step_data "DOMAIN" "$DOMAIN"
-        # fi
+        if [ -z $DOMAIN ]; then
+            user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
+            set_env_step_data "DOMAIN" "$DOMAIN"
+        fi
 
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
 
