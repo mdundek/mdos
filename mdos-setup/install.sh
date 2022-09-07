@@ -1462,18 +1462,18 @@ EOF
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
-        if [ -z $DOMAIN ]; then
-            user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
-            set_env_step_data "DOMAIN" "$DOMAIN"
-        fi
+        # if [ -z $DOMAIN ]; then
+        #     user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
+        #     set_env_step_data "DOMAIN" "$DOMAIN"
+        # fi
 
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
 
-        if [ -z $INST_STEP_CLOUDFLARE ]; then
-            info "Certbot installation and setup..."
-            setup_cloudflare_certbot
-            set_env_step_data "INST_STEP_CLOUDFLARE" "1"
-        fi
+        # if [ -z $INST_STEP_CLOUDFLARE ]; then
+        #     info "Certbot installation and setup..."
+        #     setup_cloudflare_certbot
+        #     set_env_step_data "INST_STEP_CLOUDFLARE" "1"
+        # fi
     elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
         error "Not implemented yet"
         exit 1
@@ -1495,37 +1495,37 @@ EOF
     fi
 
     # INSTALL K3S
-    if [ -z $INST_STEP_K3S ]; then
-        info "Installing K3S..."
-        install_k3s
-        set_env_step_data "INST_STEP_K3S" "1"
-    fi
+    # if [ -z $INST_STEP_K3S ]; then
+    #     info "Installing K3S..."
+    #     install_k3s
+    #     set_env_step_data "INST_STEP_K3S" "1"
+    # fi
 
-    # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
-        consigure_core_dns_for_self_signed
-    fi
+    # # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
+    # if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+    #     consigure_core_dns_for_self_signed
+    # fi
 
-    # INSTALL HELM
-    if [ -z $INST_STEP_HELM ]; then
-        info "Installing HELM..."
-        install_helm
-        set_env_step_data "INST_STEP_HELM" "1"
-    fi
+    # # INSTALL HELM
+    # if [ -z $INST_STEP_HELM ]; then
+    #     info "Installing HELM..."
+    #     install_helm
+    #     set_env_step_data "INST_STEP_HELM" "1"
+    # fi
 
-    # INSTALL ISTIO
-    if [ -z $INST_STEP_ISTIO ]; then
-        info "Install Istio..."
-        install_istio
-        set_env_step_data "INST_STEP_ISTIO" "1"
-    fi
+    # # INSTALL ISTIO
+    # if [ -z $INST_STEP_ISTIO ]; then
+    #     info "Install Istio..."
+    #     install_istio
+    #     set_env_step_data "INST_STEP_ISTIO" "1"
+    # fi
 
-    # INSTALL PROXY
-    if [ -z $INST_STEP_PROXY ]; then
-        info "Install NGinx proxy..."
-        install_nginx
-        set_env_step_data "INST_STEP_PROXY" "1"
-    fi
+    # # INSTALL PROXY
+    # if [ -z $INST_STEP_PROXY ]; then
+    #     info "Install NGinx proxy..."
+    #     install_nginx
+    #     set_env_step_data "INST_STEP_PROXY" "1"
+    # fi
 
     # COLLECT ADMIN CREDS
     if [ -z $KEYCLOAK_USER ]; then

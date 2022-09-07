@@ -15,7 +15,7 @@ echo "
 "                                          
 
 # Docker
-sudo ../../setup/lib/81_install_docker.sh --platform-user $USER
+sudo ../../mdos-setup/lib/81_install_docker.sh --platform-user $USER
 
 HAS_ALIAS=$(cat $HOME/.bashrc | grep "alias mdos=")
 if [ "$HAS_ALIAS" == "" ]; then
