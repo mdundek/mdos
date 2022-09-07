@@ -37,6 +37,7 @@ components:
     volumes:
       - name: host-data-volume
         mountPath: /var/lib/postgresql/data
+        subPath: data
         size: 10Gi
       - name: db-init
         mountPath: /docker-entrypoint-initdb.d

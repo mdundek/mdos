@@ -440,6 +440,9 @@ spec:
       {{- range .volumes }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
               mountPath: {{ .mountPath }}
+        {{- if .subPath }}
+              subPath: {{ .subPath }}
+        {{- end }}
       {{- end }}
     {{- end }}
 
