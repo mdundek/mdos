@@ -467,7 +467,7 @@ install_istio() {
   extensionProviders:
   - name: kc-mdos
     envoyExtAuthzHttp:
-      service: oauth2-proxy-mdos.oauth2-proxy.svc.cluster.local
+      service: kc-mdos-oauth2-proxy.oauth2-proxy.svc.cluster.local
       port: 4180
       includeRequestHeadersInCheck:
       - cookie
@@ -1224,9 +1224,15 @@ EOF
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         K3S_REG_DOMAIN="registry.$DOMAIN"
         K3S_MINIO_DOMAIN="http://minio.$DOMAIN:9000"
+
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].oidc)')
     else
         K3S_REG_DOMAIN="registry.$DOMAIN"
         K3S_MINIO_DOMAIN="https://minio.$DOMAIN"
+
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "'$OIDC_ISSUER_URL'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "'$OIDC_JWKS_URI'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     fi
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
@@ -1237,9 +1243,6 @@ EOF
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[7].value = "'$K3S_MINIO_DOMAIN'"')
     fi
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[8].value = "'$S3_PROVIDER'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "'$OIDC_ISSUER_URL'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "'$OIDC_JWKS_URI'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[2].value = "'$ACCESS_KEY'"')
