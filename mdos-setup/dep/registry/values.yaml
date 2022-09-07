@@ -60,6 +60,7 @@ components:
     volumes:
       - name: repo-vol
         mountPath: /var/lib/registry
+        size: 30Gi
 
   - name: auth
     uuid: KG75-7D58-registry-auth
