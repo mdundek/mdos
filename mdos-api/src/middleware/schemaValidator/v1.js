@@ -118,6 +118,7 @@ class SchemaV1 {
                                         mountPath: { type: 'string' },
                                         hostPath: { type: 'string' },
                                         syncVolume: { type: 'boolean' },
+                                        size: { type: 'string' }
                                     },
                                     required: ['name', 'mountPath'],
                                     additionalProperties: false,

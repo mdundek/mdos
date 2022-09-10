@@ -575,7 +575,6 @@ module.exports = {
     mergeFlags,
     extractErrorCode,
     extractErrorMessage,
-    s3sync,
     lftp,
     isDockerInstalled,
     buildPushComponent,
