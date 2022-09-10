@@ -82,7 +82,7 @@ spec:
     {{- if contains "true" $mdosSyncs }}
       initContainers:
       - name: {{ $appName }}-{{ lower .name }}-init
-        image: {{ $.Values.mdosRegistry }}/mdos-sync-container:latest
+        image: {{ $.Values.mdosRegistry }}/mdos-mirror-lftp:latest
         imagePullPolicy: Always
         volumeMounts:
       {{- range .volumes }}
@@ -91,31 +91,35 @@ spec:
             mountPath: "{{ .mountPath }}"
         {{- end }}
       {{- end }}
+        command:
+          - sh
+        args:
+          - /usr/local/bin/r-mirror.sh
         env: 
-        - name: SYNC_SOURCE_BUCKET
+        - name: SYNC_SOURCE_DIR
           value: "{{ $srcBuckets }}"
         - name: SYNC_TARGET_DIR
           value: "{{ $dstPaths }}"
-        - name: S3_PROVIDER
+        - name: PROTOCOL
           valueFrom:
             secretKeyRef:
-              name: s3-read
-              key: S3_PROVIDER  
-        - name: S3_INTERNAL_HOST
+              name: ftp-read
+              key: PROTOCOL
+        - name: HOST
           valueFrom:
             secretKeyRef:
-              name: s3-read
-              key: S3_INTERNAL_HOST
-        - name: ACCESS_KEY
+              name: ftp-read
+              key: HOST
+        - name: USERNAME
           valueFrom:
             secretKeyRef:
-              name: s3-read
-              key: ACCESS_KEY
-        - name: SECRET_KEY
+              name: ftp-read
+              key: USERNAME
+        - name: PASSWORD
           valueFrom:
             secretKeyRef:
-              name: s3-read
-              key: SECRET_KEY
+              name: ftp-read
+              key: PASSWORD
     {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}

@@ -29,7 +29,6 @@ const terminalCommand = async (command, jsonResponse, cwdPath) => {
     })
 }
 
-
 module.exports = {
-    terminalCommand,
+    terminalCommand
 }
