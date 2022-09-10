@@ -436,6 +436,12 @@ EOF
 # ############# INSTALL LONGHORN #############
 # ############################################
 install_longhorn() {
+    user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
+    while [ ! -d $LONGHORN_DEFAULT_DIR ]; do
+        error "Directory does not exist"
+        user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
+    done
+
     # Install storageclass
     helm repo add longhorn https://charts.longhorn.io
     helm repo update
@@ -443,7 +449,9 @@ install_longhorn() {
         --set service.ui.type=NodePort \
         --set service.ui.nodePort=30584 \
         --set persistence.defaultClassReplicaCount=2 \
-        --set defaultSettings.defaultDataPath=/media/data/longhorn \
+        --set defaultSettings.guaranteedEngineManagerCPU=125m \
+        --set defaultSettings.guaranteedReplicaManagerCPU=125m \
+        --set defaultSettings.defaultDataPath=$LONGHORN_DEFAULT_DIR \
         --namespace longhorn-system --create-namespace --atomic
     sleep 5
     # kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.1/examples/storageclass.yaml
