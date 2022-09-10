@@ -1499,7 +1499,7 @@ EOF
 
         if [ -z $INST_STEP_CLOUDFLARE ]; then
             info "Certbot installation and setup..."
-            setup_cloudflare_certbot
+            # setup_cloudflare_certbot
             set_env_step_data "INST_STEP_CLOUDFLARE" "1"
         fi
     elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
@@ -1525,7 +1525,7 @@ EOF
     INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
         info "Installing K3S..."
-        install_k3s
+        # install_k3s
         set_env_step_data "INST_STEP_K3S" "1"
     fi
 
@@ -1537,21 +1537,21 @@ EOF
     # INSTALL HELM
     if [ -z $INST_STEP_HELM ]; then
         info "Installing HELM..."
-        install_helm
+        # install_helm
         set_env_step_data "INST_STEP_HELM" "1"
     fi
 
     # INSTALL ISTIO
     if [ -z $INST_STEP_ISTIO ]; then
         info "Install Istio..."
-        install_istio
+        # install_istio
         set_env_step_data "INST_STEP_ISTIO" "1"
     fi
 
     # INSTALL PROXY
     if [ -z $INST_STEP_PROXY ]; then
         info "Install NGinx proxy..."
-        install_nginx
+        # install_nginx
         set_env_step_data "INST_STEP_PROXY" "1"
     fi
 
@@ -1629,7 +1629,7 @@ EOF
     # INSTALL MDOS
     if [ -z $INST_STEP_MDOS ]; then
         info "Install MDos API server..."
-        install_mdos
+        # install_mdos
         set_env_step_data "INST_STEP_MDOS" "1"
     fi
 
