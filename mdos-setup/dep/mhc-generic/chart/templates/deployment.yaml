@@ -1,4 +1,10 @@
 {{- $appName := lower .Values.appName -}}
+
+{{- $ftpCredentials := "" }}
+{{- if .Values.ftpCredentials }}
+  {{- $ftpCredentials := .Values.ftpCredentials }}
+{{- end }}
+
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
   {{- $uuid := .uuid }}
@@ -96,21 +102,21 @@ spec:
           - /usr/local/bin/r-mirror.sh
         env: 
         - name: SYNC_SOURCE_DIR
-          value: "{{ $srcBuckets }}"
+          value: {{ $srcBuckets }}
         - name: SYNC_TARGET_DIR
-          value: "{{ $dstPaths }}"
+          value: {{ $dstPaths }}
         - name: FTP_USERNAME
-          value: "{{ .Values.ftpCredentials.username }}"
+          value: {{ $ftpCredentials.username | quote }}
         - name: FTP_PASSWORD
-          value: "{{ .Values.ftpCredentials.password }}"
+          value: {{ $ftpCredentials.password | quote }}
         - name: CREATED_AT
-          value: "{{ .Values.ftpCredentials.createdAt }}"
+          value: {{ $ftpCredentials.createdAt | quote }}
         - name: PROTOCOL
-          value: "{{ .Values.ftpCredentials.protocol }}"
+          value: {{ $ftpCredentials.protocol | quote }}
         - name: HOST
-          value: "{{ .Values.ftpCredentials.host }}"
+          value: {{ $ftpCredentials.host | quote }}
         - name: PORT
-          value: "{{ .Values.ftpCredentials.port }}"
+          value: {{ $ftpCredentials.port | quote }}
     {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
