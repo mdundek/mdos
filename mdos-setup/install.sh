@@ -430,15 +430,24 @@ EOF
     # Restart codedns to make sure external dns resolution works
     kubectl -n kube-system rollout restart deployment coredns &>> $LOG_FILE
     sleep 3
+}
 
+# ############################################
+# ############# INSTALL LONGHORN #############
+# ############################################
+install_longhorn() {
     # Install storageclass
     helm repo add longhorn https://charts.longhorn.io
     helm repo update
-    helm install longhorn longhorn/longhorn --namespace longhorn-system --create-namespace --atomic
+    helm install longhorn longhorn/longhorn \
+        --set service.ui.type=NodePort \
+        --set service.ui.nodePort=30584 \
+        --set persistence.defaultClassReplicaCount=2 \
+        --set defaultSettings.defaultDataPath=/media/data/longhorn \
+        --namespace longhorn-system --create-namespace --atomic
     sleep 5
-    kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.1/examples/storageclass.yaml
+    # kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.1/examples/storageclass.yaml
 }
-
 
 # ############################################
 # ############### INSTALL HELM ###############
@@ -1546,6 +1555,13 @@ EOF
         info "Install Istio..."
         # install_istio
         set_env_step_data "INST_STEP_ISTIO" "1"
+    fi
+
+    # INSTALL LONGHORN
+    if [ -z $INST_STEP_LONGHORN ]; then
+        info "Install Longhorn..."
+        install_longhorn
+        set_env_step_data "INST_STEP_LONGHORN" "1"
     fi
 
     # INSTALL PROXY
