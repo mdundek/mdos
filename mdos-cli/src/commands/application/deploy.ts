@@ -1,7 +1,7 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { success, context, error, s3sync, isDockerInstalled, buildPushComponent } = require('../../lib/tools')
+const { success, context, error, lftp, isDockerInstalled, buildPushComponent } = require('../../lib/tools')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
@@ -121,11 +121,15 @@ export default class Deploy extends Command {
         // Get credentials for minio for user
         let userInfo
         try {
-            userInfo = await this.api('mdos/user-info', 'GET')
+            userInfo = await this.api(`mdos/user-info?namespace=${appYaml.tenantName}&appName=${appYaml.appName}`, 'GET')
         } catch (err) {
             this.showError(err)
             process.exit(1)
         }
+
+        // Sync volumes
+        let volSourcePath = path.join(appRootDir, 'volumes')
+        const volumeUpdates = await lftp(this.getConfig('MDOS_API_URI'), appYaml.tenantName, appYaml.appName, volSourcePath, userInfo.data.lftpCreds)
 
         // Build / push application
         for (let appComp of appYaml.components) {
@@ -140,29 +144,44 @@ export default class Deploy extends Command {
         }
 
         // Sync minio content for volumes
-        const targetS3Creds = userInfo.data.s3.find((b: { bucket: any }) => b.bucket == appYaml.tenantName)
-        let volumeUpdates = false
-        for (let component of appYaml.components) {
-            if (component.volumes) {
-                for (let volume of component.volumes) {
-                    if (volume.syncVolume) {
-                        if (!targetS3Creds) {
-                            error('There are no available S3 credentials allowing you to sync your volumes')
-                            process.exit(1)
-                        } else if (targetS3Creds.permissions == 'read') {
-                            error('You do not have sufficient S3 credentials allowing you to sync your volumes')
-                            process.exit(1)
-                        }
-                        let volSourcePath = path.join(appRootDir, 'volumes', volume.name)
-                        let volHasUpdates = await s3sync(userInfo.data.S3Provider, targetS3Creds.bucket, volume.name, volSourcePath, targetS3Creds)
-                        if (volHasUpdates) volumeUpdates = true
-                    }
-                }
-            }
-        }
+        // const targetS3Creds = userInfo.data.s3.find((b: { bucket: any }) => b.bucket == appYaml.tenantName)
+
+        
+
+        // let volumeUpdates = false
+        // for (let component of appYaml.components) {
+        //     if (component.volumes) {
+        //         for (let volume of component.volumes) {
+        //             if (volume.syncVolume) {
+
+        //                 let volSourcePath = path.join(appRootDir, 'volumes', volume.name)
+        //                 await lftp(this.getConfig('MDOS_API_URI'), appYaml.tenantName, volume.name, volSourcePath)
+
+        //                 // if (!targetS3Creds) {
+        //                 //     error('There are no available S3 credentials allowing you to sync your volumes')
+        //                 //     process.exit(1)
+        //                 // } else if (targetS3Creds.permissions == 'read') {
+        //                 //     error('You do not have sufficient S3 credentials allowing you to sync your volumes')
+        //                 //     process.exit(1)
+        //                 // }
+        //                 // let volSourcePath = path.join(appRootDir, 'volumes', volume.name)
+        //                 // let volHasUpdates = await s3sync(userInfo.data.S3Provider, targetS3Creds.bucket, volume.name, volSourcePath, targetS3Creds)
+        //                 // if (volHasUpdates) volumeUpdates = true
+        //             }
+        //         }
+        //     }
+        // }
 
         // Do some checks, make sure this deployment will not collide with existing deployments for other apps
-        const deployedApps = await this.api(`kube?target=applications&clientId=${appYaml.tenantName}`, 'get')
+        let deployedApps
+        try {
+            deployedApps = await this.api(`kube?target=applications&clientId=${appYaml.tenantName}`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+        
+
         let errorMsg: string | null = null
         // Make sure deployed apps with same uuid do not have different names
         for (const deployedApp of deployedApps.data) {
@@ -182,7 +201,7 @@ export default class Deploy extends Command {
                 }
             }
         }
-
+        
         // check that volume names are not already in use by other apps
         // NOTE: Probably obsolete checks. Need error UC to implement right
         // if(!errorMsg) {

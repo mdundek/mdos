@@ -154,10 +154,9 @@ const extractErrorCode = (error, exclude) => {
  * Extract error message from error objectt
  *
  * @param {*} error
- * @param {*} allErrors
  * @return {*} 
  */
-const extractErrorMessage = (error, allErrors) => {
+const extractErrorMessage = (error) => {
     if (typeof error === 'string' || error instanceof String) {
         return error
     }
@@ -171,20 +170,10 @@ const extractErrorMessage = (error, allErrors) => {
     if (error.response && error.response.data && error.response.data.message && errorMsg.indexOf(error.response.data.message) == -1) {
         errorMsg.push(error.response.data.message)
     }
-
+    
     if (errorMsg.length > 0) {
-        return errorMsg.join('\n')
-        // if(allErrors) {
-        // 	return errorMsg.join("\n");
-        // }
-        // else {
-        // 	let retainedError = "";
-        // 	errorMsg.forEach((msg) => {
-        // 		if(retainedError.length < msg.length)
-        // 			retainedError = msg
-        // 	});
-        // 	return retainedError;
-        // }
+        const mainErrMessage = errorMsg.filter(msg => msg.indexOf("ERROR: ") == 0).map(msg => msg.substring(7))
+        return mainErrMessage.length > 0 ? mainErrMessage.join('\n') : errorMsg.join('\n')
     } else {
         return 'An unknown error occured!'
     }
@@ -219,192 +208,217 @@ const _isPositiveInteger = (str) => {
  * @param {*} targetS3Creds
  * @return {*} 
  */
-const s3sync = async (s3Provider, bucket, volumeName, sourceDir, targetS3Creds) => {
-    // Convenience private function to download file
-    const _dl = (url, destination) => {
-        return new Promise((resolve, reject) => {
-            const fileStream = fs.createWriteStream(destination)
-            https
-                .get(url, function (response) {
-                    const code = response.statusCode ?? 0
-                    if (code >= 400) return reject(new Error(response.statusMessage))
-                    // handle redirects
-                    if (code > 300 && code < 400 && !!response.headers.location) return resolve(response.headers.location)
-                    response.pipe(fileStream)
-                    fileStream.on('finish', () => {
-                        fileStream.close()
-                        resolve()
-                    })
-                })
-                .on('error', function (err) {
-                    fs.unlink(destination)
-                    reject(err)
-                })
-        })
-    }
+// const s3sync = async (s3Provider, bucket, volumeName, sourceDir, targetS3Creds) => {
+//     // Convenience private function to download file
+//     const _dl = (url, destination) => {
+//         return new Promise((resolve, reject) => {
+//             const fileStream = fs.createWriteStream(destination)
+//             https
+//                 .get(url, function (response) {
+//                     const code = response.statusCode ?? 0
+//                     if (code >= 400) return reject(new Error(response.statusMessage))
+//                     // handle redirects
+//                     if (code > 300 && code < 400 && !!response.headers.location) return resolve(response.headers.location)
+//                     response.pipe(fileStream)
+//                     fileStream.on('finish', () => {
+//                         fileStream.close()
+//                         resolve()
+//                     })
+//                 })
+//                 .on('error', function (err) {
+//                     fs.unlink(destination)
+//                     reject(err)
+//                 })
+//         })
+//     }
 
-    // Make sure Minio CLI is available
-    let mcBin
-    if (os.platform() === 'linux') {
-        if (s3Provider == 'minio') {
-            mcBin = path.join(os.homedir(), '.mdos', 'mc')
-            if (!fs.existsSync(mcBin)) {
-                try {
-                    CliUx.ux.action.start('Downloading Minio CLI')
-                    const redirect = await _dl('https://dl.min.io/client/mc/release/linux-amd64/mc', mcBin)
-                    if (redirect) {
-                        await _dl(redirect, mcBin)
-                    }
-                    CliUx.ux.action.stop()
-                    await terminalCommand(`chmod +x ${mcBin}`)
-                } catch (err) {
-                    CliUx.ux.action.stop('error')
-                    error('Could not download Minio CLI binary')
-                    try {
-                        fs.unlink(mcBin)
-                    } catch (_e) {}
-                    process.exit(1)
-                }
-            }
-        } else {
-            error('Unsupported S3 provider: ' + s3Provider)
-            process.exit(1)
-        }
-    } else if (os.platform() === 'darwin') {
-        if (s3Provider == 'minio') {
-            mcBin = 'mc'
-            try {
-                await terminalCommand(`command -v mc`)
-            } catch (_e) {
-                try {
-                    await terminalCommand(`command -v brew`)
-                } catch (_e) {
-                    error("Please install 'brew' first and try again")
-                    process.exit(1)
-                }
-                try {
-                    CliUx.ux.action.start('Installing Minio CLI')
-                    await terminalCommand(`brew install minio/stable/mc`)
-                    CliUx.ux.action.stop()
+//     // Make sure Minio CLI is available
+//     let mcBin
+//     if (os.platform() === 'linux') {
+//         if (s3Provider == 'minio') {
+//             mcBin = path.join(os.homedir(), '.mdos', 'mc')
+//             if (!fs.existsSync(mcBin)) {
+//                 try {
+//                     CliUx.ux.action.start('Downloading Minio CLI')
+//                     const redirect = await _dl('https://dl.min.io/client/mc/release/linux-amd64/mc', mcBin)
+//                     if (redirect) {
+//                         await _dl(redirect, mcBin)
+//                     }
+//                     CliUx.ux.action.stop()
+//                     await terminalCommand(`chmod +x ${mcBin}`)
+//                 } catch (err) {
+//                     CliUx.ux.action.stop('error')
+//                     error('Could not download Minio CLI binary')
+//                     try {
+//                         fs.unlink(mcBin)
+//                     } catch (_e) {}
+//                     process.exit(1)
+//                 }
+//             }
+//         } else {
+//             error('Unsupported S3 provider: ' + s3Provider)
+//             process.exit(1)
+//         }
+//     } else if (os.platform() === 'darwin') {
+//         if (s3Provider == 'minio') {
+//             mcBin = 'mc'
+//             try {
+//                 await terminalCommand(`command -v mc`)
+//             } catch (_e) {
+//                 try {
+//                     await terminalCommand(`command -v brew`)
+//                 } catch (_e) {
+//                     error("Please install 'brew' first and try again")
+//                     process.exit(1)
+//                 }
+//                 try {
+//                     CliUx.ux.action.start('Installing Minio CLI')
+//                     await terminalCommand(`brew install minio/stable/mc`)
+//                     CliUx.ux.action.stop()
 
-                    warn('Minio CLI was installed. Please restart your command for changes to take effect')
-                    process.exit(1)
-                } catch (_e) {
-                    console.log(_e)
-                    CliUx.ux.action.stop('error')
-                    error(extractErrorMessage(_e))
-                    process.exit(1)
-                }
-            }
-        } else {
-            error('Unsupported S3 provider: ' + s3Provider)
-            process.exit(1)
-        }
-    } else if (os.platform() === 'win32') {
-        if (s3Provider == 'minio') {
-            mcBin = path.join(os.homedir(), '.mdos', 'mc.exe')
-            if (!fs.existsSync(mcBin)) {
-                try {
-                    CliUx.ux.action.start('Downloading Minio CLI')
-                    const redirect = await _dl('https://dl.min.io/client/mc/release/windows-amd64/mc.exe', mcBin)
-                    if (redirect) {
-                        await _dl(redirect, mcBin)
-                    }
-                    CliUx.ux.action.stop()
-                } catch (err) {
-                    CliUx.ux.action.stop('error')
-                    error('Could not download Minio CLI binary')
-                    process.exit(1)
-                }
-            }
-        } else {
-            error('Unsupported S3 provider: ' + s3Provider)
-            process.exit(1)
-        }
-    } else {
-        error('Unsupported platform')
-        process.exit(1)
-    }
+//                     warn('Minio CLI was installed. Please restart your command for changes to take effect')
+//                     process.exit(1)
+//                 } catch (_e) {
+//                     console.log(_e)
+//                     CliUx.ux.action.stop('error')
+//                     error(extractErrorMessage(_e))
+//                     process.exit(1)
+//                 }
+//             }
+//         } else {
+//             error('Unsupported S3 provider: ' + s3Provider)
+//             process.exit(1)
+//         }
+//     } else if (os.platform() === 'win32') {
+//         if (s3Provider == 'minio') {
+//             mcBin = path.join(os.homedir(), '.mdos', 'mc.exe')
+//             if (!fs.existsSync(mcBin)) {
+//                 try {
+//                     CliUx.ux.action.start('Downloading Minio CLI')
+//                     const redirect = await _dl('https://dl.min.io/client/mc/release/windows-amd64/mc.exe', mcBin)
+//                     if (redirect) {
+//                         await _dl(redirect, mcBin)
+//                     }
+//                     CliUx.ux.action.stop()
+//                 } catch (err) {
+//                     CliUx.ux.action.stop('error')
+//                     error('Could not download Minio CLI binary')
+//                     process.exit(1)
+//                 }
+//             }
+//         } else {
+//             error('Unsupported S3 provider: ' + s3Provider)
+//             process.exit(1)
+//         }
+//     } else {
+//         error('Unsupported platform')
+//         process.exit(1)
+//     }
 
-    // Get available minio aliases
-    if (s3Provider == 'minio') {
-        let mcConfigs = null
-        let aliasUpdate = true
-        try {
-            mcConfigs = await terminalCommand(`${mcBin} alias list --json`)
-            let aliasFound = false
-            let accessKeyMatch = false
-            for (const a of mcConfigs) {
-                const alias = JSON.parse(a)
-                if (alias.alias == `${bucket}-mdosminio`) {
-                    aliasFound = true
-                    if (alias.accessKey == targetS3Creds.ACCESS_KEY) accessKeyMatch = true
-                }
-            }
-            if (aliasFound && !accessKeyMatch) {
-                await terminalCommand(`${mcBin} alias remove ${bucket}-mdosminio`)
-            } else if (!aliasFound) {
-                aliasUpdate = true
-            }
-        } catch (err) {
-            error('Could not read Minio aliases')
-            process.exit(1)
-        }
+//     // Get available minio aliases
+//     if (s3Provider == 'minio') {
+//         let mcConfigs = null
+//         let aliasUpdate = true
+//         try {
+//             mcConfigs = await terminalCommand(`${mcBin} alias list --json`)
+//             let aliasFound = false
+//             let accessKeyMatch = false
+//             for (const a of mcConfigs) {
+//                 const alias = JSON.parse(a)
+//                 if (alias.alias == `${bucket}-mdosminio`) {
+//                     aliasFound = true
+//                     if (alias.accessKey == targetS3Creds.ACCESS_KEY) accessKeyMatch = true
+//                 }
+//             }
+//             if (aliasFound && !accessKeyMatch) {
+//                 await terminalCommand(`${mcBin} alias remove ${bucket}-mdosminio`)
+//             } else if (!aliasFound) {
+//                 aliasUpdate = true
+//             }
+//         } catch (err) {
+//             error('Could not read Minio aliases')
+//             process.exit(1)
+//         }
 
-        // If mdos minio alias not set up, do it now
-        try {
-            if (aliasUpdate)
-                await terminalCommand(
-                    `${mcBin} alias set ${bucket}-mdosminio ${targetS3Creds.host} ${targetS3Creds.ACCESS_KEY} ${targetS3Creds.SECRET_KEY}`
-                )
-        } catch (err) {
-            if (extractErrorCode(err) == 500) {
-                error('Invalid credentials')
-            } else {
-                error('Invalid domain:', targetS3Creds.host)
-            }
-            process.exit(1)
-        }
+//         // If mdos minio alias not set up, do it now
+//         try {
+//             if (aliasUpdate)
+//                 await terminalCommand(
+//                     `${mcBin} alias set ${bucket}-mdosminio ${targetS3Creds.host} ${targetS3Creds.ACCESS_KEY} ${targetS3Creds.SECRET_KEY}`
+//                 )
+//         } catch (err) {
+//             if (extractErrorCode(err) == 500) {
+//                 error('Invalid credentials')
+//             } else {
+//                 error('Invalid domain:', targetS3Creds.host)
+//             }
+//             process.exit(1)
+//         }
 
-        // Sync now
-        let updated = false
-        try {
-            CliUx.ux.action.start(`Synchronizing volume: ${bucket}/${volumeName}`)
-            const syncResult = await terminalCommand(
-                `${mcBin} mirror ${sourceDir} ${bucket}-mdosminio/${bucket}/volumes/${volumeName} --overwrite --remove --json`
-            )
-            const changeDetected = syncResult.find((logLine) => {
-                const logLineJson = JSON.parse(logLine)
-                if (logLineJson.status == 'error') {
-                    throw new Error(
-                        logLineJson.error.message +
-                            (logLineJson.error.cause && logLineJson.error.cause.message ? `: ${logLineJson.error.cause.message}` : '')
-                    )
-                }
-                if (logLineJson.key && logLineJson.key != `${bucket}/volumes/${volumeName}`) {
-                    return true
-                } else if (logLineJson.source) {
-                    return true
-                } else {
-                    return false
-                }
-            })
+//         // Sync now
+//         let updated = false
+//         try {
+//             CliUx.ux.action.start(`Synchronizing volume: ${bucket}/${volumeName}`)
+//             const syncResult = await terminalCommand(
+//                 `${mcBin} mirror ${sourceDir} ${bucket}-mdosminio/${bucket}/volumes/${volumeName} --overwrite --remove --json`
+//             )
+//             const changeDetected = syncResult.find((logLine) => {
+//                 const logLineJson = JSON.parse(logLine)
+//                 if (logLineJson.status == 'error') {
+//                     throw new Error(
+//                         logLineJson.error.message +
+//                             (logLineJson.error.cause && logLineJson.error.cause.message ? `: ${logLineJson.error.cause.message}` : '')
+//                     )
+//                 }
+//                 if (logLineJson.key && logLineJson.key != `${bucket}/volumes/${volumeName}`) {
+//                     return true
+//                 } else if (logLineJson.source) {
+//                     return true
+//                 } else {
+//                     return false
+//                 }
+//             })
 
-            updated = changeDetected ? true : false
-            CliUx.ux.action.stop()
-        } catch (err) {
-            CliUx.ux.action.stop('error')
-            error('Could not synchronize volume:', false, true)
-            context(extractErrorMessage(err), true)
-            process.exit(1)
-        }
-        return updated
-    } else {
-        error('Unsupported S3 provider: ' + s3Provider)
+//             updated = changeDetected ? true : false
+//             CliUx.ux.action.stop()
+//         } catch (err) {
+//             CliUx.ux.action.stop('error')
+//             error('Could not synchronize volume:', false, true)
+//             context(extractErrorMessage(err), true)
+//             process.exit(1)
+//         }
+//         return updated
+//     } else {
+//         error('Unsupported S3 provider: ' + s3Provider)
+//         process.exit(1)
+//     }
+// }
+
+/**
+ * Synchronize current vvolume over lftp
+ *
+ * @param {*} client
+ * @param {*} volumeName
+ * @param {*} sourceDir
+ * @return {*} 
+ */
+const lftp = async (mdosBaseUrl, client, appName, sourceDir, creds) => {
+    // Build app image
+    const hostAndPort = mdosBaseUrl.substring(mdosBaseUrl.indexOf("//") + 2)
+    const hostSplit = hostAndPort.split(":")
+
+    try {
+        CliUx.ux.action.start(`Synching volumes`)
+        const result = await terminalCommand(`docker run --name mdos-mirror-lftp --rm -e PROTOCOL=ftp -e HOST=${hostSplit[0]} -e PORT=3915 -e USERNAME=${creds.username} -e PASSWORD=${creds.password} -e LOCAL_DIR=/usr/src/volumes -e REMOTE_DIR=./ -e PARALLEL=2 -v ${sourceDir}:/usr/src/volumes registry.mdundek.network/mdos-mirror-lftp:latest sh /usr/local/bin/mirror.sh`)
+        CliUx.ux.action.stop()
+        return result.length > 0
+    } catch (err) {
+        CliUx.ux.action.stop('error')
+        error('Could not sync volume:', false, true)
+        context(extractErrorMessage(err), true)
         process.exit(1)
     }
 }
-
 
 /**
  * Build and push a component docker image to the mdos registry
@@ -426,7 +440,7 @@ const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, r
             }
         } catch (err) {
             CliUx.ux.action.stop('error')
-            context(extractErrorMessage(err, true), true)
+            context(extractErrorMessage(err), true)
             process.exit(1)
         }
     }
@@ -562,6 +576,7 @@ module.exports = {
     extractErrorCode,
     extractErrorMessage,
     s3sync,
+    lftp,
     isDockerInstalled,
     buildPushComponent,
     getConsoleLineHandel,

@@ -81,7 +81,7 @@ spec:
     {{- if contains "true" $mdosSyncs }}
       initContainers:
       - name: {{ $appName }}-{{ lower .name }}-init
-        image: {{ $.Values.mdosRegistry }}/mdos-sync-container:latest
+        image: {{ $.Values.mdosRegistry }}/mdos-mirror-lftp:latest
         imagePullPolicy: Always
         volumeMounts:
       {{- range .volumes }}
@@ -90,8 +90,12 @@ spec:
             mountPath: "{{ .mountPath }}"
         {{- end }}
       {{- end }}
+        command:
+          - sh
+        args:
+          - /usr/local/bin/r-mirror.sh
         env: 
-        - name: SYNC_SOURCE_BUCKET
+        - name: SYNC_SOURCE_DIR
           value: "{{ $srcBuckets }}"
         - name: SYNC_TARGET_DIR
           value: "{{ $dstPaths }}"
