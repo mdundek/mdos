@@ -1522,7 +1522,7 @@ EOF
         configure_etc_hosts
     fi
 
-    INSTALL K3S
+    # INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
         info "Installing K3S..."
         # install_k3s
