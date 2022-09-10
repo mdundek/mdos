@@ -26,10 +26,8 @@ class Keycloak {
     constructor(app) {
         this.app = app
 
-        this.kcHelmChartPath = process.env.KC_HELM_CHART_DIR
         this.rootDomain = process.env.ROOT_DOMAIN
         this.sslCertFolder = process.env.SSL_CERT_FOLDER
-        this.kcDbRoot = process.env.KC_DB_ROOT
 
         this.regUser = process.env.REG_USER
         this.regPass = process.env.REG_PASS

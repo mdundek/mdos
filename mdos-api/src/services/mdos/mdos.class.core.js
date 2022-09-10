@@ -30,22 +30,23 @@ class MdosCore extends CommonCore {
         allNs = allNs.map((o) => o.metadata.name)
 
         const userData = {
-            registry: `registry.${process.env.ROOT_DOMAIN}`,
-            S3Provider: process.env.S3_PROVIDER,
-            s3: [],
+            registry: `registry.${process.env.ROOT_DOMAIN}`
+            // S3Provider: process.env.S3_PROVIDER,
+            // s3: [],
         }
 
         // For dev purposes only, used if auth is disabled
         if (process.env.NO_ADMIN_AUTH == 'true') {
-            for (let ns of allNs) {
-                const s3creds = await this.app.get('s3').getNamespaceCredentials(ns, 'write')
-                if (s3creds) {
-                    s3creds.bucket = ns
-                    s3creds.permissions = 'write'
-                    userData.s3.push(s3creds)
-                }
-            }
-            userData.roles = [`mdostnt-name-${params.tenantName}`, 'mdostnt-volume-sync']
+            // for (let ns of allNs) {
+            //     const s3creds = await this.app.get('s3').getNamespaceCredentials(ns, 'write')
+            //     if (s3creds) {
+            //         s3creds.bucket = ns
+            //         s3creds.permissions = 'write'
+            //         userData.s3.push(s3creds)
+            //     }
+            // }
+            userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+            userData.roles = [`mdostnt-name-${params.namespace}`, 'mdostnt-volume-sync']
             return userData
         }
         // For production
@@ -60,33 +61,11 @@ class MdosCore extends CommonCore {
 
             for (let ns of allNs) {
                 if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
-                    const s3creds = await this.app.get('s3').getNamespaceCredentials(ns, 'write')
-                    if (s3creds) {
-                        s3creds.bucket = ns
-                        s3creds.permissions = 'write'
-                        userData.s3.push(s3creds)
-                    }
+                    userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
                 } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('admin')) {
-                    const s3creds = await this.app.get('s3').getNamespaceCredentials(ns, 'write')
-                    if (s3creds) {
-                        s3creds.bucket = ns
-                        s3creds.permissions = 'write'
-                        userData.s3.push(s3creds)
-                    }
-                } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('s3-write')) {
-                    const s3creds = await this.app.get('s3').getNamespaceCredentials(ns, 'write')
-                    if (s3creds) {
-                        s3creds.bucket = ns
-                        s3creds.permissions = 'write'
-                        userData.s3.push(s3creds)
-                    }
-                } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('s3-read')) {
-                    const s3creds = await this.app.get('s3').getNamespaceCredentials(ns, 'read')
-                    if (s3creds) {
-                        s3creds.bucket = ns
-                        s3creds.permissions = 'read'
-                        userData.s3.push(s3creds)
-                    }
+                    userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('ftp-write')) {
+                    userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
                 }
             }
             return userData
@@ -114,12 +93,12 @@ class MdosCore extends CommonCore {
             }
 
             // If sync volues , make sure we have a minio secret
-            if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
-                const minioCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, 's3-read')
-                if (!minioCredsFound) {
-                    throw new Conflict("The target namespace seems to be missing the secret named 's3-read'")
-                }
-            }
+            // if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
+            //     const minioCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, 's3-read')
+            //     if (!minioCredsFound) {
+            //         throw new Conflict("The target namespace seems to be missing the secret named 's3-read'")
+            //     }
+            // }
         }
     }
 
@@ -132,6 +111,11 @@ class MdosCore extends CommonCore {
         // Specify registry for init containers
         valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`
         valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`
+
+        // If sync volues , make sure we have a minio secret
+        if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
+            valuesYaml.ftpCredentials = this.app.get("ftpServer").generateSessionCredentials(valuesYaml.tenantName, valuesYaml.appName)
+        }
 
         // Iterate over components and proces one by one
         for (const component of valuesYaml.components) {

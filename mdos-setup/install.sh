@@ -209,7 +209,7 @@ dependencies() {
             python3 \
             unzip \
             lsb-release -y &>> $LOG_FILE
-        snap install yq &>> $LOG_FILE
+        # snap install yq &>> $LOG_FILE
 
         # Docker binary
         if [ "$DISTRO" == "Ubuntu" ]; then
@@ -587,6 +587,30 @@ install_nginx() {
                 ufw allow 443 &>> $LOG_FILE
                 echo ""
             fi
+            if [ "$(ufw status | grep '30915' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30915 &>> $LOG_FILE
+                echo ""
+            fi
+            if [ "$(ufw status | grep '30916' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30916 &>> $LOG_FILE
+                echo ""
+            fi
+            if [ "$(ufw status | grep '30917' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30917 &>> $LOG_FILE
+                echo ""
+            fi
+            if [ "$(ufw status | grep '30918' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30918 &>> $LOG_FILE
+                echo ""
+            fi
+            if [ "$(ufw status | grep '30919' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30919 &>> $LOG_FILE
+                echo ""
+            fi
+            if [ "$(ufw status | grep '30920' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30920 &>> $LOG_FILE
+                echo ""
+            fi
         fi
     fi
     
@@ -730,98 +754,98 @@ EOL
 # ############################################
 # ################### MINIO ##################
 # ############################################
-install_minio() {
-    if [ -z $ACCESS_KEY ]; then
-        user_input ACCESS_KEY "Specify your ACCESS_KEY:" "REp9k63uJ6qTe4KRtMsU" 
-        set_env_step_data "ACCESS_KEY" "$ACCESS_KEY"
-    fi
-    if [ -z $SECRET_KEY ]; then
-        user_input SECRET_KEY "Specify your SECRET_KEY:" "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
-        set_env_step_data "SECRET_KEY" "$SECRET_KEY"
-    fi
+# install_minio() {
+#     if [ -z $ACCESS_KEY ]; then
+#         user_input ACCESS_KEY "Specify your ACCESS_KEY:" "REp9k63uJ6qTe4KRtMsU" 
+#         set_env_step_data "ACCESS_KEY" "$ACCESS_KEY"
+#     fi
+#     if [ -z $SECRET_KEY ]; then
+#         user_input SECRET_KEY "Specify your SECRET_KEY:" "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
+#         set_env_step_data "SECRET_KEY" "$SECRET_KEY"
+#     fi
 
-    mkdir -p $HOME/.mdos/minio
+#     mkdir -p $HOME/.mdos/minio
 
-    # Add minio HELM repository
-    helm repo add minio https://charts.min.io/ &>> $LOG_FILE
+#     # Add minio HELM repository
+#     helm repo add minio https://charts.min.io/ &>> $LOG_FILE
 
-    # Create minio namespace
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "minio"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create ns minio &>> $LOG_FILE
-    fi
+#     # Create minio namespace
+#     unset NS_EXISTS
+#     check_kube_namespace NS_EXISTS "minio"
+#     if [ -z $NS_EXISTS ]; then
+#         kubectl create ns minio &>> $LOG_FILE
+#     fi
 
-    # Install storage class provisionner for local path
-    if [ ! -d "./local-path-provisioner" ]; then
-        git clone https://github.com/rancher/local-path-provisioner.git &>> $LOG_FILE
-    fi
+#     # Install storage class provisionner for local path
+#     if [ ! -d "./local-path-provisioner" ]; then
+#         git clone https://github.com/rancher/local-path-provisioner.git &>> $LOG_FILE
+#     fi
 
-    cd local-path-provisioner
+#     cd local-path-provisioner
 
-    # Set up minio specific storage class
-    helm upgrade --install minio-backup-storage-class \
-        --set storageClass.name=local-path-minio-backup \
-        --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
-        --set nodePathMap[0].paths[0]=$HOME/.mdos/minio \
-        ./deploy/chart/local-path-provisioner \
-        -n minio --atomic &>> $LOG_FILE
+#     # Set up minio specific storage class
+#     helm upgrade --install minio-backup-storage-class \
+#         --set storageClass.name=local-path-minio-backup \
+#         --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
+#         --set nodePathMap[0].paths[0]=$HOME/.mdos/minio \
+#         ./deploy/chart/local-path-provisioner \
+#         -n minio --atomic &>> $LOG_FILE
 
-    cd ..
-    rm -rf local-path-provisioner
+#     cd ..
+#     rm -rf local-path-provisioner
 
-    # Install minio
-    helm upgrade --install minio \
-        --set persistence.enabled=true \
-        --set persistence.storageClass=local-path-minio-backup \
-        --set mode=standalone \
-        --set resources.requests.memory=1Gi \
-        --set rootUser=$ACCESS_KEY \
-        --set rootPassword=$SECRET_KEY \
-        --set persistence.enabled=true \
-        minio/minio \
-        -n minio --atomic &>> $LOG_FILE
+#     # Install minio
+#     helm upgrade --install minio \
+#         --set persistence.enabled=true \
+#         --set persistence.storageClass=local-path-minio-backup \
+#         --set mode=standalone \
+#         --set resources.requests.memory=1Gi \
+#         --set rootUser=$ACCESS_KEY \
+#         --set rootPassword=$SECRET_KEY \
+#         --set persistence.enabled=true \
+#         minio/minio \
+#         -n minio --atomic &>> $LOG_FILE
 
-    # Create virtual service for minio
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: minio-console
-  namespace: minio
-spec:
-  gateways:
-    - istio-system/https-gateway
-  hosts:
-    - minio-console.$DOMAIN
-  http:
-    - name: minio-console
-      route:
-        - destination:
-            host: minio-console.minio.svc.cluster.local
-            port:
-              number: 9001
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-    name: minio
-    namespace: minio
-spec:
-    gateways:
-        - istio-system/https-gateway
-    hosts:
-        - "minio.$DOMAIN"
-        - "*.minio.$DOMAIN"
-    http:
-        - name: minio
-          route:
-              - destination:
-                    host: minio.minio.svc.cluster.local
-                    port:
-                        number: 9000
-EOF
-}
+#     # Create virtual service for minio
+#     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+# apiVersion: networking.istio.io/v1beta1
+# kind: VirtualService
+# metadata:
+#   name: minio-console
+#   namespace: minio
+# spec:
+#   gateways:
+#     - istio-system/https-gateway
+#   hosts:
+#     - minio-console.$DOMAIN
+#   http:
+#     - name: minio-console
+#       route:
+#         - destination:
+#             host: minio-console.minio.svc.cluster.local
+#             port:
+#               number: 9001
+# ---
+# apiVersion: networking.istio.io/v1beta1
+# kind: VirtualService
+# metadata:
+#     name: minio
+#     namespace: minio
+# spec:
+#     gateways:
+#         - istio-system/https-gateway
+#     hosts:
+#         - "minio.$DOMAIN"
+#         - "*.minio.$DOMAIN"
+#     http:
+#         - name: minio
+#           route:
+#               - destination:
+#                     host: minio.minio.svc.cluster.local
+#                     port:
+#                         number: 9000
+# EOF
+# }
 
 # ############################################
 # ################# KEYCLOAK #################
@@ -1593,14 +1617,14 @@ EOF
     fi
 
     # INSTALL MINIO
-    if [ $S3_PROVIDER == "minio" ]; then
-        if [ -z $INST_STEP_MINIO ]; then
-            info "Install Minio..."
-            echo ""
-            install_minio
-            set_env_step_data "INST_STEP_MINIO" "1"
-        fi
-    fi
+    # if [ $S3_PROVIDER == "minio" ]; then
+    #     if [ -z $INST_STEP_MINIO ]; then
+    #         info "Install Minio..."
+    #         echo ""
+    #         install_minio
+    #         set_env_step_data "INST_STEP_MINIO" "1"
+    #     fi
+    # fi
 
     # INSTALL MDOS
     if [ -z $INST_STEP_MDOS ]; then

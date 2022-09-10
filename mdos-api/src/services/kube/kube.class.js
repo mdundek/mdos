@@ -26,28 +26,17 @@ exports.Kube = class Kube extends KubeCore {
      */
     async find(params, context) {
         if (params.query.target == 'namespaces') {
-            try {
-                const nsListEnriched = await this.getEnrichedNamespaces(params.query.realm, params.query.includeKcClients)
-                return nsListEnriched
-            } catch (error) {
-                console.log(error)
-                throw error
-            }
+            const nsListEnriched = await this.getEnrichedNamespaces(params.query.realm, params.query.includeKcClients)
+            return nsListEnriched
         } else if (params.query.target == 'applications') {
-            try {
-                // Make sure namespace exists
-                if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
-                    throw new NotFound('Namespace does not exist')
-                }
-
-                let nsApps = await this.getMdosApplications(params.query.clientId)
-                return nsApps
-            } catch (error) {
-                console.log(error)
-                throw error
+            // Make sure namespace exists
+            if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+                throw new NotFound('ERROR: Namespace does not exist')
             }
+            let nsApps = await this.getMdosApplications(params.query.clientId)
+            return nsApps
         } else {
-            throw new BadRequest('Malformed API request')
+            throw new BadRequest('ERROR: Malformed API request')
         }
     }
 
@@ -109,21 +98,21 @@ exports.Kube = class Kube extends KubeCore {
             }
 
             // Create Minio bucket and credentials
-            try {
-                const credentials = await this.app.get('s3').createNamespaceBucket(data.namespace.toLowerCase())
-                await this.app.get('s3').storeNamespaceCredentials(data.namespace.toLowerCase(), credentials)
-            } catch (error) {
-                // Clean up
-                if (nsCreated)
-                    try {
-                        await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
-                    } catch (err) {}
+            // try {
+            //     const credentials = await this.app.get('s3').createNamespaceBucket(data.namespace.toLowerCase())
+            //     await this.app.get('s3').storeNamespaceCredentials(data.namespace.toLowerCase(), credentials)
+            // } catch (error) {
+            //     // Clean up
+            //     if (nsCreated)
+            //         try {
+            //             await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
+            //         } catch (err) {}
 
-                try {
-                    if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
-                } catch (err) {}
-                throw error
-            }
+            //     try {
+            //         if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
+            //     } catch (err) {}
+            //     throw error
+            // }
 
             // Create SA user for registry and give it registry-pull role
             const saUser = nanoid().toLowerCase()
@@ -143,7 +132,7 @@ exports.Kube = class Kube extends KubeCore {
                 throw error
             }
 
-            // Create secret ffor registry SA
+            // Create secret for registry SA
             try {
                 await this.app.get('kube').createRegistrySecret(data.namespace.toLowerCase(), 'mdos-regcred', saUser, saPass)
             } catch (error) {
@@ -159,7 +148,7 @@ exports.Kube = class Kube extends KubeCore {
                 throw error
             }
         } else {
-            throw new BadRequest('Malformed API request')
+            throw new BadRequest('ERROR: Malformed API request')
         }
         return data
     }
@@ -194,7 +183,7 @@ exports.Kube = class Kube extends KubeCore {
 
             // Delete S3 secrets & bucket, make non fatal / non blocking
             try {
-                await this.app.get('s3').deleteNamespaceBucket(id.toLowerCase(), nsExists)
+                await this.app.get('ftpServer').deleteNamespaceVolume(id.toLowerCase())
             } catch (_e) {
                 console.log(_e)
             }
@@ -210,12 +199,12 @@ exports.Kube = class Kube extends KubeCore {
         if (params.query.target == 'application') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
-                throw new NotFound('Namespace does not exist')
+                throw new NotFound('ERROR: Namespace does not exist')
             }
 
             await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type)
         } else {
-            throw new BadRequest('Malformed API request')
+            throw new BadRequest('ERROR: Malformed API request')
         }
         return { id }
     }

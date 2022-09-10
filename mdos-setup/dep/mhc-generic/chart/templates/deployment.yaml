@@ -1,5 +1,4 @@
 {{- $appName := lower .Values.appName -}}
-
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
   {{- $uuid := .uuid }}
@@ -64,13 +63,13 @@ spec:
     {{- range .volumes }}
       {{- if .syncVolume }}
         {{- if $srcBuckets }}
-          {{-  $bucketSrcPath := printf "%s/%s/%s" $.Values.tenantName "volumes" .name -}}
+          {{-  $bucketSrcPath := printf "%s/%s/%s/%s" $.Values.tenantName $appName "volumes" .name -}}
 
           {{- $srcBuckets = print $srcBuckets  ";" $bucketSrcPath -}}
           {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
           {{- $mdosSyncs = print $srcBuckets  " " .syncVolume -}}
         {{- else }}
-          {{-  $bucketSrcPath := printf "%s/%s/%s" $.Values.tenantName "volumes" .name -}}
+          {{-  $bucketSrcPath := printf "%s/%s/%s/%s" $.Values.tenantName $appName "volumes" .name -}}
 
           {{- $srcBuckets = print $bucketSrcPath -}}
           {{- $dstPaths = print .mountPath -}}
@@ -96,26 +95,18 @@ spec:
           value: "{{ $srcBuckets }}"
         - name: SYNC_TARGET_DIR
           value: "{{ $dstPaths }}"
-        - name: S3_PROVIDER
-          valueFrom:
-            secretKeyRef:
-              name: s3-read
-              key: S3_PROVIDER  
-        - name: S3_INTERNAL_HOST
-          valueFrom:
-            secretKeyRef:
-              name: s3-read
-              key: S3_INTERNAL_HOST
-        - name: ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: s3-read
-              key: ACCESS_KEY
-        - name: SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: s3-read
-              key: SECRET_KEY
+        - name: FTP_USERNAME
+          value: "{{ .Values.ftpCredentials.username }}"
+        - name: FTP_PASSWORD
+          value: "{{ .Values.ftpCredentials.password }}"
+        - name: CREATED_AT
+          value: "{{ .Values.ftpCredentials.createdAt }}"
+        - name: PROTOCOL
+          value: "{{ .Values.ftpCredentials.protocol }}"
+        - name: HOST
+          value: "{{ .Values.ftpCredentials.host }}"
+        - name: PORT
+          value: "{{ .Values.ftpCredentials.port }}"
     {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}

@@ -220,13 +220,7 @@ class KubeCore extends CommonCore {
         await this.app.service('keycloak').create({
             type: 'client-role',
             realm: realm,
-            name: 's3-write',
-            clientUuid: clientId,
-        })
-        await this.app.service('keycloak').create({
-            type: 'client-role',
-            realm: realm,
-            name: 's3-read',
+            name: 'ftp-write',
             clientUuid: clientId,
         })
         await this.app.service('keycloak').create({

@@ -69,7 +69,7 @@ class KeycloakCore extends CommonCore {
      */
     async getClientRoles(realm, clientId, filterProtected) {
         const clientRoles = await this.app.get('keycloak').getClientRoles(realm, clientId)
-        if (filterProtected == 'true') return clientRoles.filter((cr) => ['uma_protection', 'admin', 'k8s-read', 'k8s-write', 's3-read', 's3-write', 'registry-push'].indexOf(cr.name) == -1)
+        if (filterProtected == 'true') return clientRoles.filter((cr) => ['uma_protection', 'admin', 'k8s-read', 'k8s-write', 'ftp-write', 'registry-push'].indexOf(cr.name) == -1)
         else return clientRoles.filter((cr) => !['uma_protection'].includes(cr.name))
     }
 
