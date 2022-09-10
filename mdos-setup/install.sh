@@ -1627,11 +1627,11 @@ EOF
     # fi
 
     # INSTALL MDOS
-    if [ -z $INST_STEP_MDOS ]; then
-        info "Install MDos API server..."
-        # install_mdos
-        set_env_step_data "INST_STEP_MDOS" "1"
-    fi
+    # if [ -z $INST_STEP_MDOS ]; then
+    #     info "Install MDos API server..."
+    #     install_mdos
+    #     set_env_step_data "INST_STEP_MDOS" "1"
+    # fi
 
     # ENABLE REGISTRY AUTH
     if [ -z $INST_STEP_REG_AUTH ]; then
