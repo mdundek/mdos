@@ -417,7 +417,7 @@ class KubeBase {
             await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} ${version ? `--version ${version}` : ''} --values ./values.yaml  ${chartName} ${chart} --atomic`)
         } finally {
             if (fs.existsSync('./values.yaml')) {
-                fs.unlinkSync('./values.yaml')
+                fs.rmSync('./values.yaml', { force: true })
             }
         }
     }
@@ -481,7 +481,7 @@ class KubeBase {
             throw error
         } finally {
             if (fs.existsSync('./values.yaml')) {
-                fs.unlinkSync('./values.yaml')
+                fs.rmSync('./values.yaml', { force: true })
             }
         }
     }

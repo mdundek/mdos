@@ -121,6 +121,11 @@ class MdosCore extends CommonCore {
         for (const component of valuesYaml.components) {
             // Add registry credentials if necessary
             if (!component.imagePullSecrets && !component.publicRegistry) {
+                // MDos registry target, append namespace name to image path
+                if(component.image.indexOf('/') == 0)
+                    component.image = `${valuesYaml.tenantName}${component.image}`
+                else
+                    component.image = `${valuesYaml.tenantName}/${component.image}`
                 // Skip images from public registries or with specific secrets
                 component.imagePullSecrets = [
                     {

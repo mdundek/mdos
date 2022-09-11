@@ -77,27 +77,8 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
     deleteNamespaceVolume(namespace) {
         const targetPath = path.join(process.env.INBOX_ROOT_FOLDER, namespace);
         if(fs.existsSync(targetPath))
-            fs.unlinkSync(targetPath)
+            fs.rmSync(targetPath, { recursive: true, force: true })
     }
-
-    // /**
-    //  *
-    //  *
-    //  * @param {*} namespace
-    //  * @param {*} credentials
-    //  * @memberof FtpServer
-    //  */
-    //  async storeNamespaceCredentials(namespace) {
-    //     const usr = nanoid()
-    //     const pwd = nanoid()
-    //     const creds = {
-    //         username: usr,
-    //         password: pwd,
-    //         path: path.join(process.env.INBOX_ROOT_FOLDER, namespace)
-    //     }
-    //     this.CRED_SESSIONS.push(creds)
-    //     await this.app.get('kube').createSecret(namespace, `ftp-read`, creds)
-    // }
 
     /**
      * startDispatch

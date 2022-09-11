@@ -68,7 +68,7 @@ class Kube extends KubeBase {
                 await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`)
             } finally {
                 if (fs.existsSync('./values.yaml')) {
-                    fs.unlinkSync('./values.yaml')
+                    fs.rmSync('./values.yaml', { force: true })
                 }
             }
 
@@ -134,7 +134,7 @@ class Kube extends KubeBase {
             await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install istiod ${this.istiodChartPath} -f ./values.yaml -n istio-system --atomic`)
         } finally {
             if (fs.existsSync('./values.yaml')) {
-                fs.unlinkSync('./values.yaml')
+                fs.rmSync('./values.yaml', { force: true })
             }
         }
 
