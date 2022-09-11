@@ -48,12 +48,14 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
      * @param {*} appName 
      */
     generateSessionCredentials(namespace, appName) {
+        console.log("generateSessionCredentials");
         const usr = nanoid()
         const pwd = nanoid()
         this.CRED_SESSIONS.push({
             username: usr,
             password: pwd,
             path: path.join(process.env.INBOX_ROOT_FOLDER, namespace, appName),
+            activeConnectionIds: [],
             credsTimeout: setTimeout(function(_usr) {
                 this.CRED_SESSIONS = this.CRED_SESSIONS.filter(s => s.username != _usr)
             }.bind(this, usr), 1000 * 60)
@@ -84,17 +86,29 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
      * startDispatch
      */
      start() {
-        this.ftpServer.on('login', ({ username, password }, resolve, reject) => {
+        this.ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
             const sessionCreds = this.CRED_SESSIONS.find(s => s.username == username && s.password == password)
             if (sessionCreds) {
                 clearTimeout(sessionCreds.credsTimeout)
-                sessionCreds.credsTimeout = setTimeout(function(_usr) {
-                    this.CRED_SESSIONS = this.CRED_SESSIONS.filter(s => s.username != _usr)
-                }.bind(this, username), 1000 * 60)
+                sessionCreds.activeConnectionIds.push(connection.id)
+                
                 this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == username ? sessionCreds : session)
                 return resolve({ root: sessionCreds.path });
             }
             return reject(new Error('Wrong username / password combination'));
+        });
+
+        this.ftpServer.on('disconnect', ({connection, id, newConnectionCount}) => { 
+            const sessionCreds = this.CRED_SESSIONS.find(s => s.activeConnectionIds.find(acid => acid == connection.id))
+            if(sessionCreds) {
+                sessionCreds.activeConnectionIds = sessionCreds.activeConnectionIds.filter(acid => acid != connection.id)
+                if(sessionCreds.activeConnectionIds.length == 0) {
+                    sessionCreds.credsTimeout = setTimeout(function(_usr) {
+                        this.CRED_SESSIONS = this.CRED_SESSIONS.filter(s => s.username != _usr)
+                    }.bind(this, sessionCreds.username), 1000 * 20)
+                }
+                this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == sessionCreds.username ? sessionCreds : session)
+            }
         });
 
         this.ftpServer.listen().then(() => {

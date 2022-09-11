@@ -60,12 +60,14 @@ class MdosCore extends CommonCore {
             userData.roles = jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles ? jwtToken.resource_access.mdos.roles : []
 
             for (let ns of allNs) {
-                if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
-                    userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
-                } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('admin')) {
-                    userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
-                } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('ftp-write')) {
-                    userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                if(params.namespace == ns) {
+                    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+                        userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                    } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('admin')) {
+                        userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                    } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('ftp-write')) {
+                        userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                    }
                 }
             }
             return userData
