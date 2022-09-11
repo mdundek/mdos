@@ -140,7 +140,7 @@ export default class Deploy extends Command {
                 targetRegistry = userInfo.data.registry
             }
             const regCreds = await this.collectRegistryCredentials(flags)
-            await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir)
+            await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir, appYaml.tenantName)
         }
 
         // Sync minio content for volumes

@@ -429,7 +429,7 @@ const lftp = async (mdosBaseUrl, client, appName, sourceDir, creds) => {
  * @param {*} appComp
  * @param {*} root
  */
-const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, root) => {
+const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, root, tenantName) => {
     // PreBuild scripts?
     if (appComp.preBuildCmd) {
         try {
@@ -446,6 +446,13 @@ const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, r
     }
 
     // Build app image
+    if (!appComp.imagePullSecrets && !appComp.publicRegistry) {
+        // MDos registry target, append namespace name to image path
+        if(appComp.image.indexOf('/') == 0)
+            appComp.image = `${tenantName}${appComp.image}`
+        else
+            appComp.image = `${tenantName}/${appComp.image}`
+    }
     const targetImg = `${targetRegistry ? targetRegistry + '/' : ''}${appComp.image}:${appComp.tag}`
     try {
         CliUx.ux.action.start(`Building application image ${targetImg}`)
