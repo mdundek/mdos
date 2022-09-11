@@ -48,7 +48,6 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
      * @param {*} appName 
      */
     generateSessionCredentials(namespace, appName) {
-        console.log("generateSessionCredentials");
         const usr = nanoid()
         const pwd = nanoid()
         this.CRED_SESSIONS.push({

@@ -453,8 +453,111 @@ install_longhorn() {
         --set defaultSettings.guaranteedReplicaManagerCPU=125m \
         --set defaultSettings.defaultDataPath=$LONGHORN_DEFAULT_DIR \
         --namespace longhorn-system --create-namespace --atomic
-    sleep 5
+    
+    sleep 10
+
+    # Wait for all pods to be on
+    unset LH_IS_RUNNING
+    while [ -z $LH_IS_RUNNING ]; do
+        unset ANY_ERRORS
+        while read LH_POD_LINE ; do 
+            LH_POD_STATUS=`echo "$LH_POD_LINE" | awk 'END {print $3}'`
+            if [ "$LH_POD_STATUS" != "STATUS" ] && [ "$LH_POD_STATUS" != "Running" ]; then
+                ANY_ERRORS=1
+            fi
+        done < <(kubectl get pod -n longhorn-system 2>/dev/null)
+        if [ -z $ANY_ERRORS ]; then
+            LH_IS_RUNNING=1
+        fi
+    done
+
+    # Create Virtual Service
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  labels:
+    app: longhorn-ui
+  name: longhorn-ui-ingress
+  namespace: longhorn-system
+spec:
+  gateways:
+  - istio-system/https-gateway
+  hosts:
+  - longhorn.$DOMAIN
+  http:
+  - name: longhorn-ui-ingress
+    route:
+    - destination:
+        host: longhorn-frontend.longhorn-system.svc.cluster.local
+        port:
+          number: 80
+EOF
+
     # kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.1/examples/storageclass.yaml
+}
+
+# ############################################
+# ############# PROTEECT LONGHORN ############
+# ############################################
+protect_longhorn() {
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  labels:
+    app: longhorn-ui
+  name: longhorn-ui-ingress
+  namespace: longhorn-system
+spec:
+  gateways:
+  - istio-system/https-gateway
+  hosts:
+  - longhorn.$DOMAIN
+  http:
+  - name: longhorn-ui-ingress
+    route:
+    - destination:
+        host: longhorn-frontend.longhorn-system.svc.cluster.local
+        port:
+          number: 80
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata
+  labels:
+    app: longhorn-ui-ra
+  name: longhorn-ui-ra
+  namespace: longhorn-system
+spec:
+  jwtRules:
+  - issuer: https://keycloak.$DOMAIN/realms/mdos
+    jwksUri: https://keycloak.$DOMAIN/realms/mdos/protocol/openid-connect/certs
+  selector:
+    matchLabels:
+      app: longhorn-ui
+
+---
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    app: longhorn-ui-ap
+  name: longhorn-ui-ap
+  namespace: longhorn-system
+spec:
+  action: CUSTOM
+  provider:
+    name: kc-mdos
+  rules:
+  - to:
+    - operation:
+        hosts:
+        - longhorn.$DOMAIN
+  selector:
+    matchLabels:
+      app: longhorn-ui
+EOF
 }
 
 # ############################################
@@ -699,10 +802,6 @@ deploy_reg_chart() {
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # -=-=-=-=-=-=-=-=-=-=-=- TODO: REMOVE MDOS_URL checks for prod -=-=-=-=-=-=-=-=-=-=-=-
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
     # AUTHENTICATION SCRIPT
     if [ -z $1 ]; then # No auth
         echo "#!/bin/sh
@@ -767,102 +866,6 @@ EOL
     mdos_deploy_app "false" "false"
     rm -rf ./target_values.yaml
 }
-
-# ############################################
-# ################### MINIO ##################
-# ############################################
-# install_minio() {
-#     if [ -z $ACCESS_KEY ]; then
-#         user_input ACCESS_KEY "Specify your ACCESS_KEY:" "REp9k63uJ6qTe4KRtMsU" 
-#         set_env_step_data "ACCESS_KEY" "$ACCESS_KEY"
-#     fi
-#     if [ -z $SECRET_KEY ]; then
-#         user_input SECRET_KEY "Specify your SECRET_KEY:" "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
-#         set_env_step_data "SECRET_KEY" "$SECRET_KEY"
-#     fi
-
-#     mkdir -p $HOME/.mdos/minio
-
-#     # Add minio HELM repository
-#     helm repo add minio https://charts.min.io/ &>> $LOG_FILE
-
-#     # Create minio namespace
-#     unset NS_EXISTS
-#     check_kube_namespace NS_EXISTS "minio"
-#     if [ -z $NS_EXISTS ]; then
-#         kubectl create ns minio &>> $LOG_FILE
-#     fi
-
-#     # Install storage class provisionner for local path
-#     if [ ! -d "./local-path-provisioner" ]; then
-#         git clone https://github.com/rancher/local-path-provisioner.git &>> $LOG_FILE
-#     fi
-
-#     cd local-path-provisioner
-
-#     # Set up minio specific storage class
-#     helm upgrade --install minio-backup-storage-class \
-#         --set storageClass.name=local-path-minio-backup \
-#         --set nodePathMap[0].node=DEFAULT_PATH_FOR_NON_LISTED_NODES \
-#         --set nodePathMap[0].paths[0]=$HOME/.mdos/minio \
-#         ./deploy/chart/local-path-provisioner \
-#         -n minio --atomic &>> $LOG_FILE
-
-#     cd ..
-#     rm -rf local-path-provisioner
-
-#     # Install minio
-#     helm upgrade --install minio \
-#         --set persistence.enabled=true \
-#         --set persistence.storageClass=local-path-minio-backup \
-#         --set mode=standalone \
-#         --set resources.requests.memory=1Gi \
-#         --set rootUser=$ACCESS_KEY \
-#         --set rootPassword=$SECRET_KEY \
-#         --set persistence.enabled=true \
-#         minio/minio \
-#         -n minio --atomic &>> $LOG_FILE
-
-#     # Create virtual service for minio
-#     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
-# apiVersion: networking.istio.io/v1beta1
-# kind: VirtualService
-# metadata:
-#   name: minio-console
-#   namespace: minio
-# spec:
-#   gateways:
-#     - istio-system/https-gateway
-#   hosts:
-#     - minio-console.$DOMAIN
-#   http:
-#     - name: minio-console
-#       route:
-#         - destination:
-#             host: minio-console.minio.svc.cluster.local
-#             port:
-#               number: 9001
-# ---
-# apiVersion: networking.istio.io/v1beta1
-# kind: VirtualService
-# metadata:
-#     name: minio
-#     namespace: minio
-# spec:
-#     gateways:
-#         - istio-system/https-gateway
-#     hosts:
-#         - "minio.$DOMAIN"
-#         - "*.minio.$DOMAIN"
-#     http:
-#         - name: minio
-#           route:
-#               - destination:
-#                     host: minio.minio.svc.cluster.local
-#                     port:
-#                         number: 9000
-# EOF
-# }
 
 # ############################################
 # ################# KEYCLOAK #################
@@ -1103,7 +1106,7 @@ metadata:
   namespace: keycloak
 type: Opaque
 stringData:
-  clientSecret: $MDOS_CLIENT_SECRET
+  clientSecret: $KEYCLOAK_SECRET
   email: $KUBE_ADMIN_EMAIL
   password: $KEYCLOAK_PASS
   username: $KEYCLOAK_USER
@@ -1196,9 +1199,11 @@ install_mdos() {
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest .
     rm -rf helm
     docker push registry.$DOMAIN/mdos-api:latest
-    cd ../mdos-setup/dep/mhc-generic/infra/mdos-sync-container
-    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-sync-container:latest .
-    docker push registry.$DOMAIN/mdos-sync-container:latest
+
+    # Build lftp image
+    cd ../mdos-setup/dep/images/docker-mirror-lftp
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-mirror-lftp:latest .
+    docker push registry.$DOMAIN/mdos-mirror-lftp:latest
     cd ../../../..
 
     # Now prepare deployment config
@@ -1638,6 +1643,14 @@ EOF
         echo ""
         install_oauth2_proxy
         set_env_step_data "INST_STEP_OAUTH" "1"
+    fi
+
+    # PROTECT LONGHORN UI
+    if [ -z $INST_STEP_LONGHORN_PROTECT ]; then
+        info "Protect Longhorn UI..."
+        echo ""
+        protect_longhorn
+        set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
     fi
 
     # INSTALL MDOS
