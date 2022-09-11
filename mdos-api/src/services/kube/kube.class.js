@@ -195,8 +195,7 @@ exports.Kube = class Kube extends KubeCore {
 
             // Delete namespace
             if (nsExists) await this.app.get('kube').deleteNamespace(id.toLowerCase())
-        }
-        if (params.query.target == 'application') {
+        } else if (params.query.target == 'application') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')
