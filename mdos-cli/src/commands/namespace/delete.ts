@@ -102,7 +102,7 @@ export default class Delete extends Command {
             const confirmResponse = await inquirer.prompt([
                 {
                     name: 'confirm',
-                    message: 'You are about to delete a Namespace from your cluster?',
+                    message: 'You are about to delete a Namespace from your cluster. Do you wish to prosceed?',
                     type: 'confirm',
                     default: false,
                 },

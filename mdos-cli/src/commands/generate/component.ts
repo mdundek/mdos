@@ -100,7 +100,7 @@ export default class Component extends Command {
 
         appYaml.components.push({
             name: appName,
-            image: `${appYaml.tenantName}/${appName}`,
+            image: `${appName}`,
             uuid: `${nanoid()}-${nanoid()}`,
             tag: '0.0.1',
         })
