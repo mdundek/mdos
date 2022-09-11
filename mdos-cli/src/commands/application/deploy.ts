@@ -142,7 +142,7 @@ export default class Deploy extends Command {
 
         // Sync volumes
         let volSourcePath = path.join(appRootDir, 'volumes')
-        const volumeUpdates = await lftp(this.getConfig('MDOS_API_URI'), appYaml.tenantName, appYaml.appName, volSourcePath, userInfo.data.lftpCreds)
+        const volumeUpdates = await lftp(this.getConfig('MDOS_API_URI'), volSourcePath, userInfo.data.lftpCreds)
 
         // Build / push application
         for (let appComp of appYaml.components) {

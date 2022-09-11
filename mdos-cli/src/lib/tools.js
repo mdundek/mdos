@@ -402,14 +402,14 @@ const _isPositiveInteger = (str) => {
  * @param {*} sourceDir
  * @return {*} 
  */
-const lftp = async (mdosBaseUrl, client, appName, sourceDir, creds) => {
+const lftp = async (mdosBaseUrl, sourceDir, creds) => {
     // Build app image
     const hostAndPort = mdosBaseUrl.substring(mdosBaseUrl.indexOf("//") + 2)
     const hostSplit = hostAndPort.split(":")
 
     try {
         CliUx.ux.action.start(`Synching volumes`)
-        const result = await terminalCommand(`docker run --name mdos-mirror-lftp --rm -e PROTOCOL=ftp -e HOST=${hostSplit[0]} -e PORT=3915 -e USERNAME=${creds.username} -e PASSWORD=${creds.password} -e LOCAL_DIR=/usr/src/volumes -e REMOTE_DIR=./ -e PARALLEL=2 -v ${sourceDir}:/usr/src/volumes registry.mdundek.network/mdos-mirror-lftp:latest sh /usr/local/bin/mirror.sh`)
+        const result = await terminalCommand(`docker run --name mdos-mirror-lftp --rm -e PROTOCOL=${creds.protocol} -e HOST=${hostSplit[0]} -e PORT=${creds.port} -e USERNAME=${creds.username} -e PASSWORD=${creds.password} -e LOCAL_DIR=/usr/src/volumes -e REMOTE_DIR=./ -e PARALLEL=2 -v ${sourceDir}:/usr/src/volumes registry.mdundek.network/mdos-mirror-lftp:latest sh /usr/local/bin/r-mirror.sh`)
         CliUx.ux.action.stop()
         return result.length > 0
     } catch (err) {
