@@ -118,7 +118,20 @@ export default class Deploy extends Command {
             }
         }
 
-        // Get credentials for minio for user
+        // Make sure namespace has been created before we do anything else
+        let nsResponse
+        try {
+            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+        if (!nsResponse.data.find((ns: { name: string }) => ns.name == appYaml.tenantName)) {
+            error(`Namespace '${appYaml.tenantName}' does not yet exists. It needs to be created first using the command 'mdos namespace create' before you can deploy applications to this namespace.`)
+            process.exit(1)
+        }
+
+        // Get credentials for lftp
         let userInfo
         try {
             userInfo = await this.api(`mdos/user-info?namespace=${appYaml.tenantName}&appName=${appYaml.appName}`, 'GET')
@@ -142,35 +155,6 @@ export default class Deploy extends Command {
             const regCreds = await this.collectRegistryCredentials(flags)
             await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir, appYaml.tenantName)
         }
-
-        // Sync minio content for volumes
-        // const targetS3Creds = userInfo.data.s3.find((b: { bucket: any }) => b.bucket == appYaml.tenantName)
-
-        
-
-        // let volumeUpdates = false
-        // for (let component of appYaml.components) {
-        //     if (component.volumes) {
-        //         for (let volume of component.volumes) {
-        //             if (volume.syncVolume) {
-
-        //                 let volSourcePath = path.join(appRootDir, 'volumes', volume.name)
-        //                 await lftp(this.getConfig('MDOS_API_URI'), appYaml.tenantName, volume.name, volSourcePath)
-
-        //                 // if (!targetS3Creds) {
-        //                 //     error('There are no available S3 credentials allowing you to sync your volumes')
-        //                 //     process.exit(1)
-        //                 // } else if (targetS3Creds.permissions == 'read') {
-        //                 //     error('You do not have sufficient S3 credentials allowing you to sync your volumes')
-        //                 //     process.exit(1)
-        //                 // }
-        //                 // let volSourcePath = path.join(appRootDir, 'volumes', volume.name)
-        //                 // let volHasUpdates = await s3sync(userInfo.data.S3Provider, targetS3Creds.bucket, volume.name, volSourcePath, targetS3Creds)
-        //                 // if (volHasUpdates) volumeUpdates = true
-        //             }
-        //         }
-        //     }
-        // }
 
         // Do some checks, make sure this deployment will not collide with existing deployments for other apps
         let deployedApps
