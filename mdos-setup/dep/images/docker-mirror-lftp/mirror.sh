@@ -37,6 +37,8 @@ sync_volume () {
     mirror -v -e -s --parallel=$PARALLEL $CURRENT_SYNC_SOURCE_DIR $CURRENT_SYNC_TARGET_DIR
     quit
 EOF
+
+    echo "=>DONE"
 }
 
 # CREATED_AT
@@ -44,11 +46,11 @@ EOF
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=- MAIN -=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 main() {
     # ENV VARS using concatenation
-    IFS=';' read -ra DOURCE_DIR_ARRAY <<< "$SYNC_SOURCE_DIR"
+    IFS=';' read -ra SOURCE_DIR_ARRAY <<< "$SYNC_SOURCE_DIR"
     IFS=';' read -ra TARGET_DIR_ARRAY <<< "$SYNC_TARGET_DIR"
     ITER=0
-    for i in "${DOURCE_DIR_ARRAY[@]}"; do
-        CURRENT_SYNC_SOURCE_DIR=${DOURCE_DIR_ARRAY[$ITER]}
+    for i in "${SOURCE_DIR_ARRAY[@]}"; do
+        CURRENT_SYNC_SOURCE_DIR=${SOURCE_DIR_ARRAY[$ITER]}
         CURRENT_SYNC_TARGET_DIR=${TARGET_DIR_ARRAY[$ITER]}
         ITER=$(expr $ITER + 1)
 

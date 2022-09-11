@@ -2,7 +2,7 @@
 
 {{- $ftpCredentials := "" }}
 {{- if .Values.ftpCredentials }}
-  {{- $ftpCredentials := .Values.ftpCredentials }}
+  {{- $ftpCredentials = .Values.ftpCredentials }}
 {{- end }}
 
 {{- range .Values.components }}
@@ -69,13 +69,13 @@ spec:
     {{- range .volumes }}
       {{- if .syncVolume }}
         {{- if $srcBuckets }}
-          {{-  $bucketSrcPath := printf "%s/%s/%s/%s" $.Values.tenantName $appName "volumes" .name -}}
+          {{-  $bucketSrcPath := printf "%s/%s" "volumes" .name -}}
 
           {{- $srcBuckets = print $srcBuckets  ";" $bucketSrcPath -}}
           {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
           {{- $mdosSyncs = print $srcBuckets  " " .syncVolume -}}
         {{- else }}
-          {{-  $bucketSrcPath := printf "%s/%s/%s/%s" $.Values.tenantName $appName "volumes" .name -}}
+          {{-  $bucketSrcPath := printf "%s/%s" "volumes" .name -}}
 
           {{- $srcBuckets = print $bucketSrcPath -}}
           {{- $dstPaths = print .mountPath -}}
@@ -97,9 +97,7 @@ spec:
         {{- end }}
       {{- end }}
         command:
-          - sh
-        args:
-          - /usr/local/bin/r-mirror.sh
+          - /usr/local/bin/mirror.sh
         env: 
         - name: SYNC_SOURCE_DIR
           value: {{ $srcBuckets }}
@@ -117,6 +115,8 @@ spec:
           value: {{ $ftpCredentials.host | quote }}
         - name: PORT
           value: {{ $ftpCredentials.port | quote }}
+        - name: PARALLEL
+          value: "2"
     {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
