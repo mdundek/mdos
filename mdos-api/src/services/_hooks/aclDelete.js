@@ -9,7 +9,7 @@ const jwt_decode = require('jwt-decode')
  */
 const userDeleteHook = (context, jwtToken) => {
     if (!jwtToken.resource_access.mdos || (!jwtToken.resource_access.mdos.roles.includes('admin') && !jwtToken.resource_access.mdos.roles.includes('delete-users'))) {
-        throw new errors.Forbidden('You are not authorized to delete users')
+        throw new errors.Forbidden('ERROR: You are not authorized to delete users')
     }
     return context
 }
@@ -27,7 +27,7 @@ const userRoleDeleteHook = (context, jwtToken) => {
     }
     // If not namespace admin
     if (!jwtToken.resource_access[context.params.query.clientId] || !jwtToken.resource_access[context.params.query.clientId].roles.includes('admin')) {
-        throw new errors.Forbidden('You are not authorized to assign user roles')
+        throw new errors.Forbidden('ERROR: You are not authorized to assign user roles')
     }
     return context
 }
@@ -45,7 +45,7 @@ const clientRoleDeleteHook = (context, jwtToken) => {
     }
     // If not namespace admin
     if (!jwtToken.resource_access[context.params.query.clientId] || !jwtToken.resource_access[context.params.query.clientId].roles.includes('admin')) {
-        throw new errors.Forbidden('You are not authorized to delete client roles')
+        throw new errors.Forbidden('ERROR: You are not authorized to delete client roles')
     }
     return context
 }
@@ -62,7 +62,7 @@ const namespaceDeleteHook = (context, jwtToken) => {
         return context
     }
     // Otherwise unauthorized
-    throw new errors.Forbidden('You are not authorized to delete namespaces')
+    throw new errors.Forbidden('ERROR: You are not authorized to delete namespaces')
 }
 
 /**
@@ -86,7 +86,7 @@ const applicationDeleteHook = (context, jwtToken) => {
     }
 
     // Otherwise unauthorized
-    throw new errors.Forbidden('You are not authorized to delete applications')
+    throw new errors.Forbidden('ERROR: You are not authorized to delete applications')
 }
 
 /**
@@ -101,7 +101,7 @@ const oidcProviderDeleteHook = (context, jwtToken) => {
         return context
     }
     // Otherwise unauthorized
-    throw new errors.Forbidden('You are not authorized to delete oidc providers')
+    throw new errors.Forbidden('ERROR: You are not authorized to delete oidc providers')
 }
 
 /**
@@ -116,7 +116,7 @@ module.exports = function () {
         if (context.params.provider != 'rest')
             // Internal calls don't need authentication
             return context
-        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('You are not authenticated')
+        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('ERROR: You are not authenticated')
 
         let jwtToken = jwt_decode(context.params.headers['x-auth-request-access-token'])
 

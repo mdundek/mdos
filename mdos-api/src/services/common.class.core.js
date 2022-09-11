@@ -22,7 +22,7 @@ class CommonCore {
     async keycloakInstallCheck() {
         const keycloakAvailable = await this.app.get('keycloak').isKeycloakDeployed()
         if (!keycloakAvailable) {
-            throw new Error('Keycloak is not installed')
+            throw new Error('ERROR: Keycloak is not installed')
         }
     }
 
@@ -34,7 +34,7 @@ class CommonCore {
         // Make sure realm exists
         const response = await this.app.get('keycloak').getRealms()
         if (!response.find((o) => o.realm.toLowerCase() == realm.toLowerCase())) {
-            throw new Unavailable('Keycloak realm does not exists')
+            throw new Unavailable('ERROR: Keycloak realm does not exists')
         }
     }
 
@@ -46,7 +46,7 @@ class CommonCore {
         // Make sure client ID exists
         const response = await this.app.get('keycloak').getClients(realm)
         if (!response.find((o) => o.clientId.toLowerCase() == clientId.toLowerCase())) {
-            throw new Unavailable('Keycloak client does not exists')
+            throw new Unavailable('ERROR: Keycloak client does not exists')
         }
     }
 
@@ -58,7 +58,7 @@ class CommonCore {
         // Make sure client ID exists
         const response = await this.app.get('keycloak').getClients(realm)
         if (!response.find((o) => o.id == clientUuid)) {
-            throw new Unavailable('Keycloak client does not exists')
+            throw new Unavailable('ERROR: Keycloak client does not exists')
         }
     }
 }

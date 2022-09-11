@@ -28,7 +28,7 @@ exports.RegAuthorization = class RegAuthorization {
         let userRoles
         // Make sure user is authenticated
         if (credDataJson.Account.trim().length == 0) {
-            throw new NotAuthenticated('Not authenticated')
+            throw new NotAuthenticated('ERROR: Not authenticated')
         }
 
         // Get user role mappings
@@ -61,7 +61,7 @@ exports.RegAuthorization = class RegAuthorization {
             if (imgPathArray.length == 1) {
                 // If user is trying to push an update, reject
                 if (credDataJson.Actions.includes('push')) {
-                    throw new Forbidden('Unauthorized')
+                    throw new Forbidden('ERROR: Unauthorized')
                 }
                 // Pulling is ok for root level images
                 else {
@@ -78,11 +78,11 @@ exports.RegAuthorization = class RegAuthorization {
                 }
                 // User does not belong to this tenant name
                 else {
-                    throw new Forbidden('Unauthorized')
+                    throw new Forbidden('ERROR: Unauthorized')
                 }
             }
         } else {
-            throw new Forbidden('Unauthorized')
+            throw new Forbidden('ERROR: Unauthorized')
         }
     }
 }

@@ -16,7 +16,7 @@ class SchemaValidator {
         if (version.toLowerCase() == 'v1') {
             this.instance = new SchemaV1()
         } else {
-            throw new Error(`Schema version unknown: ${version}`)
+            throw new Error(`ERROR: Schema version unknown: ${version}`)
         }
     }
 }

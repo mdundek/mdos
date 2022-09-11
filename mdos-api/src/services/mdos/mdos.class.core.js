@@ -52,7 +52,7 @@ class MdosCore extends CommonCore {
         // For production
         else {
             if (!headers['x-auth-request-access-token']) {
-                throw new Forbidden('You are not authenticated')
+                throw new Forbidden('ERROR: You are not authenticated')
             }
 
             let jwtToken = jwt_decode(headers['x-auth-request-access-token'])
@@ -82,7 +82,7 @@ class MdosCore extends CommonCore {
         // Create namespace if not exist
         const nsFound = await this.app.get('kube').hasNamespace(valuesYaml.tenantName)
         if (!nsFound) {
-            throw new NotFound(`The namespace "${valuesYaml.tenantName}" does not exist. You need to create it first using the command: mdos namespace create`)
+            throw new NotFound(`ERROR: The namespace "${valuesYaml.tenantName}" does not exist. You need to create it first using the command: mdos namespace create`)
         }
         // If namespace exist, make sure it has the required mdos secrets
         else {
@@ -90,17 +90,9 @@ class MdosCore extends CommonCore {
             if (valuesYaml.components.find((component) => !component.imagePullSecrets && !component.publicRegistry)) {
                 const regCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, 'mdos-regcred')
                 if (!regCredsFound) {
-                    throw new Conflict("The target namespace seems to be missing the secret named 'mdos-regcred'")
+                    throw new Conflict("ERROR: The target namespace seems to be missing the secret named 'mdos-regcred'")
                 }
             }
-
-            // If sync volues , make sure we have a minio secret
-            // if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
-            //     const minioCredsFound = await this.app.get('kube').hasSecret(valuesYaml.tenantName, 's3-read')
-            //     if (!minioCredsFound) {
-            //         throw new Conflict("The target namespace seems to be missing the secret named 's3-read'")
-            //     }
-            // }
         }
     }
 
@@ -152,14 +144,14 @@ class MdosCore extends CommonCore {
                 const oidcProvider = await this.app.get('kube').getOidcProviders()
                 const targetProvider = oidcProvider.find((p) => p.name == component.oidc.provider)
                 if (!targetProvider) {
-                    throw new NotFound('Provider not found')
+                    throw new NotFound('ERROR: Provider not found')
                 }
                 if (component.oidc.provider.indexOf('kc-') == 0) {
                     const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}/realms/mdos/.well-known/openid-configuration`)
                     component.oidc.issuer = oidcLinks.data.issuer
                     component.oidc.jwksUri = oidcLinks.data.jwks_uri
                 } else {
-                    throw new Unavailable('Provider not supported')
+                    throw new Unavailable('ERROR: Provider not supported')
                 }
             }
 

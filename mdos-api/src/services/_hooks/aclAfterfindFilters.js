@@ -157,7 +157,7 @@ module.exports = function () {
         if (context.params.provider != 'rest')
             // Internal calls don't need authentication
             return context
-        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('You are not authenticated')
+        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('ERROR: You are not authenticated')
 
         let jwtToken = jwt_decode(context.params.headers['x-auth-request-access-token'])
 

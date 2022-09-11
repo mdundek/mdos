@@ -14,7 +14,7 @@ const userRoleCreateHook = (context, jwtToken) => {
     }
     // If not namespace admin
     if (!jwtToken.resource_access[context.data.clientId] || !jwtToken.resource_access[context.data.clientId].roles.includes('admin')) {
-        throw new errors.Forbidden('You are not authorized to assign user roles')
+        throw new errors.Forbidden('ERROR: You are not authorized to assign user roles')
     }
     return context
 }
@@ -28,7 +28,7 @@ const userRoleCreateHook = (context, jwtToken) => {
 const userCreateHook = (context, jwtToken) => {
     // If mdos admin or list-user
     if (!jwtToken.resource_access.mdos || (!jwtToken.resource_access.mdos.roles.includes('admin') && !jwtToken.resource_access.mdos.roles.includes('create-users'))) {
-        throw new errors.Forbidden('You are not authorized to create users')
+        throw new errors.Forbidden('ERROR: You are not authorized to create users')
     }
     return context
 }
@@ -46,7 +46,7 @@ const clientRoleCreateHook = (context, jwtToken) => {
     }
     // If not namespace admin
     if (!jwtToken.resource_access[context.data.clientId] || !jwtToken.resource_access[context.data.clientId].roles.includes('admin')) {
-        throw new errors.Forbidden('You are not authorized to create client roles')
+        throw new errors.Forbidden('ERROR: You are not authorized to create client roles')
     }
     return context
 }
@@ -63,7 +63,7 @@ const namespaceCreateHook = (context, jwtToken) => {
         return context
     }
     // Otherwise unauthorized
-    throw new errors.Forbidden('You are not authorized to create namespaces')
+    throw new errors.Forbidden('ERROR: You are not authorized to create namespaces')
 }
 
 /**
@@ -78,7 +78,7 @@ const oidcProviderCreateHook = (context, jwtToken) => {
         return context
     }
     // Otherwise unauthorized
-    throw new errors.Forbidden('You are not authorized to create oidc providers')
+    throw new errors.Forbidden('ERROR: You are not authorized to create oidc providers')
 }
 
 /**
@@ -93,7 +93,7 @@ module.exports = function () {
         if (context.params.provider != 'rest')
             // Internal calls don't need authentication
             return context
-        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('You are not authenticated')
+        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('ERROR: You are not authenticated')
 
         let jwtToken = jwt_decode(context.params.headers['x-auth-request-access-token'])
 

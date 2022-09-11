@@ -332,7 +332,7 @@ class KubeBase {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, this.k8sAxiosHeader)
         let namespaceName = data.name.trim().toLowerCase().replaceAll(' ', '_')
         if (res.data.items.find((ns) => ns.metadata.name.trim().toLowerCase() == namespaceName)) {
-            throw new Error(`The namespace "${data.name}" already exists`)
+            throw new Error(`ERROR: The namespace "${data.name}" already exists`)
         }
 
         const nsJson = {

@@ -87,7 +87,7 @@ class KubeCore extends CommonCore {
         } else if (type == 'statefulSet') {
             await this.app.get('kube').deleteStatefulSet(namespace, name)
         } else {
-            throw new BadRequest('Application type not recognized')
+            throw new BadRequest('ERROR: Application type not recognized')
         }
     }
 
@@ -99,7 +99,7 @@ class KubeCore extends CommonCore {
     async clientDoesNotExistCheck(realm, clientId) {
         const response = await this.app.get('keycloak').getClients(realm)
         if (response.find((o) => o.clientId.toLowerCase() == clientId.toLowerCase())) {
-            throw new Conflict('Keycloak client ID already exists')
+            throw new Conflict('ERROR: Keycloak client ID already exists')
         }
     }
 
@@ -114,7 +114,7 @@ class KubeCore extends CommonCore {
         if (includeKcClients) {
             const response = await this.app.get('keycloak').getRealms()
             if (!response.find((o) => o.realm.toLowerCase() == realm.toLowerCase())) {
-                throw new Unavailable('Keycloak realm does not exists')
+                throw new Unavailable('ERROR: Keycloak realm does not exists')
             }
             allClients = await this.app.get('keycloak').getClients(realm)
         }
@@ -188,7 +188,7 @@ class KubeCore extends CommonCore {
             await this.app.get('kube').createNamespace({ name: namespace.toLowerCase() })
             nsCreated = true
         } else {
-            throw new Conflict('Namespace already exists')
+            throw new Conflict('ERROR: Namespace already exists')
         }
         return nsCreated
     }

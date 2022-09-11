@@ -28,7 +28,7 @@ exports.Mdos = class Mdos extends MdosCore {
         if (id == 'user-info') {
             return await this.computeUserInfo(params.headers, params.query)
         } else {
-            throw new BadRequest('Malformed API request')
+            throw new BadRequest('ERROR: Malformed API request')
         }
     }
 
@@ -50,12 +50,12 @@ exports.Mdos = class Mdos extends MdosCore {
 
             // Make sure we have at least one component
             if (!valuesYaml.components || valuesYaml.components.length == 0) {
-                throw new BadRequest('Application has no components')
+                throw new BadRequest('ERROR: Application has no components')
             }
 
             // Validate app schema
             if (!valuesYaml.schemaVersion || typeof valuesYaml.schemaVersion != 'string') {
-                throw new BadRequest('Missing schema version in your manifest (expected property: schemaVersion)')
+                throw new BadRequest('ERROR: Missing schema version in your manifest (expected property: schemaVersion)')
             }
             const validationErrors = this.app.get('schemaValidator')[valuesYaml.schemaVersion].instance.validate(valuesYaml)
             if (validationErrors.length > 0) {
@@ -74,11 +74,11 @@ exports.Mdos = class Mdos extends MdosCore {
             try {
                 await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId)
             } catch (helmError) {
-                if (Array.isArray(helmError)) throw new GeneralError(helmError.join('\n'))
+                if (Array.isArray(helmError)) throw new GeneralError("ERROR: " + helmError.join('\n'))
                 else throw helmError
             }
         } else {
-            throw new BadRequest('Malformed API request')
+            throw new BadRequest('ERROR: Malformed API request')
         }
         return data
     }

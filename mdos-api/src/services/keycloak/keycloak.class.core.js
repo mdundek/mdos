@@ -27,7 +27,7 @@ class KeycloakCore extends CommonCore {
         // Make sure username exists
         const response = await this.app.get('keycloak').getUsers(realm)
         if (response.find((o) => o.username.toLowerCase() == username.toLowerCase() || (o.email && o.email.toLowerCase() == email.toLowerCase()))) {
-            throw new Conflict('Keycloak username already exists')
+            throw new Conflict('ERROR: Keycloak username already exists')
         }
     }
 
@@ -43,7 +43,7 @@ class KeycloakCore extends CommonCore {
         const userRolesResponse = await this.app.get('keycloak').getUserRoles(realm, username)
         const existingMappingsForClient = userRolesResponse.clientMappings ? userRolesResponse.clientMappings[clientName] : null
         if (existingMappingsForClient && existingMappingsForClient.mappings.find((m) => m.name == roleName)) {
-            throw new Conflict('Client role is already added for this user')
+            throw new Conflict('ERROR: Client role is already added for this user')
         }
     }
 

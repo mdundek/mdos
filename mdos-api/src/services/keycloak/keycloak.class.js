@@ -63,7 +63,7 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
             let roles = await this.getUserRoles(params.query.realm, params.query.username)
             return roles
         } else {
-            throw new BadRequest('Malformed API request')
+            throw new BadRequest('ERROR: Malformed API request')
         }
     }
 
@@ -111,7 +111,7 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
                 // Make sure user does not already have this client role binding
                 for (const roleEntry of body.roles) {
                     if (!cRolesResponse.find((o) => o.id == roleEntry.roleUuid)) {
-                        throw new Unavailable('Keycloak role ID does not exist for this client ID')
+                        throw new Unavailable('ERROR: Keycloak role ID does not exist for this client ID')
                     }
                     await this.userDoesNotHaveRoleCheck(body.realm, body.username, body.clientId, roleEntry.roleName)
                 }
@@ -121,7 +121,7 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
                 }
             } else {
                 if (!cRolesResponse.find((o) => o.id == body.roleUuid)) {
-                    throw new Unavailable('Keycloak role ID does not exist for this client ID')
+                    throw new Unavailable('ERROR: Keycloak role ID does not exist for this client ID')
                 }
 
                 // Make sure user does not already have this client role binding

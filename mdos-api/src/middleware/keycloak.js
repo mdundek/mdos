@@ -339,7 +339,7 @@ class Keycloak {
         const allclients = await this.getClients(realm)
         const clientInst = allclients.find((o) => o.id == clientUuid)
 
-        if (!clientInst) throw new NotFound('Client UUID not found')
+        if (!clientInst) throw new NotFound('ERROR: Client UUID not found')
 
         await axios.delete(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientUuid}`, {
             headers: {
@@ -365,7 +365,7 @@ class Keycloak {
             const allclients = await this.getClients(realm)
             const clientInst = allclients.find((o) => o.id == clientUuid)
 
-            if (!clientInst) throw new NotFound('Client UUID not found')
+            if (!clientInst) throw new NotFound('ERROR: Client UUID not found')
 
             await axios.post(
                 `https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientUuid}/roles`,
@@ -426,7 +426,7 @@ class Keycloak {
         })
 
         if (response.data.length == 0) {
-            throw new NotFound('Keycloak client not found')
+            throw new NotFound('ERROR: Keycloak client not found')
         }
 
         response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${response.data[0].id}/roles`, {
@@ -477,7 +477,7 @@ class Keycloak {
         })
 
         if (response.data.length == 0) {
-            throw new NotFound('Keycloak username not found')
+            throw new NotFound('ERROR: Keycloak username not found')
         }
 
         let userRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${response.data[0].id}/role-mappings`, {

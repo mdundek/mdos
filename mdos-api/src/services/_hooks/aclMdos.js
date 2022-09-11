@@ -16,11 +16,11 @@ const appDeployHook = (context, jwtToken) => {
 
     const plainValues = YAML.parse(Buffer.from(context.data.values, 'base64').toString('utf8'))
     if (!jwtToken.resource_access[plainValues.tenantName]) {
-        throw new errors.Forbidden('You are not authorized to deploy applications to this namespace')
+        throw new errors.Forbidden('ERROR: You are not authorized to deploy applications to this namespace')
     }
     // If no namespace write permissions
     if (!jwtToken.resource_access[plainValues.tenantName].roles.includes('k8s-write') && !jwtToken.resource_access[plainValues.tenantName].roles.includes('admin')) {
-        throw new errors.Forbidden('You are not authorized to deploy applications to this namespace')
+        throw new errors.Forbidden('ERROR: You are not authorized to deploy applications to this namespace')
     }
 
     return context
@@ -38,7 +38,7 @@ module.exports = function () {
         if (context.params.provider != 'rest')
             // Internal calls don't need authentication
             return context
-        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('You are not authenticated')
+        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('ERROR: You are not authenticated')
 
         let jwtToken = jwt_decode(context.params.headers['x-auth-request-access-token'])
 

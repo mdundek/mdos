@@ -47,7 +47,7 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
                 throw error
             }
         } else {
-            throw new Unavailable('Provider type not implemented yet')
+            throw new Unavailable('ERROR: Provider type not implemented yet')
         }
         return body
     }
