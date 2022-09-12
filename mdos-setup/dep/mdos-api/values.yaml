@@ -15,6 +15,27 @@ components:
         ports:
           - name: http-3030
             port: 3030
+      - name: tcp-ftp
+        type: NodePort
+        ports:
+          - name: tcp-3915
+            port: 3915
+            nodePort: 30915
+          - name: tcp-3916
+            port: 3916
+            nodePort: 30916
+          - name: tcp-3917
+            port: 3917
+            nodePort: 30917
+          - name: tcp-3918
+            port: 3918
+            nodePort: 30918
+          - name: tcp-3919
+            port: 3919
+            nodePort: 30919
+          - name: tcp-3920
+            port: 3920
+            nodePort: 30920
     ingress:
       - name: ingress
         matchHost: mdos-api.mydomain.com
@@ -25,24 +46,30 @@ components:
       - name: configs
         type: env
         entries:
-          - key: KC_HELM_CHART_DIR
-            value: "/usr/src/dep/keycloak"
           - key: ROOT_DOMAIN
             value: "mydomain.com"
           - key: SSL_CERT_FOLDER
             value: "/etc/letsencrypt/live/mydomain.com"
-          - key: KC_DB_ROOT
-            value: "/usr/src/mdos/db"
           - key: GEN_HELM_PATH_PATH
             value: "/usr/src/dep/mhc-generic"
           - key: ISTIO_CHART_PATH
             value: "/usr/src/dep/istio_helm/istio-control/istio-discovery"
           - key: RUN_TARGET
             value: "pod"
-          - key: S3_HOST
-            value: "https://minio.mydomain.com"
-          - key: S3_PROVIDER
-            value: "minio"
+          - key: FTP_SERVER_MAIN_PORT
+            value: "3915"
+          - key: FTP_SERVER_PASV_PORT_START
+            value: "3916"
+          - key: FTP_SERVER_PASV_PORT_END
+            value: "3920"
+          - key: FTP_SERVER_TLS_KEY_PATH
+            value: ""
+          - key: FTP_SERVER_TLS_CA_PATH
+            value: ""
+          - key: FTP_SERVER_TLS_CERT_PATH
+            value: ""
+          - key: INBOX_ROOT_FOLDER
+            value: "/usr/volume-mirror"
 
     secrets:
       - name: creds
@@ -52,10 +79,6 @@ components:
             value: "mdundek"
           - key: REG_PASS
             value: "li14ebe14"
-          - key: ACCESS_KEY
-            value: "REp9k63uJ6qTe4KRtMsU"
-          - key: SECRET_KEY
-            value: "ePFRhVookGe1SX8u9boPHoNeMh2fAO5OmTjckzFN"
       - name: k3s-ca
         type: file
         mountPath: /usr/src/dep/k3s
@@ -67,20 +90,18 @@ components:
               -----END CERTIFICATE-----
         
     volumes:
-      - name: keycloak-dep
-        mountPath: /usr/src/dep/keycloak
-        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/keycloak
-      - name: keycloak-db
-        mountPath: /usr/src/mdos/db
       - name: crt-volume
         mountPath: /etc/letsencrypt/live/mydomain.com
         hostPath: /etc/letsencrypt/live/mydomain.com
       - name: mhc-generic-chart
         mountPath: /usr/src/dep/mhc-generic
-        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/mhc-generic/chart
+        hostPath: <path to setup folder>/dep/mhc-generic/chart
       - name: istiod-helm-volume
         mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
-        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
+        hostPath: <path to setup folder>/dep/istio_helm/istio-control/istio-discovery
+      - name: ftp-mirror-volume
+        mountPath: /usr/volume-mirror
+        size: 1Gi
 
     oidc:
       issuer: https://keycloak.mydomain.com/realms/mdos

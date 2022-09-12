@@ -753,11 +753,12 @@ install_nginx() {
 # ############################################
 install_registry() {
     # Collect registry size
-    user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry storage volume:"
+    question "MDos provides you with a private registry that you can use to store your application images on. This registry is shared amongst all tenants on your cluster (ACL is implemented to protect tenant specific images)."
+    user_input REGISTRY_SIZE "How many Gi (Gigabytes) do you want to allocate to your registry volume:"
     re='^[0-9]+$'
     while ! [[ $REGISTRY_SIZE =~ $re ]] ; do
-        error "Invalide number, ingeger expected"
-        user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry storage volume:"
+        error "Invalide number, ingeger representing Gigabytes is expected"
+        user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
     done
 
     # Create kubernetes namespace & secrets for registry
@@ -1237,6 +1238,15 @@ config:
 # ############### INSTALL MDOS ###############
 # ############################################
 install_mdos() {
+    # Collect registry size
+    question "Users will be able to easiely synchronize / mirror their static datasets with application PVCs during deployments. This requires that the data is stored on the MDos API server so that the user who deployes his/het application can synchronize that data with the platform. Once done, the deploying application can update / mirror those changes to your PODs before your application actually starts.\nPlease note that this data will remain on the MDos API server side volume until the namespace / tenant is deleted, or that you explicitely requested a volume folder to be deleted.\nKeeping the data available enables you to easiely do delta sync operations iteratively without having to upload it all every time you change your datasets.\nPlease consider this carefully before allocating a size to this volume."
+    user_input FTP_SYNC_SIZE "How many Gi (Gigabytes) do you want to allocate to the FTP sync volume:"
+    re='^[0-9]+$'
+    while ! [[ $FTP_SYNC_SIZE =~ $re ]] ; do
+        error "Invalide number, ingeger representing Gigabytes is expected"
+        user_input FTP_SYNC_SIZE "How many Gi do you want to allocate to your FTP sync volume:"
+    done
+
     # Build mdos-api image
     cd ../mdos-api
     echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
@@ -1318,13 +1328,9 @@ EOF
 
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         K3S_REG_DOMAIN="registry.$DOMAIN"
-        K3S_MINIO_DOMAIN="http://minio.$DOMAIN:9000"
-
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].oidc)')
     else
         K3S_REG_DOMAIN="registry.$DOMAIN"
-        K3S_MINIO_DOMAIN="https://minio.$DOMAIN"
-
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "'$OIDC_ISSUER_URL'"')
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "'$OIDC_JWKS_URI'"')
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
@@ -1332,23 +1338,17 @@ EOF
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[2].value = "/etc/letsencrypt/live/'$DOMAIN'"')
-    if [ $S3_PROVIDER == "minio" ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[7].value = "'$K3S_MINIO_DOMAIN'"')
-    fi
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[8].value = "'$S3_PROVIDER'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "/etc/letsencrypt/live/'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[2].value = "'$ACCESS_KEY'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[3].value = "'$SECRET_KEY'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/server-ca.crt)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/keycloak"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].mountPath = "/etc/letsencrypt/live/'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[3].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[4].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
-
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].mountPath = "/etc/letsencrypt/live/'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[3].size = "'$FTP_SYNC_SIZE'Gi"')
+    
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 
     mdos_deploy_app "true" "true"
