@@ -321,6 +321,9 @@ configure_etc_hosts() {
     if [ "$(cat /etc/hosts | grep mdos-api.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 mdos-api.$DOMAIN" >> /etc/hosts
     fi
+    if [ "$(cat /etc/hosts | grep mdos-api.$DOMAIN)" == "" ]; then
+        echo "127.0.0.1 mdos-ftp.$DOMAIN" >> /etc/hosts
+    fi
     if [ "$(cat /etc/hosts | grep minio.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 minio.$DOMAIN" >> /etc/hosts
     fi
