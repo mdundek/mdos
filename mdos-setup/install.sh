@@ -1491,17 +1491,16 @@ EOF
             echo "      fall back to a developement mode and allow you to do direct login"
             echo "      requests over APIs instead. This is not secure and shoud not be used in"
             echo "      production environements."
-
-            info "To talk to your platform from an environement other than this one, you will also need to configure your 'hosts' file in that remote environement with the following resolvers:"
+            echo ""
+            echo "      To talk to your platform from an environement other than this one, you will also need to configure your 'hosts' file in that remote environement with the following resolvers:"
             echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
+            echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
             echo "          <MDOS_VM_IP> registry.$DOMAIN"
             echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
+            echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
             echo ""
-            echo "      The following services are available on the platform:"
-        elif [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" != "SELF_SIGNED" ]; then
-            info "The following services are available on the platform:"
         fi
-
+        info "The following services are available on the platform:"
         echo "          - mdos-api.$DOMAIN"
         echo "          - mdos-ftp.$DOMAIN"
         echo "          - registry.$DOMAIN"
