@@ -135,10 +135,12 @@ spec:
     {{- else }}
           image: "{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
     {{- end }}
-    {{- if $.Values.global.imagePullPolicy }}
+    {{- if .imagePullPolicy }}
+          imagePullPolicy: {{ .imagePullPolicy }}
+    {{- else if $.Values.global.imagePullPolicy }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
     {{- else }}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
     {{- end }}
     {{- if .command }}
       {{- with .command }}
