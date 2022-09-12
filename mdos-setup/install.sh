@@ -73,8 +73,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-S3_PROVIDER="minio"
-
 # SET UP FIREWALL (ufw)
 if command -v ufw >/dev/null; then
     if [ "$(ufw status | grep 'Status: active')" == "" ]; then
@@ -111,16 +109,6 @@ set_env_step_data() {
 }
 
 # ############### CHECK KUBE RESOURCE ################
-check_kube_resource() {
-    local __resultvar=$1
-    while read K_LINE ; do 
-        K_NAME=`echo "$K_LINE" | cut -d' ' -f 1`
-        if [ "$K_NAME" == "$4" ]; then
-            eval $__resultvar=1
-        fi
-    done < <(kubectl get $2 -n $3 2>/dev/null)
-}
-
 check_kube_namespace() {
     local __resultvar=$1
     while read K_LINE ; do 
@@ -441,6 +429,9 @@ install_longhorn() {
     helm repo add longhorn https://charts.longhorn.io &>> $LOG_FILE
     helm repo update &>> $LOG_FILE
 
+    question "MDos uses Longhorn as the primary storage class for your Kubernetes workload data volumes."
+    question "You can use Longhorn's default storage folder for this (root user partition), or specify your own folder path in case you want to mount a external disk as the storage target for your platform storage needs."
+    echo ""
     yes_no CUSTOM_LH_PATH "Would you like to customize the directory path used by longhorn to mount your filesystems at?" 1
     if [ "$CUSTOM_LH_PATH" == "yes" ]; then
         user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
@@ -448,6 +439,8 @@ install_longhorn() {
             error "Directory does not exist"
             user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
         done
+
+        info "Installing..."
 
         helm install longhorn longhorn/longhorn \
             --set service.ui.type=NodePort \
@@ -458,6 +451,8 @@ install_longhorn() {
             --set defaultSettings.defaultDataPath=$LONGHORN_DEFAULT_DIR \
             --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
     else
+        info "Installing..."
+
         helm install longhorn longhorn/longhorn \
             --set service.ui.type=NodePort \
             --set service.ui.nodePort=30584 \
@@ -754,12 +749,15 @@ install_nginx() {
 install_registry() {
     # Collect registry size
     question "MDos provides you with a private registry that you can use to store your application images on. This registry is shared amongst all tenants on your cluster (ACL is implemented to protect tenant specific images)."
+    echo ""
     user_input REGISTRY_SIZE "How many Gi (Gigabytes) do you want to allocate to your registry volume:"
     re='^[0-9]+$'
     while ! [[ $REGISTRY_SIZE =~ $re ]] ; do
         error "Invalide number, ingeger representing Gigabytes is expected"
         user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
     done
+
+    info "Installing..."
 
     # Create kubernetes namespace & secrets for registry
     unset NS_EXISTS
@@ -901,6 +899,7 @@ install_keycloak() {
     if [ -z $KUBE_ADMIN_EMAIL ]; then
         user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
         set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
+        info "Installing..."
     fi
 
     # Create keycloak namespace & secrets for registry
@@ -935,7 +934,6 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
 
     collect_api_key() {
-        echo ""
         echo ""
         question "To finalyze the setup, do the following:"
         echo ""
@@ -1239,13 +1237,19 @@ config:
 # ############################################
 install_mdos() {
     # Collect registry size
-    question "Users will be able to easiely synchronize / mirror their static datasets with application PVCs during deployments. This requires that the data is stored on the MDos API server so that the user who deployes his/het application can synchronize that data with the platform. Once done, the deploying application can update / mirror those changes to your PODs before your application actually starts.\nPlease note that this data will remain on the MDos API server side volume until the namespace / tenant is deleted, or that you explicitely requested a volume folder to be deleted.\nKeeping the data available enables you to easiely do delta sync operations iteratively without having to upload it all every time you change your datasets.\nPlease consider this carefully before allocating a size to this volume."
+    question "Users will be able to easiely synchronize / mirror their static datasets with application during deployments. This requires that the data is stored on the MDos API server so that the user who deploys his/het application can synchronize that data with the platform upfront. Once done, the deploying application can automatically update / mirror those changes to your PODs before your application actually starts."
+    question "Please note that this data will remain on the MDos API server side volume until the namespace / tenant is deleted, or that you explicitely requested a volume folder to be deleted."
+    question "Keeping the data available enables you to easiely do delta sync operations iteratively without having to upload it all every time you change your datasets."
+    question "Please consider this carefully before allocating a size to this volume."
+    echo ""
     user_input FTP_SYNC_SIZE "How many Gi (Gigabytes) do you want to allocate to the FTP sync volume:"
     re='^[0-9]+$'
     while ! [[ $FTP_SYNC_SIZE =~ $re ]] ; do
         error "Invalide number, ingeger representing Gigabytes is expected"
         user_input FTP_SYNC_SIZE "How many Gi do you want to allocate to your FTP sync volume:"
     done
+
+    info "Installing..."
 
     # Build mdos-api image
     cd ../mdos-api
@@ -1607,7 +1611,7 @@ EOF
 
     # INSTALL LONGHORN
     if [ -z $INST_STEP_LONGHORN ]; then
-        info "Install Longhorn..."
+        info "Install Longhorn"
         install_longhorn
         set_env_step_data "INST_STEP_LONGHORN" "1"
     fi
@@ -1621,7 +1625,7 @@ EOF
 
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
-        info "Install Registry..."
+        info "Install Registry"
         install_registry
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
@@ -1630,7 +1634,11 @@ EOF
     REALM="mdos"
     CLIENT_ID="mdos"
     if [ -z $INST_STEP_KEYCLOAK ]; then
-        info "Install Keycloak..."
+        if [ -z $KUBE_ADMIN_EMAIL ]; then
+            info "Install Keycloak"
+        else
+            info "Install Keycloak..."
+        fi
         install_keycloak
         set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
         set_env_step_data "INST_STEP_KEYCLOAK" "1"
@@ -1674,7 +1682,7 @@ EOF
 
     # INSTALL MDOS
     if [ -z $INST_STEP_MDOS ]; then
-        info "Install MDos API server..."
+        info "Install MDos API server"
         install_mdos
         set_env_step_data "INST_STEP_MDOS" "1"
     fi
