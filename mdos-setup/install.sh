@@ -321,11 +321,11 @@ configure_etc_hosts() {
     if [ "$(cat /etc/hosts | grep mdos-api.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 mdos-api.$DOMAIN" >> /etc/hosts
     fi
-    if [ "$(cat /etc/hosts | grep mdos-api.$DOMAIN)" == "" ]; then
+    if [ "$(cat /etc/hosts | grep mdos-ftp.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 mdos-ftp.$DOMAIN" >> /etc/hosts
     fi
-    if [ "$(cat /etc/hosts | grep minio.$DOMAIN)" == "" ]; then
-        echo "127.0.0.1 minio.$DOMAIN" >> /etc/hosts
+    if [ "$(cat /etc/hosts | grep longhorn.$DOMAIN)" == "" ]; then
+        echo "127.0.0.1 longhorn.$DOMAIN" >> /etc/hosts
     fi
 }
 
@@ -1503,8 +1503,11 @@ EOF
         fi
 
         echo "          - mdos-api.$DOMAIN"
+        echo "          - mdos-ftp.$DOMAIN"
         echo "          - registry.$DOMAIN"
+        echo "          - registry-auth.$DOMAIN"
         echo "          - keycloak.$DOMAIN"
+        echo "          - longhorn.$DOMAIN"
         echo ""
 
         note_print "Log details of the installation can be found here: $LOG_FILE"

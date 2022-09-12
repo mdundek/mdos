@@ -31,7 +31,7 @@ export default class Domain extends Command {
         const { args } = await this.parse(Domain)
 
         if(!args.domain) {
-            error("No auth mode specified")
+            error("No domain specified")
             process.exit(1)
         } else {
             this.setConfig('MDOS_KC_URI', `https://keycloak.${args.domain}`)
