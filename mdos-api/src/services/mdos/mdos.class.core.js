@@ -31,20 +31,10 @@ class MdosCore extends CommonCore {
 
         const userData = {
             registry: `registry.${process.env.ROOT_DOMAIN}`
-            // S3Provider: process.env.S3_PROVIDER,
-            // s3: [],
         }
 
         // For dev purposes only, used if auth is disabled
         if (process.env.NO_ADMIN_AUTH == 'true') {
-            // for (let ns of allNs) {
-            //     const s3creds = await this.app.get('s3').getNamespaceCredentials(ns, 'write')
-            //     if (s3creds) {
-            //         s3creds.bucket = ns
-            //         s3creds.permissions = 'write'
-            //         userData.s3.push(s3creds)
-            //     }
-            // }
             userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
             userData.roles = [`mdostnt-name-${params.namespace}`, 'mdostnt-volume-sync']
             return userData
