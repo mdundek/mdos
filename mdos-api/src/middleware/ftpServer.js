@@ -65,7 +65,7 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
             password: pwd,
             createdAt: new Date().toISOString(),
             protocol: (process.env.FTP_SERVER_TLS_KEY_PATH && process.env.FTP_SERVER_TLS_KEY_PATH.length > 0) ? "ftps" : "ftp",
-            host: `ftp-server.${process.env.ROOT_DOMAIN}`,
+            host: `mdos-ftp.${process.env.ROOT_DOMAIN}`,
             port: `${process.env.FTP_SERVER_MAIN_PORT}`
         }
     }
