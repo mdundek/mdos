@@ -38,7 +38,7 @@ components:
       - name: host-data-volume
         mountPath: /var/lib/postgresql/data
         subPath: data
-        size: 10Gi
+        size: 5Gi
       - name: db-init
         mountPath: /docker-entrypoint-initdb.d
         hostPath: /home/mdundek/workspaces/mdos/data/pg-init-scripts

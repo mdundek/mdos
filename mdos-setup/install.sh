@@ -208,8 +208,9 @@ dependencies() {
             apache2-utils \
             python3 \
             unzip \
+            snapd \
             lsb-release -y &>> $LOG_FILE
-        # snap install yq &>> $LOG_FILE
+        snap install yq &>> $LOG_FILE
 
         # Docker binary
         if [ "$DISTRO" == "Ubuntu" ]; then
@@ -436,43 +437,45 @@ EOF
 # ############# INSTALL LONGHORN #############
 # ############################################
 install_longhorn() {
-    user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
-    while [ ! -d $LONGHORN_DEFAULT_DIR ]; do
-        error "Directory does not exist"
-        user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
-    done
-
     # Install storageclass
-    helm repo add longhorn https://charts.longhorn.io
-    helm repo update
-    helm install longhorn longhorn/longhorn \
-        --set service.ui.type=NodePort \
-        --set service.ui.nodePort=30584 \
-        --set persistence.defaultClassReplicaCount=2 \
-        --set defaultSettings.guaranteedEngineManagerCPU=125m \
-        --set defaultSettings.guaranteedReplicaManagerCPU=125m \
-        --set defaultSettings.defaultDataPath=$LONGHORN_DEFAULT_DIR \
-        --namespace longhorn-system --create-namespace --atomic
+    helm repo add longhorn https://charts.longhorn.io &>> $LOG_FILE
+    helm repo update &>> $LOG_FILE
+
+    yes_no CUSTOM_LH_PATH "Would you like to customize the directory path used by longhorn to mount your filesystems at?" 1
+    if [ "$CUSTOM_LH_PATH" == "yes" ]; then
+        user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
+        while [ ! -d $LONGHORN_DEFAULT_DIR ]; do
+            error "Directory does not exist"
+            user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
+        done
+
+        helm install longhorn longhorn/longhorn \
+            --set service.ui.type=NodePort \
+            --set service.ui.nodePort=30584 \
+            --set persistence.defaultClassReplicaCount=2 \
+            --set defaultSettings.guaranteedEngineManagerCPU=125m \
+            --set defaultSettings.guaranteedReplicaManagerCPU=125m \
+            --set defaultSettings.defaultDataPath=$LONGHORN_DEFAULT_DIR \
+            --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
+    else
+        helm install longhorn longhorn/longhorn \
+            --set service.ui.type=NodePort \
+            --set service.ui.nodePort=30584 \
+            --set persistence.defaultClassReplicaCount=2 \
+            --set defaultSettings.guaranteedEngineManagerCPU=125m \
+            --set defaultSettings.guaranteedReplicaManagerCPU=125m \
+            --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
+    fi
     
     sleep 10
 
     # Wait for all pods to be on
-    unset LH_IS_RUNNING
-    while [ -z $LH_IS_RUNNING ]; do
-        unset ANY_ERRORS
-        while read LH_POD_LINE ; do 
-            LH_POD_STATUS=`echo "$LH_POD_LINE" | awk 'END {print $3}'`
-            if [ "$LH_POD_STATUS" != "STATUS" ] && [ "$LH_POD_STATUS" != "Running" ]; then
-                ANY_ERRORS=1
-            fi
-        done < <(kubectl get pod -n longhorn-system 2>/dev/null)
-        if [ -z $ANY_ERRORS ]; then
-            LH_IS_RUNNING=1
-        fi
-    done
+    wait_all_ns_pods_healthy "longhorn-system"
 
     # Create Virtual Service
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    set +Ee
+    while [ -z $VS_SUCCESS ]; do
+        cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
@@ -493,8 +496,13 @@ spec:
         port:
           number: 80
 EOF
-
-    # kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.1/examples/storageclass.yaml
+        if [ $? -eq 0 ]; then
+            VS_SUCCESS=1
+        else
+            sleep 2
+        fi
+    done
+    set -Ee
 }
 
 # ############################################
@@ -523,7 +531,7 @@ spec:
           number: 80
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
-metadata
+metadata:
   labels:
     app: longhorn-ui-ra
   name: longhorn-ui-ra
@@ -679,6 +687,9 @@ spec:
     tls:
       mode: PASSTHROUGH
 EOF
+
+    # Wait for all pods to be on
+    wait_all_ns_pods_healthy "istio-system"
 }
 
 # ############################################
@@ -741,6 +752,14 @@ install_nginx() {
 # ############# INSTALL REGISTRY #############
 # ############################################
 install_registry() {
+    # Collect registry size
+    user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry storage volume:"
+    re='^[0-9]+$'
+    while ! [[ $REGISTRY_SIZE =~ $re ]] ; do
+        error "Invalide number, ingeger expected"
+        user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry storage volume:"
+    done
+
     # Create kubernetes namespace & secrets for registry
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "mdos-registry"
@@ -788,6 +807,11 @@ configs:
             systemctl restart k3s &>> $LOG_FILE
         fi
     fi
+
+    # Wait for all pods to be on
+    sleep 5
+    wait_all_ns_pods_healthy "mdos-registry"
+    sleep 15
 }
 
 deploy_reg_chart() {
@@ -802,6 +826,8 @@ deploy_reg_chart() {
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
 
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
+    
     # AUTHENTICATION SCRIPT
     if [ -z $1 ]; then # No auth
         echo "#!/bin/sh
@@ -871,6 +897,11 @@ EOL
 # ################# KEYCLOAK #################
 # ############################################
 install_keycloak() {
+    if [ -z $KUBE_ADMIN_EMAIL ]; then
+        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
+        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
+    fi
+
     # Create keycloak namespace & secrets for registry
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "keycloak"
@@ -1116,14 +1147,23 @@ EOF
     echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
 
     # Pull & push images to registry
-	docker pull postgres:13.2-alpine &>> $LOG_FILE
-	docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
-	docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
+    docker pull postgres:13.2-alpine &>> $LOG_FILE
+    docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
 
-	docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
-	docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-	docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
+    # Registry might need some time to be up and ready, we therefore loop untill success for first push
+    set +Ee
+    while [ -z $KC_PG_SUCCESS ]; do
+        docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            KC_PG_SUCCESS=1
+        fi
+    done
+    set -Ee
 
+    docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
+    docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
+    docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
+    
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
@@ -1143,9 +1183,10 @@ EOF
 # ########### INSTALL OAUTH2-PROXY ###########
 # ############################################
 install_oauth2_proxy() {
-    helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
-    helm repo update
-    kubectl create ns oauth2-proxy && kubectl label ns oauth2-proxy istio-injection=enabled
+    helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests &>> $LOG_FILE
+    helm repo update &>> $LOG_FILE
+    kubectl create ns oauth2-proxy &>> $LOG_FILE
+    kubectl label ns oauth2-proxy istio-injection=enabled &>> $LOG_FILE
 
     echo "service:
   portNumber: 4180
@@ -1185,7 +1226,11 @@ config:
     helm upgrade --install -n oauth2-proxy \
       --version 6.0.1 \
       --values $_DIR/oauth2-proxy-values.yaml \
-      kc-mdos oauth2-proxy/oauth2-proxy --atomic
+      kc-mdos oauth2-proxy/oauth2-proxy --atomic &>> $LOG_FILE
+
+    # Wait for all pods to be on
+    sleep 5
+    wait_all_ns_pods_healthy "oauth2-proxy"
 }
 
 # ############################################
@@ -1194,17 +1239,17 @@ config:
 install_mdos() {
     # Build mdos-api image
     cd ../mdos-api
-    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin
+    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
     cp infra/dep/helm/helm .
-    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest .
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
     rm -rf helm
-    docker push registry.$DOMAIN/mdos-api:latest
+    docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
 
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
-    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-mirror-lftp:latest .
-    docker push registry.$DOMAIN/mdos-mirror-lftp:latest
-    cd ../../../..
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-mirror-lftp:latest . &>> $LOG_FILE
+    docker push registry.$DOMAIN/mdos-mirror-lftp:latest &>> $LOG_FILE
+    cd ../../..
 
     # Now prepare deployment config
     k8s_cluster_scope_exist ELM_EXISTS ns "mdos"
@@ -1215,7 +1260,7 @@ install_mdos() {
 
     k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
     if [ -z $ELM_EXISTS ]; then
-cat <<EOF | kubectl create -f -
+cat <<EOF | kubectl create -f &>> $LOG_FILE -
 apiVersion: v1
 kind: Secret
 metadata:
@@ -1230,7 +1275,7 @@ EOF
     # Admin role
     k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"
     if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f -
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -1252,7 +1297,7 @@ EOF
     # Admin role binding
     k8s_cluster_scope_exist ELM_EXISTS clusterrolebinding "mdos-admin-role-binding"
     if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f -
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -1315,7 +1360,7 @@ EOF
 # ############ COREDNS DOMAIN CFG ############
 # ############################################
 consigure_core_dns_for_self_signed() {
-    cat <<EOF | k3s kubectl apply -f -
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -1362,7 +1407,7 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
-    kubectl delete pod $COREDNS_POD_NAME -n kube-system
+    kubectl delete pod $COREDNS_POD_NAME -n kube-system &>> $LOG_FILE
     unset FOUND_RUNNING_POD
     while [ -z $FOUND_RUNNING_POD ]; do
         while read POD_LINE ; do
@@ -1426,56 +1471,36 @@ EOF
         fi
 
         echo ""
+        echo "-------------------------------------------------------------------"
+        echo ""
         if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
             warn "You choose to generate a self signed certificate for this installation."
             echo "      All certificates are located under the folder $SSL_ROOT."
             echo "      You can use those certificates to allow your external tools to"
             echo "      communicate with the platform (ex. docker)."
             echo ""
+            echo "      Self-signed certificates also impose limitations, the most significant"
+            echo "      one being thee inability to use OIDC authentication. MDos will therefore"
+            echo "      fall back to a developement mode and allow you to do direct login"
+            echo "      requests over APIs instead. This is not secure and shoud not be used in"
+            echo "      production environements."
 
             info "To talk to your platform from an environement other than this one, you will also need to configure your 'hosts' file in that remote environement with the following resolvers:"
-            echo "      <MDOS_VM_IP> mdos-api.$DOMAIN"
-            echo "      <MDOS_VM_IP> registry.$DOMAIN"
-            echo "      <MDOS_VM_IP> keycloak.$DOMAIN"
-        
-            if [ $S3_PROVIDER == "minio" ]; then
-                echo "      <MDOS_VM_IP> minio-console.$DOMAIN"
-                echo "      <MDOS_VM_IP> minio.$DOMAIN"
-                echo ""
-                info "The following services are available on the platform:"
-                echo "        - mdos-api.$DOMAIN"
-                echo "        - registry.$DOMAIN"
-                echo "        - keycloak.$DOMAIN"
-                echo "        - minio-console.$DOMAIN"
-                echo "        - minio.$DOMAIN"
-                echo ""
-            else
-                echo ""
-                info "The following services are available on the platform:"
-                echo "        - mdos-api.$DOMAIN"
-                echo "        - registry.$DOMAIN"
-                echo "        - keycloak.$DOMAIN"
-                echo ""
-            fi
+            echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
+            echo "          <MDOS_VM_IP> registry.$DOMAIN"
+            echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
+            echo ""
+            echo "      The following services are available on the platform:"
         elif [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" != "SELF_SIGNED" ]; then
-            if [ $S3_PROVIDER == "minio" ]; then
-                info "The following services are available on the platform:"
-                echo "        - mdos-api.$DOMAIN"
-                echo "        - registry.$DOMAIN"
-                echo "        - keycloak.$DOMAIN"
-                echo "        - minio-console.$DOMAIN"
-                echo "        - minio.$DOMAIN"
-                echo ""
-            else
-                info "The following services are available on the platform:"
-                echo "        - mdos-api.$DOMAIN"
-                echo "        - registry.$DOMAIN"
-                echo "        - keycloak.$DOMAIN"
-                echo ""
-            fi
+            info "The following services are available on the platform:"
         fi
 
-        note_print "Log details of the nstallation can be found here: $LOG_FILE"
+        echo "          - mdos-api.$DOMAIN"
+        echo "          - registry.$DOMAIN"
+        echo "          - keycloak.$DOMAIN"
+        echo ""
+
+        note_print "Log details of the installation can be found here: $LOG_FILE"
 
         if [ -z $GLOBAL_ERROR ]; then
             info "Done!"
@@ -1484,6 +1509,16 @@ EOF
 
     trap _catch ERR
     trap _finally EXIT
+
+    # COLLECT ADMIN CREDS
+    if [ -z $KEYCLOAK_USER ]; then
+        user_input KEYCLOAK_USER "Enter a admin username for the platform:"
+        set_env_step_data "KEYCLOAK_USER" "$KEYCLOAK_USER"
+    fi
+    if [ -z $KEYCLOAK_PASS ]; then
+        user_input KEYCLOAK_PASS "Enter a admin password for the platform:"
+        set_env_step_data "KEYCLOAK_PASS" "$KEYCLOAK_PASS"
+    fi
 
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
@@ -1584,25 +1619,10 @@ EOF
         set_env_step_data "INST_STEP_PROXY" "1"
     fi
 
-    # COLLECT ADMIN CREDS
-    if [ -z $KEYCLOAK_USER ]; then
-        user_input KEYCLOAK_USER "Enter a admin username for Keycloak:"
-        set_env_step_data "KEYCLOAK_USER" "$KEYCLOAK_USER"
-    fi
-    if [ -z $KEYCLOAK_PASS ]; then
-        user_input KEYCLOAK_PASS "Enter a admin password for Keycloak:"
-        set_env_step_data "KEYCLOAK_PASS" "$KEYCLOAK_PASS"
-    fi
-    if [ -z $KUBE_ADMIN_EMAIL ]; then
-        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
-        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
-    fi
-
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
         info "Install Registry..."
         install_registry
-        echo ""
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
 
@@ -1611,7 +1631,6 @@ EOF
     CLIENT_ID="mdos"
     if [ -z $INST_STEP_KEYCLOAK ]; then
         info "Install Keycloak..."
-        echo ""
         install_keycloak
         set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
         set_env_step_data "INST_STEP_KEYCLOAK" "1"
@@ -1620,7 +1639,7 @@ EOF
     # LOAD OAUTH2 DATA
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         KC_NODEPORT=":30998"
-        OIDC_DISCOVERY=$(curl -k "https://keycloak.${DOMAIN}${KC_NODEPORT}/realms/mdos/.well-known/openid-configuration")
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}${KC_NODEPORT}/realms/mdos/.well-known/openid-configuration")
         OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
         OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
         OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
@@ -1630,7 +1649,7 @@ EOF
         OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
         OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
     else
-        OIDC_DISCOVERY=$(curl -k "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
         OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
         OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
         OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)

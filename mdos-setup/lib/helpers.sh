@@ -136,3 +136,22 @@ k8s_cluster_scope_exist() {
         eval $__resultvar="1"
     fi
 }
+
+wait_all_ns_pods_healthy() {
+    # Wait for all pods to be on
+    unset TARGET_IS_RUNNING
+    while [ -z $TARGET_IS_RUNNING ]; do
+        unset ANY_ERRORS
+        while read TARGET_POD_LINE ; do 
+            TARGET_POD_STATUS=`echo "$TARGET_POD_LINE" | awk 'END {print $3}'`
+            if [ "$TARGET_POD_STATUS" != "STATUS" ] && [ "$TARGET_POD_STATUS" != "Running" ]; then
+                ANY_ERRORS=1
+            fi
+        done < <(kubectl get pod -n $1 2>/dev/null)
+        if [ -z $ANY_ERRORS ]; then
+            TARGET_IS_RUNNING=1
+        else
+            sleep 2
+        fi
+    done
+}
