@@ -24,9 +24,10 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
             pasv_max: parseInt(process.env.FTP_SERVER_PASV_PORT_END)
         };
 
+        const psvUrl = process.env.RUNTIME == "local" ? "0.0.0.0" : `mdos-ftp.${process.env.ROOT_DOMAIN}`
         if (process.env.FTP_SERVER_TLS_KEY_PATH && process.env.FTP_SERVER_TLS_KEY_PATH.length > 0) {
-            ftpServOptions.url = `ftps://0.0.0.0:${process.env.FTP_SERVER_MAIN_PORT}`;
-            ftpServOptions.pasv_url = 'ftps://0.0.0.0';
+            ftpServOptions.url = `ftps://${psvUrl}:${process.env.FTP_SERVER_MAIN_PORT}`;
+            ftpServOptions.pasv_url = `ftps://${psvUrl}`;
             ftpServOptions.tls = {
                 key: fs.readFileSync(process.env.FTP_SERVER_TLS_KEY_PATH, 'utf8'),
                 cert: fs.readFileSync(process.env.FTP_SERVER_TLS_CERT_PATH, 'utf8'),
@@ -35,8 +36,8 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
                 ftpServOptions.tls.ca = fs.readFileSync(process.env.FTP_SERVER_TLS_CA_PATH, 'utf8');
             }
         } else {
-            ftpServOptions.url = `ftp://0.0.0.0:${process.env.FTP_SERVER_MAIN_PORT}`;
-            ftpServOptions.pasv_url = 'ftp://0.0.0.0';
+            ftpServOptions.url = `ftp://${psvUrl}:${process.env.FTP_SERVER_MAIN_PORT}`;
+            ftpServOptions.pasv_url = `ftp://${psvUrl}`;
         }
         this.CRED_SESSIONS = []
         this.ftpServer = new FtpSrv(ftpServOptions);

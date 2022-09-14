@@ -16,7 +16,6 @@ exports.Mdos = class Mdos extends MdosCore {
         this.app = app
     }
 
-    
     /**
      * Get
      *
@@ -31,7 +30,6 @@ exports.Mdos = class Mdos extends MdosCore {
             throw new BadRequest('ERROR: Malformed API request')
         }
     }
-
     
     /**
      * Create
