@@ -10,6 +10,7 @@ components:
     tag: latest
     imagePullSecrets:
       - name: regcred
+    imagePullpolicy: Always
     services:
       - name: http
         ports:
@@ -57,11 +58,11 @@ components:
           - key: RUN_TARGET
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
-            value: "3915"
+            value: "30915"
           - key: FTP_SERVER_PASV_PORT_START
-            value: "3916"
+            value: "30916"
           - key: FTP_SERVER_PASV_PORT_END
-            value: "3920"
+            value: "30920"
           - key: FTP_SERVER_TLS_KEY_PATH
             value: ""
           - key: FTP_SERVER_TLS_CA_PATH
