@@ -1,7 +1,6 @@
 // src/base.ts
 import { Command, Config } from '@oclif/core'
 const fs = require('fs')
-const nconf = require('nconf')
 const os = require('os')
 const path = require('path')
 const inquirer = require('inquirer')
@@ -29,6 +28,8 @@ export default abstract class extends Command {
     authMode: string
     socketManager: any
     getConsoleLineHandel: any
+    configPath: any
+    configData: any
 
     /**
      * constructor
@@ -40,10 +41,19 @@ export default abstract class extends Command {
         if (!fs.existsSync(path.join(os.homedir(), '.mdos'))) {
             fs.mkdirSync(path.join(os.homedir(), '.mdos'))
         }
-        nconf.file({ file: path.join(os.homedir(), '.mdos', 'cli.json') })
         super(argv, config)
 
-        this.authMode = nconf.get('AUTH_MODE')
+        this.configPath = path.join(os.homedir(), '.mdos', 'cli.json')
+        if(!fs.existsSync(this.configPath)){
+            fs.writeFileSync(this.configPath, JSON.stringify({
+                "MDOS_KC_URI": "",
+                "MDOS_API_URI": "",
+                "AUTH_MODE": "oidc",
+                "OIDC_COOKIE": ""
+              }, null, 4))
+        }
+        this.configData = JSON.parse(fs.readFileSync(this.configPath))
+        this.authMode = this.configData['AUTH_MODE']
         if (!this.authMode) this.authMode = 'oidc'
 
         this.getConsoleLineHandel = getConsoleLineHandel
@@ -68,7 +78,7 @@ export default abstract class extends Command {
      * @returns
      */
     getConfig(key: any) {
-        return nconf.get(key)
+        return this.configData[key]
     }
 
     /**
@@ -78,7 +88,7 @@ export default abstract class extends Command {
      * @returns
      */
     getAllConfigs() {
-        return nconf.get()
+        return this.configData
     }
 
     /**
@@ -88,14 +98,8 @@ export default abstract class extends Command {
      * @param value
      */
     setConfig(key: any, value: any) {
-        nconf.set(key, value)
-        nconf.save(function (error: any) {
-            if (error) {
-                console.error('Could not save config file: ')
-                console.log(error)
-                process.exit(1)
-            }
-        })
+        this.configData[key] = value
+        fs.writeFileSync(this.configPath, JSON.stringify(this.configData, null, 4))
     }
 
     /**

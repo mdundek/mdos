@@ -33,7 +33,7 @@ export default class GetConfig extends Command {
         } else if (flags.keycloak) {
             context(this.getConfig('MDOS_KC_URI'))
         } else {
-            const allConfigs = this.getAllConfigs()
+            const allConfigs:any = this.getAllConfigs()
             const avKeys: any[] = []
             for (let key of Object.keys(allConfigs)) {
                 if (key != 'OIDC_COOKIE' && key != 'JWT_TOKEN') avKeys.push(key)
