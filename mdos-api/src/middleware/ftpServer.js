@@ -1,8 +1,13 @@
-const FtpSrv = require('ftp-srv');
+const axios = require('axios')
+const https = require('https')
 const fs = require('fs');
 const nanoid_1 = require('nanoid');
 const path = require('path');
 const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10)
+
+axios.defaults.httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+})
 
 /**
  * FtpServer specific functions
@@ -18,102 +23,82 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
      */
      constructor(app) {
         this.app = app;
-        const ftpServOptions = {
-            anonymous: false,
-            pasv_min: parseInt(process.env.FTP_SERVER_PASV_PORT_START),
-            pasv_max: parseInt(process.env.FTP_SERVER_PASV_PORT_END)
-        };
-
-        const psvUrl = process.env.RUNTIME == "local" ? "0.0.0.0" : `mdos-ftp.${process.env.ROOT_DOMAIN}`
-        if (process.env.FTP_SERVER_TLS_KEY_PATH && process.env.FTP_SERVER_TLS_KEY_PATH.length > 0) {
-            ftpServOptions.url = `ftps://0.0.0.0:${process.env.FTP_SERVER_MAIN_PORT}`;
-            ftpServOptions.pasv_url = `ftps://${psvUrl}`;
-            ftpServOptions.tls = {
-                key: fs.readFileSync(process.env.FTP_SERVER_TLS_KEY_PATH, 'utf8'),
-                cert: fs.readFileSync(process.env.FTP_SERVER_TLS_CERT_PATH, 'utf8'),
-            };
-            if (process.env.FTP_SERVER_TLS_CA_PATH && process.env.FTP_SERVER_TLS_CA_PATH.length > 0) {
-                ftpServOptions.tls.ca = fs.readFileSync(process.env.FTP_SERVER_TLS_CA_PATH, 'utf8');
-            }
-        } else {
-            ftpServOptions.url = `ftp://0.0.0.0:${process.env.FTP_SERVER_MAIN_PORT}`;
-            ftpServOptions.pasv_url = `ftp://${psvUrl}`;
-        }
-        this.CRED_SESSIONS = []
-        // this.ftpServer = new FtpSrv(ftpServOptions);
     }
 
     /**
-     * generateSessionCredentials
-     * @param {*} namespace 
-     * @param {*} appName 
+     * _mdosFtpApiAuthenticate
+     * @returns 
      */
-    generateSessionCredentials(namespace, appName) {
-        const usr = nanoid()
-        const pwd = nanoid()
-        this.CRED_SESSIONS.push({
-            username: usr,
-            password: pwd,
-            path: path.join(process.env.INBOX_ROOT_FOLDER, namespace, appName),
-            activeConnectionIds: [],
-            credsTimeout: setTimeout(function(_usr) {
-                this.CRED_SESSIONS = this.CRED_SESSIONS.filter(s => s.username != _usr)
-            }.bind(this, usr), 1000 * 60)
-        })
-        
-        return {
-            username: usr,
-            password: pwd,
-            createdAt: new Date().toISOString(),
-            protocol: (process.env.FTP_SERVER_TLS_KEY_PATH && process.env.FTP_SERVER_TLS_KEY_PATH.length > 0) ? "ftps" : "ftp",
-            host: `mdos-ftp.${process.env.ROOT_DOMAIN}`,
-            port: `${process.env.FTP_SERVER_MAIN_PORT}`
+    async _mdosFtpApiAuthenticate() {
+        try {
+            const token = await axios.post(
+                `https://mdos-ftp-api.${process.env.ROOT_DOMAIN}/authentication`,
+                {
+                    "strategy": "local",
+                    "email": process.env.REG_USER,
+                    "password": process.env.REG_PASS,
+                },
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+
+            this.accessToken = token.data.accessToken;
+        } catch (error) {
+            console.log(error)
+            throw error
         }
     }
 
     /**
-     * deleteNamespaceVolume
-     * @param {
-     } namespace 
+     * createFtpdCredentials
+     * @param {*} tenantName 
      */
-    deleteNamespaceVolume(namespace) {
-        const targetPath = path.join(process.env.INBOX_ROOT_FOLDER, namespace);
-        if(fs.existsSync(targetPath))
-            fs.rmSync(targetPath, { recursive: true, force: true })
+    async createFtpdCredentials(tenantName) {
+        try {
+            await this._mdosFtpApiAuthenticate();
+            const credentials = await axios.post(
+                `https://mdos-ftp-api.${process.env.ROOT_DOMAIN}/credentials`,
+                { tenantName },
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+            return credentials.data;
+        } catch (error) {
+            console.log(error)
+            throw error
+        }
     }
 
     /**
-     * startDispatch
+     * removeFtpdCredentials
+     * @param {*} tenantName 
      */
-     start() {
-        // this.ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
-        //     const sessionCreds = this.CRED_SESSIONS.find(s => s.username == username && s.password == password)
-        //     if (sessionCreds) {
-        //         clearTimeout(sessionCreds.credsTimeout)
-        //         sessionCreds.activeConnectionIds.push(connection.id)
-                
-        //         this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == username ? sessionCreds : session)
-        //         return resolve({ root: sessionCreds.path });
-        //     }
-        //     return reject(new Error('Wrong username / password combination'));
-        // });
-
-        // this.ftpServer.on('disconnect', ({connection, id, newConnectionCount}) => { 
-        //     const sessionCreds = this.CRED_SESSIONS.find(s => s.activeConnectionIds.find(acid => acid == connection.id))
-        //     if(sessionCreds) {
-        //         sessionCreds.activeConnectionIds = sessionCreds.activeConnectionIds.filter(acid => acid != connection.id)
-        //         if(sessionCreds.activeConnectionIds.length == 0) {
-        //             sessionCreds.credsTimeout = setTimeout(function(_usr) {
-        //                 this.CRED_SESSIONS = this.CRED_SESSIONS.filter(s => s.username != _usr)
-        //             }.bind(this, sessionCreds.username), 1000 * 20)
-        //         }
-        //         this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == sessionCreds.username ? sessionCreds : session)
-        //     }
-        // });
-
-        // this.ftpServer.listen().then(() => {
-        //     console.log('FTP Server started!');
-        // });
+     async removeFtpdCredentials(tenantName) {
+        try {
+            await this._mdosFtpApiAuthenticate();
+            await axios.delete(
+                `https://mdos-ftp-api.${process.env.ROOT_DOMAIN}/credentials/${tenantName}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                }
+            )
+        } catch (error) {
+            console.log(error)
+            throw error
+        }
     }
 }
 

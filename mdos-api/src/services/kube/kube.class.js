@@ -25,10 +25,17 @@ exports.Kube = class Kube extends KubeCore {
      * @return {*} 
      */
     async find(params, context) {
+        /******************************************
+         *  LOOKUP NAMESPACES
+         ******************************************/
         if (params.query.target == 'namespaces') {
             const nsListEnriched = await this.getEnrichedNamespaces(params.query.realm, params.query.includeKcClients)
             return nsListEnriched
-        } else if (params.query.target == 'applications') {
+        }
+        /******************************************
+         *  LOOKUP NAMESPACE APPLICATIONS
+         ******************************************/
+        else if (params.query.target == 'applications') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')
@@ -48,13 +55,20 @@ exports.Kube = class Kube extends KubeCore {
      * @return {*} 
      */
     async create(data, params) {
+        /******************************************
+         *  CREATE / UPDATE SECRET
+         ******************************************/
         if (data.type == 'secret') {
             if (await this.app.get('kube').hasSecret(data.namespace, data.name)) {
                 await this.app.get('kube').replaceSecret(data.namespace, data.name, data.data)
             } else {
                 await this.app.get('kube').createSecret(data.namespace, data.name, data.data)
             }
-        } else if (data.type == 'tenantNamespace') {
+        } 
+        /******************************************
+         *  CREATE NEW TENANT NAMESPACE
+         ******************************************/
+        else if (data.type == 'tenantNamespace') {
             // Make sure keycloak is deployed
             await this.keycloakInstallCheck()
 
@@ -97,22 +111,28 @@ exports.Kube = class Kube extends KubeCore {
                 throw error
             }
 
-            // Create Minio bucket and credentials
-            // try {
-            //     const credentials = await this.app.get('s3').createNamespaceBucket(data.namespace.toLowerCase())
-            //     await this.app.get('s3').storeNamespaceCredentials(data.namespace.toLowerCase(), credentials)
-            // } catch (error) {
-            //     // Clean up
-            //     if (nsCreated)
-            //         try {
-            //             await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
-            //         } catch (err) {}
+            // Create ftpd credentials
+            try {
+                const nsName = data.namespace.toLowerCase()
+                const secretName = `ftpd-${nsName}-creds`
+                const credentials = await this.app.get("ftpServer").createFtpdCredentials(nsName)
+                const secretExists = await this.app.get('kube').hasSecret("mdos", secretName)
+                if(secretExists)
+                    await this.app.get('kube').replaceSecret("mdos", secretName, credentials)
+                else
+                    await this.app.get('kube').createSecret("mdos", secretName, credentials)
+            } catch (error) {
+                // Clean up
+                if (nsCreated)
+                    try {
+                        await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
+                    } catch (err) {}
 
-            //     try {
-            //         if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
-            //     } catch (err) {}
-            //     throw error
-            // }
+                try {
+                    if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
+                } catch (err) {}
+                throw error
+            }
 
             // Create SA user for registry and give it registry-pull role
             const saUser = nanoid().toLowerCase()
@@ -161,6 +181,9 @@ exports.Kube = class Kube extends KubeCore {
      * @return {*} 
      */
     async remove(id, params) {
+        /******************************************
+         *  DELETE TENANT NAMESPACE
+         ******************************************/
         if (params.query.target == 'tenantNamespace') {
             // Make sure keycloak is deployed
             await this.keycloakInstallCheck()
@@ -181,9 +204,13 @@ exports.Kube = class Kube extends KubeCore {
             // Delete keycloak client
             if (clientFound) await this.app.get('keycloak').deleteClient(params.query.realm, clientFound.id)
 
-            // Delete S3 secrets & bucket, make non fatal / non blocking
+            // Delete FTPD secrets & credentials, make non fatal / non blocking
             try {
-                await this.app.get('ftpServer').deleteNamespaceVolume(id.toLowerCase())
+                const nsName = clientFound.id.toLowerCase()
+                // Detete pure-ftpd credentials
+                await this.app.get('ftpServer').removeFtpdCredentials(nsName)
+                // Detete ftp credentials from mdos namespace
+                await this.app.get('kube').deleteSecret("mdos", `ftpd-${nsName}-creds`)
             } catch (_e) {
                 console.log(_e)
             }
@@ -195,7 +222,11 @@ exports.Kube = class Kube extends KubeCore {
 
             // Delete namespace
             if (nsExists) await this.app.get('kube').deleteNamespace(id.toLowerCase())
-        } else if (params.query.target == 'application') {
+        }
+        /******************************************
+         *  UNINSTALL / DELETE APPLICATION
+         ******************************************/
+        else if (params.query.target == 'application') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')

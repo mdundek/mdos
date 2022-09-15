@@ -1535,6 +1535,9 @@ install_helm_ftp() {
         echo "          - keycloak.$DOMAIN"
         echo "          - longhorn.$DOMAIN"
         echo ""
+        echo "      You will have to allow inbound traffic on the following ports:"
+        echo "          - 443 (HTTPS traffic)"
+        echo "          - 3915:3920 (TCP - FTP PSV traffic)"
 
         note_print "Log details of the installation can be found here: $LOG_FILE"
 

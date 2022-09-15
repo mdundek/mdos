@@ -35,7 +35,7 @@ class MdosCore extends CommonCore {
 
         // For dev purposes only, used if auth is disabled
         if (process.env.NO_ADMIN_AUTH == 'true') {
-            userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+            userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
             userData.roles = [`mdostnt-name-${params.namespace}`, 'mdostnt-volume-sync']
             return userData
         }
@@ -52,11 +52,11 @@ class MdosCore extends CommonCore {
             for (let ns of allNs) {
                 if(params.namespace == ns) {
                     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
-                        userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                        userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
                     } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('admin')) {
-                        userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                        userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
                     } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('ftp-write')) {
-                        userData.lftpCreds = this.app.get('ftpServer').generateSessionCredentials(params.namespace, params.appName)
+                        userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
                     }
                 }
             }
@@ -98,7 +98,7 @@ class MdosCore extends CommonCore {
 
         // If sync volues , make sure we have a minio secret
         if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
-            valuesYaml.ftpCredentials = this.app.get("ftpServer").generateSessionCredentials(valuesYaml.tenantName, valuesYaml.appName)
+            valuesYaml.ftpCredentials = await this.app.get('kube').getSecret("mdos", `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
 
         // Iterate over components and proces one by one

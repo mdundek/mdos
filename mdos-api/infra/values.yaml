@@ -38,7 +38,7 @@ components:
           - key: RUN_TARGET
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
-            value: "30915"
+            value: "3915"
 
     secrets:
       - name: creds

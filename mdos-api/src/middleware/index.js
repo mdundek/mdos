@@ -14,7 +14,5 @@ module.exports = function (app) {
     app.set('schemaValidator', {
         v1: new SchemaValidator('v1'),
     })
-    const ftpServer = new FtpServer(app);
-    ftpServer.start();
-    app.set('ftpServer', ftpServer)
+    app.set('ftpServer', new FtpServer(app))
 }
