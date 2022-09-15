@@ -201,13 +201,14 @@ const _isPositiveInteger = (str) => {
  * Synchronize current vvolume over lftp
  *
  * @param {*} sourceDir
+ * @param {*} appName
  * @param {*} creds
  * @return {*} 
  */
-const lftp = async (sourceDir, creds) => {
+const lftp = async (sourceDir, appName, creds) => {
     try {
         CliUx.ux.action.start(`Synching volumes`)
-        const result = await terminalCommand(`docker run --name mdos-mirror-lftp --rm -e PROTOCOL=${creds.protocol} -e HOST=${creds.host} -e PORT=${creds.port} -e USERNAME=${creds.username} -e PASSWORD=${creds.password} -e LOCAL_DIR=/usr/src/volumes -e REMOTE_DIR=./ -e PARALLEL=2 -v ${sourceDir}:/usr/src/volumes registry.mdundek.network/mdos-mirror-lftp:latest sh /usr/local/bin/r-mirror.sh`)
+        const result = await terminalCommand(`docker run --name mdos-mirror-lftp --rm -e PROTOCOL=${creds.protocol} -e HOST=${creds.host} -e PORT=${creds.port} -e USERNAME=${creds.username} -e PASSWORD=${creds.password} -e LOCAL_DIR=/usr/src/${appName} -e REMOTE_DIR=./ -e PARALLEL=2 -v ${sourceDir}:/usr/src/${appName}/volumes registry.mdundek.network/mdos-mirror-lftp:latest sh /usr/local/bin/r-mirror.sh`)
         CliUx.ux.action.stop()
         return result.length > 0
     } catch (err) {

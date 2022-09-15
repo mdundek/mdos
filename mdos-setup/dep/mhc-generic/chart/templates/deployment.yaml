@@ -62,22 +62,22 @@ spec:
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-= INIT CONTAINER =-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
 
-    {{- $srcBuckets := "" }}
+    {{- $srcPaths := "" }}
     {{- $dstPaths := "" }}
     {{- $mdosSyncs := "" }}
 
     {{- range .volumes }}
       {{- if .syncVolume }}
-        {{- if $srcBuckets }}
-          {{-  $bucketSrcPath := printf "%s/%s" "volumes" .name -}}
+        {{- if $srcPaths }}
+          {{-  $volumeSrcPath := printf "%s/%s/%s" $appName "volumes" .name -}}
 
-          {{- $srcBuckets = print $srcBuckets  ";" $bucketSrcPath -}}
+          {{- $srcPaths = print $srcPaths  ";" $volumeSrcPath -}}
           {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
-          {{- $mdosSyncs = print $srcBuckets  " " .syncVolume -}}
+          {{- $mdosSyncs = print $srcPaths  " " .syncVolume -}}
         {{- else }}
-          {{-  $bucketSrcPath := printf "%s/%s" "volumes" .name -}}
+          {{-  $volumeSrcPath := printf "%s/%s/%s" $appName "volumes" .name -}}
 
-          {{- $srcBuckets = print $bucketSrcPath -}}
+          {{- $srcPaths = print $volumeSrcPath -}}
           {{- $dstPaths = print .mountPath -}}
           {{- $mdosSyncs = print .syncVolume -}}
         {{- end }}
@@ -100,7 +100,7 @@ spec:
           - /usr/local/bin/mirror.sh
         env: 
         - name: SYNC_SOURCE_DIR
-          value: {{ $srcBuckets }}
+          value: {{ $srcPaths }}
         - name: SYNC_TARGET_DIR
           value: {{ $dstPaths }}
         - name: FTP_USERNAME

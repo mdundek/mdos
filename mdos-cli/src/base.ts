@@ -6,13 +6,15 @@ const os = require('os')
 const path = require('path')
 const inquirer = require('inquirer')
 const open = require('open')
+const https = require('https')
 const axios = require('axios').default
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage, getConsoleLineHandel } = require('./lib/tools')
 const SocketManager = require('./lib/socket.js')
 
 type AxiosConfig = {
     timeout: number
-    headers?: any
+    headers?: any,
+    httpsAgent?: any
 }
 
 /**
@@ -110,7 +112,9 @@ export default abstract class extends Command {
         // Set oauth2 cookie if necessary
         const axiosConfig: AxiosConfig = {
             timeout: 0,
+            httpsAgent: new https.Agent({ rejectUnauthorized: false })
         }
+
         if (this.authMode == 'oidc') {
             const kcCookie = this.getConfig('OIDC_COOKIE')
             axiosConfig.headers = { Cookie: `_oauth2_proxy=${kcCookie};` }

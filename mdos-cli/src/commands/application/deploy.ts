@@ -142,7 +142,7 @@ export default class Deploy extends Command {
 
         // Sync volumes
         let volSourcePath = path.join(appRootDir, 'volumes')
-        const volumeUpdates = await lftp(this.getConfig('MDOS_API_URI'), volSourcePath, userInfo.data.lftpCreds)
+        const volumeUpdates = await lftp(volSourcePath, appYaml.appName, userInfo.data.lftpCreds)
 
         // Build / push application
         for (let appComp of appYaml.components) {
@@ -164,7 +164,6 @@ export default class Deploy extends Command {
             this.showError(err)
             process.exit(1)
         }
-        
 
         let errorMsg: string | null = null
         // Make sure deployed apps with same uuid do not have different names
