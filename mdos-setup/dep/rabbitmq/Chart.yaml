@@ -1,0 +1,23 @@
+annotations:
+  category: Infrastructure
+apiVersion: v2
+appVersion: 3.9.7
+dependencies:
+  - name: common
+    tags:
+      - scds-common
+    version: 1.10.0
+description: Open source message broker software that implements the Advanced Message Queuing Protocol (AMQP)
+engine: gotpl
+keywords:
+  - rabbitmq
+  - message queue
+  - AMQP
+maintainers:
+  - email: nicolas.ydder.external@airbus.com
+    name: SCDS / AirSpace Link
+name: rabbitmq
+sources:
+  - https://github.airbus.corp/Airbus/scds-2u32-vnsu-broker
+  - https://www.rabbitmq.com
+version: 8.23.1

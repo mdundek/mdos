@@ -219,6 +219,9 @@ dependencies() {
                     fi
                 done
             fi
+            
+            # Install docker compose
+            apt-get install docker-compose-plugin -y &>> $LOG_FILE
         fi
     fi
 }
@@ -716,28 +719,28 @@ install_nginx() {
                 ufw allow 443 &>> $LOG_FILE
                 echo ""
             fi
-            if [ "$(ufw status | grep '30915' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30915 &>> $LOG_FILE
+            if [ "$(ufw status | grep '3915' | grep 'ALLOW')" == "" ]; then
+                ufw allow 3915 &>> $LOG_FILE
                 echo ""
             fi
-            if [ "$(ufw status | grep '30916' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30916 &>> $LOG_FILE
+            if [ "$(ufw status | grep '3916' | grep 'ALLOW')" == "" ]; then
+                ufw allow 3916 &>> $LOG_FILE
                 echo ""
             fi
-            if [ "$(ufw status | grep '30917' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30917 &>> $LOG_FILE
+            if [ "$(ufw status | grep '3917' | grep 'ALLOW')" == "" ]; then
+                ufw allow 3917 &>> $LOG_FILE
                 echo ""
             fi
-            if [ "$(ufw status | grep '30918' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30918 &>> $LOG_FILE
+            if [ "$(ufw status | grep '3918' | grep 'ALLOW')" == "" ]; then
+                ufw allow 3918 &>> $LOG_FILE
                 echo ""
             fi
-            if [ "$(ufw status | grep '30919' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30919 &>> $LOG_FILE
+            if [ "$(ufw status | grep '3919' | grep 'ALLOW')" == "" ]; then
+                ufw allow 3919 &>> $LOG_FILE
                 echo ""
             fi
-            if [ "$(ufw status | grep '30920' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30920 &>> $LOG_FILE
+            if [ "$(ufw status | grep '3920' | grep 'ALLOW')" == "" ]; then
+                ufw allow 3920 &>> $LOG_FILE
                 echo ""
             fi
         fi
@@ -1239,21 +1242,6 @@ config:
 # ############### INSTALL MDOS ###############
 # ############################################
 install_mdos() {
-    # Collect registry size
-    question "Users will be able to easiely synchronize / mirror their static datasets with application during deployments. This requires that the data is stored on the MDos API server so that the user who deploys his/het application can synchronize that data with the platform upfront. Once done, the deploying application can automatically update / mirror those changes to your PODs before your application actually starts."
-    question "Please note that this data will remain on the MDos API server side volume until the namespace / tenant is deleted, or that you explicitely requested a volume folder to be deleted."
-    question "Keeping the data available enables you to easiely do delta sync operations iteratively without having to upload it all every time you change your datasets."
-    question "Please consider this carefully before allocating a size to this volume."
-    echo ""
-    user_input FTP_SYNC_SIZE "How many Gi (Gigabytes) do you want to allocate to the FTP sync volume:"
-    re='^[0-9]+$'
-    while ! [[ $FTP_SYNC_SIZE =~ $re ]] ; do
-        error "Invalide number, ingeger representing Gigabytes is expected"
-        user_input FTP_SYNC_SIZE "How many Gi do you want to allocate to your FTP sync volume:"
-    done
-
-    info "Installing..."
-
     # Build mdos-api image
     cd ../mdos-api
     echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
@@ -1354,7 +1342,6 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[3].size = "'$FTP_SYNC_SIZE'Gi"')
     
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 
@@ -1425,6 +1412,46 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
+}
+
+# ############################################
+# ########### INSTALL HELM FTP REG ###########
+# ############################################
+install_helm_ftp() {
+    # Collect registry size
+    question "Users will be able to easiely synchronize / mirror their static datasets with application during deployments. This requires that the data is stored on the MDos platform so that the user who deploys his/her applications can synchronize that data with the platform upfront. Once done, the deploying application can automatically update / mirror those changes to your PODs before your application actually starts."
+    question "Please note that this data will remain on the MDos platform until the namespace / tenant is deleted, or that you explicitely requested a volume folder to be deleted."
+    question "Keeping the data available enables you to easiely do delta sync operations iteratively without having to upload it all every time you change your datasets."
+    question "You can store this buffered data on any partition folder you like."
+    echo ""
+    user_input FTP_DATA_HOME "Enter a full path to use to store all tenant / namespace volume data for synchronization purposes:"
+    while [ ! -d $FTP_DATA_HOME ] ; do
+        error "Invalide path or path does not exist"
+        user_input FTP_DATA_HOME "Enter a full path to use to store all tenant / namespace volume data for synchronization purposes:"
+    done
+
+    info "Installing..."
+
+    # Build mdos-api image
+    cd ../mdos-ftp
+    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-ftp-bot:latest . &>> $LOG_FILE
+    docker push registry.$DOMAIN/mdos-ftp-bot:latest &>> $LOG_FILE
+    cd ../mdos-setup
+
+    mkdir -p $HOME/.mdos/pure-ftpd/passwd
+    cp ./dep/pure-ftpd/docker-compose.yaml $HOME/.mdos/pure-ftpd
+    cd $HOME/.mdos/pure-ftpd
+
+    FTP_DOCKER_COMPOSE_VAL="$(cat ./docker-compose.yaml)"
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.image = "registry.'$DOMAIN'/mdos-ftp-bot:latest"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[0] = "'$FTP_DATA_HOME':/home/ftp_data/"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[1] = "'$HOME'/.mdos/pure-ftpd/passwd:/etc/pure-ftpd/passwd"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment[1] = "'$KEYCLOAK_USER'"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment[2] = "'$KEYCLOAK_PASS'"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment[5] = "mdos-ftp.'$DOMAIN'"')
+
+    docker compose up -d
 }
 
 
@@ -1502,7 +1529,7 @@ EOF
         fi
         info "The following services are available on the platform:"
         echo "          - mdos-api.$DOMAIN"
-        echo "          - mdos-ftp.$DOMAIN"
+        echo "          - mdos-ftp.$DOMAIN:3915"
         echo "          - registry.$DOMAIN"
         echo "          - registry-auth.$DOMAIN"
         echo "          - keycloak.$DOMAIN"
@@ -1685,9 +1712,16 @@ EOF
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
     fi
 
+    # INSTALL MDOS FTP
+    if [ -z $INST_STEP_MDOS_FTP ]; then
+        info "Install MDos FTP server"
+        install_helm_ftp
+        set_env_step_data "INST_STEP_MDOS_FTP" "1"
+    fi
+
     # INSTALL MDOS
     if [ -z $INST_STEP_MDOS ]; then
-        info "Install MDos API server"
+        info "Install MDos API server..."
         install_mdos
         set_env_step_data "INST_STEP_MDOS" "1"
     fi

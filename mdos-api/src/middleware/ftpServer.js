@@ -26,7 +26,7 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
 
         const psvUrl = process.env.RUNTIME == "local" ? "0.0.0.0" : `mdos-ftp.${process.env.ROOT_DOMAIN}`
         if (process.env.FTP_SERVER_TLS_KEY_PATH && process.env.FTP_SERVER_TLS_KEY_PATH.length > 0) {
-            ftpServOptions.url = `ftps://${psvUrl}:${process.env.FTP_SERVER_MAIN_PORT}`;
+            ftpServOptions.url = `ftps://0.0.0.0:${process.env.FTP_SERVER_MAIN_PORT}`;
             ftpServOptions.pasv_url = `ftps://${psvUrl}`;
             ftpServOptions.tls = {
                 key: fs.readFileSync(process.env.FTP_SERVER_TLS_KEY_PATH, 'utf8'),
@@ -36,11 +36,11 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
                 ftpServOptions.tls.ca = fs.readFileSync(process.env.FTP_SERVER_TLS_CA_PATH, 'utf8');
             }
         } else {
-            ftpServOptions.url = `ftp://${psvUrl}:${process.env.FTP_SERVER_MAIN_PORT}`;
+            ftpServOptions.url = `ftp://0.0.0.0:${process.env.FTP_SERVER_MAIN_PORT}`;
             ftpServOptions.pasv_url = `ftp://${psvUrl}`;
         }
         this.CRED_SESSIONS = []
-        this.ftpServer = new FtpSrv(ftpServOptions);
+        // this.ftpServer = new FtpSrv(ftpServOptions);
     }
 
     /**
@@ -86,34 +86,34 @@ const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxy
      * startDispatch
      */
      start() {
-        this.ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
-            const sessionCreds = this.CRED_SESSIONS.find(s => s.username == username && s.password == password)
-            if (sessionCreds) {
-                clearTimeout(sessionCreds.credsTimeout)
-                sessionCreds.activeConnectionIds.push(connection.id)
+        // this.ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
+        //     const sessionCreds = this.CRED_SESSIONS.find(s => s.username == username && s.password == password)
+        //     if (sessionCreds) {
+        //         clearTimeout(sessionCreds.credsTimeout)
+        //         sessionCreds.activeConnectionIds.push(connection.id)
                 
-                this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == username ? sessionCreds : session)
-                return resolve({ root: sessionCreds.path });
-            }
-            return reject(new Error('Wrong username / password combination'));
-        });
+        //         this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == username ? sessionCreds : session)
+        //         return resolve({ root: sessionCreds.path });
+        //     }
+        //     return reject(new Error('Wrong username / password combination'));
+        // });
 
-        this.ftpServer.on('disconnect', ({connection, id, newConnectionCount}) => { 
-            const sessionCreds = this.CRED_SESSIONS.find(s => s.activeConnectionIds.find(acid => acid == connection.id))
-            if(sessionCreds) {
-                sessionCreds.activeConnectionIds = sessionCreds.activeConnectionIds.filter(acid => acid != connection.id)
-                if(sessionCreds.activeConnectionIds.length == 0) {
-                    sessionCreds.credsTimeout = setTimeout(function(_usr) {
-                        this.CRED_SESSIONS = this.CRED_SESSIONS.filter(s => s.username != _usr)
-                    }.bind(this, sessionCreds.username), 1000 * 20)
-                }
-                this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == sessionCreds.username ? sessionCreds : session)
-            }
-        });
+        // this.ftpServer.on('disconnect', ({connection, id, newConnectionCount}) => { 
+        //     const sessionCreds = this.CRED_SESSIONS.find(s => s.activeConnectionIds.find(acid => acid == connection.id))
+        //     if(sessionCreds) {
+        //         sessionCreds.activeConnectionIds = sessionCreds.activeConnectionIds.filter(acid => acid != connection.id)
+        //         if(sessionCreds.activeConnectionIds.length == 0) {
+        //             sessionCreds.credsTimeout = setTimeout(function(_usr) {
+        //                 this.CRED_SESSIONS = this.CRED_SESSIONS.filter(s => s.username != _usr)
+        //             }.bind(this, sessionCreds.username), 1000 * 20)
+        //         }
+        //         this.CRED_SESSIONS = this.CRED_SESSIONS.map(session => session.username == sessionCreds.username ? sessionCreds : session)
+        //     }
+        // });
 
-        this.ftpServer.listen().then(() => {
-            console.log('FTP Server started!');
-        });
+        // this.ftpServer.listen().then(() => {
+        //     console.log('FTP Server started!');
+        // });
     }
 }
 

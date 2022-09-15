@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  mdos_ftpd_server:
+    image: registry.mdundek.network/mdos-ftp-bot:latest
+    container_name: mdos-ftpd-bot
+    ports:
+      - "3039:3039"
+      - "3915:21"
+      - "3916-3920:3916-3920"
+    volumes:
+      - "~/.mdos/ftp-data/userdata:/home/ftp_data/"
+      - "~/.mdos/ftp-data/passwd:/etc/pure-ftpd/passwd"
+      # - "/etc/letsencrypt/live/<your_server>/fullchain.pem:/etc/ssl/private/pure-ftpd-cert.pem"
+      # - "/etc/letsencrypt/live/<your_server>/privkey.pem:/etc/ssl/private/pure-ftpd-key.pem"
+    environment:
+      FTP_HOME_ROOT: /home/ftp_data
+      M2M_USER: mdundek
+      M2M_PASSWORD: li14ebe14
+      FTP_SERVER_MAIN_PORT: "3915"
+      FTP_PASSIVE_PORTS: 3916:3920
+      PUBLICHOST: "mdos-ftp.mdundek.network"
+      # ADDED_FLAGS: "--tls=2"
+    restart: always

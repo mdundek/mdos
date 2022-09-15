@@ -10,35 +10,15 @@ components:
     tag: latest
     imagePullSecrets:
       - name: regcred
-    imagePullpolicy: Always
+    imagePullPolicy: Always
     services:
       - name: http
         ports:
           - name: http-3030
             port: 3030
-      - name: tcp-ftp
-        type: NodePort
-        ports:
-          - name: tcp-3915
-            port: 3915
-            nodePort: 30915
-          - name: tcp-3916
-            port: 3916
-            nodePort: 30916
-          - name: tcp-3917
-            port: 3917
-            nodePort: 30917
-          - name: tcp-3918
-            port: 3918
-            nodePort: 30918
-          - name: tcp-3919
-            port: 3919
-            nodePort: 30919
-          - name: tcp-3920
-            port: 3920
-            nodePort: 30920
+
     ingress:
-      - name: ingress
+      - name: http-ingress
         matchHost: mdos-api.mdundek.network
         targetPort: 3030
         trafficType: http
@@ -59,18 +39,6 @@ components:
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
             value: "30915"
-          - key: FTP_SERVER_PASV_PORT_START
-            value: "30916"
-          - key: FTP_SERVER_PASV_PORT_END
-            value: "30920"
-          - key: FTP_SERVER_TLS_KEY_PATH
-            value: ""
-          - key: FTP_SERVER_TLS_CA_PATH
-            value: ""
-          - key: FTP_SERVER_TLS_CERT_PATH
-            value: ""
-          - key: INBOX_ROOT_FOLDER
-            value: "/usr/volume-mirror"
 
     secrets:
       - name: creds
@@ -108,9 +76,6 @@ components:
       - name: istiod-helm-volume
         mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
         hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
-      - name: ftp-mirror-volume
-        mountPath: /usr/volume-mirror
-        hostPath: /home/mdundek/.mdos/volume-mirror
 
     oidc:
       issuer: https://keycloak.mdundek.network/realms/mdos
