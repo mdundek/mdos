@@ -18,7 +18,7 @@ class PureFtpDaemon {
         this.app = app
         this.CRED_SESSIONS = []
         if(process.env.RUNTIME != "local") {
-            terminalCommandAsync(`bash /run.sh -c 3 -C 5 -l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R -P ${process.env.PUBLICHOST} --daemonize`, (msg) => {
+            terminalCommandAsync(`bash /run.sh -c 3 -C 5 -l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -P ${process.env.PUBLICHOST} --daemonize`, (msg) => {
                 console.log(msg);
             }, (err) => {
                 console.log("ftpd error: ", err);
