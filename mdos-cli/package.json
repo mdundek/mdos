@@ -31,14 +31,11 @@
         "draftlog": "^1.0.13",
         "inquirer": "^8.2.4",
         "nanoid": "^3.3.4",
-        "nconf": "^0.12.0",
         "open": "^8.4.0",
-        "s3-sync-client": "^3.0.3",
         "shelljs": "^0.8.5",
         "socket.io-client": "^2.5.0",
         "treeify": "^1.1.0",
-        "yaml": "^2.1.1",
-        "zip-a-folder": "^1.1.5"
+        "yaml": "^2.1.1"
     },
     "devDependencies": {
         "@oclif/test": "^2",
