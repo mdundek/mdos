@@ -327,6 +327,9 @@ configure_etc_hosts() {
     if [ "$(cat /etc/hosts | grep mdos-ftp.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 mdos-ftp.$DOMAIN" >> /etc/hosts
     fi
+    if [ "$(cat /etc/hosts | grep mdos-ftp-api.$DOMAIN)" == "" ]; then
+        echo "127.0.0.1 mdos-ftp-api.$DOMAIN" >> /etc/hosts
+    fi
     if [ "$(cat /etc/hosts | grep longhorn.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 longhorn.$DOMAIN" >> /etc/hosts
     fi
