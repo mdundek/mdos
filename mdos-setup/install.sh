@@ -15,6 +15,7 @@ fi
 source ./lib/components.sh
 source ./lib/helpers.sh
 
+clear
 echo '
   __  __ ___   ___  ___   ___ _  _ ___ _____ _   _    _    
  |  \/  |   \ / _ \/ __| |_ _| \| / __|_   _/_\ | |  | |   
@@ -76,7 +77,8 @@ done
 # SET UP FIREWALL (ufw)
 if command -v ufw >/dev/null; then
     if [ "$(ufw status | grep 'Status: active')" == "" ]; then
-        yes_no USE_FIREWALL "Your firewall is currently disabled. Do you want to enable it now and configure the necessary ports for the platform?" 1
+        question "Your firewall is currently disabled."
+        yes_no USE_FIREWALL "Do you want to enable it now and configure the necessary ports for the platform?" 1
         if [ "$USE_FIREWALL" == "yes" ]; then
             ufw enable
         fi
@@ -909,12 +911,6 @@ EOL
 # ################# KEYCLOAK #################
 # ############################################
 install_keycloak() {
-    if [ -z $KUBE_ADMIN_EMAIL ]; then
-        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
-        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
-        info "Installing..."
-    fi
-
     # Create keycloak namespace & secrets for registry
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "keycloak"
@@ -1437,10 +1433,10 @@ install_helm_ftp() {
     question "Keeping the data available enables you to easiely do delta sync operations iteratively without having to upload it all every time you change your datasets."
     question "You can store this buffered data on any partition folder you like."
     echo ""
-    user_input FTP_DATA_HOME "Enter a full path to use to store all tenant / namespace volume data for synchronization purposes:"
+    user_input FTP_DATA_HOME "Enter a full path to use to store all tenant/namespace volume data for synchronization purposes:"
     while [ ! -d $FTP_DATA_HOME ] ; do
         error "Invalide path or path does not exist"
-        user_input FTP_DATA_HOME "Enter a full path to use to store all tenant / namespace volume data for synchronization purposes:"
+        user_input FTP_DATA_HOME "Enter a full path to use to store all tenant/namespace volume data for synchronization purposes:"
     done
 
     info "Installing..."
@@ -1576,6 +1572,10 @@ install_helm_ftp() {
         user_input KEYCLOAK_USER "Enter a admin username for the platform:"
         set_env_step_data "KEYCLOAK_USER" "$KEYCLOAK_USER"
     fi
+    if [ -z $KUBE_ADMIN_EMAIL ]; then
+        user_input KUBE_ADMIN_EMAIL "Enter the admin email address for the default keycloak client user:"
+        set_env_step_data "KUBE_ADMIN_EMAIL" "$KUBE_ADMIN_EMAIL"
+    fi
     if [ -z $KEYCLOAK_PASS ]; then
         user_input KEYCLOAK_PASS "Enter a admin password for the platform:"
         set_env_step_data "KEYCLOAK_PASS" "$KEYCLOAK_PASS"
@@ -1692,11 +1692,7 @@ install_helm_ftp() {
     REALM="mdos"
     CLIENT_ID="mdos"
     if [ -z $INST_STEP_KEYCLOAK ]; then
-        if [ -z $KUBE_ADMIN_EMAIL ]; then
-            info "Install Keycloak"
-        else
-            info "Install Keycloak..."
-        fi
+        info "Install Keycloak..."
         install_keycloak
         set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
         set_env_step_data "INST_STEP_KEYCLOAK" "1"
