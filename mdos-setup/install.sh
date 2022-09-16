@@ -1740,7 +1740,9 @@ install_helm_ftp() {
 
     # COLLECT LOCAL IP FOR NO DNS DOMAINS
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+        set +Ee
         yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
+        set -Ee
         if [ "$DNS_RESOLVABLE" == "no" ]; then
             question "MDos will need to know how to reach it's FTP server from within the cluster without DNS resolution. An IP address is therefore required."
             echo ""
