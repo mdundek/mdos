@@ -1,9 +1,5 @@
 const axios = require('axios')
 const https = require('https')
-const fs = require('fs');
-const nanoid_1 = require('nanoid');
-const path = require('path');
-const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10)
 
 axios.defaults.httpsAgent = new https.Agent({
     rejectUnauthorized: false,
