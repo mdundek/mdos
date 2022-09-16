@@ -1328,20 +1328,15 @@ EOF
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         K3S_REG_DOMAIN="registry.$DOMAIN"
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].oidc)')
-
-        # Add static IP for FTP server id DNS not resolvable
-        yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
-        if [ "$DNS_RESOLVABLE" == "no" ]; then
-            question "MDos will need to know how to reach it's FTP server from within the cluster without DNS resolution. An IP address is therefore required."
-            echo ""
-            user_input LOCAL_IP "Please enter the local IP address for this machine:"
-            MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[6].value = "'$LOCAL_IP'"')
-        fi
     else
         K3S_REG_DOMAIN="registry.$DOMAIN"
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "'$OIDC_ISSUER_URL'"')
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "'$OIDC_JWKS_URI'"')
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
+    fi
+
+    if [ ! -z $NODNS_LOCAL_IP ]; then
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[6].value = "'$NODNS_LOCAL_IP'"')
     fi
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
@@ -1464,7 +1459,12 @@ install_helm_ftp() {
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[1] = "'$HOME'/.mdos/pure-ftpd/passwd:/etc/pure-ftpd/passwd"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_USER = "'$KEYCLOAK_USER'"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_PASSWORD = "'$KEYCLOAK_PASS'"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "mdos-ftp.'$DOMAIN'"')
+    
+    if [ ! -z $NODNS_LOCAL_IP ]; then
+        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "'$NODNS_LOCAL_IP'"')
+    else
+        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "mdos-ftp.'$DOMAIN'"')
+    fi
 
     printf "$FTP_DOCKER_COMPOSE_VAL\n" > ./docker-compose.yaml
 
@@ -1733,6 +1733,16 @@ install_helm_ftp() {
         echo ""
         protect_longhorn
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
+    fi
+
+    # COLLECT LOCAL IP FOR NO DNS DOMAINS
+    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+        yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
+        if [ "$DNS_RESOLVABLE" == "no" ]; then
+            question "MDos will need to know how to reach it's FTP server from within the cluster without DNS resolution. An IP address is therefore required."
+            echo ""
+            user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
+        fi
     fi
 
     # INSTALL MDOS
