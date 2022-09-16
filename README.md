@@ -8,7 +8,7 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 
 <div style="display: flex; align-items: center; justify-content: center">
   <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
-    <img src="https://raw.githubusercontent.com/mdundek/mdos/main/docs/img/overview.png" style="max-width: 100%">
+    <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/img/overview.png?raw=true" style="max-width: 100%">
   </div>
   <div style="padding-right: 20px;">
     <ul>
