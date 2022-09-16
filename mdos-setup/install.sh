@@ -259,7 +259,7 @@ setup_cloudflare_certbot() {
     if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
         question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
         echo ""
-        echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN -d *.minio.$DOMAIN --email $CF_EMAIL --agree-tos -n"
+        echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
         echo ""
 
         yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
@@ -841,7 +841,11 @@ deploy_reg_chart() {
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
 
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
-    
+
+    if [ ! -z $NODNS_LOCAL_IP ]; then
+        REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[1].value = ""')
+    fi
+
     # AUTHENTICATION SCRIPT
     if [ -z $1 ]; then # No auth
         echo "#!/bin/sh
@@ -1385,7 +1389,6 @@ data:
         rewrite name registry.$DOMAIN registry-v2-https.mdos-registry.svc.cluster.local
         rewrite name registry-auth.$DOMAIN registry-auth-https.mdos-registry.svc.cluster.local
         rewrite name keycloak.$DOMAIN keycloak-keycloak-service.keycloak.svc.cluster.local
-        rewrite name minio.$DOMAIN minio.minio.svc.cluster.local
         rewrite name mdos-api.$DOMAIN mdos-api-http.mdos.svc.cluster.local
         prometheus :9153
         forward . /etc/resolv.conf
@@ -1680,6 +1683,18 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_PROXY" "1"
     fi
 
+    # COLLECT LOCAL IP FOR NO DNS DOMAINS
+    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+        set +Ee
+        yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
+        set -Ee
+        if [ "$DNS_RESOLVABLE" == "no" ]; then
+            question "MDos will need to know how to reach it's FTP server from within the cluster without DNS resolution. An IP address is therefore required."
+            echo ""
+            user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
+        fi
+    fi
+
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
         info "Install Registry"
@@ -1734,18 +1749,6 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
     fi
 
-    # COLLECT LOCAL IP FOR NO DNS DOMAINS
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
-        set +Ee
-        yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
-        set -Ee
-        if [ "$DNS_RESOLVABLE" == "no" ]; then
-            question "MDos will need to know how to reach it's FTP server from within the cluster without DNS resolution. An IP address is therefore required."
-            echo ""
-            user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
-        fi
-    fi
-
     # INSTALL MDOS
     if [ -z $INST_STEP_MDOS ]; then
         info "Install MDos API server..."
@@ -1760,7 +1763,7 @@ install_helm_ftp() {
     fi
 
     # ENABLE REGISTRY AUTH
-    if [ -z $INST_STEP_REG_AUTH ]; then
+    if [ -z $INST_STEP_REG_AUTH ] && [ -z $NODNS_LOCAL_IP ]; then
         info "Enabeling MDos registry auth..."
         collect_reg_pv_size
         deploy_reg_chart 1
