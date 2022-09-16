@@ -752,17 +752,21 @@ install_nginx() {
 # ############################################
 # ############# INSTALL REGISTRY #############
 # ############################################
-install_registry() {
-    # Collect registry size
-    question "MDos provides you with a private registry that you can use to store your application images on. This registry is shared amongst all tenants on your cluster (ACL is implemented to protect tenant specific images)."
-    echo ""
-    user_input REGISTRY_SIZE "How many Gi (Gigabytes) do you want to allocate to your registry volume:"
-    re='^[0-9]+$'
-    while ! [[ $REGISTRY_SIZE =~ $re ]] ; do
-        error "Invalide number, ingeger representing Gigabytes is expected"
-        user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
-    done
+collect_reg_pv_size() {
+    if [ -z $REGISTRY_SIZE ]; then
+        # Collect registry size
+        question "MDos provides you with a private registry that you can use to store your application images on. This registry is shared amongst all tenants on your cluster (ACL is implemented to protect tenant specific images)."
+        echo ""
+        user_input REGISTRY_SIZE "How many Gi (Gigabytes) do you want to allocate to your registry volume:"
+        re='^[0-9]+$'
+        while ! [[ $REGISTRY_SIZE =~ $re ]] ; do
+            error "Invalide number, ingeger representing Gigabytes is expected"
+            user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
+        done
+    fi
+}
 
+install_registry() {
     info "Installing..."
 
     # Create kubernetes namespace & secrets for registry
@@ -1427,6 +1431,8 @@ EOF
 # ########### INSTALL HELM FTP REG ###########
 # ############################################
 install_helm_ftp() {
+    C_DIR="$(pwd)"
+    
     # Collect registry size
     question "Users will be able to easiely synchronize / mirror their static datasets with application during deployments. This requires that the data is stored on the MDos platform so that the user who deploys his/her applications can synchronize that data with the platform upfront. Once done, the deploying application can automatically update / mirror those changes to your PODs before your application actually starts."
     question "Please note that this data will remain on the MDos platform until the namespace / tenant is deleted, or that you explicitely requested a volume folder to be deleted."
@@ -1456,11 +1462,15 @@ install_helm_ftp() {
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.image = "registry.'$DOMAIN'/mdos-ftp-bot:latest"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[0] = "'$FTP_DATA_HOME':/home/ftp_data/"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[1] = "'$HOME'/.mdos/pure-ftpd/passwd:/etc/pure-ftpd/passwd"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment[1] = "'$KEYCLOAK_USER'"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment[2] = "'$KEYCLOAK_PASS'"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment[5] = "mdos-ftp.'$DOMAIN'"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_USER = "'$KEYCLOAK_USER'"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_PASSWORD = "'$KEYCLOAK_PASS'"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "mdos-ftp.'$DOMAIN'"')
+
+    printf "$FTP_DOCKER_COMPOSE_VAL\n" > ./docker-compose.yaml
 
     docker compose up -d
+
+    cd $C_DIR
 }
 
 
@@ -1670,6 +1680,7 @@ install_helm_ftp() {
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
         info "Install Registry"
+        collect_reg_pv_size
         install_registry
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
@@ -1724,6 +1735,12 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
     fi
 
+    # INSTALL MDOS
+    if [ -z $INST_STEP_MDOS ]; then
+        info "Install MDos API server..."
+        install_mdos
+    fi
+
     # INSTALL MDOS FTP
     if [ -z $INST_STEP_MDOS_FTP ]; then
         info "Install MDos FTP server"
@@ -1731,16 +1748,10 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_MDOS_FTP" "1"
     fi
 
-    # INSTALL MDOS
-    if [ -z $INST_STEP_MDOS ]; then
-        info "Install MDos API server..."
-        install_mdos
-        set_env_step_data "INST_STEP_MDOS" "1"
-    fi
-
     # ENABLE REGISTRY AUTH
     if [ -z $INST_STEP_REG_AUTH ]; then
         info "Enabeling MDos registry auth..."
+        collect_reg_pv_size
         deploy_reg_chart 1
         set_env_step_data "INST_STEP_REG_AUTH" "1"
     fi
