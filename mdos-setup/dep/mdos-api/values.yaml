@@ -38,6 +38,8 @@ components:
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
             value: "3915"
+          - key: FTP_DOMAIN_OVERWRITE
+            value: ""
 
     secrets:
       - name: creds

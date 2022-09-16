@@ -23,6 +23,8 @@ axios.defaults.httpsAgent = new https.Agent({
      */
      constructor(app) {
         this.app = app;
+        this.ftpApiDomain = process.env.FTP_DOMAIN_OVERWRITE && process.env.FTP_DOMAIN_OVERWRITE.length > 0 ? 
+            process.env.FTP_DOMAIN_OVERWRITE : `mdos-ftp-api.${process.env.ROOT_DOMAIN}`
     }
 
     /**
@@ -32,7 +34,7 @@ axios.defaults.httpsAgent = new https.Agent({
     async _mdosFtpApiAuthenticate() {
         try {
             const token = await axios.post(
-                `https://mdos-ftp-api.${process.env.ROOT_DOMAIN}/authentication`,
+                `https://${this.ftpApiDomain}/authentication`,
                 {
                     "strategy": "local",
                     "email": process.env.REG_USER,
@@ -42,6 +44,7 @@ axios.defaults.httpsAgent = new https.Agent({
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
+                        'Host': `mdos-ftp-api.${process.env.ROOT_DOMAIN}`
                     },
                 }
             )
@@ -61,13 +64,14 @@ axios.defaults.httpsAgent = new https.Agent({
         try {
             await this._mdosFtpApiAuthenticate();
             const credentials = await axios.post(
-                `https://mdos-ftp-api.${process.env.ROOT_DOMAIN}/credentials`,
+                `https://${this.ftpApiDomain}/credentials`,
                 { tenantName },
                 {
                     headers: {
                         Authorization: `Bearer ${this.accessToken}`,
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
+                        'Host': `mdos-ftp-api.${process.env.ROOT_DOMAIN}`
                     },
                 }
             )
@@ -86,12 +90,13 @@ axios.defaults.httpsAgent = new https.Agent({
         try {
             await this._mdosFtpApiAuthenticate();
             await axios.delete(
-                `https://mdos-ftp-api.${process.env.ROOT_DOMAIN}/credentials/${tenantName}`,
+                `https://${this.ftpApiDomain}/credentials/${tenantName}`,
                 {
                     headers: {
                         Authorization: `Bearer ${this.accessToken}`,
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
+                        'Host': `mdos-ftp-api.${process.env.ROOT_DOMAIN}`
                     },
                 }
             )

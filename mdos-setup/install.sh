@@ -1324,6 +1324,15 @@ EOF
     if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         K3S_REG_DOMAIN="registry.$DOMAIN"
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].oidc)')
+
+        # Add static IP for FTP server id DNS not resolvable
+        yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
+        if [ "$DNS_RESOLVABLE" == "no" ]; then
+            question "MDos will need to know how to reach it's FTP server from within the cluster without DNS resolution. An IP address is therefore required."
+            echo ""
+            user_input LOCAL_IP "Please enter the local IP address for this machine:"
+            MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[6].value = "'$LOCAL_IP'"')
+        fi
     else
         K3S_REG_DOMAIN="registry.$DOMAIN"
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "'$OIDC_ISSUER_URL'"')
