@@ -559,7 +559,7 @@ EOF
 
     # Restart codedns to make sure external dns resolution works
     kubectl -n kube-system rollout restart deployment coredns &>> $LOG_FILE
-    sleep 3
+    sleep 10
 }
 
 # ############################################
@@ -1268,10 +1268,12 @@ EOF
     done
     set -Ee
 
+    echo "PASSED THIS POINT" &>> $LOG_FILE
+
     docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
     docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
     docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-    
+    echo "AND THAT POINT" &>> $LOG_FILE
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
@@ -1476,6 +1478,7 @@ EOF
 # ############ COREDNS DOMAIN CFG ############
 # ############################################
 consigure_core_dns_for_self_signed() {
+    echo "===> 1" &>> $LOG_FILE
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 kind: ConfigMap
@@ -1509,6 +1512,7 @@ data:
         loadbalance
     }
 EOF
+    echo "===> 2" &>> $LOG_FILE
     sleep 1
     # Restart the CoreDNS pod
     unset FOUND_RUNNING_POD
@@ -1522,10 +1526,10 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
-
+    echo "===> 3" &>> $LOG_FILE
     kubectl delete pod $COREDNS_POD_NAME -n kube-system &>> $LOG_FILE
     sleep 2
-    
+    echo "===> 4" &>> $LOG_FILE
     unset FOUND_RUNNING_POD
     while [ -z $FOUND_RUNNING_POD ]; do
         while read POD_LINE ; do
@@ -1536,6 +1540,7 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
+    echo "===> 5" &>> $LOG_FILE
 }
 
 # ############################################
@@ -1637,44 +1642,47 @@ install_helm_ftp() {
             docker rmi postgres:13.2-alpine &>> $LOG_FILE
         fi
 
-        if [ -z $GLOBAL_ERROR ]; then
-            echo ""
-            echo "-------------------------------------------------------------------"
-            echo ""
-        fi
-        if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
-            warn "You choose to generate a self signed certificate for this installation."
-            echo "      All certificates are located under the folder $SSL_ROOT."
-            echo "      You can use those certificates to allow your external tools to"
-            echo "      communicate with the platform (ex. docker)."
-            echo ""
-            echo "      Self-signed certificates also impose limitations, the most significant"
-            echo "      one being the inability to use OIDC authentication. MDos will therefore"
-            echo "      fall back to a developement mode and allow you to do direct login"
-            echo "      requests over APIs instead. This is not secure and shoud not be used in"
-            echo "      production environements."
-            echo ""
-            echo "      To talk to your platform from an environement other than this one, you will also need to configure your 'hosts' file in that remote environement with the following resolvers:"
-            echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
-            echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
-            echo "          <MDOS_VM_IP> registry.$DOMAIN"
-            echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
-            echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
-            echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
-            echo ""
-        fi
-        if [ -z $GLOBAL_ERROR ]; then
-            info "The following services are available on the platform:"
-            echo "          - mdos-api.$DOMAIN"
-            echo "          - mdos-ftp.$DOMAIN:3915"
-            echo "          - registry.$DOMAIN"
-            echo "          - registry-auth.$DOMAIN"
-            echo "          - keycloak.$DOMAIN"
-            echo "          - longhorn.$DOMAIN"
-            echo ""
-            echo "      You will have to allow inbound traffic on the following ports:"
-            echo "          - 443 (HTTPS traffic)"
-            echo "          - 3915:3920 (TCP - FTP PSV traffic)"
+        if [ ! -z $MDOS_SUCCESS ]; then
+
+            if [ -z $GLOBAL_ERROR ]; then
+                echo ""
+                echo "-------------------------------------------------------------------"
+                echo ""
+            fi
+            if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+                warn "You choose to generate a self signed certificate for this installation."
+                echo "      All certificates are located under the folder $SSL_ROOT."
+                echo "      You can use those certificates to allow your external tools to"
+                echo "      communicate with the platform (ex. docker)."
+                echo ""
+                echo "      Self-signed certificates also impose limitations, the most significant"
+                echo "      one being the inability to use OIDC authentication. MDos will therefore"
+                echo "      fall back to a developement mode and allow you to do direct login"
+                echo "      requests over APIs instead. This is not secure and shoud not be used in"
+                echo "      production environements."
+                echo ""
+                echo "      To talk to your platform from an environement other than this one, you will also need to configure your 'hosts' file in that remote environement with the following resolvers:"
+                echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
+                echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
+                echo "          <MDOS_VM_IP> registry.$DOMAIN"
+                echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
+                echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
+                echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
+                echo ""
+            fi
+            if [ -z $GLOBAL_ERROR ]; then
+                info "The following services are available on the platform:"
+                echo "          - mdos-api.$DOMAIN"
+                echo "          - mdos-ftp.$DOMAIN:3915"
+                echo "          - registry.$DOMAIN"
+                echo "          - registry-auth.$DOMAIN"
+                echo "          - keycloak.$DOMAIN"
+                echo "          - longhorn.$DOMAIN"
+                echo ""
+                echo "      You will have to allow inbound traffic on the following ports:"
+                echo "          - 443 (HTTPS traffic)"
+                echo "          - 3915:3920 (TCP - FTP PSV traffic)"
+            fi
         fi
 
         note_print "Log details of the installation can be found here: $LOG_FILE"
@@ -1833,4 +1841,6 @@ install_helm_ftp() {
         deploy_reg_chart 1
         set_env_step_data "INST_STEP_REG_AUTH" "1"
     fi
+
+    MDOS_SUCCESS=1
 )
