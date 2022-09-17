@@ -838,31 +838,24 @@ install_nginx() {
         if command -v ufw >/dev/null; then
             if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
                 ufw allow 443 &>> $LOG_FILE
-                echo ""
             fi
             if [ "$(ufw status | grep '3915' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3915 &>> $LOG_FILE
-                echo ""
             fi
             if [ "$(ufw status | grep '3916' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3916 &>> $LOG_FILE
-                echo ""
             fi
             if [ "$(ufw status | grep '3917' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3917 &>> $LOG_FILE
-                echo ""
             fi
             if [ "$(ufw status | grep '3918' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3918 &>> $LOG_FILE
-                echo ""
             fi
             if [ "$(ufw status | grep '3919' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3919 &>> $LOG_FILE
-                echo ""
             fi
             if [ "$(ufw status | grep '3920' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3920 &>> $LOG_FILE
-                echo ""
             fi
         fi
     fi
@@ -1664,14 +1657,14 @@ install_helm_ftp() {
     # COLLECT USER DATA
     collect_user_input
 
+    print_section_title "Installation"
+
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
         info "Update system and install dependencies..."
         dependencies
         set_env_step_data "INST_STEP_DEPENDENCY" "1"
     fi
-
-    echo ""
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
@@ -1777,7 +1770,6 @@ install_helm_ftp() {
     # INSTALL OAUTH2 PROXY
     if [ -z $INST_STEP_OAUTH ]; then
         info "Install OAuth2 proxy..."
-        echo ""
         install_oauth2_proxy
         set_env_step_data "INST_STEP_OAUTH" "1"
     fi
@@ -1785,7 +1777,6 @@ install_helm_ftp() {
     # PROTECT LONGHORN UI
     if [ -z $INST_STEP_LONGHORN_PROTECT ]; then
         info "Protect Longhorn UI..."
-        echo ""
         protect_longhorn
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
     fi
