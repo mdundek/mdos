@@ -1474,7 +1474,7 @@ install_helm_ftp() {
 
     printf "$FTP_DOCKER_COMPOSE_VAL\n" > ./docker-compose.yaml
 
-    docker compose up -d
+    docker compose up -d &>> $LOG_FILE
 
     cd $C_DIR
 }
@@ -1548,6 +1548,7 @@ install_helm_ftp() {
             echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
             echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
             echo "          <MDOS_VM_IP> registry.$DOMAIN"
+            echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
             echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
             echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
             echo ""
