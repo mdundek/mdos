@@ -1258,6 +1258,7 @@ EOF
 
     # Registry might need some time to be up and ready, we therefore loop untill success for first push
     set +Ee
+    PUSHING_DOCKER=1
     while [ -z $KC_PG_SUCCESS ]; do
         docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
         if [ $? -eq 0 ]; then
@@ -1266,26 +1267,24 @@ EOF
             sleep 10
         fi
     done
+    unset PUSHING_DOCKER
     set -Ee
-
-    echo "PASSED THIS POINT" &>> $LOG_FILE
 
     docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
     docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
     docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-    echo "AND THAT POINT" &>> $LOG_FILE
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
     printf "$KEYCLOAK_VAL\n" > ./target_values.yaml
     mdos_deploy_app "false" "true" &>> $LOG_FILE
     rm -rf ./target_values.yaml
+
     # Give it 2 secs to be up & running
     sleep 2
 
 	# Configure API key
 	collect_api_key
-
 	gen_api_token
 	setup_keycloak_mdos_realm
 }
@@ -1357,6 +1356,7 @@ install_mdos() {
     rm -rf helm
 
     set +Ee
+    PUSHING_DOCKER=1
     while [ -z $MDOS_API_PUSH_SUCCESS ]; do
         docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
         if [ $? -eq 0 ]; then
@@ -1365,6 +1365,7 @@ install_mdos() {
             sleep 10
         fi
     done
+    unset PUSHING_DOCKER
     set -Ee
 
     # Build lftp image
@@ -1556,6 +1557,7 @@ install_helm_ftp() {
 
     set +Ee
     unset DKPUSH_SUCCESS
+    PUSHING_DOCKER=1
     while [ -z $DKPUSH_SUCCESS ]; do
         docker push registry.$DOMAIN/mdos-ftp-bot:latest &>> $LOG_FILE
         if [ $? -eq 0 ]; then
@@ -1564,6 +1566,7 @@ install_helm_ftp() {
             sleep 10
         fi
     done
+    unset PUSHING_DOCKER
     set -Ee
 
     cd ../mdos-setup
@@ -1600,11 +1603,14 @@ install_helm_ftp() {
     set -Ee
 
     function _catch {
-        GLOBAL_ERROR=1
-        # Rollback
-        if [ -z $IN_CLEANUP ]; then
-            echo ""
-            error "An error occured"
+        if [ -z $PUSHING_DOCKER ]; then
+            GLOBAL_ERROR=1
+            # Rollback
+            if [ -z $IN_CLEANUP ]; then
+                echo ""
+                error "An error occured"
+                echo "=> ERROR OCCURED" &>> $LOG_FILE
+            fi
         fi
     }
 

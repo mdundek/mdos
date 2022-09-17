@@ -1,30 +1,107 @@
 # Installation & setup
 
-## Install the MDos CLI
 
-The easiest way to install the platform is to use the MDos CLI. Do do so, you will have to clone the repo on your target machine:
+## MDos platform
+
+First, clone this repo on your target machine:
 
 ```sh
 git clone https://github.com/mdundek/mdos.git
 ```
 
-Then install the CLI by executing the following script:
+### Master node & MDos control plane
+
+Then, install the platform by calling the following script as root:
 
 ```sh
-./mdos/cli/install/01_setup_mdos_cmd.sh
+sudo ./mdos-setup/install.sh
 ```
 
-During the installation of the CLI, you will be asked to enter your main domain name.  
+During the installation of the CLI, you will be asked to provide a few details.  
 
-> _Ex. yourdomain.com_  
-> _Enter your root domain name: `yourdomain.com`_
-
-Once done, execute the following command to reload your aliases for the mdos CLI:
+#### Administrator credentials 
 
 ```sh
-source ~/.bashrc
+Admin user account
+-------------------------------------
+Enter a admin username for the platform: mdundek
+
+Enter the admin email address for the default keycloak client user: li14ebe14
+
+Enter a admin password for the platform: li14ebe14
 ```
 
+
+
+
+```
+Domain name and certificate
+-------------------------------------
+>   You already have a certificate and a wild card domain
+>   You have a Cloudflare domain, but no certificates
+>   Generate and use self signed, do not have a domain
+
+Enter your DNS root domain name (ex. mydomain.com): mydomain.com
+
+Is your domain "mydomain.com" resolvable through a public or private DNS server?
+>   Yes
+>   No
+
+MDos will need to know how to reach it's FTP server from within the
+cluster without DNS resolution. An IP address is therefore required.
+
+Please enter the local IP address for this machine: 192.168.50.177
+```
+
+
+
+```
+Kubernetes Storage
+-------------------------------------
+MDos uses Longhorn as the primary storage class for your Kubernetes workload data volumes.
+You can use Longhorn's default storage folder for this (/var/lib/longhorn), or specify
+your own folder path in case you want to mount a external disk as the storage target for
+your platform storage needs.
+
+Would you like to customize the directory path used by longhorn to mount your filesystems at?
+>   Yes
+>   No
+```
+
+```
+Private registry
+-------------------------------------
+MDos provides you with a private registry that you can use to store your application
+images on. This registry is shared amongst all tenants on your cluster (ACL is
+implemented to protect tenant specific images).
+
+How many Gi (Gigabytes) do you want to allocate to your registry volume: 6
+```
+
+```
+FTP volume sync server
+-------------------------------------
+Users will be able to easiely synchronize / mirror their static datasets with application
+during deployments. This requires that the data is stored on the MDos platform so that
+the user who deploys his/her applications can synchronize that data with the platform
+upfront. Once done, the deploying application can automatically update / mirror those
+changes to your PODs before your application actually starts.
+Please note that this data will remain on the MDos platform until the namespace / tenant
+is deleted, or that you explicitely requested a volume folder to be deleted.
+Keeping the data available enables you to easiely do delta sync operations iteratively
+without having to upload it all every time you change your datasets.
+You can store this buffered data on any partition folder you like.
+
+Enter a full path to use to store all tenant/namespace volume data for synchronization purposes: /content/ftpData
+
+WARN: This directory path does not exist.
+Would you like to create this folder?
+>   Yes
+>   No
+```
+
+
+<!-- 
 ## Set up the MDos platform
 
 To install the platform, you can use the `mdos` CLI to do so. For a more granual installation, the setup is split into multiple steps:
@@ -37,10 +114,6 @@ To install the platform, you can use the `mdos` CLI to do so. For a more granual
 * Install a local `NGinx` server as a reverse proxy for your platform (also used to load-balance between nodes if you have more than one)
 * Install a local `private Docker regisytry` on the K3S cluster
 * Install `Pure-ftpd` stack using docker-compose
-
-<!-- ![Platform](img/mdos-platform.png) -->
-
-> NOTE: The GlusterFS shared filesystem is not available at the moment, this is planned for future releases.
 
 The CLI command that will allow you to install each one of these components is `mdos core-setup`:
 
@@ -152,4 +225,4 @@ echo "UUID=445d3106-669d-492e-b537-b444e9a666b2 /media/multimedia ext4 defaults 
 echo "UUID=67643a4b-4bb9-45b2-9530-838bb48deb05 /media/backup ext4 defaults 0 2" >> /etc/fstab
 
 mount -a
-```
+``` -->
