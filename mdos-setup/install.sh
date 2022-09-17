@@ -1262,6 +1262,8 @@ EOF
         docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
         if [ $? -eq 0 ]; then
             KC_PG_SUCCESS=1
+        else
+            sleep 10
         fi
     done
     set -Ee
@@ -1351,7 +1353,17 @@ install_mdos() {
     cp infra/dep/helm/helm .
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
     rm -rf helm
-    docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
+
+    set +Ee
+    while [ -z $MDOS_API_PUSH_SUCCESS ]; do
+        docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            MDOS_API_PUSH_SUCCESS=1
+        else
+            sleep 10
+        fi
+    done
+    set -Ee
 
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
@@ -1536,7 +1548,19 @@ install_helm_ftp() {
     cd ../mdos-ftp
     echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-ftp-bot:latest . &>> $LOG_FILE
-    docker push registry.$DOMAIN/mdos-ftp-bot:latest &>> $LOG_FILE
+
+    set +Ee
+    unset DKPUSH_SUCCESS
+    while [ -z $DKPUSH_SUCCESS ]; do
+        docker push registry.$DOMAIN/mdos-ftp-bot:latest &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DKPUSH_SUCCESS=1
+        else
+            sleep 10
+        fi
+    done
+    set -Ee
+
     cd ../mdos-setup
 
     mkdir -p $HOME/.mdos/pure-ftpd/passwd
