@@ -29,6 +29,5 @@ nav:
     - Home: index.md
     - Install: installation.md
     - Getting started: getting-started.md
-    - Minio S3: minio.md
 plugins:
   - external-markdown
