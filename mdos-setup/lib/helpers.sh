@@ -70,6 +70,16 @@ note_print() {
     echo "${c_note}$1${c_reset}"
 }
 
+context_print() {
+    echo "${c_grey}$1${c_reset}"
+}
+
+print_section_title() {
+    echo ""
+    warn_print "$1"
+    warn_print "-------------------------------------"
+}
+
 error_print() {
     echo "${c_error}$1${c_reset}"
 }
