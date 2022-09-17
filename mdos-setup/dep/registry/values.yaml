@@ -61,7 +61,6 @@ components:
       - name: repo-vol
         mountPath: /var/lib/registry
         size: 10Gi
-    
     hostAliases:
       - ip: ""
         hostNames:

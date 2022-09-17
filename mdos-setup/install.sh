@@ -1340,7 +1340,10 @@ EOF
     fi
 
     if [ ! -z $NODNS_LOCAL_IP ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[6].value = "'$NODNS_LOCAL_IP'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].ip = "'$NODNS_LOCAL_IP'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
+    else
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].hostAliases)')
     fi
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
@@ -1764,7 +1767,7 @@ install_helm_ftp() {
     fi
 
     # ENABLE REGISTRY AUTH
-    if [ -z $INST_STEP_REG_AUTH ] && [ -z $NODNS_LOCAL_IP ]; then
+    if [ -z $INST_STEP_REG_AUTH ]; then
         info "Enabeling MDos registry auth..."
         collect_reg_pv_size
         deploy_reg_chart 1

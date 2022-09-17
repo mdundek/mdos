@@ -38,8 +38,6 @@ components:
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
             value: "3915"
-          - key: FTP_DOMAIN_OVERWRITE
-            value: ""
 
     secrets:
       - name: creds
@@ -70,6 +68,11 @@ components:
         mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
         hostPath: <path to setup folder>/dep/istio_helm/istio-control/istio-discovery
 
+    hostAliases:
+      - ip: ""
+        hostNames:
+          - ""
+          
     oidc:
       issuer: https://keycloak.mydomain.com/realms/mdos
       jwksUri: https://keycloak.mydomain.com/realms/mdos/protocol/openid-connect/certs

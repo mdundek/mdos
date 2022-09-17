@@ -19,8 +19,7 @@ axios.defaults.httpsAgent = new https.Agent({
      */
      constructor(app) {
         this.app = app;
-        this.ftpApiDomain = process.env.FTP_DOMAIN_OVERWRITE && process.env.FTP_DOMAIN_OVERWRITE.length > 0 ? 
-            process.env.FTP_DOMAIN_OVERWRITE : `mdos-ftp-api.${process.env.ROOT_DOMAIN}`
+        this.ftpApiDomain = `mdos-ftp-api.${process.env.ROOT_DOMAIN}`
     }
 
     /**
