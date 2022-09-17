@@ -12,7 +12,7 @@ git clone https://github.com/mdundek/mdos.git
 
 ### Master node & MDos control plane
 
-Then, install the platform by calling the following script as root:
+Install the platform by calling the following script as root:
 
 ```sh
 sudo ./mdos-setup/install.sh
@@ -112,6 +112,31 @@ WARN: This directory path does not exist.
 Would you like to create this folder?
 >   Yes
 >   No
+```
+
+#### Configure Keycloak and set up the master token
+
+After a few minutes (can take up to 10 minutes, depending on your internet speed), you will be asked to set up Keycloak and provide a secret token to the installation script.   
+This token is necessary so that mdos can administer everything it needs on Keycload.  
+The script provides you with detailed instructions on how to do so, simply follow them and enter the secret `token` from the Keycloak website.
+
+```
+To finalyze the setup, do the following:
+
+  1. Open a browser and go to:
+     https://keycloak.mydomain.com/admin/master/console/#/realms/master/clients
+  2. From the 'Clients' section, click on the client 'master-realm'
+  3. Change 'Access Type' value to 'confidential'
+  4. Enable the boolean value 'Service Accounts Enabled'
+  5. Set 'Valid Redirect URIs' value to '*'
+  6. Save those changes (button at the bottom of the page)
+  7. In tab 'Roles', Click on button 'edit' for role 'magage realm'.
+     Enable 'Composite roles' and add 'admin' realm to associated roles
+  8. Go to the 'Service Account Roles' tab and add the role 'admin' to the 'Assigned Roles' box
+  9. Click on tab 'Credentials'
+ 10. When ready, copy and paste the 'Secret' value into this terminal, then press enter:
+
+SECRET: cXXyx8EtGGL8BgCC9zVYQidKYuctzuXA
 ```
 
 
