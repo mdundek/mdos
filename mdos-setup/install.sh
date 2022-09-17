@@ -1497,7 +1497,7 @@ data:
         loadbalance
     }
 EOF
-
+    sleep 1
     # Restart the CoreDNS pod
     unset FOUND_RUNNING_POD
     while [ -z $FOUND_RUNNING_POD ]; do
@@ -1510,7 +1510,10 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
+
     kubectl delete pod $COREDNS_POD_NAME -n kube-system &>> $LOG_FILE
+    sleep 2
+    
     unset FOUND_RUNNING_POD
     while [ -z $FOUND_RUNNING_POD ]; do
         while read POD_LINE ; do
@@ -1610,9 +1613,11 @@ install_helm_ftp() {
             docker rmi postgres:13.2-alpine &>> $LOG_FILE
         fi
 
-        echo ""
-        echo "-------------------------------------------------------------------"
-        echo ""
+        if [ -z $GLOBAL_ERROR ]; then
+            echo ""
+            echo "-------------------------------------------------------------------"
+            echo ""
+        fi
         if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
             warn "You choose to generate a self signed certificate for this installation."
             echo "      All certificates are located under the folder $SSL_ROOT."
@@ -1634,17 +1639,19 @@ install_helm_ftp() {
             echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
             echo ""
         fi
-        info "The following services are available on the platform:"
-        echo "          - mdos-api.$DOMAIN"
-        echo "          - mdos-ftp.$DOMAIN:3915"
-        echo "          - registry.$DOMAIN"
-        echo "          - registry-auth.$DOMAIN"
-        echo "          - keycloak.$DOMAIN"
-        echo "          - longhorn.$DOMAIN"
-        echo ""
-        echo "      You will have to allow inbound traffic on the following ports:"
-        echo "          - 443 (HTTPS traffic)"
-        echo "          - 3915:3920 (TCP - FTP PSV traffic)"
+        if [ -z $GLOBAL_ERROR ]; then
+            info "The following services are available on the platform:"
+            echo "          - mdos-api.$DOMAIN"
+            echo "          - mdos-ftp.$DOMAIN:3915"
+            echo "          - registry.$DOMAIN"
+            echo "          - registry-auth.$DOMAIN"
+            echo "          - keycloak.$DOMAIN"
+            echo "          - longhorn.$DOMAIN"
+            echo ""
+            echo "      You will have to allow inbound traffic on the following ports:"
+            echo "          - 443 (HTTPS traffic)"
+            echo "          - 3915:3920 (TCP - FTP PSV traffic)"
+        fi
 
         note_print "Log details of the installation can be found here: $LOG_FILE"
 
