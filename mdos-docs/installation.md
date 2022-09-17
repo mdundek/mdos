@@ -36,9 +36,9 @@ To install the platform, you can use the `mdos` CLI to do so. For a more granual
 * Install `Istio` for ingress
 * Install a local `NGinx` server as a reverse proxy for your platform (also used to load-balance between nodes if you have more than one)
 * Install a local `private Docker regisytry` on the K3S cluster
-* Install `Minio` for file sharing
+* Install `Pure-ftpd` stack using docker-compose
 
-![Platform](img/mdos-platform.png)
+<!-- ![Platform](img/mdos-platform.png) -->
 
 > NOTE: The GlusterFS shared filesystem is not available at the moment, this is planned for future releases.
 

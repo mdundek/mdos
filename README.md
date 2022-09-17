@@ -34,7 +34,7 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
     - [Advanced volume and storage workflows](#3-advanced-volume-and-storage-workflows)
     - [Multi-tenant based segregation](#4-multi-tenant-based-segregation)
     - [OIDC / OAuth2 authentication & Application RBAC](#5-oidc-oauth2-authentication-application-rbac)
-- [Installation & setup](mdos-docs/infra/mkdocs/docs/installation.md)
+- [Installation & setup](mdos-docs/installation.md)
     - [MDos platform](#overview)
         - [Master node & MDos control plane](#overview)
         - [Worker nodes](#overview)
