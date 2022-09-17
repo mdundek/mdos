@@ -3,6 +3,8 @@
 source ./components.sh
 source ./helpers.sh
 
+pathRe='^/[A-Za-z0-9/_-]+$'
+
 # COLLECT ADMIN CREDS
 print_section_title "Admin user account"
 user_input KEYCLOAK_USER "Enter a admin username for the platform:"
@@ -36,11 +38,23 @@ elif [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         context_print "MDos will need to know how to reach it's FTP server from within the"
         context_print "cluster without DNS resolution. An IP address is therefore required."
         echo ""
-        user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
+
+        unset LOOP_BREAK
+        while [ -z $LOOP_BREAK ]; do
+            user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
+            if [[ $NODNS_LOCAL_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                LOOP_BREAK=1
+            else
+                error "Invalid IP address"
+            fi
+        done
     fi
+else
+    warn "Not implemented yet!"
+    exit 1
 fi
 
-# Install Longhorn
+# LONGHORN
 print_section_title "Kubernetes Storage"
 context_print "MDos uses Longhorn as the primary storage class for your Kubernetes workload data volumes."
 context_print "You can use Longhorn's default storage folder for this (/var/lib/longhorn), or specify"
@@ -52,17 +66,31 @@ yes_no CUSTOM_LH_PATH "Would you like to customize the directory path used by lo
 set -Ee
 
 if [ "$CUSTOM_LH_PATH" == "yes" ]; then
-    user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
-    while [ ! -d $LONGHORN_DEFAULT_DIR ]; do
-        error "Directory does not exist"
-        user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at:"
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        user_input LONGHORN_DEFAULT_DIR "Specify the path where you wish to store your cluster storage data at (absolute path):"
+        if [[ ${LONGHORN_DEFAULT_DIR} =~ $pathRe ]]; then
+            LOOP_BREAK=1
+        else
+            error "Invalid folder path"
+        fi
     done
+    if [ ! -d $LONGHORN_DEFAULT_DIR ]; then
+        warn "This directory path does not exist."
+        set +Ee
+        yes_no CREATE_LG_PATH "Would you like to create this folder?"
+        set -Ee
+        if [ "$CREATE_LG_PATH" == "yes" ]; then
+            mkdir -p $LONGHORN_DEFAULT_DIR
+        else
+            exit 1
+        fi
+    fi
 fi
 
-# collect_reg_pv_size
+# REGISTRY
 print_section_title "Private registry"
 if [ -z $REGISTRY_SIZE ]; then
-    # Collect registry size
     context_print "MDos provides you with a private registry that you can use to store your application"
     context_print "images on. This registry is shared amongst all tenants on your cluster (ACL is"
     context_print "implemented to protect tenant specific images)."
@@ -75,7 +103,7 @@ if [ -z $REGISTRY_SIZE ]; then
     done
 fi
 
-# install_helm_ftp
+# FTP
 print_section_title "FTP volume sync server"
 context_print "Users will be able to easiely synchronize / mirror their static datasets with application"
 context_print "during deployments. This requires that the data is stored on the MDos platform so that"
@@ -88,8 +116,24 @@ context_print "Keeping the data available enables you to easiely do delta sync o
 context_print "without having to upload it all every time you change your datasets."
 context_print "You can store this buffered data on any partition folder you like."
 echo ""
-user_input FTP_DATA_HOME "Enter a full path to use to store all tenant/namespace volume data for synchronization purposes:"
-while [ ! -d $FTP_DATA_HOME ] ; do
-    error "Invalide path or path does not exist"
+
+unset LOOP_BREAK
+while [ -z $LOOP_BREAK ]; do
     user_input FTP_DATA_HOME "Enter a full path to use to store all tenant/namespace volume data for synchronization purposes:"
+    if [[ ${FTP_DATA_HOME} =~ $pathRe ]]; then
+        LOOP_BREAK=1
+    else
+        error "Invalid folder path"
+    fi
 done
+if [ ! -d $FTP_DATA_HOME ]; then
+    warn "This directory path does not exist."
+    set +Ee
+    yes_no CREATE_FTP_PATH "Would you like to create this folder?"
+    set -Ee
+    if [ "$CREATE_FTP_PATH" == "yes" ]; then
+        mkdir -p $FTP_DATA_HOME
+    else
+        exit 1
+    fi
+fi
