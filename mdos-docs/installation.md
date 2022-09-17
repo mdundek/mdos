@@ -22,6 +22,8 @@ During the installation of the CLI, you will be asked to provide a few details.
 
 #### Administrator credentials 
 
+The platform will create a overall admin account on the platform. Please provide the admin username, email and password first:
+
 ```
 Admin user account
 -------------------------------------
@@ -32,8 +34,17 @@ Enter the admin email address for the default keycloak client user: mdundek@myma
 Enter a admin password for the platform: supersecret
 ```
 
-
 #### Domain & certificate setup
+
+Some of the components such as the registry auth server require a TLS certificate to function.  
+The installation script will give you multiple choices here:
+
+1. You have a valid certificate at hand that you would like to use
+2. You have a domain name on `Cloudflare`, and would like to set it up using `LetsEncrypt`
+3. You have no certificate and would like to create a self-signed certificate (only suited for developement purposes)
+
+> :warning: **Warning:** For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.  
+> For production, you will have to use a fully valid certificate in order to use all of MDos features. 
 
 ```
 Domain name and certificate
@@ -51,10 +62,15 @@ Is your domain "mydomain.com" resolvable through a public or private DNS server?
 MDos will need to know how to reach it's FTP server from within the
 cluster without DNS resolution. An IP address is therefore required.
 
-Please enter the local IP address for this machine: 192.168.50.177
+Please enter the local IP address for this machine: XXX.XXX.XXX.XXX
 ```
 
+This example is based on the 3rd option, a self signed certificate.
+
 #### Kubernetes workload storage directory path
+
+When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.  
+MDos uses `Longhorn` from Rancher for this as a storage class. Longhorn will allocate your container volumes in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
 
 ```
 Kubernetes Storage
@@ -78,6 +94,9 @@ Would you like to create this folder?
 
 #### Private registry max size
 
+MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.  
+The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).
+
 ```
 Private registry
 -------------------------------------
@@ -91,6 +110,17 @@ How many Gi (Gigabytes) do you want to allocate to your registry volume: 10
 > :memo: **Note:** Please note that this storage capacity will be located on your main Kubernetes storage path specified above
 
 #### FTP sync server for Kubernetes POD data provisionning
+
+When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using `hostPath` mount points instead. This is an antipatern and does not go well with multi-node cluster environements where you can not easiely predict where your pod is going to start.  
+MDos provides you with a means to initialize your application pods with data pre-alocated to it's volumes. This can be very usefull for usecases such as (but not only):
+
+* Provision a volume with a already pre-established database schema and data set for initialization purposes (or any other type of initialization data sets)
+* Provision static data such as websites
+* or for anything else for that matter...
+
+This is achieved by providing a centralized storage space on the mdos platform where a FTP server will allow you to (using the mdos CLI) mirror your application volume data from your local machine to the centralized FTP storage device where Kubernetes will then mirror those data volumes onto your POD volumes using `initContainers` and the FTP protocol.  
+Here you are being asked to provide a directory path to where this centralized data will be hosted.  
+Again, this is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
 
 ```
 FTP volume sync server
