@@ -1276,6 +1276,8 @@ EOF
     printf "$KEYCLOAK_VAL\n" > ./target_values.yaml
     mdos_deploy_app "false" "true" &>> $LOG_FILE
     rm -rf ./target_values.yaml
+    # Give it 10 secs to be up & running
+    sleep 10
 
 	# Configure API key
 	collect_api_key
