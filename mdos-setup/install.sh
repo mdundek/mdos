@@ -1535,7 +1535,7 @@ install_helm_ftp() {
             echo "      communicate with the platform (ex. docker)."
             echo ""
             echo "      Self-signed certificates also impose limitations, the most significant"
-            echo "      one being thee inability to use OIDC authentication. MDos will therefore"
+            echo "      one being the inability to use OIDC authentication. MDos will therefore"
             echo "      fall back to a developement mode and allow you to do direct login"
             echo "      requests over APIs instead. This is not secure and shoud not be used in"
             echo "      production environements."
