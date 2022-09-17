@@ -2,6 +2,8 @@
 
 ## MDos platform
 
+> :warning: **Warning:** At the moment, only Ubuntu >= 20.04 is supported. Debian and Alpine are planned next
+
 First, clone this repo on your target machine:
 
 ```sh
@@ -86,7 +88,7 @@ implemented to protect tenant specific images).
 How many Gi (Gigabytes) do you want to allocate to your registry volume: 10
 ```
 
-> Please note that this storage capacity will be located on your main Kubernetes storage path specified above
+> :memo: **Note:** Please note that this storage capacity will be located on your main Kubernetes storage path specified above
 
 #### FTP sync server for Kubernetes POD data provisionning
 

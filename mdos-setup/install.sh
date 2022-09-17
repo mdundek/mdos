@@ -740,6 +740,7 @@ install_istio() {
       - content-type" > $_DIR/istiod-values.yaml
       
     helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -f $_DIR/istiod-values.yaml -n istio-system &>> $LOG_FILE
+    rm -rf $_DIR/istiod-values.yaml
 
     info "Waiting for istiod to become ready..."
     ATTEMPTS=0
