@@ -33,7 +33,8 @@ elif [ "$CERT_MODE" == "SELF_SIGNED" ]; then
     yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
     set -Ee
     if [ "$DNS_RESOLVABLE" == "no" ]; then
-        context_print "MDos will need to know how to reach it's FTP server from within the cluster without DNS resolution. An IP address is therefore required."
+        context_print "MDos will need to know how to reach it's FTP server from within the"
+        context_print "cluster without DNS resolution. An IP address is therefore required."
         echo ""
         user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
     fi
@@ -42,7 +43,9 @@ fi
 # Install Longhorn
 print_section_title "Kubernetes Storage"
 context_print "MDos uses Longhorn as the primary storage class for your Kubernetes workload data volumes."
-context_print "You can use Longhorn's default storage folder for this (root user partition), or specify your own folder path in case you want to mount a external disk as the storage target for your platform storage needs."
+context_print "You can use Longhorn's default storage folder for this (/var/lib/longhorn), or specify"
+context_print "your own folder path in case you want to mount a external disk as the storage target for"
+context_print "your platform storage needs."
 echo ""
 set +Ee
 yes_no CUSTOM_LH_PATH "Would you like to customize the directory path used by longhorn to mount your filesystems at?" 1
@@ -60,7 +63,9 @@ fi
 print_section_title "Private registry"
 if [ -z $REGISTRY_SIZE ]; then
     # Collect registry size
-    context_print "MDos provides you with a private registry that you can use to store your application images on. This registry is shared amongst all tenants on your cluster (ACL is implemented to protect tenant specific images)."
+    context_print "MDos provides you with a private registry that you can use to store your application"
+    context_print "images on. This registry is shared amongst all tenants on your cluster (ACL is"
+    context_print "implemented to protect tenant specific images)."
     echo ""
     user_input REGISTRY_SIZE "How many Gi (Gigabytes) do you want to allocate to your registry volume:"
     re='^[0-9]+$'
@@ -72,9 +77,15 @@ fi
 
 # install_helm_ftp
 print_section_title "FTP volume sync server"
-context_print "Users will be able to easiely synchronize / mirror their static datasets with application during deployments. This requires that the data is stored on the MDos platform so that the user who deploys his/her applications can synchronize that data with the platform upfront. Once done, the deploying application can automatically update / mirror those changes to your PODs before your application actually starts."
-context_print "Please note that this data will remain on the MDos platform until the namespace / tenant is deleted, or that you explicitely requested a volume folder to be deleted."
-context_print "Keeping the data available enables you to easiely do delta sync operations iteratively without having to upload it all every time you change your datasets."
+context_print "Users will be able to easiely synchronize / mirror their static datasets with application"
+context_print "during deployments. This requires that the data is stored on the MDos platform so that"
+context_print "the user who deploys his/her applications can synchronize that data with the platform"
+context_print "upfront. Once done, the deploying application can automatically update / mirror those"
+context_print "changes to your PODs before your application actually starts."
+context_print "Please note that this data will remain on the MDos platform until the namespace / tenant"
+context_print "is deleted, or that you explicitely requested a volume folder to be deleted."
+context_print "Keeping the data available enables you to easiely do delta sync operations iteratively"
+context_print "without having to upload it all every time you change your datasets."
 context_print "You can store this buffered data on any partition folder you like."
 echo ""
 user_input FTP_DATA_HOME "Enter a full path to use to store all tenant/namespace volume data for synchronization purposes:"

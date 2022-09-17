@@ -1,4 +1,5 @@
 const { terminalCommand, terminalCommandAsync } = require('../libs/terminal')
+const fs = require('fs');
 const nanoid_1 = require('nanoid');
 const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10)
 
@@ -58,6 +59,10 @@ class PureFtpDaemon {
     async deleteTenantCredentials(tenantName) {
         try {
             await terminalCommand(`pure-pw userdel ${tenantName} -f /etc/pure-ftpd/passwd/pureftpd.passwd -m`)
+            fs.rmdirSync(
+                `${process.env.FTP_HOME_ROOT}/${tenantName}`,
+                { recursive: true, force: true }
+            )
         } catch (error) {
             console.log(error);
         }
