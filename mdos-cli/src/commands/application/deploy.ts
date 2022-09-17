@@ -164,7 +164,7 @@ export default class Deploy extends Command {
             this.showError(err)
             process.exit(1)
         }
-
+        
         let errorMsg: string | null = null
         // Make sure deployed apps with same uuid do not have different names
         for (const deployedApp of deployedApps.data) {
@@ -214,10 +214,10 @@ export default class Deploy extends Command {
             error(errorMsg)
             process.exit(1)
         }
-
+        
         // Init realtime connection
         await this.initSocketIo()
-
+        
         const consoleHandles: any[] = []
         let spinning = false
         let appLogs = {}
@@ -236,7 +236,7 @@ export default class Deploy extends Command {
                 appLogs = data.appLogs
             }
         })
-
+        
         // Deploy app
         CliUx.ux.action.start('Deploying application')
         spinning = true

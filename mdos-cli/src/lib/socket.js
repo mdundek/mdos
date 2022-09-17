@@ -18,14 +18,17 @@ class SocketManager {
     constructor(serverUrl, kcCookie) {
         if (kcCookie) {
             this.socket = io(serverUrl, {
+                rejectUnauthorized: false,
                 extraHeaders: {
                     Cookie: `_oauth2_proxy=${kcCookie};`,
                 },
             })
         } else {
             this.socket = io(serverUrl)
+            this.socket = io(serverUrl, {
+                rejectUnauthorized: false
+            })
         }
-
         this.app = feathers()
 
         // Set up Socket.io client with the socket
