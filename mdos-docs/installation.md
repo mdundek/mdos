@@ -65,7 +65,7 @@ cluster without DNS resolution. An IP address is therefore required.
 Please enter the local IP address for this machine: XXX.XXX.XXX.XXX
 ```
 
-This example is based on the 3rd option, a self signed certificate.
+> This example is based on the 3rd option, a self signed certificate. Other questions will be asked according to your choices.
 
 #### Kubernetes workload storage directory path
 
