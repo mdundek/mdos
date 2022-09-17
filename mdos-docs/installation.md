@@ -1,6 +1,5 @@
 # Installation & setup
 
-
 ## MDos platform
 
 First, clone this repo on your target machine:
@@ -21,18 +20,18 @@ During the installation of the CLI, you will be asked to provide a few details.
 
 #### Administrator credentials 
 
-```sh
+```
 Admin user account
 -------------------------------------
 Enter a admin username for the platform: mdundek
 
-Enter the admin email address for the default keycloak client user: li14ebe14
+Enter the admin email address for the default keycloak client user: mdundek@mymail.com
 
-Enter a admin password for the platform: li14ebe14
+Enter a admin password for the platform: supersecret
 ```
 
 
-
+#### Domain & certificate setup
 
 ```
 Domain name and certificate
@@ -53,7 +52,7 @@ cluster without DNS resolution. An IP address is therefore required.
 Please enter the local IP address for this machine: 192.168.50.177
 ```
 
-
+#### Kubernetes workload storage directory path
 
 ```
 Kubernetes Storage
@@ -66,7 +65,16 @@ your platform storage needs.
 Would you like to customize the directory path used by longhorn to mount your filesystems at?
 >   Yes
 >   No
+
+Specify the path where you wish to store your cluster storage data at (absolute path): /content/kubestorage
+
+WARN: This directory path does not exist.
+Would you like to create this folder?
+>   Yes
+>   No
 ```
+
+#### Private registry max size
 
 ```
 Private registry
@@ -75,8 +83,12 @@ MDos provides you with a private registry that you can use to store your applica
 images on. This registry is shared amongst all tenants on your cluster (ACL is
 implemented to protect tenant specific images).
 
-How many Gi (Gigabytes) do you want to allocate to your registry volume: 6
+How many Gi (Gigabytes) do you want to allocate to your registry volume: 10
 ```
+
+> Please note that this storage capacity will be located on your main Kubernetes storage path specified above
+
+#### FTP sync server for Kubernetes POD data provisionning
 
 ```
 FTP volume sync server
@@ -92,7 +104,7 @@ Keeping the data available enables you to easiely do delta sync operations itera
 without having to upload it all every time you change your datasets.
 You can store this buffered data on any partition folder you like.
 
-Enter a full path to use to store all tenant/namespace volume data for synchronization purposes: /content/ftpData
+Enter a full path to use to store all tenant/namespace volume data for synchronization purposes: /content/ftpstorage
 
 WARN: This directory path does not exist.
 Would you like to create this folder?
