@@ -5,5 +5,12 @@
   "paginate": {
     "default": 10,
     "max": 50
+  },
+  "authentication": {
+    "entity": null,
+    "secret": "WREpVqRef/+pWwfg5Du9CPwDgAk=",
+    "authStrategies": [
+      "keycloak"
+    ]
   }
 }
