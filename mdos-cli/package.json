@@ -4,7 +4,7 @@
     "description": "mdos cli tool",
     "author": "Michael Dundek",
     "bin": {
-        "mdos": "./bin/dev"
+        "mdos": "./bin/run"
     },
     "homepage": "https://github.com/mdos-cli/hello-world",
     "license": "MIT",
