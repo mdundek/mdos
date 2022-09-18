@@ -115,6 +115,54 @@ class Keycloak {
     }
 
     /**
+     * userTokenInstrospect
+     * @param {*} realm 
+     * @param {*} token 
+     */
+    async userTokenInstrospect(realm, token, collectRoles) {
+        if(!this.MDOS_CLIENT_SECRET) {
+            let accessToken = await this._getAccessToken()
+            const clientIdResponse = await terminalCommand(`curl -s -k --request GET \
+                -H "Accept: application/json" \
+                -H "Content-Type:application/json" \
+                -H "Authorization: Bearer ${accessToken}" \
+                https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients?clientId=mdos`)
+            const clientIdJson = JSON.parse(clientIdResponse[0])
+        
+            const clientSecretResponse = await terminalCommand(`curl -k -s --location --request GET \
+                https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientIdJson[0].id}/client-secret \
+                -H "Accept: application/json" \
+                -H "Content-Type:application/json" \
+                -H "Authorization: Bearer ${accessToken}"`)
+            this.MDOS_CLIENT_SECRET = JSON.parse(clientSecretResponse[0]).value
+        }
+
+        const introspectResponse = await terminalCommand(`curl -s -k -X POST \
+            "https://keycloak.${this.rootDomain}/realms/${realm}/protocol/openid-connect/token/introspect" \
+            -H "Content-Type: application/x-www-form-urlencoded"  \
+            -d "client_id=mdos" \
+            -d "client_secret=${this.MDOS_CLIENT_SECRET}" \
+            -d "grant_type=client_credentials" \
+            -d "token=${token}"`)
+
+        let jwtToken = JSON.parse(introspectResponse[0])
+        if(jwtToken.active && collectRoles) {
+            if(!jwtToken.resource_access) {
+                jwtToken.resource_access = {};
+                const userRoles = await this.getUserRoles(realm, jwtToken.preferred_username)
+                const clients = Object.keys(userRoles.clientMappings);
+                for(const client of clients) {
+                    jwtToken.resource_access[client] = {
+                        roles: userRoles.clientMappings[client].mappings.map(rm => rm.name)
+                    }
+                }
+            }
+        }
+
+        return jwtToken 
+    }
+
+    /**
      *
      *
      * @return {*} 

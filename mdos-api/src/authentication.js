@@ -1,5 +1,7 @@
 const { AuthenticationService, AuthenticationBaseStrategy } = require('@feathersjs/authentication')
 const { expressOauth } = require('@feathersjs/authentication-oauth')
+const { NotFound, GeneralError, BadRequest, NotAuthenticated } = require('@feathersjs/errors')
+const jwt_decode = require('jwt-decode')
 
 class KeycloakStrategy extends AuthenticationBaseStrategy {
     /**
@@ -7,40 +9,28 @@ class KeycloakStrategy extends AuthenticationBaseStrategy {
      * @param {*} data
      */
     async authenticate(data) {
-        const { email, password } = data
-
-        console.log('AUTH REQUEST =>', data)
-        // let error = new Error('Unknown user');
-        // error.statusCode = 401;
-        // err.code = 401;
-        // return reject(new NotAuthenticated(error));
-
-        return {
-            authentication: { strategy: this.name },
-            user: {
-                id: '123',
-                username: 'foo',
-                email: 'bar',
-            },
+        const { username, password } = data
+        const userAuthToken = await this.app.get("keycloak").getUserAccessToken("mdos", username, password)
+        if(userAuthToken.error) {
+            let error = new Error('ERROR: Invalide user credentials');
+            error.statusCode = 401;
+            error.code = 401;
+            throw new NotAuthenticated(error);
         }
+        return userAuthToken
     }
 }
 
 class KcAuthService extends AuthenticationService {
     async getPayload(authResult, params) {
-        console.log('authResult=>', authResult)
-        const payload = {
-            id: '456',
-            username: 'foo2',
-            email: 'bar3',
-        }
-        return payload
+        return authResult
     }
 }
 
 module.exports = (app) => {
     const authentication = new KcAuthService(app)
-    authentication.register('keycloak', new KeycloakStrategy())
+    const keycloakStrategy = new KeycloakStrategy()
+    authentication.register('keycloak', keycloakStrategy)
     app.use('/authentication', authentication)
     app.configure(expressOauth())
 }
