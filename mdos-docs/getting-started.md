@@ -4,11 +4,12 @@
 
 ### Applications & application components
 
-Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, another might be a database server and a third one your front end application for instance.
+Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, and a second component would hold your front end application for instance.  
+Every application component can have one or more volumes attached to it for storage persistance & data mirroring. 
 
 <img src="img/anatomy.png" alt="anatomy" width="400"/>
 
-This architecture allows you to compose quite complex applications to suit most needs.
+This architecture allows you to compose complex applications to suit your needs.
 
 ### Project layout
 
@@ -22,15 +23,44 @@ my-application/
 ├── frontend
 │   └── Dockerfile
 ├── volumes
+│   └── static-website
 └── mdos.yaml
 ```
 
 In this example we have an application named `my-application`, that is composed of two distinct application components: `backend` & `frontend`.  
 Each component has it's own Dockerfile.  
-At the `application` level, there is also a `volumes` folder where you can store application component volume files to be used within your application, and a `mdos.yaml` config file that holds all runtime configuration parameters.  
-We will have a look at a sample `mdos.yaml` file in our example below. But first, we need to create a new Namespace for our application.
+At the `application` level, there is also a `volumes` folder where you can store application component volume files to be used within your application, and a `mdos.yaml` config file that holds all runtime configuration parameters. As an example, here the `volumes` folder has a subfolder called `static-website` that is used by the `frontend` application so serve it's website data.
+
+> **Note**
+> Volumes are managed on the `application` level rather than on the `component` level in case you wish to share volumes amongst components.
+
+We will build a similar `hello world` example application now, but to keep thinks simple, we will not deploy a backend component along with it.  
+But first, we need to create a new Namespace for our application.
+
+## Configure your CLI to point to a MDos platform API host
+
+The mdos CLI needs to know to what MDos API server to talk to first.
+
+> **Note**
+> If you installed the platform using a self-signed certificate without any valid domain names configures, then you will have to ensure that all necessary hostnames are configures on your `hosts` before you prosceed.  
+> In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
+> For more information as of what needs to be configured there, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name]()
 
 ## Create a tenant namespace
+
+In Kubernetes, `namespaces` are used to group assets together so that they can be properly administered & run in their own scoped context.  
+In MDos, we assign a dedicated `namespace` to each tenant on the platform. Applications belong to a tenant namespace, without the namespace we can not deploy our application.  
+
+To create a new tenant nameespace, run the following command:
+
+```
+mdos namespace create
+```
+
+You will be prompted to enter a name for this new namespace. Please do so, and hit enter when done.
+
+
+
 
 ## Scaffold an application & application components
 

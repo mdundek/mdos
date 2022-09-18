@@ -209,6 +209,37 @@ mdos --version
 mdos-cli/0.0.0 linux-x64 node-v18.9.0
 ```
 
+### Special notes about self-signed certificates without a resolvable DNS name
+
+For developement purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your `hosts` file from wherever you wish to use the CLI from so that it can resolve the various hostnames used by the MDos API platform.
+
+> **Note**
+> Please replace `XXX.XXX.XXX.XXX` with the MDos Platform server IP address, and `mydomain.com` with the actual domain used when you deployed the MDos platform. 
+
+#### Linux & Mac OSX
+
+Open your `/etc/hosts` file (root user) and add the following entries to it:
+
+```
+XXX.XXX.XXX.XXX registry.mydomain.com registry-auth.mydomain.com mdos-api.mydomain.com mdos-ftp.mydomain.com mdos-ftp-api.mydomain.com longhorn.mydomain.com
+```
+
+> **Note**
+> Please replace `XXX.XXX.XXX.XXX` with the MDos Platform server IP address, and `mydomain.com` with the actual domain used when you deployed the MDos platform. 
+
+#### Windows
+
+Open your `c:\Windows\System32\Drivers\etc\hosts` file (root user) and add the following entries to it:
+
+```
+XXX.XXX.XXX.XXX registry.mydomain.com
+XXX.XXX.XXX.XXX registry-auth.mydomain.com
+XXX.XXX.XXX.XXX mdos-api.mydomain.com
+XXX.XXX.XXX.XXX mdos-ftp.mydomain.com
+XXX.XXX.XXX.XXX mdos-ftp-api.mydomain.com
+XXX.XXX.XXX.XXX longhorn.mydomain.com
+```
+
 <!-- ## Extra
 
 ### disk mounts
