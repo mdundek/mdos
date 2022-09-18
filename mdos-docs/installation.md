@@ -169,9 +169,9 @@ To finalyze the setup, do the following:
 SECRET: cXXyx8EtGGL8BgCC9zVYQidKYuctzuXA
 ```
 
----
-
 That's it, once the installation script is finished you are ready to use the platform.
+
+---
 
 ## Install the MDos CLI
 
