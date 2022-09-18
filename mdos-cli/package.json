@@ -96,7 +96,7 @@
         }
     },
     "scripts": {
-        "package": "npx pkg -t node16-linuxstatic-x64 -o compiled/mdos-cli .",
+        "package": "oclif pack tarballs",
         "build": "shx rm -rf dist && tsc -b && cp -r ./src/lib ./dist",
         "lint": "eslint . --ext .ts --config .eslintrc",
         "postpack": "shx rm -f oclif.manifest.json",

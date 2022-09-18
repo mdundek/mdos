@@ -10,7 +10,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/0.0.0 linux-x64 node-v16.17.0
+mdos-cli/0.0.0 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
