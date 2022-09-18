@@ -6,29 +6,17 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
   <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/img/overview.png?raw=true">
 </p>
 
-<div style="display: flex; align-items: center; justify-content: center">
-  <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
-    <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/img/overview.png?raw=true" style="max-width: 100%">
-  </div>
-</div>
-
 ---
 
 ## Overview
 
-<div style="display: flex; align-items: center; justify-content: center">
-  <div style="padding-right: 20px;">
-    <ul>
-      <li>Build & deploy your applications on Kubernetes</li>
-      <li>No Kubernetes skills needed to perform complex workflows</li>
-      <li>Hassle free secure multi-tenant cluster usage and isolation</li>
-      <li>Greatly simplifies complex Kubernetes application deployment patterns</li>
-      <li>Provides tools to deal with hard to solve storage related challanges</li>
-      <li>Protect your applications by delegating authentication to MDos using Oauth2 & OIDC</li>
-      <li>Simply focus on your application RBAC logic by inspecting the user JWT token</li>
-    </ul>
-  </div>
-</div>
+* Build & deploy your applications on Kubernetes
+* No Kubernetes skills needed to perform complex workflows
+* Hassle free secure multi-tenant cluster usage and isolation
+* Greatly simplifies complex Kubernetes application deployment patterns
+* Provides tools to deal with hard to solve storage related challanges
+* Protect your applications by delegating authentication to MDos using Oauth2 & OIDC
+* Simply focus on your application RBAC logic by inspecting the user JWT token
 
 ---
 
