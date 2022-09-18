@@ -46,7 +46,7 @@ The mdos CLI needs to know to what MDos API server to talk to first.
 > In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
 > For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name]()
 
-The set the target MDos platform hostname, use the following command:
+To configure the target MDos platform domain name with your CLI, use the following command:
 
 ```
 mdos set domain mydomain.com
