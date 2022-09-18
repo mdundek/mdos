@@ -42,9 +42,25 @@ But first, we need to create a new Namespace for our application.
 The mdos CLI needs to know to what MDos API server to talk to first.
 
 > **Warning**
-> If you installed the platform using a self-signed certificate without any valid domain names configures, then you will have to ensure that all necessary hostnames are configures on your `hosts` before you prosceed.  
+> If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all necessary hostnames are configured on your local `hosts` file before you prosceed.  
 > In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
-> For more information as of what needs to be configured there, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name]()
+> For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name]()
+
+The set the target MDos platform hostname, use the following command:
+
+```
+mdos set domain mydomain.com
+```
+
+> Replace `mydomain.com` by your actual domain name used during the platform installation procedure.
+
+If your MDos installation uses a self signed certificate, then you will have to switch over to `api` based authentication mode rather than OIDC SSO authentication. To do so, simply configure your CLI using the following command:
+
+```
+mdos set auth-mode api
+```
+
+You are now ready to start using the platform.
 
 ## Create a tenant namespace
 
@@ -57,10 +73,10 @@ To create a new tenant nameespace, run the following command:
 mdos namespace create
 ```
 
+> If this is the first time you interact with the platform (or if your JWT token has expired), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the `admin` user account that was used during the platform installation procedure. If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  
+> Depending on your authenication mode, you will be prompted by the CLI to enter your credentials directly, or your browser will automatically open so that you can authenticate yourself using `Keycloak`. If OIDC is used for authentication, then you will be presented with your secure JWT token that you need to paste back into the CLI to complete your authentication procedure.
+
 You will be prompted to enter a name for this new namespace. Please do so, and hit enter when done.
-
-
-
 
 ## Scaffold an application & application components
 
