@@ -41,7 +41,7 @@ But first, we need to create a new Namespace for our application.
 
 The mdos CLI needs to know to what MDos API server to talk to first.
 
-> **Note**
+> **Warning**
 > If you installed the platform using a self-signed certificate without any valid domain names configures, then you will have to ensure that all necessary hostnames are configures on your `hosts` before you prosceed.  
 > In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
 > For more information as of what needs to be configured there, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name]()
