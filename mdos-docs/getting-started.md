@@ -52,9 +52,10 @@ To configure the target MDos platform domain name with your CLI, use the followi
 mdos set domain mydomain.com
 ```
 
-> Replace `mydomain.com` by your actual domain name used during the platform installation procedure.
+Replace `mydomain.com` with your actual domain name used during the platform installation procedure.
 
-If your MDos installation uses a self signed certificate, then you will have to switch over to `api` based authentication mode rather than OIDC SSO authentication. To do so, simply configure your CLI using the following command:
+> **Warning**
+> If your MDos installation uses a self signed certificate, then you will have to switch over to `api` based authentication mode rather than OIDC SSO authentication. To do so, simply configure your CLI using the following command:
 
 ```
 mdos set auth-mode api
