@@ -26,9 +26,7 @@ export default class GetConfig extends Command {
     // *********************
     public async run(): Promise<void> {
         const { flags } = await this.parse(GetConfig)
-        if (flags.auth) {
-            context(this.getConfig('AUTH_MODE'))
-        } else if (flags.backend) {
+        if (flags.backend) {
             context(this.getConfig('MDOS_API_URI'))
         } else if (flags.keycloak) {
             context(this.getConfig('MDOS_KC_URI'))
@@ -36,7 +34,7 @@ export default class GetConfig extends Command {
             const allConfigs:any = this.getAllConfigs()
             const avKeys: any[] = []
             for (let key of Object.keys(allConfigs)) {
-                if (key != 'OIDC_COOKIE' && key != 'JWT_TOKEN') avKeys.push(key)
+                if (key != 'ACCESS_TOKEN') avKeys.push(key)
             }
 
             console.log()

@@ -25,7 +25,6 @@ type AxiosConfig = {
  * @extends {Command}
  */
 export default abstract class extends Command {
-    authMode: string
     socketManager: any
     getConsoleLineHandel: any
     configPath: any
@@ -48,14 +47,10 @@ export default abstract class extends Command {
             fs.writeFileSync(this.configPath, JSON.stringify({
                 "MDOS_KC_URI": "",
                 "MDOS_API_URI": "",
-                "AUTH_MODE": "oidc",
-                "OIDC_COOKIE": ""
+                "ACCESS_TOKEN": ""
               }, null, 4))
         }
         this.configData = JSON.parse(fs.readFileSync(this.configPath))
-        this.authMode = this.configData['AUTH_MODE']
-        if (!this.authMode) this.authMode = 'oidc'
-
         this.getConsoleLineHandel = getConsoleLineHandel
     }
 
@@ -64,11 +59,8 @@ export default abstract class extends Command {
      */
     async initSocketIo() {
         const API_URI = this.checkIfDomainSet()
-        let kcCookie = null
-        if (this.authMode == 'oidc') {
-            kcCookie = this.getConfig('OIDC_COOKIE')
-        }
-        this.socketManager = new SocketManager(API_URI, kcCookie)
+        let accessToken = this.getConfig('ACCESS_TOKEN')
+        this.socketManager = new SocketManager(API_URI, accessToken)
     }
 
     /**
@@ -119,28 +111,9 @@ export default abstract class extends Command {
             httpsAgent: new https.Agent({ rejectUnauthorized: false })
         }
 
-        if (this.authMode == 'oidc') {
-            const kcCookie = this.getConfig('OIDC_COOKIE')
-            axiosConfig.headers = { Cookie: `_oauth2_proxy=${kcCookie};` }
-        }
+        axiosConfig.headers = { Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}` }
         axiosConfig.timeout = 1000 * 60 * 10
 
-        // ------------------------- INJECT TOKEN FOR TESTING ----------------------
-        // INFO: No need to try injevcting your own JWT token here in production mode,
-        // it will not pass the OIDC authentication flow from OAuth2-proxy & Keycloak.
-        // This mode should only be used for developement purposes and can not be
-        // considered secure
-        const authMode = this.checkIfAuthSet()
-        if (!skipTokenInjection && authMode == 'api') {
-            const token = this.getConfig('JWT_TOKEN')
-            if (!token || token.length == 0) {
-                error('User is not authenticated. Please login and try again')
-                process.exit(1)
-            }
-            if (!axiosConfig.headers) axiosConfig.headers = {}
-            axiosConfig.headers['x-auth-request-access-token'] = token
-        }
-        // -------------------------------------------------------------------------
         if (method.toLowerCase() == 'post') {
             return await axios.post(`${API_URI}/${endpoint}`, body, axiosConfig)
         } else if (method.toLowerCase() == 'get') {
@@ -167,148 +140,67 @@ export default abstract class extends Command {
     }
 
     /**
-     * checkIfAuthSet
-     * 
-     * @returns
+     * validateJwt
      */
-    checkIfAuthSet() {
-        let AUTH_SET = this.getConfig('AUTH_MODE')
-        if (!AUTH_SET) {
-            error("Please set your mdos auth mode using the command 'mdos set auth-mode [oidc|api|none]'")
-            process.exit(1);
-        }
-        return AUTH_SET
-    }
+    async validateJwt() {
+        const _validateCookie = async (takeNoAction?: boolean) => {
+            const testResponse = await this.api('token-introspect', 'post', { access_token: this.getConfig('ACCESS_TOKEN') }, true)
 
-    /**
-     * _collectKeycloakUrl
-     *
-     * @returns
-     */
-    async _collectKeycloakUrl() {
-        let KC_URI = this.getConfig('MDOS_KC_URI')
-        if (!KC_URI) {
+            if(testResponse.data.active) {
+                if (takeNoAction) {
+                    return true
+                }
+            } else {
+                if (takeNoAction) {
+                    return false
+                } else {
+                    // token expired
+                    this.setConfig('ACCESS_TOKEN', null)
+                    warn('Your current token has expired or is invalid. You need to re-authenticate')
+                    await this.validateJwt()
+                }
+            }
+        }
+
+        const token = this.getConfig('ACCESS_TOKEN')
+        if (!token || token.length == 0) {
             const responses = await inquirer.prompt([
                 {
                     type: 'text',
-                    name: 'kcUrl',
-                    message: 'Please enter the Keycloak base URL:',
+                    name: 'username',
+                    message: 'Please enter your username:',
                     validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
                         if (value.trim().length == 0) {
                             return 'Mandatory field'
                         }
-                        try {
-                            await axios.get(`${value}`, { timeout: 2000 })
-                            return true
-                        } catch (error) {
-                            return 'URL does not seem to be valid'
+                        return true
+                    },
+                },
+                {
+                    type: 'password',
+                    name: 'password',
+                    message: 'Please enter your password:',
+                    validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
+                        if (value.trim().length == 0) {
+                            return 'Mandatory field'
                         }
+                        return true
                     },
                 },
             ])
-            KC_URI = responses.kcUrl
 
-            this.setConfig('MDOS_KC_URI', KC_URI)
-        }
-        return KC_URI
-    }
-
-    /**
-     * validateJwt
-     */
-    async validateJwt() {
-        if (this.authMode == 'none') return
-
-        let API_URI = this.checkIfDomainSet()
-        let KC_URI = await this._collectKeycloakUrl()
-
-        KC_URI = KC_URI.startsWith('http://') || KC_URI.startsWith('https://') ? KC_URI.substring(KC_URI.indexOf('//') + 2) : KC_URI
-
-        const authMode = this.checkIfAuthSet()
-        if (authMode == 'oidc') {
-            const _validateCookie = async (takeNoAction?: boolean) => {
-                const testResponse = await this.api('jwt', 'get', true)
-                if (testResponse.request.host == KC_URI) {
-                    if (takeNoAction) {
-                        return false
-                    } else {
-                        // token expired
-                        this.setConfig('OIDC_COOKIE', null)
-                        warn('Your current token has expired or is invalid. You need to re-authenticate')
-                        await this.validateJwt()
-                    }
-                } else {
-                    if (takeNoAction) {
-                        return true
-                    }
-                }
+            const loginResponse = await this.api('authentication', 'post', { 
+                "strategy": "keycloak", 
+                "username": responses.username, 
+                "password": responses.password
+            }, true)
+            if (loginResponse.data.error) {
+                error(loginResponse.data.error_description)
+                process.exit(1)
             }
-
-            const kcCookie = this.getConfig('OIDC_COOKIE')
-            if (!kcCookie || kcCookie.length == 0) {
-                await open(`${API_URI}/jwt`)
-
-                await inquirer.prompt([
-                    {
-                        type: 'text',
-                        name: 'jwtToken',
-                        message: 'Please enter the JWT token now once you successfully authenticated yourself:',
-                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
-                            if (value.trim().length == 0) {
-                                return 'Mandatory field'
-                            }
-                            this.setConfig('OIDC_COOKIE', value)
-                            const validTkn = await _validateCookie(true)
-                            if (!validTkn) {
-                                this.setConfig('OIDC_COOKIE', null)
-                                return 'Invalid cookie'
-                            }
-                            return true
-                        },
-                    },
-                ])
-                console.log()
-            } else {
-                await _validateCookie()
-            }
+            this.setConfig('ACCESS_TOKEN', loginResponse.data.access_token)
         } else {
-            const token = this.getConfig('JWT_TOKEN')
-            if (!token || token.length == 0) {
-                const responses = await inquirer.prompt([
-                    {
-                        type: 'text',
-                        name: 'username',
-                        message: 'Please enter your username:',
-                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
-                            if (value.trim().length == 0) {
-                                return 'Mandatory field'
-                            }
-                            return true
-                        },
-                    },
-                    {
-                        type: 'password',
-                        name: 'password',
-                        message: 'Please enter your password:',
-                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
-                            if (value.trim().length == 0) {
-                                return 'Mandatory field'
-                            }
-                            return true
-                        },
-                    },
-                ])
-
-                const loginResponse = await this.api('direct-login', 'post', responses, true)
-                if (loginResponse.data.error) {
-                    error(loginResponse.data.error_description)
-                    process.exit(1)
-                }
-
-                warn("API authentication is not secure, it is for developement purposes only")
-
-                this.setConfig('JWT_TOKEN', loginResponse.data.access_token)
-            }
+            await _validateCookie()
         }
     }
 
@@ -317,8 +209,7 @@ export default abstract class extends Command {
      */
     async logout() {
         await this.api('logout', 'get')
-        this.setConfig('OIDC_COOKIE', '')
-        this.setConfig('JWT_TOKEN', '')
+        this.setConfig('ACCESS_TOKEN', '')
     }
 
     /**

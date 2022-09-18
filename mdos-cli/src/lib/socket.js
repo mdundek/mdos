@@ -12,15 +12,15 @@ class SocketManager {
     /**
      * Creates an instance of SocketManager.
      * @param {*} serverUrl
-     * @param {*} kcCookie
+     * @param {*} accessToken
      * @memberof SocketManager
      */
-    constructor(serverUrl, kcCookie) {
-        if (kcCookie) {
+    constructor(serverUrl, accessToken) {
+        if (accessToken) {
             this.socket = io(serverUrl, {
                 rejectUnauthorized: false,
                 extraHeaders: {
-                    Cookie: `_oauth2_proxy=${kcCookie};`,
+                    Authorization: `Bearer ${accessToken}`
                 },
             })
         } else {
@@ -34,7 +34,6 @@ class SocketManager {
         // Set up Socket.io client with the socket
         this.app.configure(socketio(this.socket))
     }
-
     
     /**
      * Subscribe to server
