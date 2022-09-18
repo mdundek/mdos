@@ -34,15 +34,15 @@ At the `application` level, there is also a `volumes` folder where you can store
 > **Note**
 > Volumes are managed on the `application` level rather than on the `component` level in case you wish to share volumes amongst components.
 
-We will build a similar `hello world` example application now, but to keep thinks simple, we will not deploy a backend component along with it.  
-But first, we need to create a new Namespace for our application.
+We will build a similar `hello world` example application now, but to keep thinks simple, we will not deploy a backend component along with the frontend component.  
+But first, we need to configure our MDos CLI so that it knows how to talk to our MDos API server.
 
 ## Configure your CLI to point to a MDos platform API host
 
 The mdos CLI needs to know to what MDos API server to talk to first.
 
 > **Warning**
-> If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all necessary hostnames are configured on your local `hosts` file before you prosceed.  
+> If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine `hosts` file before you prosceed.  
 > In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
 > For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name]()
 
