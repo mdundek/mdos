@@ -20,6 +20,12 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 
 ---
 
+> **Note**
+> This is a note
+
+> **Warning**
+> This is a warning
+
 ## Table of Contents
 
 - [Why would you want to use it?](#why-would-you-want-to-use-it)
