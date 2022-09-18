@@ -77,7 +77,6 @@ mdos namespace create
 You will be prompted to enter a name for this new namespace. Please do so, and hit enter when done.
 
 > If this is the first time you interact with the platform (or if your JWT token has expired), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the `admin` user account that was used during the platform installation procedure. If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  
-> Depending on your authenication mode, you will be prompted by the CLI to enter your credentials directly, or your browser will automatically open so that you can authenticate yourself using `Keycloak`. If OIDC is used for authentication (Keycloak login), then you will be presented with your secure JWT token that you need to copy/paste back into the CLI to complete your authentication procedure.
 
 ## Scaffold an application & application components
 
