@@ -152,7 +152,6 @@ const oidcProviderFilterHook = async (context, jwtToken) => {
  */
 module.exports = function () {
     return async (context) => {
-        console.log("jwtToken >", context.jwtToken)
         // Is auth disabled?
         if (process.env.NO_ADMIN_AUTH == 'true') return context
         if (context.params.provider != 'rest')
@@ -161,15 +160,20 @@ module.exports = function () {
         if (!context.params.headers['authorization']) throw new errors.Forbidden('ERROR: You are not authenticated')
 
         // Get JWT token
-        let access_token = context.params.headers['authorization'].split(" ")[1]
-        if (access_token.slice(-1) === ';') {
-            access_token = access_token.substring(0, access_token.length-1)
+        let jwtToken
+        if(context.jwtToken) {
+            jwtToken = context.jwtToken
+        } else {
+            let access_token = context.params.headers['authorization'].split(" ")[1]
+            if (access_token.slice(-1) === ';') {
+                access_token = access_token.substring(0, access_token.length-1)
+            }
+            jwtToken = await context.app.get('keycloak').userTokenInstrospect('mdos', access_token, true)
+            if(!jwtToken.active) {
+                throw new errors.Forbidden('ERROR: Authentication session timeout')
+            }
         }
-        const jwtToken = await context.app.get('keycloak').userTokenInstrospect('mdos', access_token, true)
-        if(!jwtToken.active) {
-            throw new errors.Forbidden('ERROR: Authentication session timeout')
-        }
-    
+        
         // Client find call
         if (context.path == 'keycloak' && context.params.query.target == 'users') {
             return await userFilterHook(context, jwtToken)

@@ -23,13 +23,9 @@ export default class Login extends Command {
         const { flags } = await this.parse(Login)
 
         // Make sure we are logged out
-        const cookie = this.getConfig('OIDC_COOKIE')
-        if (cookie && cookie.length > 0) {
-            this.setConfig('OIDC_COOKIE', '')
-        }
-        const token = this.getConfig('JWT_TOKEN')
+        const token = this.getConfig('ACCESS_TOKEN')
         if (token && token.length > 0) {
-            this.setConfig('JWT_TOKEN', '')
+            this.setConfig('ACCESS_TOKEN', '')
         }
 
         // Login

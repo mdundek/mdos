@@ -1,14 +1,15 @@
 const aclMdos = require('../_hooks/aclMdos')
+const isAuthenticated = require('../_hooks/isAuthenticated')
 
 module.exports = {
     before: {
         all: [],
-        find: [],
-        get: [],
+        find: [isAuthenticated()],
+        get: [isAuthenticated()],
         create: [aclMdos()],
         update: [aclMdos()],
         patch: [aclMdos()],
-        remove: [],
+        remove: [isAuthenticated()],
     },
 
     after: {

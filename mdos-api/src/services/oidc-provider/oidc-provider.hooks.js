@@ -2,12 +2,13 @@
 const aclDataFindFilter = require('../_hooks/aclAfterfindFilters')
 const aclDataCreate = require('../_hooks/aclCreate')
 const aclDataDelete = require('../_hooks/aclDelete')
+const isAuthenticated = require('../_hooks/isAuthenticated')
 
 module.exports = {
     before: {
         all: [],
-        find: [],
-        get: [],
+        find: [isAuthenticated()],
+        get: [isAuthenticated()],
         create: [aclDataCreate()],
         update: [aclDataCreate()],
         patch: [aclDataCreate()],
