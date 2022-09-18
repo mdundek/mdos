@@ -1379,7 +1379,7 @@ install_mdos() {
     k8s_cluster_scope_exist ELM_EXISTS ns "mdos"
     if [ -z $ELM_EXISTS ]; then
         kubectl create ns mdos &>> $LOG_FILE
-        kubectl label ns mdos istio-injection=enabled &>> $LOG_FILE
+        # kubectl label ns mdos istio-injection=enabled &>> $LOG_FILE
     fi
 
     k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
@@ -1440,15 +1440,7 @@ EOF
     # Deploy mdos-api server
     MDOS_VALUES="$(cat ./dep/mdos-api/values.yaml)"
 
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
-        K3S_REG_DOMAIN="registry.$DOMAIN"
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].oidc)')
-    else
-        K3S_REG_DOMAIN="registry.$DOMAIN"
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "'$OIDC_ISSUER_URL'"')
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "'$OIDC_JWKS_URI'"')
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
-    fi
+    K3S_REG_DOMAIN="registry.$DOMAIN"
 
     if [ ! -z $NODNS_LOCAL_IP ]; then
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].ip = "'$NODNS_LOCAL_IP'"')

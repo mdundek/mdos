@@ -152,6 +152,7 @@ const oidcProviderFilterHook = async (context, jwtToken) => {
  */
 module.exports = function () {
     return async (context) => {
+        console.log("jwtToken >", context.jwtToken)
         // Is auth disabled?
         if (process.env.NO_ADMIN_AUTH == 'true') return context
         if (context.params.provider != 'rest')

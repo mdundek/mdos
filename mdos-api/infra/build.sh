@@ -93,45 +93,8 @@ if [ ! -z $DO_DEPLOY ]; then
     # Deploy keycloak
     cat ./values.yaml > ./target_values.yaml
 
-    # MDOS_ACBM_APP_UUID=$(cat ./target_values.yaml | yq eval '.appUUID')
-    # MDOS_ACBM_APP_CMP_UUID=$(cat ./target_values.yaml | yq eval '.appComponents[0].appCompUUID')
-    # MDOS_ACBM_APP_CMP_NAME=$(cat ./target_values.yaml | yq eval '.appComponents[0].name')
-
     mdos_deploy_app
     rm -rf ./target_values.yaml
-
-#     cat <<EOF | kubectl create -f -
-# apiVersion: security.istio.io/v1beta1
-# kind: RequestAuthentication
-# metadata:
-#   name: mdos-api-ra
-#   namespace: mdos
-# spec:
-#   jwtRules:
-#   - issuer: $OIDC_ISSUER_URL
-#     jwksUri: $OIDC_JWKS_URI
-#   selector:
-#     matchLabels:
-#       app: api
-# ---
-# apiVersion: security.istio.io/v1beta1
-# kind: AuthorizationPolicy
-# metadata:
-#   name: mdos-api-ap
-#   namespace: mdos
-# spec:
-#   action: CUSTOM
-#   provider:
-#     name: kc-mdos
-#   rules:
-#   - to:
-#     - operation:
-#         hosts:
-#         - "mdos-api.$DOMAIN"
-#   selector:
-#     matchLabels:
-#       app: api
-# EOF
 
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
     kubectl logs $POD_NAME -n mdos --follow
@@ -145,10 +108,6 @@ if [ ! -z $DO_RESTART ]; then
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
     kubectl logs $POD_NAME -n mdos --follow
 fi
-
-
-
-
 
 # exec_in_pod() {
 #     POD_CANDIDATES=()

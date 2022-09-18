@@ -76,12 +76,3 @@ components:
       - name: istiod-helm-volume
         mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
         hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
-
-    oidc:
-      issuer: https://keycloak.mdundek.network/realms/mdos
-      jwksUri: https://keycloak.mdundek.network/realms/mdos/protocol/openid-connect/certs
-      provider: kc-mdos
-      hosts:
-        - mdos-api.mdundek.network
-      excludePaths:
-        - /registry_domain
