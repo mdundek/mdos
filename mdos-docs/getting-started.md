@@ -54,13 +54,6 @@ mdos set domain mydomain.com
 
 Replace `mydomain.com` with your actual domain name used during the platform installation procedure.
 
-> **Warning**
-> If your MDos installation uses a self signed certificate, then you will have to switch over to `api` based authentication mode rather than OIDC SSO authentication. To do so, simply configure your CLI using the following command:
-
-```
-mdos set auth-mode api
-```
-
 You are now ready to start using the platform.
 
 ## Create a tenant namespace
