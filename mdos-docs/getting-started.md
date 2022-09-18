@@ -6,7 +6,7 @@
 
 Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, another might be a database server and a third one your front end application for instance.
 
-![CLI](img/anatomy.png)
+<img src="img/anatomy.png" alt="anatomy" width="400"/>
 
 This architecture allows you to compose quite complex applications to suit most needs.
 
