@@ -93,9 +93,17 @@ module.exports = function () {
         if (context.params.provider != 'rest')
             // Internal calls don't need authentication
             return context
-        if (!context.params.headers['x-auth-request-access-token']) throw new errors.Forbidden('ERROR: You are not authenticated')
+        if (!context.params.headers['authorization']) throw new errors.Forbidden('ERROR: You are not authenticated')
 
-        let jwtToken = jwt_decode(context.params.headers['x-auth-request-access-token'])
+        // Get JWT token
+        let access_token = context.params.headers['authorization'].split(" ")[1]
+        if (access_token.slice(-1) === ';') {
+            access_token = access_token.substring(0, access_token.length-1)
+        }
+        const jwtToken = await context.app.get('keycloak').userTokenInstrospect('mdos', access_token, true)
+        if(!jwtToken.active) {
+            throw new errors.Forbidden('ERROR: Authentication session timeout')
+        }
 
         // Evaluate permissions
         if (context.path == 'keycloak' && context.data.type == 'user') {
