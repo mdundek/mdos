@@ -4,7 +4,6 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const inquirer = require('inquirer')
-const open = require('open')
 const https = require('https')
 const axios = require('axios').default
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage, getConsoleLineHandel } = require('./lib/tools')
