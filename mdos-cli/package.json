@@ -17,7 +17,6 @@
         "/oclif.manifest.json"
     ],
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.150.0",
         "@feathersjs/feathers": "^4.5.15",
         "@feathersjs/socketio-client": "^4.5.15",
         "@oclif/core": "^1.13.3",
@@ -32,6 +31,7 @@
         "inquirer": "^8.2.4",
         "nanoid": "^3.3.4",
         "open": "^8.4.0",
+        "pkg": "^5.8.0",
         "shelljs": "^0.8.5",
         "socket.io-client": "^2.5.0",
         "treeify": "^1.1.0",
@@ -69,17 +69,34 @@
         ],
         "topicSeparator": " ",
         "topics": {
-            "application": { "description": "Manage your applications" },
-            "generate": { "description": "Scaffold applications and components" },
-            "kc": { "description": "Manage Keycloak users and roles" },
-            "kc:client": { "description": "Manage Keycloak client roles" },
-            "kc:user": { "description": "Assig Keycloak client roles to users" },
-            "namespace": { "description": "Manage your tenant kubernetes namespaces" },
-            "oidc": { "description": "Manage OIDC authentication providers and protect your applications" },
-            "set": { "description": "Configure local mdos CLI context parameters" }
-          }
+            "application": {
+                "description": "Manage your applications"
+            },
+            "generate": {
+                "description": "Scaffold applications and components"
+            },
+            "kc": {
+                "description": "Manage Keycloak users and roles"
+            },
+            "kc:client": {
+                "description": "Manage Keycloak client roles"
+            },
+            "kc:user": {
+                "description": "Assig Keycloak client roles to users"
+            },
+            "namespace": {
+                "description": "Manage your tenant kubernetes namespaces"
+            },
+            "oidc": {
+                "description": "Manage OIDC authentication providers and protect your applications"
+            },
+            "set": {
+                "description": "Configure local mdos CLI context parameters"
+            }
+        }
     },
     "scripts": {
+        "package": "npx pkg -t node16-linuxstatic-x64 -o compiled/mdos-cli .",
         "build": "shx rm -rf dist && tsc -b && cp -r ./src/lib ./dist",
         "lint": "eslint . --ext .ts --config .eslintrc",
         "postpack": "shx rm -f oclif.manifest.json",
