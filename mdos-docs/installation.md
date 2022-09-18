@@ -2,7 +2,8 @@
 
 ## Install the MDos (server) platform
 
-> **Warning:** At the moment, only Ubuntu >= 20.04 is supported. Debian and Alpine are planned next
+> **Warning**
+> At the moment, only Ubuntu >= 20.04 is supported. Debian and Alpine are planned next
 
 First, clone this repo on your target machine:
 
@@ -43,7 +44,8 @@ The installation script will give you multiple choices here:
 2. You have a domain name on `Cloudflare`, and would like to set it up using `LetsEncrypt`
 3. You have no certificate and would like to create a self-signed certificate (only suited for developement purposes)
 
-> **Warning:** For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.  
+> **Warning**
+> For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.  
 > For production, you will have to use a fully valid certificate in order to use all of MDos features. 
 
 ```
@@ -65,7 +67,8 @@ cluster without DNS resolution. An IP address is therefore required.
 Please enter the local IP address for this machine: XXX.XXX.XXX.XXX
 ```
 
-> **Note:** This example is based on the 3rd option, a self signed certificate. Other questions will be asked according to your choices.
+> **Note**
+> This example is based on the 3rd option, a self signed certificate. Other questions will be asked according to your choices.
 
 #### Kubernetes workload storage directory path
 
@@ -107,7 +110,8 @@ implemented to protect tenant specific images).
 How many Gi (Gigabytes) do you want to allocate to your registry volume: 10
 ```
 
-> **Note:** Please note that this storage capacity will be located on your main Kubernetes storage path specified above
+> **Note**
+> Please note that this storage capacity will be located on your main Kubernetes storage path specified above
 
 #### FTP sync server for Kubernetes POD data provisionning
 

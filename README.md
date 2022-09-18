@@ -10,6 +10,9 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 
 ## Overview
 
+> **Warning**
+> MDos is in alpha stage at the moment, it is under developement and should not be used in production yet
+
 * Build & deploy your applications on Kubernetes
 * No Kubernetes skills needed to perform complex workflows
 * Hassle free secure multi-tenant cluster usage and isolation
@@ -19,12 +22,6 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 * Simply focus on your application RBAC logic by inspecting the user JWT token
 
 ---
-
-> **Note**
-> This is a note
-
-> **Warning**
-> This is a warning
 
 ## Table of Contents
 
