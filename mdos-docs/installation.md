@@ -174,6 +174,34 @@ SECRET: cXXyx8EtGGL8BgCC9zVYQidKYuctzuXA
 That's it, once the installation script is finished you are ready to use the platform.
 
 
+
+### The MDos CLI
+
+#### Linux & Mac OSX
+
+The standalone install is a simple tarball with a binary. It contains its own node.js binary and autoupdates.
+
+To set up the CLI in /usr/local/lib/mdos and /usr/local/bin/mdos, run the following script. The script requires sudo and isn’t Windows compatible.
+
+```sh
+curl https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh | sh
+```
+
+#### Windows
+
+Comming soon
+
+
+#### Verify Your Installation
+
+To verify your CLI installation, use the mdos --version command:
+
+```
+mdos --version
+mdos-cli/0.0.0 linux-x64 node-v18.9.0
+```
+
+
 <!-- 
 ## Set up the MDos platform
 
