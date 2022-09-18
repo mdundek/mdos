@@ -2,14 +2,17 @@
 
 MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency
 
+<div style="display: flex; align-items: center; justify-content: center">
+  <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
+    <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/img/overview.png?raw=true" style="max-width: 100%">
+  </div>
+</div>
+
 ---
 
 ## Overview
 
 <div style="display: flex; align-items: center; justify-content: center">
-  <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
-    <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/img/overview.png?raw=true" style="max-width: 100%">
-  </div>
   <div style="padding-right: 20px;">
     <ul>
       <li>Build & deploy your applications on Kubernetes</li>
