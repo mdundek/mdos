@@ -458,8 +458,8 @@ tag_publish() {
     REPO_DIR=$(pwd)
     REPO_BRANCH_MDOS=$(get_current_branch)
 
+    # Check git status
     check_if_git_has_unstaiged_changes UNSTAGED_CHANGES "strict"
-
     PROSCEED_IF_DIRTY=""
     if [ "$REPO_BRANCH_MDOS" == "main" ]; then
         check_if_git_is_clean PROSCEED_IF_DIRTY strict
@@ -479,6 +479,52 @@ tag_publish() {
     fi
 
     git checkout main > /dev/null 2>&1
+
+    # Version bump target
+    question "What version upgrade type do you want to do for those repos?"
+    OPTIONS_VALUES=("major" "feature" "bug")
+    OPTIONS_LABELS=("X.y.z" "x.Y.z" "x.y.Z")
+    OPTIONS_STRING=""
+    for y in "${!OPTIONS_VALUES[@]}"; do
+        OPTIONS_STRING+="${OPTIONS_VALUES[$y]} (${OPTIONS_LABELS[$y]});"
+    done
+    prompt_for_select VERSION_BUMP_FLAGS "$OPTIONS_STRING"
+    for y in "${!VERSION_BUMP_FLAGS[@]}"; do
+        if [ "${VERSION_BUMP_FLAGS[$y]}" == "true" ]; then
+            VERSION_BUMP_TARGET="${OPTIONS_VALUES[$y]}"
+        fi
+    done
+
+    # Now create release merges
+    process_repo_release() {
+        # Version bump
+        bump_and_merge() {
+            (
+                ./mdos-cli/infra/version-bump.sh --type $1 && \
+                git checkout release > /dev/null 2>&1 && \
+                git merge --no-ff main > /dev/null 2>&1
+                git push origin release > /dev/null 2>&1
+            ) || ( exit 1 )
+        }
+        return_to_branch() {
+            git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
+        }
+        on_error() {
+            error "$1. You should manually clean up and fix potential inconcistencies."
+            return_to_branch
+            exit 1
+        }
+        info "Bump up version & merge to branch \"release\"..."
+        pwd
+        bump_and_merge $VERSION_BUMP_TARGET || on_error "Could not create release for repo ${c_warn}$REPO_DIR${c_reset}"
+        
+        return_to_branch
+
+        info "Successfully merged repo ${c_warn}$REPO_DIR${c_reset} to release branch on version ${c_warn}$CURRENT_APP_VERSION${c_reset}"
+    }
+
+    info "Processing Repo..."
+    process_repo_release $_PATH $_CHART_PATH
 )
 
 
