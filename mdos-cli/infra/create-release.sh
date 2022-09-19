@@ -141,6 +141,8 @@ source ./.env
 
     process_repo_tag_publish
 
+    git checkout release > /dev/null 2>&1
+
     # Now we create the release for this tag
     # Create release with releasenotes
     generate_release_files() {
@@ -188,6 +190,8 @@ source ./.env
 
     # Clean up
     # rm -rf ./mdos-cli/dist/*.tar.*
+
+    git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
 
     info "Release created for tag $CURRENT_APP_VERSION: $RELEASE_URL"
 )
