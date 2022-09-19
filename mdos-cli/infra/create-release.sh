@@ -458,8 +458,8 @@ tag_publish() {
     REPO_DIR=$(pwd)
     REPO_BRANCH_MDOS=$(get_current_branch)
 
+    # Check git status
     check_if_git_has_unstaiged_changes UNSTAGED_CHANGES "strict"
-
     PROSCEED_IF_DIRTY=""
     if [ "$REPO_BRANCH_MDOS" == "main" ]; then
         check_if_git_is_clean PROSCEED_IF_DIRTY strict
@@ -479,6 +479,23 @@ tag_publish() {
     fi
 
     git checkout main > /dev/null 2>&1
+
+    # Version bump target
+    question "What version upgrade type do you want to do for those repos?"
+    OPTIONS_VALUES=("major" "feature" "bug")
+    OPTIONS_LABELS=("X.y.z" "x.Y.z" "x.y.Z")
+    OPTIONS_STRING=""
+    for y in "${!OPTIONS_VALUES[@]}"; do
+        OPTIONS_STRING+="${OPTIONS_VALUES[$y]} (${OPTIONS_LABELS[$y]});"
+    done
+    prompt_for_select VERSION_BUMP_FLAGS "$OPTIONS_STRING"
+    for y in "${!VERSION_BUMP_FLAGS[@]}"; do
+        if [ "${VERSION_BUMP_FLAGS[$y]}" == "true" ]; then
+            VERSION_BUMP_TARGET="${OPTIONS_VALUES[$y]}"
+        fi
+    done
+
+
 )
 
 
