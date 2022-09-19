@@ -34,7 +34,7 @@ git_pull_rebase() {
 check_if_git_has_unstaiged_changes() {
     local  __resultvar=$1
     C_FOLDER="$(basename $PWD)"
-    GIT_LOGS=$(git status > /dev/null 2>&1)
+    GIT_LOGS=$(git status)
     if [[ "$GIT_LOGS" == *"Changes not staged for commit:"* ]]; then
         if [ "$2" != "strict" ]; then
             warn "Your Git repo \"$C_FOLDER\" has commits that are not pushed to remote yet."
@@ -53,7 +53,7 @@ check_if_git_has_unstaiged_changes() {
 check_if_git_has_untracked() {
     local  __resultvar=$1
     C_FOLDER="$(basename $PWD)"
-    GIT_LOGS=$(git status > /dev/null 2>&1)
+    GIT_LOGS=$(git status)
     if [[ "$GIT_LOGS" == *"Untracked files:"* ]]; then
         if [ "$2" != "strict" ]; then
             warn "Your Git repo \"$C_FOLDER\" has commits that are not pushed to remote yet."
@@ -72,7 +72,7 @@ check_if_git_has_untracked() {
 check_if_git_has_staged_to_commit() {
     local  __resultvar=$1
     C_FOLDER="$(basename $PWD)"
-    GIT_LOGS=$(git status > /dev/null 2>&1)
+    GIT_LOGS=$(git status)
     if [[ "$GIT_LOGS" == *"Changes to be committed:"* ]]; then
         if [ "$2" != "strict" ]; then
             warn "Your Git repo \"$C_FOLDER\" has commits that are not pushed to remote yet."
@@ -91,7 +91,7 @@ check_if_git_has_staged_to_commit() {
 check_if_git_is_ahead() {
     local  __resultvar=$1
     C_FOLDER="$(basename $PWD)"
-    GIT_LOGS=$(git status > /dev/null 2>&1)
+    GIT_LOGS=$(git status)
     if [[ "$GIT_LOGS" == *"Your branch is ahead of "* ]]; then
         if [ "$2" != "strict" ]; then
             warn "Your Git repo \"$C_FOLDER\" has commits that are not pushed to remote yet."
@@ -110,7 +110,7 @@ check_if_git_is_ahead() {
 check_if_git_is_clean() {
     local  __resultvar=$1
     C_FOLDER="$(basename $PWD)"
-    GIT_LOGS=$(git status -s > /dev/null 2>&1)
+    GIT_LOGS=$(git status -s)
     if [ "$GIT_LOGS" != "" ]; then
         if [ "$2" != "strict" ]; then
             warn "Your Git repo \"$C_FOLDER\" is not clean."
@@ -140,7 +140,8 @@ get_parent_branch() {
 # ######################################
 # ############### RELEASE ##############
 # ######################################
-release_from_master() {
+release_from_main() {
+    echo ""
     # select_repos SEL_REPOS --mandatory --include-stack-chart
 
     # # First, we make sure all target repos have no un-committed stuff as a pre-flight check
@@ -153,11 +154,11 @@ release_from_master() {
     # REPO_DIR=$(pwd)
 
     # PROSCEED_IF_DIRTY=""
-    # if [ "$REPO_BRANCH_MDOS" == "master" ]; then
+    # if [ "$REPO_BRANCH_MDOS" == "main" ]; then
     #     check_if_git_is_clean PROSCEED_IF_DIRTY strict
     # else
     #     check_if_git_is_clean PROSCEED_IF_DIRTY
-    #     git checkout master > /dev/null 2>&1
+    #     git checkout main > /dev/null 2>&1
     # fi
     # git_pull_rebase PROSCEED_IF_DIRTY strict
 
@@ -170,7 +171,7 @@ release_from_master() {
     #     git_pull_rebase PROSCEED_IF_DIRTY strict
     # fi
 
-    # git checkout master > /dev/null 2>&1
+    # git checkout main > /dev/null 2>&1
    
     # # Version bump target
     # question "What version upgrade type do you want to do for those repos?"
@@ -198,7 +199,7 @@ release_from_master() {
     #         (
     #             ./infra/version_bump.sh --type $1 && \
     #             git checkout release > /dev/null 2>&1 && \
-    #             git merge --no-ff master > /dev/null 2>&1
+    #             git merge --no-ff main > /dev/null 2>&1
     #             git push origin release > /dev/null 2>&1
     #         ) || ( exit 1 )
     #     }
@@ -226,6 +227,7 @@ release_from_master() {
 # ########### TAG & PUBLISH ############
 # ######################################
 tag_publish() {
+    echo ""
     # # First, we make sure all target repos have no un-committed stuff as a pre-flight check
     # info "Repo pre-flight checks..."
     # for i in "${!SEL_REPOS[@]}"; do
@@ -300,11 +302,11 @@ tag_publish() {
 
     #     REPO_BRANCH=$(get_current_branch)
     #     PROSCEED_IF_DIRTY=""
-    #     if [ "$REPO_BRANCH" == "master" ]; then
+    #     if [ "$REPO_BRANCH" == "main" ]; then
     #         check_if_git_is_clean PROSCEED_IF_DIRTY strict
     #     else
     #         check_if_git_is_clean PROSCEED_IF_DIRTY
-    #         git checkout master > /dev/null 2>&1
+    #         git checkout main > /dev/null 2>&1
     #     fi
 
     #     git_pull_rebase PROSCEED_IF_DIRTY strict
@@ -430,6 +432,55 @@ tag_publish() {
 # ######################################
 # ############### MAIN #################
 # ######################################
+
+(
+    set -Ee
+
+    # ################################################
+    # ############ TRY CATCH INTERCEPTORS ############
+    # ################################################
+
+    function _catch {
+        # Rollback
+        error "$(caller): ${BASH_COMMAND}"
+    }
+
+    function _finally {
+        info "Done!"
+    }
+
+    trap '_catch' ERR
+    trap _finally EXIT
+    
+    # ############### MAIN #################
+
+    cd $_DIR & cd ../..
+    REPO_DIR=$(pwd)
+    REPO_BRANCH_MDOS=$(get_current_branch)
+
+    check_if_git_has_unstaiged_changes UNSTAGED_CHANGES "strict"
+
+    PROSCEED_IF_DIRTY=""
+    if [ "$REPO_BRANCH_MDOS" == "main" ]; then
+        check_if_git_is_clean PROSCEED_IF_DIRTY strict
+    else
+        check_if_git_is_clean PROSCEED_IF_DIRTY
+        git checkout main > /dev/null 2>&1
+    fi
+    git_pull_rebase PROSCEED_IF_DIRTY strict
+
+    git rev-parse --verify release > /dev/null 2>&1
+    if [ $? != 0 ]; then
+        git checkout -b release > /dev/null 2>&1
+        git push -u origin release > /dev/null 2>&1
+    else
+        git checkout release > /dev/null 2>&1
+        git_pull_rebase PROSCEED_IF_DIRTY strict
+    fi
+
+    git checkout main > /dev/null 2>&1
+)
+
 
 
 

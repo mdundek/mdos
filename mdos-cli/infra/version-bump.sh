@@ -87,6 +87,16 @@ if [ -z $FORCE ]; then
 fi
 
 (
+  # Get distro and make sure we have proper sed command
+  distro
+  if [ "$DISTRO" == "darwin" ]; then
+    GSED_OK=$(command_exists gsed)
+    if [ "$GSED_OK" == "KO" ]; then
+      error "On OSX, you need to install the tool 'gsed' (brew install gnu-sed) before you prosceed" 
+      exit 1
+    fi
+  fi
+
   set -Ee
 
   # ################################################
@@ -133,8 +143,12 @@ fi
   # ################################################
 
   # Update package.json
-  gsed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
-
+  if [ "$DISTRO" == "darwin" ]; then
+      gsed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
+  else
+      sed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
+  fi
+  
   # ################################################
   # ################# PUSH TO GIT ##################
   # ################################################
