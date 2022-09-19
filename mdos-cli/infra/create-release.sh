@@ -492,7 +492,7 @@ tag_publish() {
 
     git checkout main > /dev/null 2>&1
 
-    # Version bump target
+    # Determine new version
     question "What version upgrade type do you want to do for those repos?"
     OPTIONS_VALUES=("major" "feature" "bug")
     OPTIONS_LABELS=("X.y.z" "x.Y.z" "x.y.Z")
@@ -507,9 +507,8 @@ tag_publish() {
         fi
     done
 
-    # Now create release merges
+    # Update version and merge with release branch
     process_repo_release() {
-        # Version bump
         bump_and_merge() {
             (
                 ./mdos-cli/infra/version-bump.sh --type $1 && \
@@ -537,14 +536,7 @@ tag_publish() {
     info "Processing Repo..."
     process_repo_release $_PATH $_CHART_PATH
 
-
-
-
-
-
-
-
-
+    # Create new tag for version and publish to release
     git checkout release > /dev/null 2>&1
 
     process_repo_tag_publish() {
@@ -566,16 +558,30 @@ tag_publish() {
         CURRENT_APP_VERSION=$(cat ./mdos-cli/package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
         
         info "Tagging current commit with version $CURRENT_APP_VERSION..."
-        # tag $CURRENT_APP_VERSION || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
+        tag $CURRENT_APP_VERSION || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
 
         return_to_branch
 
         info "Successfully tagged repo ${c_warn}$REPO_DIR${c_reset} on release branch: version ${c_warn}$CURRENT_APP_VERSION${c_reset}"
     }
 
-    process_repo_tag_publish
+    # process_repo_tag_publish
 
+    # Now we create the release for this tag
+    # Create release with releasenotes
+    git_release() {
+        TAG_NAME="$1"
 
+        # Login to Github using gh CLI
+        echo "$GITHUB_TOKEN" > .githubtoken
+        gh auth login --hostname github.airbus.corp --git-protocol https --with-token < .githubtoken
+        rm -rf .githubtoken
+
+        # Create release
+        gh release create $TAG_NAME
+    }
+
+    user_input GITHUB_TOKEN "Please enter your Github API token:"
 )
 
 
