@@ -500,7 +500,7 @@ tag_publish() {
         # Version bump
         bump_and_merge() {
             (
-                ./mdos-cli/infra/version_bump.sh --type $1 && \
+                ./mdos-cli/infra/version-bump.sh --type $1 && \
                 git checkout release > /dev/null 2>&1 && \
                 git merge --no-ff main > /dev/null 2>&1
                 git push origin release > /dev/null 2>&1
