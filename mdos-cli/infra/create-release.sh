@@ -371,6 +371,11 @@ tag_publish() {
     #     info "Successfully tagged repo ${c_warn}$REPO_DIR${c_reset} on release branch: version ${c_warn}$CURRENT_APP_VERSION${c_reset}"
     # }
 
+
+
+
+
+
     # # Get previous tag name for repo
     # get_previous_tag() {
     #     local __resultvar=$1
@@ -566,6 +571,8 @@ tag_publish() {
 
         info "Successfully tagged repo ${c_warn}$REPO_DIR${c_reset} on release branch: version ${c_warn}$VERSION_BUMP_TARGET${c_reset}"
     }
+
+    process_repo_tag_publish
 
 
 )
