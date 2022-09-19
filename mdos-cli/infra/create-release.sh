@@ -581,11 +581,11 @@ tag_publish() {
 
         # Login to Github using gh CLI
         echo "$GITHUB_TOKEN" > .githubtoken
-        gh auth login --hostname github.airbus.corp --git-protocol https --with-token < .githubtoken
+        gh auth login --hostname github.com --git-protocol https --with-token < .githubtoken
         rm -rf .githubtoken
 
         # Create release
-        gh release create $TAG_NAME
+        gh release create --generate-notes --target release --prerelease --title "MDos Platform release v$CURRENT_APP_VERSION" $TAG_NAME ./mdos-cli/dist/*.tar.*
     }
 
     if [ -z $GITHUB_TOKEN ]; then
@@ -593,8 +593,8 @@ tag_publish() {
         echo "GITHUB_TOKEN=$GITHUB_TOKEN" >> $_DIR/.env
     fi
 
-    RELEASE_URL=$(git_release $CURRENT_APP_VERSION)
-    info "Release created for tag $CURRENT_APP_VERSION: $RELEASE_URL"
+    # RELEASE_URL=$(git_release $CURRENT_APP_VERSION)
+    # info "Release created for tag $CURRENT_APP_VERSION: $RELEASE_URL"
 
 )
 
