@@ -515,6 +515,7 @@ tag_publish() {
             exit 1
         }
         info "Bump up version & merge to branch \"release\"..."
+        pwd
         bump_and_merge $VERSION_BUMP_TARGET || on_error "Could not create release for repo ${c_warn}$REPO_DIR${c_reset}"
         
         return_to_branch
