@@ -95,13 +95,14 @@ fi
 
   function _catch {
     # Rollback
+    error "$(caller): ${BASH_COMMAND}"
     error "Rolling back changes..."
 
     if [ -f $REPO_DIR/mdos-cli/package.json.backup ]; then
       rm -rf $REPO_DIR/mdos-cli/package.json && mv $REPO_DIR/mdos-cli/package.json.backup $REPO_DIR/mdos-cli/package.json
       if [ ! -z $GIT_AVAILABLE ] && [ ! -z $GIT_PUSHED ]; then
-        cd $REPO_DIR/mdos-cli
-        git add package.json > /dev/null 2>&1
+        cd $REPO_DIR
+        git add mdos-cli/package.json > /dev/null 2>&1
         DO_REVERT_PUSH=1
       fi
     fi
@@ -119,20 +120,20 @@ fi
     info "Done!"
   }
 
-  trap _catch ERR
+  trap '_catch' ERR
   trap _finally EXIT
   
   # ################################################
   # ################ BACKUP FILES ##################
   # ################################################
-  cp $REPO_DIR/mdos-cli/package.json $REPO_DIR/package.json.backup
+  cp $REPO_DIR/mdos-cli/package.json $REPO_DIR/mdos-cli/package.json.backup
 
   # ################################################
   # ############ UPDATE LOCAL VERSIONS #############
   # ################################################
 
   # Update package.json
-  sed -i '/"version":/c\  "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
+  gsed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
 
   # ################################################
   # ################# PUSH TO GIT ##################
