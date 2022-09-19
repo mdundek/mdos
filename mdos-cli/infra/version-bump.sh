@@ -42,10 +42,10 @@ if command -v git &> /dev/null; then
 
   cd $REPO_DIR
   GIT_LOGS=$(git pull --rebase  origin $(git rev-parse --abbrev-ref HEAD) > /dev/null 2>&1)
-  if [ $? -ne 0 ]; then
-    error "Please resolve your local GIT issues first and try again."
-    exit 1
-  fi
+#   if [ $? -ne 0 ]; then
+#     error "Please resolve your local GIT issues first and try again."
+#     exit 1
+#   fi
 fi
 
 CURRENT_APP_VERSION=$(cat $REPO_DIR/mdos-cli/package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
