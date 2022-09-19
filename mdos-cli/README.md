@@ -10,7 +10,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/0.0.0 darwin-x64 node-v18.9.0
+mdos-cli/1.0.13 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -181,7 +181,6 @@ USAGE
 * [`mdos secret generate`](#mdos-secret-generate)
 * [`mdos service add`](#mdos-service-add)
 * [`mdos service generate`](#mdos-service-generate)
-* [`mdos set auth-mode [TARGET]`](#mdos-set-auth-mode-target)
 * [`mdos set domain [DOMAIN]`](#mdos-set-domain-domain)
 * [`mdos show-config`](#mdos-show-config)
 * [`mdos show client`](#mdos-show-client)
@@ -2362,7 +2361,7 @@ ALIASES
   $ mdos show-config
 ```
 
-_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v0.0.0/dist/commands/get-config.ts)_
+_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.0.13/dist/commands/get-config.ts)_
 
 ## `mdos get config`
 
@@ -3318,7 +3317,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v0.0.0/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.0.13/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3332,7 +3331,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v0.0.0/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.0.13/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -4141,18 +4140,6 @@ ALIASES
   $ mdos service generate
   $ mdos generate port
   $ mdos port generate
-```
-
-## `mdos set auth-mode [TARGET]`
-
-Set a configutation parameter for your local CLI environement
-
-```
-USAGE
-  $ mdos set auth-mode [TARGET]
-
-DESCRIPTION
-  Set a configutation parameter for your local CLI environement
 ```
 
 ## `mdos set domain [DOMAIN]`

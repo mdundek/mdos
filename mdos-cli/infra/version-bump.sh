@@ -116,6 +116,16 @@ fi
         DO_REVERT_PUSH=1
       fi
     fi
+
+    if [ -f $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup ]; then
+      rm -rf $REPO_DIR/mdos-cli/infra/install-linux-mac.sh && mv $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup $REPO_DIR/mdos-cli/infra/install-linux-mac.sh
+      if [ ! -z $GIT_AVAILABLE ] && [ ! -z $GIT_PUSHED ]; then
+        cd $REPO_DIR
+        git add mdos-cli/infra/install-linux-mac.sh > /dev/null 2>&1
+        DO_REVERT_PUSH=1
+      fi
+    fi
+
     if [ ! -z "$DO_REVERT_PUSH" ]; then
       git commit -m "Revert version bump" > /dev/null 2>&1
       git push > /dev/null 2>&1
@@ -127,6 +137,9 @@ fi
     if [ -f $REPO_DIR/mdos-cli/package.json.backup ]; then
       rm -rf $REPO_DIR/mdos-cli/package.json.backup
     fi
+    if [ -f $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup ]; then
+      rm -rf $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup
+    fi
     info "Done!"
   }
 
@@ -137,6 +150,7 @@ fi
   # ################ BACKUP FILES ##################
   # ################################################
   cp $REPO_DIR/mdos-cli/package.json $REPO_DIR/mdos-cli/package.json.backup
+  cp $REPO_DIR/mdos-cli/infra/install-linux-mac.sh $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup
 
   # ################################################
   # ############ UPDATE LOCAL VERSIONS #############
@@ -148,6 +162,12 @@ fi
   else
       sed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
   fi
+  # Update auto install scripts for CLI
+  if [ "$DISTRO" == "darwin" ]; then
+      gsed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/mdos-cli/infra/install-linux-mac.sh
+  else
+      sed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/mdos-cli/infra/install-linux-mac.sh
+  fi
   
   # ################################################
   # ################# PUSH TO GIT ##################
@@ -156,6 +176,7 @@ fi
     info "Pushing to GIT..."
     cd $REPO_DIR
     git add mdos-cli/package.json
+    git add mdos-cli/infra/install-linux-mac.sh
     git commit -m "Bumped project up to version $NEW_APP_VERSION" > /dev/null 2>&1
     git push > /dev/null 2>&1
     GIT_PUSHED=1

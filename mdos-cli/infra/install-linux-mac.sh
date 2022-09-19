@@ -16,6 +16,8 @@
     $SUDO bash <<SCRIPT
 set -e
 
+CLI_VERSION=v0.0.0
+
 if [[ ! ":\$PATH:" == *":/usr/local/bin:"* ]]; then
     echo "Your path is missing /usr/local/bin, you need to add this to use this installer."
     exit 1
@@ -44,10 +46,10 @@ rm -rf mdos
 rm -rf ~/.mdos/cli.json
 if [ \$(command -v xz) ]; then
     TAR_ARGS="xJ"
-    URL=https://github.com/mdundek/mdos/releases/download/v0.0.0/mdos-v0.0.0-f39d220-\$OS-\$ARCH.tar.xz
+    URL=https://github.com/mdundek/mdos/releases/download/$\CLI_VERSION/mdos-$\CLI_VERSION-\$OS-\$ARCH.tar.xz
 else
     TAR_ARGS="xz"
-    URL=https://github.com/mdundek/mdos/releases/download/v0.0.0/mdos-v0.0.0-f39d220-\$OS-\$ARCH.tar.gz
+    URL=https://github.com/mdundek/mdos/releases/download/$\CLI_VERSION/mdos-$\CLI_VERSION-\$OS-\$ARCH.tar.gz
 fi
 
 echo "Installing CLI from \$URL"
