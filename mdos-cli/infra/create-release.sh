@@ -563,13 +563,14 @@ tag_publish() {
             exit 1
         }
     
+        CURRENT_APP_VERSION=$(cat ./mdos-cli/package.json | grep 'version:' | head -1 | cut -d ":" -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         
-        info "Tagging current commit with version $VERSION_BUMP_TARGET..."
-        tag $VERSION_BUMP_TARGET || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
+        info "Tagging current commit with version $CURRENT_APP_VERSION..."
+        tag $CURRENT_APP_VERSION || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
 
         return_to_branch
 
-        info "Successfully tagged repo ${c_warn}$REPO_DIR${c_reset} on release branch: version ${c_warn}$VERSION_BUMP_TARGET${c_reset}"
+        info "Successfully tagged repo ${c_warn}$REPO_DIR${c_reset} on release branch: version ${c_warn}$CURRENT_APP_VERSION${c_reset}"
     }
 
     process_repo_tag_publish
