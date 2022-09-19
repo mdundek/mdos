@@ -147,7 +147,7 @@ source ./.env
     # Create release with releasenotes
     generate_release_files() {
         # Package files
-        cd ./mdos-cli
+        cd $REPO_DIR/mdos-cli
         npm run package
 
         # Rename files
@@ -155,7 +155,7 @@ source ./.env
         for f in ./*.tar.*; do
             if [[ $f == *"darwin-arm64.tar.gz"* ]]; then
                 AUID=$f
-                AUID=${AUID##*mdos-v1.0.13-}
+                AUID=${AUID##*mdos-v${CURRENT_APP_VERSION}-}
                 AUID=${AUID%%-darwin-arm64.tar.gz*}
             fi
         done
@@ -189,9 +189,13 @@ source ./.env
     RELEASE_URL=$(git_release $CURRENT_APP_VERSION)
 
     # Clean up
-    # rm -rf ./mdos-cli/dist/*.tar.*
+    rm -rf ./mdos-cli/dist/*.tar.*
 
     git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
+
+    git add mdos-cli/README.md
+    git commit -m "Version bump"
+    git push
 
     info "Release created for tag $CURRENT_APP_VERSION: $RELEASE_URL"
 )
