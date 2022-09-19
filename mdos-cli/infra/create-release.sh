@@ -4,6 +4,7 @@ cd $_DIR
 
 source ./lib/helpers.sh
 source ./lib/components.sh
+source ./.env
 
 # ######################################
 # ########## HELPER FUNCTIONS ##########
@@ -470,27 +471,33 @@ tag_publish() {
     REPO_DIR=$(pwd)
     REPO_BRANCH_MDOS=$(get_current_branch)
 
+    GH_OK=$(command_exists gh)
+    if [ "$GH_OK" == "KO" ]; then
+      error "You need to install the gh (GitHub) CLI first" 
+      exit 1
+    fi
+
     # Check git status
-    check_if_git_has_unstaiged_changes UNSTAGED_CHANGES "strict"
-    PROSCEED_IF_DIRTY=""
-    if [ "$REPO_BRANCH_MDOS" == "main" ]; then
-        check_if_git_is_clean PROSCEED_IF_DIRTY strict
-    else
-        check_if_git_is_clean PROSCEED_IF_DIRTY
-        git checkout main > /dev/null 2>&1
-    fi
-    git_pull_rebase PROSCEED_IF_DIRTY strict
+    # check_if_git_has_unstaiged_changes UNSTAGED_CHANGES "strict"
+    # PROSCEED_IF_DIRTY=""
+    # if [ "$REPO_BRANCH_MDOS" == "main" ]; then
+    #     check_if_git_is_clean PROSCEED_IF_DIRTY strict
+    # else
+    #     check_if_git_is_clean PROSCEED_IF_DIRTY
+    #     git checkout main > /dev/null 2>&1
+    # fi
+    # git_pull_rebase PROSCEED_IF_DIRTY strict
 
-    git rev-parse --verify release > /dev/null 2>&1
-    if [ $? != 0 ]; then
-        git checkout -b release > /dev/null 2>&1
-        git push -u origin release > /dev/null 2>&1
-    else
-        git checkout release > /dev/null 2>&1
-        git_pull_rebase PROSCEED_IF_DIRTY strict
-    fi
+    # git rev-parse --verify release > /dev/null 2>&1
+    # if [ $? != 0 ]; then
+    #     git checkout -b release > /dev/null 2>&1
+    #     git push -u origin release > /dev/null 2>&1
+    # else
+    #     git checkout release > /dev/null 2>&1
+    #     git_pull_rebase PROSCEED_IF_DIRTY strict
+    # fi
 
-    git checkout main > /dev/null 2>&1
+    # git checkout main > /dev/null 2>&1
 
     # Determine new version
     question "What version upgrade type do you want to do for those repos?"
@@ -565,7 +572,7 @@ tag_publish() {
         info "Successfully tagged repo ${c_warn}$REPO_DIR${c_reset} on release branch: version ${c_warn}$CURRENT_APP_VERSION${c_reset}"
     }
 
-    # process_repo_tag_publish
+    process_repo_tag_publish
 
     # Now we create the release for this tag
     # Create release with releasenotes
@@ -581,7 +588,14 @@ tag_publish() {
         gh release create $TAG_NAME
     }
 
-    user_input GITHUB_TOKEN "Please enter your Github API token:"
+    if [ -z $GITHUB_TOKEN ]; then
+        user_input GITHUB_TOKEN "Please enter your Github API token:"
+        echo "GITHUB_TOKEN=$GITHUB_TOKEN" >> $_DIR/.env
+    fi
+
+    RELEASE_URL=$(git_release $CURRENT_APP_VERSION)
+    info "Release created for tag $CURRENT_APP_VERSION: $RELEASE_URL"
+
 )
 
 
