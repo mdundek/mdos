@@ -314,6 +314,13 @@ tag_publish() {
     #     git checkout release > /dev/null 2>&1
     # done
 
+
+
+
+
+
+
+
     # # Now create tag & publish
     # process_repo_tag_publish() {
     #     cd $1
@@ -515,7 +522,6 @@ tag_publish() {
             exit 1
         }
         info "Bump up version & merge to branch \"release\"..."
-        pwd
         bump_and_merge $VERSION_BUMP_TARGET || on_error "Could not create release for repo ${c_warn}$REPO_DIR${c_reset}"
         
         return_to_branch
@@ -525,6 +531,43 @@ tag_publish() {
 
     info "Processing Repo..."
     process_repo_release $_PATH $_CHART_PATH
+
+
+
+
+
+
+
+
+
+    git checkout release > /dev/null 2>&1
+
+    process_repo_tag_publish() {
+        tag() {
+            (
+                git tag -a v$1 -m "Release version v$1" > /dev/null 2>&1 && \
+                git push origin --tags > /dev/null 2>&1
+            ) || ( exit 1 )
+        }
+        return_to_branch() {
+            git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
+        }
+        on_error() {
+            error "$1. You should manually clean up and fix potential inconcistencies."
+            return_to_branch
+            exit 1
+        }
+    
+        
+        info "Tagging current commit with version $VERSION_BUMP_TARGET..."
+        tag $VERSION_BUMP_TARGET || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
+
+        return_to_branch
+
+        info "Successfully tagged repo ${c_warn}$REPO_DIR${c_reset} on release branch: version ${c_warn}$VERSION_BUMP_TARGET${c_reset}"
+    }
+
+
 )
 
 
