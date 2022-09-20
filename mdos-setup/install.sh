@@ -1716,6 +1716,8 @@ install_helm_ftp() {
         fi
     elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
         error "Not implemented yet"
+        # Collect ffullchain and privkey
+        # Ask if self signed or not
         exit 1
     else
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN

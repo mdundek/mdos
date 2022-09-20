@@ -1,7 +1,9 @@
+const KubeBaseConstants = require('./kubeBaseConstants')
 const axios = require('axios')
 const https = require('https')
 const YAML = require('yaml')
 const fs = require('fs')
+let _ = require('lodash');
 const { terminalCommand, terminalCommandAsync } = require('../libs/terminal')
 
 let caCrt
@@ -19,7 +21,7 @@ axios.defaults.httpsAgent = new https.Agent({
  *
  * @class KubeBase
  */
-class KubeBase {
+class KubeBase extends KubeBaseConstants {
     
     /**
      * Creates an instance of KubeBase.
@@ -27,6 +29,8 @@ class KubeBase {
      * @memberof KubeBase
      */
     constructor(app) {
+        super()
+
         this.app = app
         if (process.env.RUN_TARGET == 'pod') {
             this.K3S_TOKEN = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/token', 'utf8').toString()
@@ -349,6 +353,10 @@ class KubeBase {
 
         // Create namespace
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, nsJson, this.k8sAxiosHeader)
+
+        // Create Roles for admin & non admin user profiles in namespace
+        await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSAdminRoles(namespaceName), this.k8sAxiosHeader)
+        await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSUserRoles(namespaceName), this.k8sAxiosHeader)
     }
 
     /**
@@ -773,7 +781,7 @@ class KubeBase {
 
         for (const podResponse of cPods) {
             // Now get pod logs
-            const logObjects = await this._getAppPodLogs(namespace, appUuid, appName, podResponse)
+            const logObjects = await this._getAppPodLogs(namespace, appName, podResponse)
             appLogs = { ...appLogs, ...logObjects }
         }
         return appLogs
@@ -789,7 +797,7 @@ class KubeBase {
      * @return {*} 
      * @memberof KubeBase
      */
-    async _getAppPodLogs(namespace, appUuid, appName, podResponse) {
+    async _getAppPodLogs(namespace, appName, podResponse) {
         const podLogs = {}
         if (podResponse.status.phase != 'Pending') {
             const initContainerNames = podResponse.spec.initContainers.map((c) => c.name).filter((n) => n != 'istio-init')
@@ -806,6 +814,147 @@ class KubeBase {
             }
         }
         return podLogs
+    }
+
+    /**
+     * buildTmplNSAdminRoles
+     * @param {*} namespaceName 
+     */
+     buildTmplNSAdminRoles(namespaceName) {
+        // Load all available roles
+        let allRules = JSON.parse(JSON.stringify(this.getAllRolesRBACTemplate()));
+        
+        this.getForbiddenRolesRBACForNsAdmins().forEach(toRemRoleTemplate => {
+            allRules = allRules.map(rule => {
+                if((toRemRoleTemplate.apiGroups[0] == rule.apiGroups[0]) || (toRemRoleTemplate.apiGroups[0].length == 0 && rule.apiGroups[0].length == 0)) {
+                    rule.resources = rule.resources.filter(resource => toRemRoleTemplate.resources.indexOf(resource) == -1);
+                    rule.verbs = rule.verbs.filter(verb => toRemRoleTemplate.verbs.indexOf(verb) == -1);
+                }
+                return rule;
+            });
+        });
+        allRules = allRules.filter(group => this.getForbiddenGroupsRBACForNsAdmins().indexOf(group.apiGroups[0]) == -1);
+
+        return {
+            "kind": "Role",
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "metadata": {
+                "namespace": namespaceName,
+                "name": "ns-admin"
+            },
+            "rules": allRules
+        }
+    }
+
+    /**
+     * buildTmplNSUserRoles
+     * @param {*} namespaceName 
+     */
+     buildTmplNSUserRoles(namespaceName) {
+        let allRules = JSON.parse(JSON.stringify(this.getAllRolesRBACTemplate()));
+        this.getForbiddenRolesRBACForNsUsers().forEach(toRemRoleTemplate => {
+            allRules = allRules.map(rule => {
+                if((toRemRoleTemplate.apiGroups[0] == rule.apiGroups[0]) || (toRemRoleTemplate.apiGroups[0].length == 0 && rule.apiGroups[0].length == 0)) {
+                    rule.resources = rule.resources.filter(resource => toRemRoleTemplate.resources.indexOf(resource) == -1);
+                    rule.verbs = rule.verbs.filter(verb => toRemRoleTemplate.verbs.indexOf(verb) == -1);
+                }
+                return rule;
+            });
+        });
+        allRules = allRules.filter(group => this.getForbiddenGroupsRBACForNsUsers().indexOf(group.apiGroups[0]) == -1);
+        return {
+            "kind": "Role",
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "metadata": {
+                "namespace": namespaceName,
+                "name": "ns-user"
+            },
+            "rules": allRules
+        }
+    }
+
+     /**
+     * buildTmplNSAdminRoleBindings
+     * @param {*} namespaceName 
+     * @param {*} userEmails 
+     */
+    buildTmplNSAdminRoleBindings(namespaceName, userEmails) {
+        return {
+            "kind": "RoleBinding",
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "metadata": {
+                "name": "ns-admin",
+                "namespace": namespaceName
+            },
+            "subjects": userEmails.map(ue => {
+                return {
+                    "kind": "User",
+                    "name": ue,
+                    "apiGroup": "rbac.authorization.k8s.io"
+                }
+            }),
+            "roleRef": {
+                "name": "ns-admin",
+                "kind": "Role",
+                "apiGroup": "rbac.authorization.k8s.io"
+            }
+        }
+    }
+
+    /**
+     * buildTmplNSUserRoleBindings
+     * @param {*} namespaceName 
+     * @param {*} userEmails 
+     */
+     buildTmplNSUserRoleBindings(namespaceName, userEmails) {
+        return {
+            "kind": "RoleBinding",
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "metadata": {
+                "name": "ns-user",
+                "namespace": namespaceName
+            },
+            "subjects": userEmails.map(ue => {
+                return {
+                    "kind": "User",
+                    "name": ue,
+                    "apiGroup": "rbac.authorization.k8s.io"
+                }
+            }),
+            "roleRef": {
+                "name": "ns-user",
+                "kind": "Role",
+                "apiGroup": "rbac.authorization.k8s.io"
+            }
+        }
+    }
+
+    /**
+     * applyNamespaceAdminRoleBindings
+     * @param {*} namespace 
+     * @param {*} users 
+     */
+    async applyNamespaceAdminRoleBindings(namespace, users) {
+        const existingRoleBindings = await axios.get(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespace}/rolebindings`, this.k8sAxiosHeader)
+        if(existingRoleBindings.data.items.find(rb => rb.metadata.name == "ns-admin")) {
+            await axios.put(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespace}/rolebindings/ns-admin`, this.buildTmplNSAdminRoleBindings(namespace, users), this.k8sAxiosHeader)
+        } else {
+            await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespace}/rolebindings`, this.buildTmplNSAdminRoleBindings(namespace, users), this.k8sAxiosHeader)
+        }
+    }
+
+    /**
+     * applyNamespaceUserRoleBindings
+     * @param {*} namespace 
+     * @param {*} users 
+     */
+     async applyNamespaceUserRoleBindings(namespace, users) {
+        const existingRoleBindings = await axios.get(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespace}/rolebindings`, this.k8sAxiosHeader)
+        if(existingRoleBindings.data.items.find(rb => rb.metadata.name == "ns-user")) {
+            await axios.put(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespace}/rolebindings/ns-user`, this.buildTmplNSUserRoleBindings(namespace, users), this.k8sAxiosHeader)
+        } else {
+            await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespace}/rolebindings`, this.buildTmplNSUserRoleBindings(namespace, users), this.k8sAxiosHeader)
+        }
     }
 }
 
