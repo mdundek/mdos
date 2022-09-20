@@ -70,12 +70,19 @@ async function sh(cmd) {
         "delete"
     ]
   });
+
+  responses = responses.map(res => {
+    if(res.APIVERSION.indexOf("/") != -1)
+      res.APIVERSION = res.APIVERSION.substring(0, res.APIVERSION.indexOf("/"))
+    return res
+  })
+
   for(let resource of responses) {
     if(resource.NAME.length > 0) {
-      let apigroupRule = rules.find(r => (r.apiGroups[0] == resource.APIGROUP) || (r.apiGroups[0].length == 0 && resource.APIGROUP.length == 0));
+      let apigroupRule = rules.find(r => (r.apiGroups[0] == resource.APIVERSION) || (r.apiGroups[0].length == 0 && resource.APIVERSION.length == 0));
       if(!apigroupRule) {
         apigroupRule = {
-          "apiGroups": [resource.APIGROUP],
+          "apiGroups": [resource.APIVERSION],
           "resources": [resource.NAME],
           "verbs": [
               "get",
@@ -95,10 +102,10 @@ async function sh(cmd) {
   }
 
 
-  rules.forEach(rule => {
-    console.log(JSON.stringify(rule.resources.join(",")));
-  });
+  // rules.forEach(rule => {
+  //   console.log(JSON.stringify(rule.resources.join(",")));
+  // });
   
   
-  // console.log(JSON.stringify(rules, null, 4));
+  console.log(JSON.stringify(rules, null, 4));
 })();

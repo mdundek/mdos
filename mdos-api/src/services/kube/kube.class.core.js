@@ -1,6 +1,7 @@
 const { NotFound, Conflict, Unavailable, Forbidden, BadRequest } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
+const Constants = require('../../libs/constants');
 const CommonCore = require('../common.class.core')
 
 /**
@@ -128,24 +129,7 @@ class KubeCore extends CommonCore {
             })
             .filter(
                 (ns) =>
-                    ![
-                        'local-path-storage',
-                        'mdos',
-                        'oauth2-proxy',
-                        'keycloak',
-                        'code-server',
-                        'minio',
-                        'mdos-registry',
-                        'calico-apiserver',
-                        'calico-system',
-                        'tigera-operator',
-                        'kube-node-lease',
-                        'kube-public',
-                        'kube-system',
-                        'default',
-                        'istio-system',
-                        'longhorn-system'
-                    ].includes(ns.name)
+                    !Constants.RESERVED_NAMESPACES.includes(ns.name)
             )
 
         if (allClients) {

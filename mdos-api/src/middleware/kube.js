@@ -3,6 +3,7 @@ const https = require('https')
 const YAML = require('yaml')
 const fs = require('fs')
 const KubeBase = require('./kubeBase')
+const Constants = require('../libs/constants');
 const { terminalCommand } = require('../libs/terminal')
 
 axios.defaults.httpsAgent = new https.Agent({
@@ -211,6 +212,49 @@ config:
      */
     async uninstallOauth2Proxy(name) {
         await this.helmUninstall('oauth2-proxy', name)
+    }
+
+    /**
+     * This function will update all namespace user role bindings on kubernetes according to their roles
+     * @param {*} namespace 
+     */
+    async applyUserRoleBindingsForNamespace(namespace) {
+        const nsUsersAndRoles = await this.app.get("keycloak").getUsers("mdos")
+        // Compute mdos admin emails
+        const mdosAdmins = nsUsersAndRoles
+            .filter(user => user.clientRoleMappings && user.clientRoleMappings.mdos && user.clientRoleMappings.mdos.mappings
+                .find(roleMapping => roleMapping.name == 'admin')
+            )
+            .map(user => user.email)
+
+        // Collect all namespaces
+        let allNamespaces = await this.app.get("kube").getNamespaces()
+        allNamespaces = allNamespaces.map(ns => ns.metadata.name).filter(nsName => !Constants.RESERVED_NAMESPACES.includes(nsName))
+
+        // Iterate over namespaces and apply rolebindings on each namespace
+        for(const ns of allNamespaces) {
+            // Compute namespace admin emails
+            let nsKubeAdmins = nsUsersAndRoles
+                .filter(user => user.clientRoleMappings && user.clientRoleMappings[ns] && user.clientRoleMappings[ns].mappings
+                    .find(roleMapping => roleMapping.name == 'k8s-write')
+                )
+                .map(user => user.email)
+                .filter(email => !mdosAdmins.includes(email))
+
+            // Compute namespace user emails
+            const nsKubeUsers = nsUsersAndRoles
+                .filter(user => user.clientRoleMappings && user.clientRoleMappings[ns] && user.clientRoleMappings[ns].mappings
+                    .find(roleMapping => roleMapping.name == 'k8s-read')
+                )
+                .map(user => user.email)
+                .filter(email => !nsKubeAdmins.includes(email) && !mdosAdmins.includes(email))
+
+            nsKubeAdmins = nsKubeAdmins.concat(mdosAdmins)
+
+            // Update rolebindings for both user types for this namespace 
+            await this.applyNamespaceAdminRoleBindings(ns, nsKubeAdmins)
+            await this.applyNamespaceUserRoleBindings(ns, nsKubeUsers)
+        }
     }
 }
 

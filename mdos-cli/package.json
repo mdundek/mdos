@@ -19,7 +19,6 @@
     "dependencies": {
         "@feathersjs/feathers": "^4.5.15",
         "@feathersjs/socketio-client": "^4.5.15",
-        "@oclif/core": "^1.13.3",
         "@oclif/plugin-help": "^5",
         "@oclif/plugin-not-found": "^2.3.1",
         "@oclif/plugin-plugins": "^2.0.1",
@@ -87,6 +86,9 @@
                 "description": "Manage your tenant kubernetes namespaces"
             },
             "oidc": {
+                "description": "Manage OIDC authentication providers and protect your applications"
+            },
+            "oidc:provider": {
                 "description": "Manage OIDC authentication providers and protect your applications"
             },
             "set": {

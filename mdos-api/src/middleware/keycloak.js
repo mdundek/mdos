@@ -568,6 +568,7 @@ class Keycloak {
                     },
                 })
                 user.clients = clientRoleMappingsResponse.data.clientMappings ? Object.keys(clientRoleMappingsResponse.data.clientMappings).join(', ') : ''
+                user.clientRoleMappings = clientRoleMappingsResponse.data.clientMappings ? clientRoleMappingsResponse.data.clientMappings : null
             }
             return response.data
         } else {
@@ -584,6 +585,7 @@ class Keycloak {
                 if (clientRoleMappingsResponse.data.clientMappings) {
                     if (Object.keys(clientRoleMappingsResponse.data.clientMappings).find((c) => c == clientId)) {
                         user.clients = Object.keys(clientRoleMappingsResponse.data.clientMappings).join(', ')
+                        user.clientRoleMappings = clientRoleMappingsResponse.data.clientMappings ? clientRoleMappingsResponse.data.clientMappings : null
                         filteredUsers.push(user)
                     }
                 }

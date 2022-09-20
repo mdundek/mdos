@@ -130,11 +130,13 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
                 // Create keycloak user role binding
                 await this.app.get('keycloak').createClientRoleBindingForUser(body.realm, body.clientUuid, body.userUuid, body.roleUuid, body.roleName)
             }
+
+            // Regenerate namespace rolebindings in cluster
+            await this.app.get('kube').applyUserRoleBindingsForNamespace()
         }
         return body
     }
 
-    
     /**
      * Remove
      *
@@ -161,11 +163,17 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
             await this.realmCheck(params.query.realm)
 
             await this.app.get('keycloak').deleteUser(params.query.realm, id)
+
+            // Regenerate namespace rolebindings in cluster
+            await this.app.get('kube').applyUserRoleBindingsForNamespace()
         } else if (params.query.target == 'user-roles') {
             // Make sure realm exists
             await this.realmCheck(params.query.realm)
 
             await this.app.get('keycloak').removeClientRoleBindingFromUser(params.query.realm, params.query.clientUuid, params.query.userUuid, params.query.roleName, id)
+
+            // Regenerate namespace rolebindings in cluster
+            await this.app.get('kube').applyUserRoleBindingsForNamespace()
         }
         return { id }
     }
