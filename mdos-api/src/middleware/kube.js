@@ -256,6 +256,53 @@ config:
             await this.applyNamespaceUserRoleBindings(ns, nsKubeUsers)
         }
     }
+
+    /**
+     * generateUserKubectlCertificates
+     * @param {*} username 
+     */
+    async generateUserKubectlCertificates(username) {
+        try {
+            await terminalCommand(`openssl genrsa -out /home/node/app/tmp/${username}.key 2048`);
+            await terminalCommand(`openssl req -new -key /home/node/app/tmp/${username}.key -out /home/node/app/tmp/${username}.csr -subj "/CN=${username}/O=$O"`);
+            await terminalCommand(`openssl x509 -req -in /home/node/app/tmp/${username}.csr -CA ${process.env.K3S_ROOT_CA_PATH} -CAkey ${process.env.K3S_ROOT_KEY_PATH} -CAcreateserial -out /home/node/app/tmp/${username}.crt -days 500`);
+
+            const key = fs.readFileSync(`/home/node/app/tmp/${username}.key`, {encoding:'utf8', flag:'r'}); 
+            const csr = fs.readFileSync(`/home/node/app/tmp/${username}.csr`, {encoding:'utf8', flag:'r'}); 
+            const crt = fs.readFileSync(`/home/node/app/tmp/${username}.crt`, {encoding:'utf8', flag:'r'}); 
+
+            // const rootCrt = fs.readFileSync(`/etc/kubernetes/pki/ca.crt`, {encoding:'utf8', flag:'r'}); 
+            
+            return {
+                "host": `kubernetes-api.${process.env.ROOT_DOMAIN}`,
+                "user": username,
+                "key": key,
+                "csr": csr,
+                "crt": crt
+            };
+        } 
+        catch(error) {
+            console.log(error);
+            throw error;
+        }
+        finally {
+            try {
+                if (fs.existsSync(`/home/node/app/tmp/${username}.key`)) {
+                    fs.unlinkSync(`/home/node/app/tmp/${username}.key`);
+                }
+            } catch(err) {}
+            try {
+                if (fs.existsSync(`/home/node/app/tmp/${username}.csr`)) {
+                    fs.unlinkSync(`/home/node/app/tmp/${username}.csr`);
+                }
+            } catch(err) {}
+            try {
+                if (fs.existsSync(`/home/node/app/tmp/${username}.crt`)) {
+                    fs.unlinkSync(`/home/node/app/tmp/${username}.crt`);
+                }
+            } catch(err) {}
+        }
+    }
 }
 
 module.exports = Kube

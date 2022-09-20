@@ -39,6 +39,10 @@ components:
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
             value: "3915"
+          - key: K3S_ROOT_CA_PATH
+            value: "/usr/src/dep/k3s/server-ca.crt"
+          - key: K3S_ROOT_KEY_PATH
+            value: "/usr/src/dep/k3s/server-ca.key"
 
     secrets:
       - name: creds
@@ -65,6 +69,14 @@ components:
               nFHYwpUwCgYIKoZIzj0EAwIDRwAwRAIgE/vVSKmwiVfaDaeIqX1qu9BEKwODCKiU
               V3DpnOxpnTcCIDOcjO+a/Ngbx3cUta1zr+ApcaxU0dZV1ssoHDMkwjaO
               -----END CERTIFICATE-----
+          - name: server-key
+            filename: server-ca.key
+            value: |-
+              -----BEGIN EC PRIVATE KEY-----
+              MHcCAQEEIJLgBm4OLr84ehYnA4ztMlajyE7ggcRMlmIgZ4F+pI3uoAoGCCqGSM49
+              AwEHoUQDQgAEplFLFgw3sNtavGyV1l6BK9BYFVCoL5Uh54s9+07uE/UnVefkFYfX
+              Q79g/2LGJ8LbhyOuT5P7xLae1JR9u2l3fQ==
+              -----END EC PRIVATE KEY-----
         
     volumes:
       - name: crt-volume

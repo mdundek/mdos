@@ -1,4 +1,4 @@
-const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
+const { NotFound, GeneralError, BadRequest, Forbidden, Unavailable } = require('@feathersjs/errors')
 const nanoid_1 = require('nanoid')
 const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10)
 const KubeCore = require('./kube.class.core')
@@ -42,6 +42,22 @@ exports.Kube = class Kube extends KubeCore {
             }
             let nsApps = await this.getMdosApplications(params.query.clientId)
             return nsApps
+        } 
+        /******************************************
+        *  GENERATE USER KUBECTL CERTIFICATE
+        ******************************************/
+        else if (params.query.target == 'kubeconfig') {
+            // Get JWT token
+            let access_token = params.headers.authorization.split(" ")[1]
+            if (access_token.slice(-1) === ';') {
+                access_token = access_token.substring(0, access_token.length-1)
+            }
+            const jwtToken = await this.app.get('keycloak').userTokenInstrospect('mdos', access_token, true)
+            if(!jwtToken.active) {
+                throw new Forbidden('ERROR: Authentication session timeout')
+            }
+            const certData = await this.app.get('kube').generateUserKubectlCertificates(jwtToken.email)
+            return certData
         } else {
             throw new BadRequest('ERROR: Malformed API request')
         }
