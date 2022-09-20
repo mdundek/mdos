@@ -141,7 +141,7 @@ export default abstract class extends Command {
     /**
      * validateJwt
      */
-    async validateJwt() {
+    async validateJwt(skipAuthMsg?: boolean) {
         const _validateCookie = async (takeNoAction?: boolean) => {
             const testResponse = await this.api('token-introspect', 'post', { access_token: this.getConfig('ACCESS_TOKEN') }, true)
 
@@ -156,13 +156,17 @@ export default abstract class extends Command {
                     // token expired
                     this.setConfig('ACCESS_TOKEN', null)
                     warn('Your current token has expired or is invalid. You need to re-authenticate')
-                    await this.validateJwt()
+                    await this.validateJwt(true)
                 }
             }
         }
 
         const token = this.getConfig('ACCESS_TOKEN')
         if (!token || token.length == 0) {
+
+            if(!skipAuthMsg)
+                warn("Authentication required")
+
             const responses = await inquirer.prompt([
                 {
                     type: 'text',
@@ -198,6 +202,7 @@ export default abstract class extends Command {
                 process.exit(1)
             }
             this.setConfig('ACCESS_TOKEN', loginResponse.data.access_token)
+            console.log()
         } else {
             await _validateCookie()
         }

@@ -152,7 +152,7 @@ export default class RemoveRole extends Command {
             const confirmResponse = await inquirer.prompt([
                 {
                     name: 'confirm',
-                    message: 'You are about to delete a OIDC provider, are you sure you wish to prosceed?',
+                    message: 'You are about to remove a role for this user, are you sure you wish to prosceed?',
                     type: 'confirm',
                     default: false,
                 },
