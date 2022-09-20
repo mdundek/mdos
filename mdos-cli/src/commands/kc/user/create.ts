@@ -28,7 +28,7 @@ export default class Create extends Command {
             group: 'user',
             type: 'text',
             name: 'username',
-            message: 'Enter keycloak username',
+            message: 'Enter username for new user:',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
                 else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
@@ -40,15 +40,20 @@ export default class Create extends Command {
             group: 'user',
             type: 'text',
             name: 'password',
-            message: 'Enter keycloak password',
+            message: 'Enter password for new user:',
             validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
         },
         {
             group: 'user',
             type: 'text',
             name: 'email',
-            message: 'Enter keycloak user email address',
-            validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
+            message: 'Enter user email address for new user:',
+            validate: (value: any) => {
+                if (value.trim().length == 0) return `Mandatory field`
+                else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value))
+                    return 'Invalid email address'
+                return true
+            },
         },
     ]
     // *********************
