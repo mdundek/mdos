@@ -8,10 +8,39 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 
 ---
 
-## Overview
+## Problem statement
+
+I have been working with Kubernetes for some years now, it is an amazing platform, so versatile, extensible and powerfull. But with great power comes great responsability!  
+I am and have been leading teams that are developing applications that are destined to run on Kubernetes. Over the years, it became obvious that even with the greatness of the platform, there was a major elephant in the room... Let's dig a bit deeper down that rabbit hole.
+Creating container images and running them on `docker-compose` for instance is easy enougth. Most developers know how to get there without too much hassle. Kubernetes on the other hand is a whole other animal all together. A simple volume mount with some data, exposing a port to make your application accessible or simply wrapping your head around how everything fits together takes on a whole different meaning when you have to do it in Kubernetes. For those of you who had the opportunity to work with it, but who do not have a PhD in Kubernetes are probably very well aware of what I mean by this. But the complexity goes way beyong those simple examples.  
+Putting an application into production is no easy task. Kubernetes has phantastic mechanisms in place to allow you to address the most chalanging aspects of production environements (auto scaling, network security, cluster support, endless extensibility ...). There is a reason why they call it a `Container Operating System` with cluster support rather than a simple container runtime engine, but this also brings tremendous complexity that often hinders developers and devops admins to use it efficiently, or to adopt it all together. Most developers tell me they know Kubernetes when I ask them about it. They believe that is they scheduled a Pod once and attached a volume to it, they have the basic understanding needed to work with it. Let's throw in a few more buzzwords, see if that triggeres a nervous twitching in your core:
+
+* Role Based Access Control (I am sure not many people use it, way to complicated)
+* Network Policies (Restricting network traffic between applications)
+* Storage Classes (Ceph, NFS, Longhorn, HostPaths...)
+* Storage types (WriteOnce, WriteMany...)
+* Pods, Deployments, StatefulSets, DaemonSets, Services, VirtualServices, Gateways, Ingress, PVs, PVCs, Secrets, ConfigMaps, Roles, ClusterRoles, RoleMappings.............. (feeling dizzy)
+* Debugging applications in Kubernetes (logs, state, resources...)
+* ...
+
+And those are some base core concepts, let's not forget third party tools such as Helm, logging agregators such as Loki, OAuth2 proxy for authentication and all the other goodies that this amazing community has produced over the years. On the subject of HELM, it's a great package manager for kubernetes workloads, but building your HELM charts is complex, even more so that simply creating Kubernetes deployment artefacts. Every app has a dedicated HELM chart, they are usually configured differently, yet using the same Kubernetes concepts under the hood. Why is that?
+
+One of my favourites. `PersistetVolumes` and `PersistedVolumeClaims`, they allow you to persist your application data even when your application dies. Great, right! But then you start to wonder: Those volumes and files are hidden somewhere on the cluster out of your control, and every new PVC that is created for your application is completely empty at first! See where I am going with this? So what if I have some data that I would like to put into this volume that my application depends on? What if I want to copy this data for backup reasons fr instance? Initial database schema & dataset, a static website that serves as a base for my application etc. Let's face it, an empty volume is nice and all, but it needs data right? So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult! 
+
+Ok, I think you get the point. This is what I see everyday when a developer joins our team and discovers a production ready Kubernetes environement that he/she has to understand so that he/she can develop & test applications on. The amount of time I spend going over all those concepts is tremendous, it takes a while before those concepts become second nature to them. Then a developer quits because he found a better salery elsewhere, because he got valuable training on Kubernetes with us, so we have to replace them and start all over again.  
+
+There are great flavors of managed Kubernetes implementations (EKS, Rancher, IKS...), they are all great to deploy a cluster with a simple click, but they all fall short helping you on your day to day interactions with the cluster, or to deploy workloads on it. The only one that offers a decent experience with it is OpenShift, but you need a licence, they are not cheap and the code base is closed.  
+
+## What can we do about this?
+
+Welcome to MDos! It's not a managed Kubernetes flavor, it's a packaged Kubernetes deployment, removing the clutter and focusing on the value with all sorts of automated tools and integrations to solve the most chalanging tasks. The aim is to deploy it anywhere, no vendor lockin, no cloud specific dependencies, you can run it on a Raspberry Pi if you have enougth memory on it. It also removes the complexity of kubernetes and provides a framework to package your applications in a simple way, but once deployed they use all the greatness that Kubernetes has to offer. Learn one simplified way of describing your applications and let MDos do the heavy lifting for you.  
+MDos goes beyond just simplifying kubernetes deployments, it also adds mechanisms to deal with typicat tasks such as application authentication and authorization for instance, coupled with a popular user management system called `Keycloak` (which is also managed by `MDos` by the way, you won't have to learn about `Keycloak`) to allow you to add `OAuth2 OIDC` authentication to your applications or manage `Role Based Access Control` to your cluster and resources without having to write a single line of code. You also get a log aggregator OOTB to centralize all your logs and make them searchable, and a multi-tenant private registry is also set up in the cluster ready for you to use. The volume dilema I mentioned above is also addressed here, and debugging falty application deployments is becomming easy again. 
+MDos is multi-tenant oriented, it is designed to be shared between teams, yet secured so that everyone has privacy and security on the cluster.
 
 > **Warning**
-> MDos is in alpha stage at the moment, it is under developement and should not be used in production yet
+> Yeah, I know, too good to be true, right? MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
+
+## Again, but this time in a Nutshell
 
 * Build & deploy your applications on Kubernetes
 * No Kubernetes skills needed to perform complex workflows
