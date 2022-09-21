@@ -2,17 +2,18 @@
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
-source ./lib/helpers.sh
-source ./lib/components.sh
-
-cd ../..
-REPO_DIR=$(pwd)
+source ../lib/helpers.sh
+source ../lib/components.sh
 
 while [ "$1" != "" ]; do
     case $1 in
         --type )
             shift
             BUMP_TYPE=$1
+        ;;
+        --repo )
+            shift
+            REPO_NAME=$1
         ;;
         --force|-f )
             FORCE=1
@@ -22,6 +23,23 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ -z $REPO_NAME ]; then
+  error 'Missing param --repo [cli/api]'
+  exit 1
+elif [ "$REPO_NAME" != "cli" ] && [ "$REPO_NAME" != "api" ]; then
+  error 'Invalid repo name '$REPO_NAME'. Needs to be "cli" or "api"'
+  exit 1
+else
+  if [ "$REPO_NAME" != "cli" ]; then
+    REPO_NAME=mdos-cli
+  else
+    REPO_NAME=mdos-api
+  fi
+fi
+
+cd ../..
+REPO_DIR=$(pwd)
 
 if [ -z $BUMP_TYPE ]; then
   error 'Missing param --type [major/feature/bug]'
@@ -42,13 +60,16 @@ if command -v git &> /dev/null; then
 
   cd $REPO_DIR
   GIT_LOGS=$(git pull --rebase  origin $(git rev-parse --abbrev-ref HEAD) > /dev/null 2>&1)
-#   if [ $? -ne 0 ]; then
-#     error "Please resolve your local GIT issues first and try again."
-#     exit 1
-#   fi
+  if [ $? -ne 0 ]; then
+    error "Please resolve your local GIT issues first and try again."
+    exit 1
+  fi
+else
+  error 'The GIT CLI is required. Please install it first'
+  exit 1
 fi
 
-CURRENT_APP_VERSION=$(cat $REPO_DIR/mdos-cli/package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
+CURRENT_APP_VERSION=$(cat $REPO_DIR/$REPO_NAME/package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
 major=0
 minor=0
 build=0
@@ -108,20 +129,20 @@ fi
     error "$(caller): ${BASH_COMMAND}"
     error "Rolling back changes..."
 
-    if [ -f $REPO_DIR/mdos-cli/package.json.backup ]; then
-      rm -rf $REPO_DIR/mdos-cli/package.json && mv $REPO_DIR/mdos-cli/package.json.backup $REPO_DIR/mdos-cli/package.json
+    if [ -f $REPO_DIR/$REPO_NAME/package.json.backup ]; then
+      rm -rf $REPO_DIR/$REPO_NAME/package.json && mv $REPO_DIR/$REPO_NAME/package.json.backup $REPO_DIR/$REPO_NAME/package.json
       if [ ! -z $GIT_AVAILABLE ] && [ ! -z $GIT_PUSHED ]; then
         cd $REPO_DIR
-        git add mdos-cli/package.json > /dev/null 2>&1
+        git add $REPO_NAME/package.json > /dev/null 2>&1
         DO_REVERT_PUSH=1
       fi
     fi
 
-    if [ -f $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup ]; then
-      rm -rf $REPO_DIR/mdos-cli/infra/install-linux-mac.sh && mv $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup $REPO_DIR/mdos-cli/infra/install-linux-mac.sh
+    if [ -f $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup ]; then
+      rm -rf $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh && mv $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
       if [ ! -z $GIT_AVAILABLE ] && [ ! -z $GIT_PUSHED ]; then
         cd $REPO_DIR
-        git add mdos-cli/infra/install-linux-mac.sh > /dev/null 2>&1
+        git add $REPO_NAME/infra/install-linux-mac.sh > /dev/null 2>&1
         DO_REVERT_PUSH=1
       fi
     fi
@@ -134,11 +155,11 @@ fi
 
   function _finally {
     # Clean up
-    if [ -f $REPO_DIR/mdos-cli/package.json.backup ]; then
-      rm -rf $REPO_DIR/mdos-cli/package.json.backup
+    if [ -f $REPO_DIR/$REPO_NAME/package.json.backup ]; then
+      rm -rf $REPO_DIR/$REPO_NAME/package.json.backup
     fi
-    if [ -f $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup ]; then
-      rm -rf $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup
+    if [ -f $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup ]; then
+      rm -rf $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup
     fi
     info "Done!"
   }
@@ -149,8 +170,8 @@ fi
   # ################################################
   # ################ BACKUP FILES ##################
   # ################################################
-  cp $REPO_DIR/mdos-cli/package.json $REPO_DIR/mdos-cli/package.json.backup
-  cp $REPO_DIR/mdos-cli/infra/install-linux-mac.sh $REPO_DIR/mdos-cli/infra/install-linux-mac.sh.backup
+  cp $REPO_DIR/$REPO_NAME/package.json $REPO_DIR/$REPO_NAME/package.json.backup
+  cp $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup
 
   # ################################################
   # ############ UPDATE LOCAL VERSIONS #############
@@ -158,15 +179,15 @@ fi
 
   # Update package.json
   if [ "$DISTRO" == "darwin" ]; then
-      gsed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
+      gsed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/$REPO_NAME/package.json
   else
-      sed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/mdos-cli/package.json
+      sed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/$REPO_NAME/package.json
   fi
   # Update auto install scripts for CLI
   if [ "$DISTRO" == "darwin" ]; then
-      gsed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/mdos-cli/infra/install-linux-mac.sh
+      gsed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
   else
-      sed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/mdos-cli/infra/install-linux-mac.sh
+      sed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
   fi
   
   # ################################################
@@ -175,8 +196,8 @@ fi
   if [ ! -z $GIT_AVAILABLE ]; then
     info "Pushing to GIT..."
     cd $REPO_DIR
-    git add mdos-cli/package.json
-    git add mdos-cli/infra/install-linux-mac.sh
+    git add $REPO_NAME/package.json
+    git add $REPO_NAME/infra/install-linux-mac.sh
     git commit -m "Bumped project up to version $NEW_APP_VERSION" > /dev/null 2>&1
     git push > /dev/null 2>&1
     GIT_PUSHED=1

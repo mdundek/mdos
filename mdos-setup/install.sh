@@ -840,6 +840,9 @@ install_nginx() {
             if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
                 ufw allow 443 &>> $LOG_FILE
             fi
+            if [ "$(ufw status | grep 'HTTPS\|6443' | grep 'ALLOW')" == "" ]; then
+                ufw allow 6443 &>> $LOG_FILE
+            fi
             if [ "$(ufw status | grep '3915' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3915 &>> $LOG_FILE
             fi
@@ -1455,7 +1458,8 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "/etc/letsencrypt/live/'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/server-ca.crt)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].mountPath = "/etc/letsencrypt/live/'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
@@ -1678,7 +1682,8 @@ install_helm_ftp() {
                 echo "          - longhorn.$DOMAIN"
                 echo ""
                 echo "      You will have to allow inbound traffic on the following ports:"
-                echo "          - 443 (HTTPS traffic)"
+                echo "          - 443 (HTTPS traffic for the MDos API)"
+                echo "          - 6443 (HTTPS traffic for Kubernetes API server)"
                 echo "          - 3915:3920 (TCP - FTP PSV traffic)"
             fi
         fi

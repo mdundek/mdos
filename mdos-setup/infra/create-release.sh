@@ -2,10 +2,44 @@
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
-source ./lib/helpers.sh
-source ./lib/components.sh
-source ./lib/gittools.sh
-source ./.env
+source ../lib/helpers.sh
+source ../lib/components.sh
+source ../lib/gittools.sh
+if [ -f ./.env ]; then
+    source ./.env
+fi
+
+GH_OK=$(command_exists gh)
+if [ "$GH_OK" == "KO" ]; then
+    error "You need to install the gh (GitHub) CLI first" 
+    exit 1
+fi
+
+while [ "$1" != "" ]; do
+    case $1 in
+        --repo )
+            shift
+            REPO_TARGET=$1
+        ;;
+        * ) error "Invalid parameter detected: $1"
+            exit 1
+    esac
+    shift
+done
+
+if [ -z $REPO_TARGET ]; then
+  error 'Missing param --repo [cli/api]'
+  exit 1
+elif [ "$REPO_TARGET" != "cli" ] && [ "$REPO_TARGET" != "api" ]; then
+  error 'Invalid repo name. Needs to be "cli" or "api"'
+  exit 1
+else
+  if [ "$REPO_TARGET" != "cli" ]; then
+    REPO_NAME=mdos-cli
+  else
+    REPO_NAME=mdos-api
+  fi
+fi
 
 # ######################################
 # ############### MAIN #################
@@ -52,9 +86,9 @@ collect_new_version() {
 bump_version_on_main_merge_to_release() {
     bump_and_merge() {
         (
-            ./mdos-cli/infra/version-bump.sh --type $1 && \
-            git checkout release > /dev/null 2>&1 && \
-            git merge --no-ff main > /dev/null 2>&1
+            ./mdos-setup/infra/version-bump.sh --repo $REPO_TARGET --type $1 && \
+                git checkout release > /dev/null 2>&1 && \
+                git merge --no-ff main > /dev/null 2>&1
             git push origin release > /dev/null 2>&1
         ) || ( exit 1 )
     }
@@ -89,7 +123,7 @@ tag_and_publish_to_release() {
         return_to_branch
         exit 1
     }
-    CURRENT_APP_VERSION=$(cat ./mdos-cli/package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
+    CURRENT_APP_VERSION=$(cat ./$REPO_NAME/package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
     info "Tagging current commit with version $CURRENT_APP_VERSION..."
     git checkout release > /dev/null 2>&1
     tag $CURRENT_APP_VERSION || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
@@ -102,7 +136,7 @@ gen_and_publish_release_and_assets() {
     # Create release with releasenotes
     generate_release_files() {
         # Package files
-        cd $REPO_DIR/mdos-cli
+        cd $REPO_DIR/$REPO_NAME
         npm run package
 
         # Rename files
@@ -131,7 +165,7 @@ gen_and_publish_release_and_assets() {
         rm -rf .githubtoken
 
         # Create release
-        gh release create --generate-notes --target release $TAG_NAME ./mdos-cli/dist/*.tar.*
+        gh release create --generate-notes --target release $TAG_NAME ./$REPO_NAME/dist/*.tar.*
     }
 
     if [ -z $GITHUB_TOKEN ]; then
@@ -141,11 +175,11 @@ gen_and_publish_release_and_assets() {
 
     # Generate assets
     git checkout release > /dev/null 2>&1
-    generate_release_files
+    # generate_release_files
     RELEASE_URL=$(git_release $CURRENT_APP_VERSION)
 
     # Clean up
-    rm -rf ./mdos-cli/dist/*.tar.*
+    rm -rf ./$REPO_NAME/dist/*.tar.*
 }
 
 (
@@ -173,12 +207,6 @@ gen_and_publish_release_and_assets() {
     REPO_DIR=$(pwd)
     REPO_BRANCH_MDOS=$(get_current_branch)
 
-    GH_OK=$(command_exists gh)
-    if [ "$GH_OK" == "KO" ]; then
-      error "You need to install the gh (GitHub) CLI first" 
-      exit 1
-    fi
-
     # Check git status, do not prosceed if pending changes
     check_repo_status_clean
 
@@ -200,7 +228,7 @@ gen_and_publish_release_and_assets() {
 
     # Commit and push README file due to version bump
     git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
-    git add mdos-cli/README.md > /dev/null 2>&1
+    git add $REPO_NAME/README.md > /dev/null 2>&1
     git commit -m "Version bump" > /dev/null 2>&1
     git push > /dev/null 2>&1
     git checkout release > /dev/null 2>&1

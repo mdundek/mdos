@@ -8,6 +8,7 @@ const https = require('https')
 const axios = require('axios').default
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage, getConsoleLineHandel } = require('./lib/tools')
 const SocketManager = require('./lib/socket.js')
+const pjson = require('../package.json');
 
 type AxiosConfig = {
     timeout: number
@@ -110,7 +111,10 @@ export default abstract class extends Command {
             httpsAgent: new https.Agent({ rejectUnauthorized: false })
         }
 
-        axiosConfig.headers = { Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}` }
+        axiosConfig.headers = { 
+            Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}`,
+            mdos_version: pjson.version
+        }
         axiosConfig.timeout = 1000 * 60 * 10
 
         if (method.toLowerCase() == 'post') {

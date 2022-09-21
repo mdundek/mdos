@@ -38,6 +38,10 @@ components:
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
             value: "3915"
+          - key: K3S_CLIENT_CA_PATH
+            value: "/usr/src/dep/k3s/client-ca.crt"
+          - key: K3S_CLIENT_KEY_PATH
+            value: "/usr/src/dep/k3s/client-ca.key"
 
     secrets:
       - name: creds
@@ -51,11 +55,16 @@ components:
         type: file
         mountPath: /usr/src/dep/k3s
         entries:
-          - name: server-ca
-            filename: server-ca.crt
+          - name: client-ca
+            filename: client-ca.crt
             value: |-
               -----BEGIN CERTIFICATE-----
               -----END CERTIFICATE-----
+          - name: client-key
+            filename: client-ca.key
+            value: |-
+              -----BEGIN EC PRIVATE KEY-----
+              -----END EC PRIVATE KEY-----
         
     volumes:
       - name: crt-volume

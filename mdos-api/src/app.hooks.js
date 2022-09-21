@@ -1,8 +1,10 @@
+const cliVersionCheck = require('./services/_hooks/versionCheck')
+
 // Application hooks that run for every service
 
 module.exports = {
     before: {
-        all: [],
+        all: [cliVersionCheck()],
         find: [],
         get: [],
         create: [],
