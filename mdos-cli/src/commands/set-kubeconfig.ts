@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core'
-import Command from '../../base'
+import Command from '../base'
 const path = require("path")
 const os = require("os")
 const fs = require("fs")
@@ -13,7 +13,7 @@ const { terminalCommand } = require('../../lib/terminal')
  * @class SetConfig
  * @extends {Command}
  */
-export default class Kubeconfig extends Command {
+export default class SetKubeconfig extends Command {
     static aliases = []
     static description = 'Retrieve user kubeconfig file and set up'
 
@@ -27,20 +27,29 @@ export default class Kubeconfig extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(Kubeconfig)
-        const { args } = await this.parse(Kubeconfig)
+        const { flags } = await this.parse(SetKubeconfig)
+        const { args } = await this.parse(SetKubeconfig)
 
         // Make sure kubectl is installed
         let kctlTargetPath = null;
         if(process.platform === "linux" || process.platform === "darwin") {
             let kc = await terminalCommand("command -v kubectl");
             if (kc.length == 0 || !kc.find((o: string | string[]) => o.indexOf("/kubectl") != -1)) {
-                kctlTargetPath = path.join(require('os').homedir(), ".local", "bin", "kubectl");
+                error('You need to install the "kubectl" CLI first (https://kubernetes.io/docs/tasks/tools/).')
+                process.exit(1);
             } else {
                 kctlTargetPath = kc.find((o: string | string[]) => o.indexOf("/kubectl"));
             }
+        } else if(process.platform === "win32") {
+            let kc = await terminalCommand("WHERE kubectl");
+            if (kc.length == 0 || !kc.find((o: string | string[]) => o.indexOf("\kubectl.exe") != -1)) {
+                error('You need to install the "kubectl" CLI first (https://kubernetes.io/docs/tasks/tools/).')
+                process.exit(1);
+            } else {
+                kctlTargetPath = kc.find((o: string | string[]) => o.indexOf("\kubectl.exe"));
+            }
         } else {
-            error("Windows is not supported yet for this command")
+            error(`${process.platform} is not supported yet for this command`)
             process.exit(1);
         }
 
