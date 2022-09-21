@@ -16,7 +16,7 @@
     $SUDO bash <<SCRIPT
 set -e
 
-CLI_VERSION=v1.1.7
+CLI_VERSION=v1.1.8
 
 if [[ ! ":\$PATH:" == *":/usr/local/bin:"* ]]; then
     echo "Your path is missing /usr/local/bin, you need to add this to use this installer."
