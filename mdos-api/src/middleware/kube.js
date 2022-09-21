@@ -263,18 +263,16 @@ config:
      */
     async generateUserKubectlCertificates(username) {
         try {
-            await terminalCommand(`openssl genrsa -out /home/node/app/tmp/${username}.key 2048`);
-            await terminalCommand(`openssl req -new -key /home/node/app/tmp/${username}.key -out /home/node/app/tmp/${username}.csr -subj "/CN=${username}/O=$O"`);
-            await terminalCommand(`openssl x509 -req -in /home/node/app/tmp/${username}.csr -CA ${process.env.K3S_ROOT_CA_PATH} -CAkey ${process.env.K3S_ROOT_KEY_PATH} -CAcreateserial -out /home/node/app/tmp/${username}.crt -days 500`);
+            await terminalCommand(`openssl ecparam -name prime256v1 -genkey -noout -out /home/node/app/tmp/${username}.key`);
+            await terminalCommand(`openssl req -new -key /home/node/app/tmp/${username}.key -out /home/node/app/tmp/${username}.csr -subj "/CN=${username}/O=key-gen"`);
+            await terminalCommand(`openssl x509 -req -in /home/node/app/tmp/${username}.csr -CA ${process.env.K3S_CLIENT_CA_PATH} -CAkey ${process.env.K3S_CLIENT_KEY_PATH} -CAcreateserial -out /home/node/app/tmp/${username}.crt -days 500`);
 
             const key = fs.readFileSync(`/home/node/app/tmp/${username}.key`, {encoding:'utf8', flag:'r'}); 
             const csr = fs.readFileSync(`/home/node/app/tmp/${username}.csr`, {encoding:'utf8', flag:'r'}); 
             const crt = fs.readFileSync(`/home/node/app/tmp/${username}.crt`, {encoding:'utf8', flag:'r'}); 
 
-            // const rootCrt = fs.readFileSync(`/etc/kubernetes/pki/ca.crt`, {encoding:'utf8', flag:'r'}); 
-            
             return {
-                "host": `kubernetes-api.${process.env.ROOT_DOMAIN}`,
+                "host": `kubernetes-api.${process.env.ROOT_DOMAIN}:6443`,
                 "user": username,
                 "key": key,
                 "csr": csr,
