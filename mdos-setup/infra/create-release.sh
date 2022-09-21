@@ -228,11 +228,6 @@ gen_and_publish_release_and_assets() {
         git add mdos-cli/README.md > /dev/null 2>&1
     fi
 
-    git status
-
-
-    git commit -m "Version bump" > /dev/null 2>&1
-    git push > /dev/null 2>&1
     git checkout release > /dev/null 2>&1
     git merge main > /dev/null 2>&1
     git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
