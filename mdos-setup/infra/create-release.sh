@@ -71,8 +71,8 @@ collect_new_version() {
 bump_version_on_main_merge_to_release() {
     bump_and_merge() {
         (
-            ./mdos-setup/infra/version-bump.sh --repo api --type $1 && \
-            ./mdos-setup/infra/version-bump.sh --repo cli --type $1 && \
+            ./mdos-setup/infra/version-bump.sh --repo api --type $1 --force && \
+            ./mdos-setup/infra/version-bump.sh --repo cli --type $1 --force && \
                 git checkout release > /dev/null 2>&1 && \
                 git merge --no-ff main > /dev/null 2>&1
             git push origin release > /dev/null 2>&1
