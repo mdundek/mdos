@@ -20,8 +20,10 @@ At the root of the application folder is a `mdos.yaml` file that holds all runti
 my-application/
 ├── backend
 │   └── Dockerfile
+│   └── ...
 ├── frontend
 │   └── Dockerfile
+│   └── ...
 ├── volumes
 │   └── static-website
 │       └── index.html
