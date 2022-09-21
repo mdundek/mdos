@@ -4,7 +4,7 @@
 
 ### Applications & application components
 
-Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, and a second component would hold your front end application for instance.  
+Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, and a second component would hold your front end application for instance and so on.  
 Every application component can have one or more volumes attached to it for storage persistance & data mirroring. 
 
 <img src="img/anatomy.png" alt="anatomy" width="400"/>
@@ -20,10 +20,14 @@ At the root of the application folder is a `mdos.yaml` file that holds all runti
 my-application/
 ├── backend
 │   └── Dockerfile
+│   └── <your application code files>...
 ├── frontend
 │   └── Dockerfile
+│   └── <your application code files>...
 ├── volumes
 │   └── static-website
+│       └── index.html
+│       └── ...
 └── mdos.yaml
 ```
 
