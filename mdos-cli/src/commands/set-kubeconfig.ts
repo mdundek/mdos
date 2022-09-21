@@ -3,8 +3,8 @@ import Command from '../base'
 const path = require("path")
 const os = require("os")
 const fs = require("fs")
-const { error, success } = require('../../lib/tools')
-const { terminalCommand } = require('../../lib/terminal')
+const { error, success } = require('../lib/tools')
+const { terminalCommand } = require('../lib/terminal')
 
 /**
  * Command
