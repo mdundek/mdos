@@ -8,7 +8,7 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 
 ---
 
-## Problem statement
+<!-- ## Problem statement
 
 I have been working with Kubernetes for some years now, it is an amazing platform, so versatile, extensible and powerfull. But with great power comes great responsability!  
 I am and have been leading teams that are developing applications that are destined to run on Kubernetes. Over the years, it became obvious that even with the greatness of the platform, there was a major elephant in the room... Let's dig a bit deeper down that rabbit hole.
@@ -35,12 +35,12 @@ There are great flavors of managed Kubernetes implementations (EKS, Rancher, IKS
 
 Welcome to MDos! It's not a managed Kubernetes flavor, it's a packaged Kubernetes deployment, removing the clutter and focusing on the value with all sorts of automated tools and integrations to solve the most chalanging tasks. The aim is to deploy it anywhere, no vendor lockin, no cloud specific dependencies, you can run it on a Raspberry Pi if you have enougth memory on it. It also removes the complexity of kubernetes and provides a framework to package your applications in a simple way, but once deployed they use all the greatness that Kubernetes has to offer. Learn one simplified way of describing your applications and let MDos do the heavy lifting for you.  
 MDos goes beyond just simplifying kubernetes deployments, it also adds mechanisms to deal with typicat tasks such as application authentication and authorization for instance, coupled with a popular user management system called `Keycloak` (which is also managed by `MDos` by the way, you won't have to learn about `Keycloak`) to allow you to add `OAuth2 OIDC` authentication to your applications or manage `Role Based Access Control` to your cluster and resources without having to write a single line of code. You also get a log aggregator OOTB to centralize all your logs and make them searchable, and a multi-tenant private registry is also set up in the cluster ready for you to use. The volume dilema I mentioned above is also addressed here, and debugging falty application deployments is becomming easy again. 
-MDos is multi-tenant oriented, it is designed to be shared between teams, yet secured so that everyone has privacy and security on the cluster.
+MDos is multi-tenant oriented, it is designed to be shared between teams, yet secured so that everyone has privacy and security on the cluster. -->
 
 > **Warning**
-> Yeah, I know, too good to be true, right? MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
+> MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
 
-## Again, but this time in a Nutshell
+## In a Nutshell
 
 * Build & deploy your applications on Kubernetes
 * No Kubernetes skills needed to perform complex workflows
