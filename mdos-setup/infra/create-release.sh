@@ -232,6 +232,7 @@ gen_and_publish_release_and_assets() {
     git checkout release > /dev/null 2>&1
     git merge main > /dev/null 2>&1
     git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
+    git merge release > /dev/null 2>&1
 
     info "Release created for tag $CURRENT_APP_VERSION: $RELEASE_URL"
 )
