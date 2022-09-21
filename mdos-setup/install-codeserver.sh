@@ -64,9 +64,8 @@ LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_codeserver_install.log"
 # Parse user input
 while [ "$1" != "" ]; do
     case $1 in
-        --oidc )
-            shift
-            OIDC_PROVIDER=$1
+        --oidc-keycloak )
+            OIDC_PROVIDER=keycloak
         ;;
         * ) error "Invalid parameter detected: $1"
             exit 1
@@ -367,7 +366,7 @@ metadata:
 spec:
   action: CUSTOM
   provider:
-    name: oauth2-proxy-keycloak
+    name: kc-mdos
   rules:
   - to:
     - operation:
