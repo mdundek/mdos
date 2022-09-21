@@ -19,7 +19,7 @@ while [ "$1" != "" ]; do
     case $1 in
         --repo )
             shift
-            REPO_NAME=$1
+            REPO_TARGET=$1
         ;;
         * ) error "Invalid parameter detected: $1"
             exit 1
@@ -27,14 +27,14 @@ while [ "$1" != "" ]; do
     shift
 done
 
-if [ -z $REPO_NAME ]; then
+if [ -z $REPO_TARGET ]; then
   error 'Missing param --repo [cli/api]'
   exit 1
-elif [ "$REPO_NAME" != "cli" ] && [ "$REPO_NAME" != "api" ]; then
+elif [ "$REPO_TARGET" != "cli" ] && [ "$REPO_TARGET" != "api" ]; then
   error 'Invalid repo name. Needs to be "cli" or "api"'
   exit 1
 else
-  if [ "$REPO_NAME" != "cli" ]; then
+  if [ "$REPO_TARGET" != "cli" ]; then
     REPO_NAME=mdos-cli
   else
     REPO_NAME=mdos-api
@@ -85,9 +85,8 @@ collect_new_version() {
 
 bump_version_on_main_merge_to_release() {
     bump_and_merge() {
-        echo "===> $REPO_NAME"
         (
-            ./mdos-setup/infra/version-bump.sh --repo $REPO_NAME --type $1 && \
+            ./mdos-setup/infra/version-bump.sh --repo $REPO_TARGET --type $1 && \
                 git checkout release > /dev/null 2>&1 && \
                 git merge --no-ff main > /dev/null 2>&1
             git push origin release > /dev/null 2>&1
