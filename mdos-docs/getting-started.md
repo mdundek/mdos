@@ -24,6 +24,8 @@ my-application/
 │   └── Dockerfile
 ├── volumes
 │   └── static-website
+│       └── index.html
+│       └── ...
 └── mdos.yaml
 ```
 
