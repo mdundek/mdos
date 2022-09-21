@@ -41,8 +41,6 @@ fi
 cd ../..
 REPO_DIR=$(pwd)
 
-pwd
-
 if [ -z $BUMP_TYPE ]; then
   error 'Missing param --type [major/feature/bug]'
   exit 1
