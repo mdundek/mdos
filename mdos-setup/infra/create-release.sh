@@ -165,7 +165,7 @@ gen_and_publish_release_and_assets() {
         rm -rf .githubtoken
 
         # Create release
-        gh release create --generate-notes --target release $TAG_NAME ./$REPO_NAME/dist/*.tar.*
+        gh release create --generate-notes --target release $TAG_NAME # ./$REPO_NAME/dist/*.tar.*
     }
 
     if [ -z $GITHUB_TOKEN ]; then
