@@ -840,6 +840,9 @@ install_nginx() {
             if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
                 ufw allow 443 &>> $LOG_FILE
             fi
+            if [ "$(ufw status | grep 'HTTPS\|6443' | grep 'ALLOW')" == "" ]; then
+                ufw allow 6443 &>> $LOG_FILE
+            fi
             if [ "$(ufw status | grep '3915' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3915 &>> $LOG_FILE
             fi
@@ -1679,7 +1682,8 @@ install_helm_ftp() {
                 echo "          - longhorn.$DOMAIN"
                 echo ""
                 echo "      You will have to allow inbound traffic on the following ports:"
-                echo "          - 443 (HTTPS traffic)"
+                echo "          - 443 (HTTPS traffic for the MDos API)"
+                echo "          - 6443 (HTTPS traffic for Kubernetes API server)"
                 echo "          - 3915:3920 (TCP - FTP PSV traffic)"
             fi
         fi
