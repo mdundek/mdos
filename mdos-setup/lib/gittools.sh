@@ -2,9 +2,11 @@
 _DIR="$(cd "$(dirname "$0")" && pwd)"
 cd $_DIR
 
-source ./lib/helpers.sh
-source ./lib/components.sh
-source .env
+source ../lib/helpers.sh
+source ../lib/components.sh
+if [ -f ./.env ]; then
+    source ./.env
+fi
 
 # ######################################
 # ########## HELPER FUNCTIONS ##########
