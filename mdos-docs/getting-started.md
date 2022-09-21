@@ -101,6 +101,6 @@ mdos generate component
 
 The CLI will ask you a couple of things about some base configuration parameters.
 This will create a new component folder with an empty `Dockerfile` for you to use, as well as update the `mdos.yaml` file referencing the component as part of the overall application project along with it's configuration parameters.  
-You can no go ahead and build & test your application locally, and complete the `Dockerfile` that will be used to build your component application image for deployment onto the cluster.
+You can now go ahead and build & test your application locally, and complete the `Dockerfile` that will be used to build your component application image for deployment onto the cluster.
 
 ## Deploy your application
