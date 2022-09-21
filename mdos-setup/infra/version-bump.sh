@@ -138,7 +138,7 @@ fi
       fi
     fi
 
-    if [ -f $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup ]; then
+    if [ "$REPO_NAME" == "mdos-cli" ] && [ -f $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup ]; then
       rm -rf $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh && mv $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
       if [ ! -z $GIT_AVAILABLE ] && [ ! -z $GIT_PUSHED ]; then
         cd $REPO_DIR
@@ -158,7 +158,7 @@ fi
     if [ -f $REPO_DIR/$REPO_NAME/package.json.backup ]; then
       rm -rf $REPO_DIR/$REPO_NAME/package.json.backup
     fi
-    if [ -f $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup ]; then
+    if [ "$REPO_NAME" == "mdos-cli" ] && [ -f $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup ]; then
       rm -rf $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup
     fi
     info "Done!"
@@ -171,7 +171,9 @@ fi
   # ################ BACKUP FILES ##################
   # ################################################
   cp $REPO_DIR/$REPO_NAME/package.json $REPO_DIR/$REPO_NAME/package.json.backup
-  cp $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup
+  if [ "$REPO_NAME" == "mdos-cli" ]; then
+    cp $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh.backup
+  fi
 
   # ################################################
   # ############ UPDATE LOCAL VERSIONS #############
@@ -183,11 +185,13 @@ fi
   else
       sed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/$REPO_NAME/package.json
   fi
-  # Update auto install scripts for CLI
-  if [ "$DISTRO" == "darwin" ]; then
-      gsed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
-  else
-      sed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
+  if [ "$REPO_NAME" == "mdos-cli" ]; then
+    # Update auto install scripts for CLI
+    if [ "$DISTRO" == "darwin" ]; then
+        gsed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
+    else
+        sed -i '/CLI_VERSION=/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
+    fi
   fi
   
   # ################################################
@@ -197,7 +201,9 @@ fi
     info "Pushing to GIT..."
     cd $REPO_DIR
     git add $REPO_NAME/package.json
-    git add $REPO_NAME/infra/install-linux-mac.sh
+    if [ "$REPO_NAME" == "mdos-cli" ]; then
+      git add $REPO_NAME/infra/install-linux-mac.sh
+    fi
     git commit -m "Bumped project up to version $NEW_APP_VERSION" > /dev/null 2>&1
     git push > /dev/null 2>&1
     GIT_PUSHED=1
