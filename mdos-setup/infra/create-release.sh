@@ -17,29 +17,14 @@ fi
 
 while [ "$1" != "" ]; do
     case $1 in
-        --repo )
-            shift
-            REPO_TARGET=$1
+        --gen-cli-bin )
+            GEN_CLI_BIN=1
         ;;
         * ) error "Invalid parameter detected: $1"
             exit 1
     esac
     shift
 done
-
-if [ -z $REPO_TARGET ]; then
-  error 'Missing param --repo [cli/api]'
-  exit 1
-elif [ "$REPO_TARGET" != "cli" ] && [ "$REPO_TARGET" != "api" ]; then
-  error 'Invalid repo name. Needs to be "cli" or "api"'
-  exit 1
-else
-  if [ "$REPO_TARGET" != "cli" ]; then
-    REPO_NAME=mdos-cli
-  else
-    REPO_NAME=mdos-api
-  fi
-fi
 
 # ######################################
 # ############### MAIN #################
@@ -86,7 +71,8 @@ collect_new_version() {
 bump_version_on_main_merge_to_release() {
     bump_and_merge() {
         (
-            ./mdos-setup/infra/version-bump.sh --repo $REPO_TARGET --type $1 && \
+            ./mdos-setup/infra/version-bump.sh --repo api --type $1 && \
+            ./mdos-setup/infra/version-bump.sh --repo cli --type $1 && \
                 git checkout release > /dev/null 2>&1 && \
                 git merge --no-ff main > /dev/null 2>&1
             git push origin release > /dev/null 2>&1
@@ -123,7 +109,7 @@ tag_and_publish_to_release() {
         return_to_branch
         exit 1
     }
-    CURRENT_APP_VERSION=$(cat ./$REPO_NAME/package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
+    CURRENT_APP_VERSION=$(cat ./mdos-api/package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
     info "Tagging current commit with version $CURRENT_APP_VERSION..."
     git checkout release > /dev/null 2>&1
     tag $CURRENT_APP_VERSION || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
@@ -136,7 +122,7 @@ gen_and_publish_release_and_assets() {
     # Create release with releasenotes
     generate_release_files() {
         # Package files
-        cd $REPO_DIR/$REPO_NAME
+        cd $REPO_DIR/mdos-cli
         npm run package
 
         # Rename files
@@ -165,7 +151,11 @@ gen_and_publish_release_and_assets() {
         rm -rf .githubtoken
 
         # Create release
-        gh release create --generate-notes --target release $TAG_NAME # ./$REPO_NAME/dist/*.tar.*
+        if [ ! -z $GEN_CLI_BIN ]; then
+            gh release create --generate-notes --target release $TAG_NAME ./mdos-cli/dist/*.tar.*
+        else
+            gh release create --generate-notes --target release $TAG_NAME
+        fi
     }
 
     if [ -z $GITHUB_TOKEN ]; then
@@ -175,11 +165,17 @@ gen_and_publish_release_and_assets() {
 
     # Generate assets
     git checkout release > /dev/null 2>&1
-    # generate_release_files
+
+    if [ ! -z $GEN_CLI_BIN ]; then
+        generate_release_files
+    fi
+
     RELEASE_URL=$(git_release $CURRENT_APP_VERSION)
 
     # Clean up
-    rm -rf ./$REPO_NAME/dist/*.tar.*
+    if [ ! -z $GEN_CLI_BIN ]; then
+        rm -rf ./mdos-cli/dist/*.tar.*
+    fi
 }
 
 (
@@ -228,7 +224,9 @@ gen_and_publish_release_and_assets() {
 
     # Commit and push README file due to version bump
     git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
-    git add $REPO_NAME/README.md > /dev/null 2>&1
+    if [ ! -z $GEN_CLI_BIN ]; then
+        git add mdos-cli/README.md > /dev/null 2>&1
+    fi
     git commit -m "Version bump" > /dev/null 2>&1
     git push > /dev/null 2>&1
     git checkout release > /dev/null 2>&1
