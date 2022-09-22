@@ -102,7 +102,13 @@ spec:
       initContainers:
       - name: {{ $appName }}-{{ lower .name }}-init
         image: {{ $.Values.mdosRegistry }}/mdos-mirror-lftp:latest
-        imagePullPolicy: Always
+      {{- if .imagePullPolicy }}
+          imagePullPolicy: {{ .imagePullPolicy }}
+      {{- else if $.Values.global.imagePullPolicy }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+      {{- else }}
+          imagePullPolicy: IfNotPresent
+      {{- end }}
         volumeMounts:
       {{- range .volumes }}
         {{- if .syncVolume }}
