@@ -339,8 +339,11 @@ dependencies() {
             python3 \
             unzip \
             snapd \
+            nfs-common \
             lsb-release -y &>> $LOG_FILE
         snap install yq &>> $LOG_FILE
+
+        systemctl enable iscsid &>> $LOG_FILE
 
         # Docker binary
         if [ "$DISTRO" == "Ubuntu" ]; then
