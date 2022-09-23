@@ -34,8 +34,9 @@ At the `application` level, there is also a `volumes` folder where you can store
 > **Note**
 > Volumes are managed on the `application` level rather than on the `component` level in case you wish to share volumes amongst components.
 
-We will build a similar `hello world` example application now, but to keep thinks simple, we will not deploy a backend component along with the frontend component.  
-But first, we need to configure our MDos CLI so that it knows how to talk to our MDos API server.
+We will build a similar `hello world` example application now, but to keep thinks simple, we will not deploy a backend component along with the frontend component, and not work with volumes yet. Those will be subjects for later on.  
+
+First, we need to configure our MDos CLI so that it knows how to talk to our MDos API server.
 
 ## Configure your CLI to point to a MDos platform API host
 
@@ -180,6 +181,18 @@ mdos generate ingress
 
 > Again, replace `mydomain.com` with whatever domain you configured during the platform installation.
 
+That's it, this is what your project file structure should look like now:
+
+```
+hello-world
+├── hello-world-server
+│   ├── Dockerfile
+│   └── server.js
+├── mdos.yaml
+└── volumes
+    └── README.md
+```
+
 Let's have a look at the generated code in the `mdos.yaml` file:
 
 ```yaml
@@ -203,7 +216,9 @@ components:
         trafficType: http
 ```
 
-That's it, we can now deploy this onto our cluster and access it using a browser
+> **Note**
+> All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.
+> To learn more about everything that you can configure for your deployments in this yaml file, please refer back to the specific documentation chapters
 
 ## Deploy your `hello-world` application on the cluster
 
