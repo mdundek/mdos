@@ -2,7 +2,7 @@
 
 ## Anatomy of a mdos application
 
-Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, and a second component would hold your front end application for instance and so on.  
+Applications are to be seen as a higher level concept, an application in `mdos` is composed of one or more application components. Application components are your actual project asset placeholders (source code), where one component could be an API backend server for instance, and a second component would hold your front end application and so on.  
 Every application component can have one or more volumes attached to it for storage persistance & data mirroring. 
 
 <img src="img/anatomy.png" alt="anatomy" width="400"/>
@@ -50,7 +50,7 @@ Before we can start using the mdos CLI, we need to tell it what MDos API server 
 To configure the target MDos platform API server endpoint with your CLI, use the following command:
 
 ```
-mdos configure api-endpoint api.mydomain.com
+mdos configure api-endpoint https://mdos-api.mydomain.com
 ```
 
 Replace `mydomain.com` with your actual domain name used during the platform installation procedure.  

@@ -45,7 +45,6 @@ export default abstract class extends Command {
         this.configPath = path.join(os.homedir(), '.mdos', 'cli.json')
         if(!fs.existsSync(this.configPath)){
             fs.writeFileSync(this.configPath, JSON.stringify({
-                "MDOS_KC_URI": "",
                 "MDOS_API_URI": "",
                 "ACCESS_TOKEN": ""
               }, null, 4))

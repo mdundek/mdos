@@ -9,9 +9,9 @@ const { error, success } = require('../../lib/tools')
  * @class SetConfig
  * @extends {Command}
  */
-export default class Domain extends Command {
+export default class ApiEndpoint extends Command {
     static aliases = []
-    static description = 'Set a configutation parameter for your local CLI environement'
+    static description = 'Set the MDos API endpoint URL to use'
 
     // ******* FLAGS *******
     static flags = {
@@ -20,22 +20,21 @@ export default class Domain extends Command {
     
     // ******* ARGS *******
     static args = [
-        {name: 'domain'}
+        {name: 'uri'}
     ]
 
     // *********************
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(Domain)
-        const { args } = await this.parse(Domain)
+        const { flags } = await this.parse(ApiEndpoint)
+        const { args } = await this.parse(ApiEndpoint)
 
-        if(!args.domain) {
-            error("No domain specified")
+        if(!args.uri) {
+            error("No uri specified")
             process.exit(1)
         } else {
-            this.setConfig('MDOS_KC_URI', `https://keycloak.${args.domain}`)
-            this.setConfig('MDOS_API_URI', `${flags.dev ? "http":"https"}://mdos-api.${args.domain}${flags.dev ? ":3030":""}`)
+            this.setConfig('MDOS_API_URI', `${args.uri}${flags.dev ? ":3030":""}`)
             success("Done")
         }
     }
