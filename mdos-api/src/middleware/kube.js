@@ -216,9 +216,8 @@ config:
 
     /**
      * This function will update all namespace user role bindings on kubernetes according to their roles
-     * @param {*} namespace 
      */
-    async applyUserRoleBindingsForNamespace(namespace) {
+    async applyUserRoleBindingsForNamespaces() {
         const nsUsersAndRoles = await this.app.get("keycloak").getUsers("mdos")
         // Compute mdos admin emails
         const mdosAdmins = nsUsersAndRoles

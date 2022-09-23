@@ -183,6 +183,9 @@ exports.Kube = class Kube extends KubeCore {
                 } catch (err) {}
                 throw error
             }
+
+            // Regenerate namespace rolebindings in cluster
+            await this.app.get('kube').applyUserRoleBindingsForNamespaces()
         } else {
             throw new BadRequest('ERROR: Malformed API request')
         }
