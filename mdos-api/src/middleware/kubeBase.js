@@ -850,8 +850,8 @@ class KubeBase extends KubeBaseConstants {
      * @param {*} namespaceName
      */
     buildTmplNSUserRoles(namespaceName) {
-        let userReadRules = this.getAdminReadRolesRBAC()
-        let userWriteRules = this.getAdminWriteRolesRBAC()
+        let userReadRules = this.getUserReadRolesRBAC()
+        let userWriteRules = this.getUserWriteRolesRBAC()
         if(userReadRules.length > 0) {
             userReadRules = userReadRules.map((rule) => {
                 rule.verbs = ['get', 'list', 'watch']
