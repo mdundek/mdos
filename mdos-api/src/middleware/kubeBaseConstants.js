@@ -41,7 +41,7 @@ class KubeBaseConstants {
             },
             {
                 apiGroups: ['apps'],
-                resources: ['controllerrevisions', 'deployments', 'replicasets', 'statefulsets']
+                resources: ['controllerrevisions', 'deployments', 'replicasets', 'statefulsets', 'daemonsets']
             },
             {
                 apiGroups: ['autoscaling'],
@@ -155,7 +155,7 @@ class KubeBaseConstants {
             },
             {
                 apiGroups: ['apps'],
-                resources: ['controllerrevisions', 'deployments', 'replicasets', 'statefulsets']
+                resources: ['controllerrevisions', 'deployments', 'replicasets', 'statefulsets', 'daemonsets']
             },
             {
                 apiGroups: ['autoscaling'],
@@ -264,7 +264,7 @@ class KubeBaseConstants {
             },
             {
                 apiGroups: ['apps'],
-                resources: ['controllerrevisions', 'deployments', 'replicasets', 'statefulsets']
+                resources: ['controllerrevisions', 'deployments', 'replicasets', 'statefulsets', 'daemonsets']
             },
             {
                 apiGroups: ['autoscaling'],
