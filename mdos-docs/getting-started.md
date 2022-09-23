@@ -69,14 +69,15 @@ mdos namespace create
 
 WARN : Your current token has expired or is invalid. You need to re-authenticate
 
-? Please enter your username: mdundek
+? Please enter your username: admin-username
 ? Please enter your password: [hidden]
 
 ? Enter a namespace name to create a-team
 Creating namespace... done
 ```
 
-> If this is the first time you interact with the platform (or if your JWT token has expired like in the example above), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the `admin` user account that was used during the platform installation procedure. If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  
+> If this is the first time you interact with the platform (or if your JWT token has expired like in the example above), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the `admin` user account that was used during the platform installation procedure (in this example, the admin username is called `admin-username`, super original, I know...).  
+> If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  
 
 So what happened on the platform side when you create a namespace using the MDos CLI? Here are some high level details:
 
@@ -217,7 +218,7 @@ components:
 ```
 
 > **Note**
-> All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.
+> All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.  
 > To learn more about everything that you can configure for your deployments in this yaml file, please refer back to the specific documentation chapters
 
 ## Deploy your `hello-world` application on the cluster
@@ -232,14 +233,14 @@ mdos application deploy
 
 WARN : Your current token has expired or is invalid. You need to re-authenticate
 
-? Please enter your username: mdundek
+? Please enter your username: admin-username
 ? Please enter your password: [hidden]
 
 Synching volumes... done
 
 To push your images to the mdos registry, you need to provide your mdos username and password first
 
-? Username: mdundek
+? Username: admin-username
 ? Password: ********
 Building application image registry.mydomain.com/a-team/hello-world:0.0.1... done
 Pushing application image registry.mydomain.com/a-team/hello-world:0.0.1... done
