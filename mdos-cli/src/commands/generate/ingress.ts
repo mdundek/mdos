@@ -93,7 +93,7 @@ export default class Ingress extends Command {
                 type: 'confirm',
                 name: 'useSubPath',
                 default: false,
-                message: 'Do you want to match a subpath for this host',
+                message: 'Do you want to match a subpath for this host?',
             },
             {
                 type: 'string',
