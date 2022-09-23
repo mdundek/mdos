@@ -3,7 +3,8 @@
 ## Install the MDos (server) platform
 
 > **Warning**
-> At the moment, only Ubuntu >= 20.04 is supported. Debian and Alpine are planned next
+> At the moment, only Ubuntu >= 20.04 is supported for the MDos platform itself. Debian and Alpine are planned next.
+> The MDos CLI is available for Max, linux and Windows
 
 First, clone this repo on your target machine:
 
@@ -19,7 +20,7 @@ Install the platform by calling the following script as root:
 sudo ./mdos-setup/install.sh
 ```
 
-During the installation of the CLI, you will be asked to provide a few details.  
+During the installation procedure, you will be asked to provide a few details.  
 
 #### Administrator credentials 
 
@@ -151,7 +152,7 @@ Would you like to create this folder?
 #### Configure Keycloak and set up the master token
 
 After a few minutes (can take up to 10 minutes, depending on your internet speed), you will be asked to set up Keycloak and provide a secret token to the installation script.   
-This token is necessary so that mdos can administer everything it needs on Keycload.  
+This token is necessary so that mdos can administer everything it needs on Keycloak.  
 The script provides you with detailed instructions on how to do so, simply follow them and enter the secret `token` from the Keycloak website.
 
 ```

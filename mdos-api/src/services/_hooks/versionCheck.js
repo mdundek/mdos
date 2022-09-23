@@ -8,7 +8,7 @@ const pjson = require('../../../package.json');
  */
 module.exports = function () {
     return async (context) => {
-        if (!context.params.headers['mdos_version']) return context
+        if (context.params.provider != 'rest' || !context.params.headers['mdos_version']) return context
 
         const cliVersionBreakdown = context.params.headers['mdos_version'].split(".").map(v => parseInt(v))
         const apiVersionBreakdown = pjson.version.split(".").map(v => parseInt(v))

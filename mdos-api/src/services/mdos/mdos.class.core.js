@@ -41,11 +41,16 @@ class MdosCore extends CommonCore {
         }
         // For production
         else {
-            if (!headers['x-auth-request-access-token']) {
+            if (!headers['authorization']) {
                 throw new Forbidden('ERROR: You are not authenticated')
             }
 
-            let jwtToken = jwt_decode(headers['x-auth-request-access-token'])
+            // Get JWT token
+            let access_token = headers['authorization'].split(" ")[1]
+            if (access_token.slice(-1) === ';') {
+                access_token = access_token.substring(0, access_token.length-1)
+            }
+            const jwtToken = await this.app.get('keycloak').userTokenInstrospect('mdos', access_token, true)
 
             userData.roles = jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles ? jwtToken.resource_access.mdos.roles : []
 

@@ -155,7 +155,7 @@ export default class Deploy extends Command {
             const regCreds = await this.collectRegistryCredentials(flags)
             await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir, appYaml.tenantName)
         }
-
+ 
         // Do some checks, make sure this deployment will not collide with existing deployments for other apps
         let deployedApps
         try {
@@ -164,7 +164,7 @@ export default class Deploy extends Command {
             this.showError(err)
             process.exit(1)
         }
-        
+
         let errorMsg: string | null = null
         // Make sure deployed apps with same uuid do not have different names
         for (const deployedApp of deployedApps.data) {
@@ -184,7 +184,7 @@ export default class Deploy extends Command {
                 }
             }
         }
-        
+
         // check that volume names are not already in use by other apps
         // NOTE: Probably obsolete checks. Need error UC to implement right
         // if(!errorMsg) {
@@ -217,7 +217,7 @@ export default class Deploy extends Command {
         
         // Init realtime connection
         await this.initSocketIo()
-        
+
         const consoleHandles: any[] = []
         let spinning = false
         let appLogs = {}
@@ -236,7 +236,7 @@ export default class Deploy extends Command {
                 appLogs = data.appLogs
             }
         })
-        
+
         // Deploy app
         CliUx.ux.action.start('Deploying application')
         spinning = true
@@ -516,7 +516,7 @@ export default class Deploy extends Command {
             if(!flags.password) {
                 questions.push({
                     group: 'application',
-                    type: 'text',
+                    type: 'password',
                     name: 'password',
                     message: 'Password:',
                     validate: (value: { trim: () => { (): any; new (): any; length: number } }) => {
