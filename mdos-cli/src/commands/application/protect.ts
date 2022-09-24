@@ -13,8 +13,8 @@ const YAML = require('yaml')
  * @class Sso
  * @extends {Command}
  */
-export default class Sso extends Command {
-    static aliases = ['app:sso', 'app:protect', 'application:protect', 'sso:app', 'protect:app', 'protect:application']
+export default class Protect extends Command {
+    static aliases = ['app:sso', 'app:protect', 'sso:app', 'protect:app', 'protect:application']
     static description = 'Protect an ingress hostname'
 
     // ******* FLAGS *******
@@ -25,7 +25,7 @@ export default class Sso extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(Sso)
+        const { flags } = await this.parse(Protect)
 
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), 'mdos.yaml')
