@@ -240,7 +240,7 @@ collect_user_input() {
         unset LOOP_BREAK
         while [ -z $LOOP_BREAK ]; do
             user_input OWN_FULLCHAIN_CRT_PATH "Please enter the absolute path to your fullchain PEM certificate (ex. /path/to/fullchain.pem):"
-            if [ ! -f $OWN_FULLCHAIN_CRT_PATH ]; then
+            if [ -f $OWN_FULLCHAIN_CRT_PATH ]; then
                 LOOP_BREAK=1
             else
                 error "File not found"
@@ -250,7 +250,7 @@ collect_user_input() {
         unset LOOP_BREAK
         while [ -z $LOOP_BREAK ]; do
             user_input OWN_PRIVKEY_PATH "Please enter the absolute path to your private key (ex. /path/to/privkey.pem):"
-            if [ ! -f $OWN_PRIVKEY_PATH ]; then
+            if [ -f $OWN_PRIVKEY_PATH ]; then
                 LOOP_BREAK=1
             else
                 error "File not found"
@@ -260,6 +260,15 @@ collect_user_input() {
         if [ "$(dirname "${OWN_FULLCHAIN_CRT_PATH}")" != "$(dirname "${OWN_PRIVKEY_PATH}")" ]; then
             error "The fullchain certificate and private key file need to located in the same directory"
             exit 1
+        fi
+
+        set +Ee
+        yes_no PROV_CERT_IS_SELFSIGNED "Is the domain \"$DOMAIN\" properly configured on a DNS provider to point to this server?"
+        set -Ee
+        if [ "$PROV_CERT_IS_SELFSIGNED" == "no" ]; then
+            PROV_CERT_IS_SELFSIGNED=1
+        else
+            unset PROV_CERT_IS_SELFSIGNED
         fi
     fi
 
@@ -913,7 +922,7 @@ install_registry() {
     deploy_reg_chart
 
     # Update docker and K3S registry for self signed cert
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
         # Configure self signed cert with local docker deamon
         if [ ! -d /etc/docker/certs.d/registry.$DOMAIN ]; then
             mkdir -p /etc/docker/certs.d/registry.$DOMAIN
@@ -1685,25 +1694,28 @@ install_helm_ftp() {
                 echo "-------------------------------------------------------------------"
                 echo ""
             fi
-            if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
-                warn "You choose to generate a self signed certificate for this installation."
-                echo "      All certificates are located under the folder $SSL_ROOT."
-                echo "      You can use those certificates to allow your external tools to"
-                echo "      communicate with the platform (ex. docker)."
-                echo ""
-                echo "      Self-signed certificates also impose limitations, the most significant"
-                echo "      one being the inability to use OIDC authentication on your applications."
-                echo ""
-                echo "      To talk to your platform from an environement other than this one, you will"
-                echo "      also need to configure your 'hosts' file in that remote environement with"
-                echo "      the following resolvers:"
-                echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
-                echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
-                echo "          <MDOS_VM_IP> registry.$DOMAIN"
-                echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
-                echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
-                echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
-                echo ""
+            
+            if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+                if [ -z $GLOBAL_ERROR ]; then
+                    warn "You choose to generate a self signed certificate for this installation."
+                    echo "      All certificates are located under the folder $SSL_ROOT."
+                    echo "      You can use those certificates to allow your external tools to"
+                    echo "      communicate with the platform (ex. docker)."
+                    echo ""
+                    echo "      Self-signed certificates also impose limitations, the most significant"
+                    echo "      one being the inability to use OIDC authentication on your applications."
+                    echo ""
+                    echo "      To talk to your platform from an environement other than this one, you will"
+                    echo "      also need to configure your 'hosts' file in that remote environement with"
+                    echo "      the following resolvers:"
+                    echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
+                    echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
+                    echo "          <MDOS_VM_IP> registry.$DOMAIN"
+                    echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
+                    echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
+                    echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
+                    echo ""
+                fi
             fi
             if [ -z $GLOBAL_ERROR ]; then
                 info "The following services are available on the platform:"
@@ -1758,6 +1770,9 @@ install_helm_ftp() {
         SSL_ROOT="$(dirname "${OWN_FULLCHAIN_CRT_PATH}")"
         FULLCHAIN_FNAME=$(basename "${OWN_FULLCHAIN_CRT_PATH}")
         PRIVKEY_FNAME=$(basename "${OWN_PRIVKEY_PATH}")
+        if [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+            configure_etc_hosts
+        fi
     else
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
         FULLCHAIN_FNAME=fullchain.pem
@@ -1780,7 +1795,7 @@ install_helm_ftp() {
     fi
 
     # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
         consigure_core_dns_for_self_signed
     fi
 
@@ -1830,7 +1845,7 @@ install_helm_ftp() {
     fi
 
     # LOAD OAUTH2 DATA
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
         KC_NODEPORT=":30998"
         OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}${KC_NODEPORT}/realms/mdos/.well-known/openid-configuration")
         OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
