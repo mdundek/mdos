@@ -11,8 +11,8 @@ services:
     volumes:
       - "~/.mdos/ftp-data/userdata:/home/ftp_data/"
       - "~/.mdos/ftp-data/passwd:/etc/pure-ftpd/passwd"
-      # - "/etc/letsencrypt/live/<your_server>/fullchain.pem:/etc/ssl/private/pure-ftpd-cert.pem"
-      # - "/etc/letsencrypt/live/<your_server>/privkey.pem:/etc/ssl/private/pure-ftpd-key.pem"
+      - "/etc/letsencrypt/live/<your_server>/fullchain.pem:/etc/ssl/private/pure-ftpd-cert.pem"
+      - "/etc/letsencrypt/live/<your_server>/privkey.pem:/etc/ssl/private/pure-ftpd-key.pem"
     environment:
       FTP_HOME_ROOT: /home/ftp_data
       M2M_USER: mdundek

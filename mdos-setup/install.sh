@@ -234,8 +234,33 @@ collect_user_input() {
             done
         fi
     else
-        warn "Not implemented yet!"
-        exit 1
+        warn "It is assumed that your domain for the certificate you wish to use is configured (DNS) to route traffic directly to this host IP"
+        user_input DOMAIN "Enter your DNS root domain name for your certificate(ex. mydomain.com):" 
+
+        unset LOOP_BREAK
+        while [ -z $LOOP_BREAK ]; do
+            user_input OWN_FULLCHAIN_CRT_PATH "Please enter the absolute path to your fullchain PEM certificate (ex. /path/to/fullchain.pem):"
+            if [ ! -f $OWN_FULLCHAIN_CRT_PATH ]; then
+                LOOP_BREAK=1
+            else
+                error "File not found"
+            fi
+        done
+
+        unset LOOP_BREAK
+        while [ -z $LOOP_BREAK ]; do
+            user_input OWN_PRIVKEY_PATH "Please enter the absolute path to your private key (ex. /path/to/privkey.pem):"
+            if [ ! -f $OWN_PRIVKEY_PATH ]; then
+                LOOP_BREAK=1
+            else
+                error "File not found"
+            fi
+        done
+
+        if [ "$(dirname "${OWN_FULLCHAIN_CRT_PATH}")" != "$(dirname "${OWN_PRIVKEY_PATH}")" ]; then
+            error "The fullchain certificate and private key file need to located in the same directory"
+            exit 1
+        fi
     fi
 
     # LONGHORN
@@ -389,7 +414,7 @@ setup_cloudflare_certbot() {
     echo "dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee" >> $HOME/.mdos/cloudflare.ini
 
     # Create certificate now (will require manual input)
-    if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
+    if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
         question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
         echo ""
         echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
@@ -398,8 +423,8 @@ setup_cloudflare_certbot() {
         yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
         
         if [ "$CERT_OK" == "yes" ]; then
-            if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
-                error "Could not find generated certificate under: /etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+            if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
+                error "Could not find generated certificate under: $SSL_ROOT/$FULLCHAIN_FNAME"
                 exit 1
             fi
             chmod 655 /etc/letsencrypt/archive/$DOMAIN/*.pem
@@ -499,8 +524,8 @@ DNS.1 = $DOMAIN
 DNS.2 = *.$DOMAIN" > $SSL_ROOT/config.cfg
     /usr/bin/docker run --rm -v $SSL_ROOT:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
 
-    cp $SSL_ROOT/$DOMAIN.key $SSL_ROOT/privkey.pem
-    cp $SSL_ROOT/$DOMAIN.crt $SSL_ROOT/fullchain.pem
+    cp $SSL_ROOT/$DOMAIN.key $SSL_ROOT/$PRIVKEY_FNAME
+    cp $SSL_ROOT/$DOMAIN.crt $SSL_ROOT/$FULLCHAIN_FNAME
     chmod 655 $SSL_ROOT/*.pem
 }
 
@@ -771,7 +796,7 @@ install_istio() {
         fi
     done
 
-    kubectl create -n istio-system secret tls httpbin-credential --key=$SSL_ROOT/privkey.pem --cert=$SSL_ROOT/fullchain.pem &>> $LOG_FILE
+    kubectl create -n istio-system secret tls httpbin-credential --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
 
     ## Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
@@ -834,7 +859,10 @@ install_nginx() {
         cp ./dep/proxy/mdos.conf /etc/nginx/conf.d/
 
         sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s/__SSL_ROOT__/$SSL_ROOT/g" /etc/nginx/conf.d/mdos.conf
         sed -i "s/__NODE_IP__/127.0.0.1/g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s/__FULLCHAIN_FNAME__/$FULLCHAIN_FNAME/g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s/__PRIVKEY_FNAME__/$PRIVKEY_FNAME/g" /etc/nginx/conf.d/mdos.conf
     fi
 
     # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
@@ -889,7 +917,7 @@ install_registry() {
         # Configure self signed cert with local docker deamon
         if [ ! -d /etc/docker/certs.d/registry.$DOMAIN ]; then
             mkdir -p /etc/docker/certs.d/registry.$DOMAIN
-            cp $SSL_ROOT/fullchain.pem /etc/docker/certs.d/registry.$DOMAIN/ca.crt
+            cp $SSL_ROOT/$FULLCHAIN_FNAME /etc/docker/certs.d/registry.$DOMAIN/ca.crt
 
             # Allow self signed cert registry for docker daemon
             echo "{
@@ -915,9 +943,9 @@ configs:
       username: $KEYCLOAK_USER
       password: $KEYCLOAK_PASS
     tls:
-      cert_file: $SSL_ROOT/fullchain.pem
-      key_file: $SSL_ROOT/privkey.pem
-      ca_file: $SSL_ROOT/fullchain.pem" > /etc/rancher/k3s/registries.yaml
+      cert_file: $SSL_ROOT/$FULLCHAIN_FNAME
+      key_file: $SSL_ROOT/$PRIVKEY_FNAME
+      ca_file: $SSL_ROOT/$FULLCHAIN_FNAME" > /etc/rancher/k3s/registries.yaml
             systemctl restart k3s &>> $LOG_FILE
         fi
     fi
@@ -932,11 +960,11 @@ deploy_reg_chart() {
     REG_VALUES="$(cat ./dep/registry/values.yaml)"
 
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
 
@@ -1044,8 +1072,8 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
 
     collect_api_key() {
         echo ""
@@ -1458,13 +1486,13 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "/etc/letsencrypt/live/'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "'$SSL_ROOT'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].mountPath = "/etc/letsencrypt/live/'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].mountPath = "'$SSL_ROOT'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$SSL_ROOT'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
     
@@ -1579,6 +1607,8 @@ install_helm_ftp() {
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.image = "registry.'$DOMAIN'/mdos-ftp-bot:latest"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[0] = "'$FTP_DATA_HOME':/home/ftp_data/"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[1] = "'$HOME'/.mdos/pure-ftpd/passwd:/etc/pure-ftpd/passwd"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[2] = "'$SSL_ROOT'/'$FULLCHAIN_FNAME':/etc/ssl/private/pure-ftpd-cert.pem"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[3] = "'$SSL_ROOT'/'$PRIVKEY_FNAME':/etc/ssl/private/pure-ftpd-key.pem"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_USER = "'$KEYCLOAK_USER'"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_PASSWORD = "'$KEYCLOAK_PASS'"')
     
@@ -1716,6 +1746,8 @@ install_helm_ftp() {
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
+        FULLCHAIN_FNAME=fullchain.pem
+        PRIVKEY_FNAME=privkey.pem
 
         if [ -z $INST_STEP_CLOUDFLARE ]; then
             info "Certbot installation and setup..."
@@ -1723,12 +1755,13 @@ install_helm_ftp() {
             set_env_step_data "INST_STEP_CLOUDFLARE" "1"
         fi
     elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
-        error "Not implemented yet"
-        # Collect ffullchain and privkey
-        # Ask if self signed or not
-        exit 1
+        SSL_ROOT="$(dirname "${OWN_FULLCHAIN_CRT_PATH}")"
+        FULLCHAIN_FNAME=$(basename "${OWN_FULLCHAIN_CRT_PATH}")
+        PRIVKEY_FNAME=$(basename "${OWN_PRIVKEY_PATH}")
     else
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
+        FULLCHAIN_FNAME=fullchain.pem
+        PRIVKEY_FNAME=privkey.pem
 
         if [ -z $INST_STEP_SS_CERT ]; then
             info "Generating self signed certificate..."
