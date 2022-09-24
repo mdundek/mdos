@@ -858,11 +858,11 @@ install_nginx() {
     if [ ! -f /etc/nginx/conf.d/mdos.conf ]; then
         cp ./dep/proxy/mdos.conf /etc/nginx/conf.d/
 
-        sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s/__SSL_ROOT__/$SSL_ROOT/g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s/__NODE_IP__/127.0.0.1/g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s/__FULLCHAIN_FNAME__/$FULLCHAIN_FNAME/g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s/__PRIVKEY_FNAME__/$PRIVKEY_FNAME/g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s|__DOMAIN__|$DOMAIN|g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s|__SSL_ROOT__|$SSL_ROOT|g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s|__NODE_IP__|127.0.0.1|g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s|__FULLCHAIN_FNAME__|$FULLCHAIN_FNAME|g" /etc/nginx/conf.d/mdos.conf
+        sed -i "s|__PRIVKEY_FNAME__|$PRIVKEY_FNAME|g" /etc/nginx/conf.d/mdos.conf
     fi
 
     # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
