@@ -161,10 +161,10 @@ Ok, we have an application ready to use now. Next, we need to tell out `mdos` ap
 > **Note**
 > As of now, MDos uses the platform wildcard domain name that was configured during the installation of the platform in order to exposes any application you deploy on it. Adding extra domain names for your various applications is under developement and will be available soon. 
 
-Let's start with exposing port `8080`. Move into the `hello-world-server` component folder and execute the following command:
+Let's start with exposing port `8080` for our application component, which can be done with a kubernetes `service`. Move into the `hello-world-server` component folder and execute the following command:
 
 ```
-mdos generate port
+mdos generate service
 ? Enter a name for the service to add a port to: http
 ? Specify a port number on which your application needs to be accessible on: 8080
 ```
