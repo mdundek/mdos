@@ -52,15 +52,18 @@ components:
       - name: regcred
     services:
       - name: service
-        type: NodePort
         ports:
           - name: http-8080
             port: 8080
-            nodePort: 30999
           - name: http-8443
             port: 8443
             svcPort: 443
-            nodePort: 30998
+    ingress:
+      - name: ingress
+        gateway: https-gateway-mdos
+        matchHost: keycloak.<DOMAIN>
+        targetPort: 443
+        trafficType: https
     readinessProbe:
       type: http
       path: /realms/master
