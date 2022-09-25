@@ -103,11 +103,11 @@ spec:
       - name: {{ $appName }}-{{ lower .name }}-init
         image: {{ $.Values.mdosRegistry }}/mdos-mirror-lftp:latest
       {{- if .imagePullPolicy }}
-          imagePullPolicy: {{ .imagePullPolicy }}
+        imagePullPolicy: {{ .imagePullPolicy }}
       {{- else if $.Values.global.imagePullPolicy }}
-          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
       {{- else }}
-          imagePullPolicy: IfNotPresent
+        imagePullPolicy: IfNotPresent
       {{- end }}
         volumeMounts:
       {{- range .volumes }}
