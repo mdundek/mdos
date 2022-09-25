@@ -189,6 +189,21 @@ exec_in_pod() {
 collect_user_input() {
     pathRe='^/[A-Za-z0-9/_-]+$'
 
+    # COLLECT LOCAL IP FOR K3S ENDPOINTS
+    if command -v getent >/dev/null; then
+        if command -v ip >/dev/null; then
+            # Get the default network interface in use to connect to the internet
+            host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
+            INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
+            LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+        fi
+    fi
+    if [ -z $LOC_IP ]; then
+        user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):"
+    else
+        user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):" "$LOC_IP"
+    fi
+
     # COLLECT ADMIN CREDS
     print_section_title "Admin user account"
     user_input KEYCLOAK_USER "Enter a admin username for the platform:"
@@ -1632,6 +1647,58 @@ install_helm_ftp() {
     printf "$FTP_DOCKER_COMPOSE_VAL\n" > ./docker-compose.yaml
 
     docker compose up -d &>> $LOG_FILE
+
+    # Install endpoint to use K3S ingress for this
+    cat <<EOF | kubectl apply -f &>> $LOG_FILE -
+apiVersion: v1
+kind: Service
+metadata:
+  name: ftpd-bot-service-egress
+  namespace: mdos
+  labels:
+    app: ftpd-bot
+spec:
+   clusterIP: None
+   ports:
+   - protocol: TCP
+     port: 3039
+     targetPort: 3039
+   type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: ftpd-bot-service-egress
+  namespace: mdos
+  labels:
+    app: ftpd-bot
+subsets:
+  - addresses:
+    - ip: $LOCAL_IP
+    ports:
+      - port: 3039
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ftpd-bot
+  namespace: mdos
+  labels:
+    app: ftpd-bot
+spec:
+  gateways:
+  - istio-system/https-gateway
+  hosts:
+  - mdos-ftp-api.$DOMAIN
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: ftpd-bot-service-egress.mdos.svc.cluster.local
+        port:
+          number: 3039
+EOF
 
     cd $C_DIR
 }
