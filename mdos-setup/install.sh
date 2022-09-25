@@ -844,6 +844,7 @@ spec:
     hosts:
     - "registry.$DOMAIN"
     - "registry-auth.$DOMAIN"
+    - "keycloak.$DOMAIN"
     tls:
       mode: PASSTHROUGH
 EOF
@@ -1077,6 +1078,7 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].volumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
 
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].ingress[0].matchHost = "keycloak.'$DOMAIN'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')

@@ -8,6 +8,8 @@ mdos-docs/infra/mkdocs/mkdocs/site
 mdos-setup/cloudflare.ini
 mdos-setup/deprecated/*
 mdos-setup/dep/mdos-api
+mdos-docs/.$architecture.drawio.bkp
+mdos-docs/.$architecture.drawio.dtmp
 mdos-docs/draw.io/.$architecture.drawio.bkp
 mdos-docs/draw.io/.$architecture.drawio.dtmp
 ftp_target
