@@ -624,8 +624,6 @@ install_longhorn() {
 
     if [ "$CUSTOM_LH_PATH" == "yes" ]; then
         helm install longhorn longhorn/longhorn \
-            --set service.ui.type=NodePort \
-            --set service.ui.nodePort=30584 \
             --set persistence.defaultClassReplicaCount=2 \
             --set defaultSettings.guaranteedEngineManagerCPU=125m \
             --set defaultSettings.guaranteedReplicaManagerCPU=125m \
@@ -633,8 +631,6 @@ install_longhorn() {
             --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
     else
         helm install longhorn longhorn/longhorn \
-            --set service.ui.type=NodePort \
-            --set service.ui.nodePort=30584 \
             --set persistence.defaultClassReplicaCount=2 \
             --set defaultSettings.guaranteedEngineManagerCPU=125m \
             --set defaultSettings.guaranteedReplicaManagerCPU=125m \
@@ -805,8 +801,8 @@ install_istio() {
         fi
     done
 
-    sed -i 's/type: LoadBalancer/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
-    sed -i 's/type: ClusterIP/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
+    # sed -i 's/type: LoadBalancer/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
+    # sed -i 's/type: ClusterIP/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
     helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system &>> $LOG_FILE
 
     info "Waiting for istio ingress gateway to become ready..."
@@ -1778,6 +1774,7 @@ EOF
                     echo "      also need to configure your 'hosts' file in that remote environement with"
                     echo "      the following resolvers:"
                     echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
+                    echo "          <MDOS_VM_IP> mdos-ftp-api.$DOMAIN"
                     echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
                     echo "          <MDOS_VM_IP> registry.$DOMAIN"
                     echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
@@ -1789,7 +1786,8 @@ EOF
             if [ -z $GLOBAL_ERROR ]; then
                 info "The following services are available on the platform:"
                 echo "          - mdos-api.$DOMAIN"
-                echo "          - mdos-ftp.$DOMAIN:3915"
+                echo "          - mdos-ftp-api.$DOMAIN"
+                echo "          - mdos-ftp.$DOMAIN:3915-3920"
                 echo "          - registry.$DOMAIN"
                 echo "          - registry-auth.$DOMAIN"
                 echo "          - keycloak.$DOMAIN"
