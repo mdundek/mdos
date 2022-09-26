@@ -865,33 +865,37 @@ EOF
 # ############################################
 # ############### INSTALL NGINX ##############
 # ############################################
-install_nginx() {
-    info "Setting up NGinx..."
+setup_firewall() {
+    
 
-    if [ "$PSYSTEM" == "APT" ]; then
-        apt install nginx -y &>> $LOG_FILE
-        systemctl enable nginx &>> $LOG_FILE
-        systemctl start nginx &>> $LOG_FILE
-    fi
+    # if [ "$PSYSTEM" == "APT" ]; then
+    #     apt install nginx -y &>> $LOG_FILE
+    #     systemctl enable nginx &>> $LOG_FILE
+    #     systemctl start nginx &>> $LOG_FILE
+    # fi
 
-    if [ ! -f /etc/nginx/conf.d/mdos.conf ]; then
-        cp ./dep/proxy/mdos.conf /etc/nginx/conf.d/
+    # if [ ! -f /etc/nginx/conf.d/mdos.conf ]; then
+    #     cp ./dep/proxy/mdos.conf /etc/nginx/conf.d/
 
-        sed -i "s|__DOMAIN__|$DOMAIN|g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s|__SSL_ROOT__|$SSL_ROOT|g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s|__NODE_IP__|127.0.0.1|g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s|__FULLCHAIN_FNAME__|$FULLCHAIN_FNAME|g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s|__PRIVKEY_FNAME__|$PRIVKEY_FNAME|g" /etc/nginx/conf.d/mdos.conf
-    fi
+    #     sed -i "s|__DOMAIN__|$DOMAIN|g" /etc/nginx/conf.d/mdos.conf
+    #     sed -i "s|__SSL_ROOT__|$SSL_ROOT|g" /etc/nginx/conf.d/mdos.conf
+    #     sed -i "s|__NODE_IP__|127.0.0.1|g" /etc/nginx/conf.d/mdos.conf
+    #     sed -i "s|__FULLCHAIN_FNAME__|$FULLCHAIN_FNAME|g" /etc/nginx/conf.d/mdos.conf
+    #     sed -i "s|__PRIVKEY_FNAME__|$PRIVKEY_FNAME|g" /etc/nginx/conf.d/mdos.conf
+    # fi
 
     # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
     if [ "$USE_FIREWALL" == "yes" ]; then
         if command -v ufw >/dev/null; then
+            info "Setting up firewall rules..."
             if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
                 ufw allow 443 &>> $LOG_FILE
             fi
             if [ "$(ufw status | grep 'HTTPS\|6443' | grep 'ALLOW')" == "" ]; then
                 ufw allow 6443 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep 'HTTPS\|30999' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30999 &>> $LOG_FILE
             fi
             if [ "$(ufw status | grep '3915' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3915 &>> $LOG_FILE
@@ -914,7 +918,7 @@ install_nginx() {
         fi
     fi
     
-    systemctl restart nginx &>> $LOG_FILE
+    # systemctl restart nginx &>> $LOG_FILE
 }
 
 # ############################################
@@ -1889,11 +1893,10 @@ EOF
         set_env_step_data "INST_STEP_LONGHORN" "1"
     fi
 
-    # INSTALL PROXY
-    if [ -z $INST_STEP_PROXY ]; then
-        info "Install NGinx proxy..."
-        install_nginx
-        set_env_step_data "INST_STEP_PROXY" "1"
+    # SETUP FIREWALL
+    if [ -z $SETUP_FIREWALL_RULES ]; then
+        setup_firewall
+        set_env_step_data "SETUP_FIREWALL_RULES" "1"
     fi
 
     # INSTALL REGISTRY
