@@ -58,7 +58,7 @@ class Keycloak {
             const user = await this.getUser(realm, null, username)
 
             await axios.post(
-                `https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${user.id}/logout`,
+                `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users/${user.id}/logout`,
                 {},
                 {
                     headers: {
@@ -83,7 +83,7 @@ class Keycloak {
     async _getAccessToken() {
         const keycloakSecret = await this.app.get('kube').getSecret('keycloak', 'admin-creds')
         const kcAuthResponse = await terminalCommand(`curl -s -k -X POST \
-            "https://keycloak.${this.rootDomain}/realms/master/protocol/openid-connect/token" \
+            "https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/master/protocol/openid-connect/token" \
             -H "Content-Type: application/x-www-form-urlencoded"  \
             -d "grant_type=client_credentials" \
             -d "client_id=master-realm" \
@@ -105,7 +105,7 @@ class Keycloak {
      */
     async getUserAccessToken(realm, username, password) {
         const kcAuthResponse = await terminalCommand(`curl -s -k -X POST \
-            "https://keycloak.${this.rootDomain}/realms/${realm}/protocol/openid-connect/token" \
+            "https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/protocol/openid-connect/token" \
             -H "Content-Type: application/x-www-form-urlencoded"  \
             -d "grant_type=password" \
             -d "client_id=admin-cli" \
@@ -126,11 +126,11 @@ class Keycloak {
                 -H "Accept: application/json" \
                 -H "Content-Type:application/json" \
                 -H "Authorization: Bearer ${accessToken}" \
-                https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients?clientId=mdos`)
+                https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients?clientId=mdos`)
             const clientIdJson = JSON.parse(clientIdResponse[0])
         
             const clientSecretResponse = await terminalCommand(`curl -k -s --location --request GET \
-                https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientIdJson[0].id}/client-secret \
+                https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients/${clientIdJson[0].id}/client-secret \
                 -H "Accept: application/json" \
                 -H "Content-Type:application/json" \
                 -H "Authorization: Bearer ${accessToken}"`)
@@ -138,7 +138,7 @@ class Keycloak {
         }
 
         const introspectResponse = await terminalCommand(`curl -s -k -X POST \
-            "https://keycloak.${this.rootDomain}/realms/${realm}/protocol/openid-connect/token/introspect" \
+            "https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/protocol/openid-connect/token/introspect" \
             -H "Content-Type: application/x-www-form-urlencoded"  \
             -d "client_id=mdos" \
             -d "client_secret=${this.MDOS_CLIENT_SECRET}" \
@@ -170,7 +170,7 @@ class Keycloak {
      */
     async getRealms() {
         let accessToken = await this._getAccessToken()
-        const response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms`, {
+        const response = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -188,7 +188,7 @@ class Keycloak {
      */
     async createRealm(realm) {
         let accessToken = await this._getAccessToken()
-        const responseRealm = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms`, {
+        const responseRealm = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -198,7 +198,7 @@ class Keycloak {
 
         if (!responseRealm.data.find((r) => r.realm == realm)) {
             await axios.post(
-                `https://keycloak.${this.rootDomain}/admin/realms`,
+                `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms`,
                 {
                     id: realm,
                     realm: realm,
@@ -225,7 +225,7 @@ class Keycloak {
      */
     async getClients(realm) {
         let accessToken = await this._getAccessToken()
-        const response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients`, {
+        const response = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -262,7 +262,7 @@ class Keycloak {
         let accessToken = await this._getAccessToken()
 
         await axios.post(
-            `https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients`,
+            `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients`,
             {
                 clientId: clientId,
                 rootUrl: '',
@@ -389,7 +389,7 @@ class Keycloak {
 
         if (!clientInst) throw new NotFound('ERROR: Client UUID not found')
 
-        await axios.delete(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientUuid}`, {
+        await axios.delete(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients/${clientUuid}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -416,7 +416,7 @@ class Keycloak {
             if (!clientInst) throw new NotFound('ERROR: Client UUID not found')
 
             await axios.post(
-                `https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientUuid}/roles`,
+                `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients/${clientUuid}/roles`,
                 {
                     id: `${clientInst.clientId}_${name}`,
                     name: name,
@@ -446,7 +446,7 @@ class Keycloak {
      */
     async removeClientRole(realm, clientUuid, name) {
         let accessToken = await this._getAccessToken()
-        await axios.delete(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${clientUuid}/roles/${name}`, {
+        await axios.delete(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients/${clientUuid}/roles/${name}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -465,7 +465,7 @@ class Keycloak {
      */
     async getClientRoles(realm, clientId) {
         let accessToken = await this._getAccessToken()
-        let response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients?clientId=${clientId}`, {
+        let response = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients?clientId=${clientId}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -477,7 +477,7 @@ class Keycloak {
             throw new NotFound('ERROR: Keycloak client not found')
         }
 
-        response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${response.data[0].id}/roles`, {
+        response = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients/${response.data[0].id}/roles`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -516,7 +516,7 @@ class Keycloak {
     async getUserRoles(realm, username) {
         let accessToken = await this._getAccessToken()
 
-        let response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users?username=${username}`, {
+        let response = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users?username=${username}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -528,7 +528,7 @@ class Keycloak {
             throw new NotFound('ERROR: Keycloak username not found')
         }
 
-        let userRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${response.data[0].id}/role-mappings`, {
+        let userRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users/${response.data[0].id}/role-mappings`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -550,7 +550,7 @@ class Keycloak {
     async getUsers(realm, clientId) {
         let accessToken = await this._getAccessToken()
 
-        const response = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users`, {
+        const response = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -560,7 +560,7 @@ class Keycloak {
 
         if (!clientId) {
             for (let user of response.data) {
-                const clientRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${user.id}/role-mappings`, {
+                const clientRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users/${user.id}/role-mappings`, {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         Accept: 'application/json',
@@ -574,7 +574,7 @@ class Keycloak {
         } else {
             const filteredUsers = []
             for (let user of response.data) {
-                const clientRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${user.id}/role-mappings`, {
+                const clientRoleMappingsResponse = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users/${user.id}/role-mappings`, {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         Accept: 'application/json',
@@ -621,7 +621,7 @@ class Keycloak {
         let accessToken = await this._getAccessToken()
 
         await axios.post(
-            `https://keycloak.${this.rootDomain}/admin/realms/${realm}/users`,
+            `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users`,
             {
                 username: userName,
                 enabled: true,
@@ -648,7 +648,7 @@ class Keycloak {
             }
         )
 
-        const responseAllUsers = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users`, {
+        const responseAllUsers = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -660,7 +660,7 @@ class Keycloak {
         accessToken = await this._getAccessToken()
 
         await axios.put(
-            `https://keycloak.${this.rootDomain}/admin/realms/mdos/users/${userUuid}/reset-password`,
+            `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/mdos/users/${userUuid}/reset-password`,
             {
                 type: 'password',
                 value: password,
@@ -686,7 +686,7 @@ class Keycloak {
     async deleteUser(realm, userId) {
         let accessToken = await this._getAccessToken()
 
-        await axios.delete(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${userId}`, {
+        await axios.delete(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users/${userId}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -705,7 +705,7 @@ class Keycloak {
      */
     async getClientSecret(realm, clientId) {
         let accessToken = await this._getAccessToken()
-        const responseClient = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients?clientId=${clientId}`, {
+        const responseClient = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients?clientId=${clientId}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -713,7 +713,7 @@ class Keycloak {
             },
         })
 
-        const responseClientSecret = await axios.get(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/clients/${responseClient.data[0].id}/client-secret`, {
+        const responseClientSecret = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/clients/${responseClient.data[0].id}/client-secret`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
@@ -737,7 +737,7 @@ class Keycloak {
     async createClientRoleBindingForUser(realm, clientUuid, userUuid, roleUuid, roleName) {
         let accessToken = await this._getAccessToken()
         await axios.post(
-            `https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${userUuid}/role-mappings/clients/${clientUuid}`,
+            `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users/${userUuid}/role-mappings/clients/${clientUuid}`,
             [
                 {
                     id: roleUuid,
@@ -766,7 +766,7 @@ class Keycloak {
      */
     async removeClientRoleBindingFromUser(realm, clientUuid, userUuid, roleName, roleUuid) {
         let accessToken = await this._getAccessToken()
-        await axios.delete(`https://keycloak.${this.rootDomain}/admin/realms/${realm}/users/${userUuid}/role-mappings/clients/${clientUuid}`, {
+        await axios.delete(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users/${userUuid}/role-mappings/clients/${clientUuid}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',

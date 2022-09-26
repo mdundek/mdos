@@ -142,7 +142,7 @@ class MdosCore extends CommonCore {
                     throw new NotFound(`ERROR: OIDC Provider "${component.oidc.provider}" not found`)
                 }
                 if (component.oidc.provider.indexOf('kc-') == 0) {
-                    const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}/realms/mdos/.well-known/openid-configuration`)
+                    const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}:${process.env.KC_PORT}/realms/mdos/.well-known/openid-configuration`)
                     component.oidc.issuer = oidcLinks.data.issuer
                     component.oidc.jwksUri = oidcLinks.data.jwks_uri
                 } else {

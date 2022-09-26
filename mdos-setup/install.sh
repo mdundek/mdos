@@ -708,8 +708,8 @@ metadata:
   namespace: longhorn-system
 spec:
   jwtRules:
-  - issuer: https://keycloak.$DOMAIN/realms/mdos
-    jwksUri: https://keycloak.$DOMAIN/realms/mdos/protocol/openid-connect/certs
+  - issuer: https://keycloak.$DOMAIN:30999/realms/mdos
+    jwksUri: https://keycloak.$DOMAIN:30999/realms/mdos/protocol/openid-connect/certs
   selector:
     matchLabels:
       app: longhorn-ui
@@ -1120,7 +1120,7 @@ install_keycloak() {
 
     gen_api_token() {
         KC_TOKEN=$(curl -s -k -X POST \
-            "https://keycloak.$DOMAIN/realms/master/protocol/openid-connect/token" \
+            "https://keycloak.$DOMAIN:30999/realms/master/protocol/openid-connect/token" \
             -H "Content-Type: application/x-www-form-urlencoded"  \
             -d "grant_type=client_credentials" \
             -d "client_id=master-realm" \
@@ -1133,7 +1133,7 @@ install_keycloak() {
     setup_keycloak_mdos_realm() {
         # Create mdos realm
         curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms \
+            https://keycloak.$DOMAIN:30999/admin/realms \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1142,7 +1142,7 @@ install_keycloak() {
         # Create mdos client
         gen_api_token
         curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1196,11 +1196,11 @@ install_keycloak() {
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients?clientId=$CLIENT_ID | jq '.[0].id' | sed 's/[\"]//g')
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients?clientId=$CLIENT_ID | jq '.[0].id' | sed 's/[\"]//g')
 
         # Get mdos client secret
         MDOS_CLIENT_SECRET=$(curl -k -s --location --request GET \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/client-secret \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/client-secret \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" | jq '.value' | sed 's/[\"]//g')
@@ -1208,7 +1208,7 @@ install_keycloak() {
         # Create admin user
         gen_api_token
         curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/users \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1233,14 +1233,14 @@ install_keycloak() {
         # Get admin user UUID
         gen_api_token
         MDOS_USER_UUID=$(curl -k -s --location --request GET \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/users \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" | jq '.[0].id' | sed 's/[\"]//g')
 
         # Set admin user password
         curl -s -k --request PUT \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/users/$MDOS_USER_UUID/reset-password \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users/$MDOS_USER_UUID/reset-password \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1255,7 +1255,7 @@ install_keycloak() {
                 -H "Content-Type:application/json" \
                 -H "Authorization: Bearer $KC_TOKEN" \
                 -d '{"id": "'$1'", "name": "'$1'", "clientRole": true}' \
-                https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles
+                https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles
 
             # Create client role mapping for mdos admin user
             if [ ! -z $2 ]; then
@@ -1266,14 +1266,14 @@ install_keycloak() {
                     -H "Accept: application/json" \
                     -H "Content-Type:application/json" \
                     -H "Authorization: Bearer $KC_TOKEN" \
-                    https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles/$1 | jq '.id' | sed 's/[\"]//g')
+                    https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles/$1 | jq '.id' | sed 's/[\"]//g')
 
                 curl -s -k --request POST \
                     -H "Accept: application/json" \
                     -H "Content-Type:application/json" \
                     -H "Authorization: Bearer $KC_TOKEN" \
                     -d '[{"id":"'$ROLE_UUID'","name":"'$1'"}]' \
-                    https://keycloak.$DOMAIN/admin/realms/$REALM/users/$2/role-mappings/clients/$MDOS_CLIENT_UUID
+                    https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users/$2/role-mappings/clients/$MDOS_CLIENT_UUID
             fi
         }
 
@@ -1517,6 +1517,9 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$SSL_ROOT'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 
@@ -1790,12 +1793,13 @@ EOF
                 echo "          - mdos-ftp.$DOMAIN:3915-3920"
                 echo "          - registry.$DOMAIN"
                 echo "          - registry-auth.$DOMAIN"
-                echo "          - keycloak.$DOMAIN"
+                echo "          - keycloak.$DOMAIN:30999"
                 echo "          - longhorn.$DOMAIN"
                 echo ""
                 echo "      You will have to allow inbound traffic on the following ports:"
                 echo "          - 443 (HTTPS traffic for the MDos API)"
                 echo "          - 6443 (HTTPS traffic for Kubernetes API server)"
+                echo "          - 30999 (HTTPS traffic for Keycloak OIDC Oauth2 FLow)"
                 echo "          - 3915:3920 (TCP - FTP PSV traffic)"
             fi
         fi
@@ -1913,8 +1917,7 @@ EOF
 
     # LOAD OAUTH2 DATA
     if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
-        KC_NODEPORT=":30998"
-        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}${KC_NODEPORT}/realms/mdos/.well-known/openid-configuration")
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}:30999/realms/mdos/.well-known/openid-configuration")
         OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
         OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
         OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
@@ -1924,7 +1927,7 @@ EOF
         OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
         OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
     else
-        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
         OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
         OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
         OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)

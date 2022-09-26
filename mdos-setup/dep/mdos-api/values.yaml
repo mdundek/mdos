@@ -42,6 +42,8 @@ components:
             value: "/usr/src/dep/k3s/client-ca.crt"
           - key: K3S_CLIENT_KEY_PATH
             value: "/usr/src/dep/k3s/client-ca.key"
+          - key: KC_PORT
+            value: "30999"
 
     secrets:
       - name: creds
@@ -83,8 +85,8 @@ components:
           - ""
           
     oidc:
-      issuer: https://keycloak.mydomain.com/realms/mdos
-      jwksUri: https://keycloak.mydomain.com/realms/mdos/protocol/openid-connect/certs
+      issuer: https://keycloak.mydomain.com:30999/realms/mdos
+      jwksUri: https://keycloak.mydomain.com:30999/realms/mdos/protocol/openid-connect/certs
       provider: kc-mdos
       hosts:
         - mdos-api.mydomain.com

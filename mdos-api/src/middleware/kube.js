@@ -159,7 +159,7 @@ class Kube extends KubeBase {
      */
     async deployOauth2Proxy(type, realm, data) {
         if (type == 'keycloak') {
-            const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}/realms/${realm}/.well-known/openid-configuration`)
+            const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/.well-known/openid-configuration`)
             const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
             const clientSecret = await this.app.get('keycloak').getClientSecret(realm, data.clientId)
 
