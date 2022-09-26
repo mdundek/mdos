@@ -198,11 +198,24 @@ collect_user_input() {
             LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
         fi
     fi
-    if [ -z $LOC_IP ]; then
-        user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):"
-    else
-        user_input LOCAL_IP "Enter the local machine IP address (used to join code-server on this host from within the cluster):" "$LOC_IP"
-    fi
+    
+    context_print "MDos will need to know how to reach services running on the host directly"
+    context_print "from within the cluster. An IP address is therefore required."
+    echo ""
+
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        if [ -z $LOC_IP ]; then
+            user_input LOCAL_IP "MDos Host IP address:"
+        else
+            user_input LOCAL_IP "MDos Host IP address:" "$LOC_IP"
+        fi
+        if [[ $LOCAL_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            LOOP_BREAK=1
+        else
+            error "Invalid IP address"
+        fi
+    done
 
     # COLLECT ADMIN CREDS
     print_section_title "Admin user account"
@@ -233,21 +246,6 @@ collect_user_input() {
         set +Ee
         yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
         set -Ee
-        if [ "$DNS_RESOLVABLE" == "no" ]; then
-            context_print "MDos will need to know how to reach it's FTP server from within the"
-            context_print "cluster without DNS resolution. An IP address is therefore required."
-            echo ""
-
-            unset LOOP_BREAK
-            while [ -z $LOOP_BREAK ]; do
-                user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
-                if [[ $NODNS_LOCAL_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                    LOOP_BREAK=1
-                else
-                    error "Invalid IP address"
-                fi
-            done
-        fi
     else
         warn "It is assumed that your domain for the certificate you wish to use is configured (DNS) to route traffic directly to this host IP"
         user_input DOMAIN "Enter your DNS root domain name for your certificate(ex. mydomain.com):" 
@@ -989,8 +987,8 @@ deploy_reg_chart() {
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
 
-    if [ ! -z $NODNS_LOCAL_IP ]; then
-        REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].ip = "'$NODNS_LOCAL_IP'"')
+    if [ ! -z $NO_DNS ]; then
+        REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
         REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].hostNames[0] = "registry-auth.'$DOMAIN'"')
     else
         REG_VALUES=$(echo "$REG_VALUES" | yq eval 'del(.components[0].hostAliases)')
@@ -1498,8 +1496,8 @@ EOF
 
     K3S_REG_DOMAIN="registry.$DOMAIN"
 
-    if [ ! -z $NODNS_LOCAL_IP ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].ip = "'$NODNS_LOCAL_IP'"')
+    if [ ! -z $NO_DNS ]; then
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
     else
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].hostAliases)')
@@ -1637,8 +1635,8 @@ install_helm_ftp() {
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_USER = "'$KEYCLOAK_USER'"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_PASSWORD = "'$KEYCLOAK_PASS'"')
     
-    if [ ! -z $NODNS_LOCAL_IP ]; then
-        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "'$NODNS_LOCAL_IP'"')
+    if [ ! -z $NO_DNS ]; then
+        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "'$LOCAL_IP'"')
     else
         FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "mdos-ftp.'$DOMAIN'"')
     fi
