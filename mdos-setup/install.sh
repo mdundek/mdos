@@ -225,8 +225,8 @@ collect_user_input() {
 
     # CERT MODE
     print_section_title "Domain name and certificate"
-    OPTIONS_STRING="You already have a certificate and a wild card domain;You have a Cloudflare domain, but no certificates;Generate and use self signed, do not have a domain"
-    OPTIONS_VALUES=("SSL_PROVIDED" "CLOUDFLARE" "SELF_SIGNED")
+    OPTIONS_STRING="You already have a certificate and a wild card domain;Use \"cert-manager\" to manage generare & manage your certificate;Generate and use self signed certificate, I do not have a domain"
+    OPTIONS_VALUES=("CRT_PROVIDED" "CERT_MANAGER" "SELF_SIGNED")
     set +Ee
     prompt_for_select CMD_SELECT "$OPTIONS_STRING"
     set -Ee
@@ -237,10 +237,22 @@ collect_user_input() {
     done
 
     # PREPARE CERTIFICATES & DOMAIN
-    if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
+    if [ "$CERT_MODE" == "CERT_MANAGER" ]; then
+
+    context_print "This installation script will install cert-manager and generate your MDos root domain (wildcard) certificate for you."
+    context_print "You will have to provide the \"cert-manager\" Issuer (and Secret if applicable) yaml file to use for this, according to your certificate issuer of choice."
+    context_print "Please refer to the documentation on the following link in order to do so:"
+    context_print "https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers"
+    context_print "An example Issuer Yaml file can be found here: "
+
+
+
+
+
+
         user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
-        user_input CF_EMAIL "Enter your Cloudflare account email:"
-        user_input CF_TOKEN "Enter your Cloudflare API token:"
+        # user_input CF_EMAIL "Enter your Cloudflare account email:"
+        # user_input CF_TOKEN "Enter your Cloudflare API token:"
     elif [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
         set +Ee
@@ -419,76 +431,146 @@ dependencies() {
 }
 
 # ############################################
+# ############### CERT MANAGER ###############
+# ############################################
+setup_cert_manager() {
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
+    helm install cert-manager jetstack/cert-manager \
+        --namespace cert-manager \
+        --create-namespace \
+        --version v1.9.1 \
+        --set installCRDs=true \
+        --atomic
+
+    # Wait untill all pods are up and running
+    unset FOUND_RUNNING_POD
+    while [ -z $FOUND_RUNNING_POD ]; do
+        unset CM_POD_UP
+        unset CM_INJ_POD_UP
+        unset CM_WEBHOOK_POD_UP
+        while read POD_LINE ; do
+            POD_NAME=`echo "$POD_LINE" | awk 'END {print $1}'`
+            POD_STATUS=`echo "$POD_LINE" | awk 'END {print $3}'`
+            if [[ "$POD_NAME" == *"cert-manager-cainjector-"* ]]; then
+                if [ "$POD_STATUS" == "Running" ]; then
+                    CM_INJ_POD_UP=1
+                fi
+            elif [[ "$POD_NAME" == *"cert-manager-webhook-"* ]]; then
+                if [ "$POD_STATUS" == "Running" ]; then
+                    CM_WEBHOOK_POD_UP=1
+                fi
+            elif [[ "$POD_NAME" == *"cert-manager-"* ]]; then
+                if [ "$POD_STATUS" == "Running" ]; then
+                    CM_POD_UP=1
+                fi
+            fi
+        done < <(kubectl get pods -n cert-manager 2>/dev/null)
+        if [ ! -z $CM_POD_UP ] && [ ! -z $CM_INJ_POD_UP ] && [ ! -z $CM_WEBHOOK_POD_UP ]; then
+            FOUND_RUNNING_POD=1
+        fi
+        sleep 2
+    done
+}
+
+# ############################################
+# ######### CERT MANAGER MDOS ISSUER #########
+# ############################################
+cert_manager_mdos_issuer_and_crt() {
+    kubectl create ns mdos &>> $LOG_FILE
+
+    # TODO: Install Issuer (Secret + Issuer)
+
+    # Create certificate
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mdos-root-domain
+  namespace: mdos
+spec:
+  secretName: mdos-root-domain-tls
+  duration: 2160h
+  renewBefore: 360h
+  dnsNames:
+    - "*.$DOMAIN"
+  issuerRef:
+    name: mdos-issuer
+    kind: Issuer
+EOF
+}
+
+# ############################################
 # ########### CLOUDFLARE & CERTBOT ###########
 # ############################################
-setup_cloudflare_certbot() {
+# setup_cloudflare_certbot() {
     
-    if [ "$PSYSTEM" == "APT" ]; then
-        # Install certbot
-        apt-get install certbot python3-certbot-dns-cloudflare -y &>> $LOG_FILE
-    fi
+#     if [ "$PSYSTEM" == "APT" ]; then
+#         # Install certbot
+#         apt-get install certbot python3-certbot-dns-cloudflare -y &>> $LOG_FILE
+#     fi
 
-    # Create cloudflare credentials file
-    echo "dns_cloudflare_email = $CF_EMAIL" > $HOME/.mdos/cloudflare.ini
-    echo "dns_cloudflare_api_key = $CF_TOKEN" >> $HOME/.mdos/cloudflare.ini
+#     # Create cloudflare credentials file
+#     echo "dns_cloudflare_email = $CF_EMAIL" > $HOME/.mdos/cloudflare.ini
+#     echo "dns_cloudflare_api_key = $CF_TOKEN" >> $HOME/.mdos/cloudflare.ini
 
-    echo "dns_cloudflare_email = mdundek@gmail.com" > $HOME/.mdos/cloudflare.ini
-    echo "dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee" >> $HOME/.mdos/cloudflare.ini
+#     # echo "dns_cloudflare_email = mdundek@gmail.com" > $HOME/.mdos/cloudflare.ini
+#     # echo "dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee" >> $HOME/.mdos/cloudflare.ini
 
-    # Create certificate now (will require manual input)
-    if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
-        question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
-        echo ""
-        echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
-        echo ""
+#     # Create certificate now (will require manual input)
+#     if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
+#         question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
+#         echo ""
+#         echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
+#         echo ""
 
-        yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
+#         yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
         
-        if [ "$CERT_OK" == "yes" ]; then
-            if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
-                error "Could not find generated certificate under: $SSL_ROOT/$FULLCHAIN_FNAME"
-                exit 1
-            fi
-            chmod 655 /etc/letsencrypt/archive/$DOMAIN/*.pem
-        else
-            warn "Aborting installation"
-            exit 1
-        fi
+#         if [ "$CERT_OK" == "yes" ]; then
+#             if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
+#                 error "Could not find generated certificate under: $SSL_ROOT/$FULLCHAIN_FNAME"
+#                 exit 1
+#             fi
+#             chmod 655 /etc/letsencrypt/archive/$DOMAIN/*.pem
+#         else
+#             warn "Aborting installation"
+#             exit 1
+#         fi
         
-    fi
+#     fi
 
-    if [ ! -f /var/spool/cron/crontabs/root ]; then
-        # TODO: Need fixing if chrontab creation, opens editor and breaks install script
-        yes_no CRON_OK "Please create a crontab for user 'root' in a separate terminal using the command: sudo crontab -e. Once done, select 'yes'" 1
-        if [ "$CRON_OK" == "yes" ]; then
-            if [ ! -f /var/spool/cron/crontabs/root ]; then
-                error "Could not find root user crontab"
-                exit 1
-            fi
-        else
-            warn "Aborting installation"
-            exit 1
-        fi
-    fi
+#     if [ ! -f /var/spool/cron/crontabs/root ]; then
+#         # TODO: Need fixing if chrontab creation, opens editor and breaks install script
+#         yes_no CRON_OK "Please create a crontab for user 'root' in a separate terminal using the command: sudo crontab -e. Once done, select 'yes'" 1
+#         if [ "$CRON_OK" == "yes" ]; then
+#             if [ ! -f /var/spool/cron/crontabs/root ]; then
+#                 error "Could not find root user crontab"
+#                 exit 1
+#             fi
+#         else
+#             warn "Aborting installation"
+#             exit 1
+#         fi
+#     fi
 
-    mkdir -p $HOME/.mdos/cron
-    # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
-    cp $_DIR/dep/cron/91_renew_certbot.sh $HOME/.mdos/cron/91_renew_certbot.sh
-    if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
-        (crontab -l 2>/dev/null; echo "5 8 * * * $HOME/.mdos/cron/91_renew_certbot.sh") | crontab -
-    fi
+#     mkdir -p $HOME/.mdos/cron
+#     # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
+#     cp $_DIR/dep/cron/91_renew_certbot.sh $HOME/.mdos/cron/91_renew_certbot.sh
+#     if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
+#         (crontab -l 2>/dev/null; echo "5 8 * * * $HOME/.mdos/cron/91_renew_certbot.sh") | crontab -
+#     fi
 
-    # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
-    cp $_DIR/dep/cron/90_update_ip_cloudflare.sh $HOME/.mdos/cron/90_update_ip_cloudflare.sh
-    if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
-        yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
-        if [ "$IP_UPDATE" == "yes" ]; then
-            (crontab -l 2>/dev/null; echo "5 6 * * * $HOME/.mdos/cron/90_update_ip_cloudflare.sh") | crontab -
-        fi
-    fi
+#     # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
+#     cp $_DIR/dep/cron/90_update_ip_cloudflare.sh $HOME/.mdos/cron/90_update_ip_cloudflare.sh
+#     if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
+#         yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
+#         if [ "$IP_UPDATE" == "yes" ]; then
+#             (crontab -l 2>/dev/null; echo "5 6 * * * $HOME/.mdos/cron/90_update_ip_cloudflare.sh") | crontab -
+#         fi
+#     fi
 
-    /etc/init.d/cron restart &>> $LOG_FILE
-}
+#     /etc/init.d/cron restart &>> $LOG_FILE
+# }
 
 # ############################################
 # ################# ETC_HOSTS ################
@@ -1437,7 +1519,6 @@ install_mdos() {
     k8s_cluster_scope_exist ELM_EXISTS ns "mdos"
     if [ -z $ELM_EXISTS ]; then
         kubectl create ns mdos &>> $LOG_FILE
-        # kubectl label ns mdos istio-injection=enabled &>> $LOG_FILE
     fi
 
     k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
@@ -1829,17 +1910,17 @@ EOF
     fi
 
     # PREPARE CERTIFICATES & DOMAIN
-    if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
+    if [ "$CERT_MODE" == "CERT_MANAGER" ]; then
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
         FULLCHAIN_FNAME=fullchain.pem
         PRIVKEY_FNAME=privkey.pem
 
-        if [ -z $INST_STEP_CLOUDFLARE ]; then
-            info "Certbot installation and setup..."
-            setup_cloudflare_certbot
-            set_env_step_data "INST_STEP_CLOUDFLARE" "1"
-        fi
-    elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
+        # if [ -z $INST_STEP_CLOUDFLARE ]; then
+        #     info "Certbot installation and setup..."
+        #     setup_cloudflare_certbot
+        #     set_env_step_data "INST_STEP_CLOUDFLARE" "1"
+        # fi
+    elif [ "$CERT_MODE" == "CRT_PROVIDED" ]; then
         SSL_ROOT="$(dirname "${OWN_FULLCHAIN_CRT_PATH}")"
         FULLCHAIN_FNAME=$(basename "${OWN_FULLCHAIN_CRT_PATH}")
         PRIVKEY_FNAME=$(basename "${OWN_PRIVKEY_PATH}")
@@ -1868,9 +1949,9 @@ EOF
     fi
 
     # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
-    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
-        consigure_core_dns_for_self_signed
-    fi
+    # if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+    #     consigure_core_dns_for_self_signed
+    # fi
 
     # INSTALL HELM
     if [ -z $INST_STEP_HELM ]; then
@@ -1899,75 +1980,87 @@ EOF
         set_env_step_data "SETUP_FIREWALL_RULES" "1"
     fi
 
+    # INSTALL CERT-MANAGER
+    if [ -z $SETUP_CERT_MANAGER ]; then
+        setup_cert_manager
+        set_env_step_data "SETUP_CERT_MANAGER" "1"
+    fi
+
+  
+
+
+
+
+
     # INSTALL REGISTRY
-    if [ -z $INST_STEP_REGISTRY ]; then
-        info "Install Registry..."
-        install_registry
-        set_env_step_data "INST_STEP_REGISTRY" "1"
-    fi
+    # if [ -z $INST_STEP_REGISTRY ]; then
+    #     info "Install Registry..."
+    #     install_registry
+    #     set_env_step_data "INST_STEP_REGISTRY" "1"
+    # fi
 
-    # INSTALL KEYCLOAK
-    REALM="mdos"
-    CLIENT_ID="mdos"
-    if [ -z $INST_STEP_KEYCLOAK ]; then
-        info "Install Keycloak..."
-        install_keycloak
-        set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
-        set_env_step_data "INST_STEP_KEYCLOAK" "1"
-    fi
+    # # INSTALL KEYCLOAK
+    # REALM="mdos"
+    # CLIENT_ID="mdos"
+    # if [ -z $INST_STEP_KEYCLOAK ]; then
+    #     info "Install Keycloak..."
+    #     install_keycloak
+    #     set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
+    #     set_env_step_data "INST_STEP_KEYCLOAK" "1"
+    # fi
 
-    # LOAD OAUTH2 DATA
-    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
-        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}:30999/realms/mdos/.well-known/openid-configuration")
-        OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
-        OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
-        OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
-        COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+    # # LOAD OAUTH2 DATA
+    # if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+    #     OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}:30999/realms/mdos/.well-known/openid-configuration")
+    #     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+    #     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+    #     OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
+    #     COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
        
-        OIDC_ISSUER_URL=${OIDC_ISSUER_URL//$KC_NODEPORT/}
-        OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
-        OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
-    else
-        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
-        OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
-        OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
-        OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
-        COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
-    fi
+    #     OIDC_ISSUER_URL=${OIDC_ISSUER_URL//$KC_NODEPORT/}
+    #     OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
+    #     OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
+    # else
+    #     OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
+    #     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+    #     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+    #     OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
+    #     COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+    # fi
     
-    # INSTALL OAUTH2 PROXY
-    if [ -z $INST_STEP_OAUTH ]; then
-        info "Install OAuth2 proxy..."
-        install_oauth2_proxy
-        set_env_step_data "INST_STEP_OAUTH" "1"
-    fi
+    # # INSTALL OAUTH2 PROXY
+    # if [ -z $INST_STEP_OAUTH ]; then
+    #     info "Install OAuth2 proxy..."
+    #     install_oauth2_proxy
+    #     set_env_step_data "INST_STEP_OAUTH" "1"
+    # fi
 
-    # PROTECT LONGHORN UI
-    if [ -z $INST_STEP_LONGHORN_PROTECT ]; then
-        info "Protect Longhorn UI..."
-        protect_longhorn
-        set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
-    fi
+    # # PROTECT LONGHORN UI
+    # if [ -z $INST_STEP_LONGHORN_PROTECT ]; then
+    #     info "Protect Longhorn UI..."
+    #     protect_longhorn
+    #     set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
+    # fi
 
-    # INSTALL MDOS
-    if [ -z $INST_STEP_MDOS ]; then
-        info "Install MDos API server..."
-        install_mdos
-    fi
+    # # INSTALL MDOS
+    # if [ -z $INST_STEP_MDOS ]; then
+    #     info "Install MDos API server..."
+    #     install_mdos
+    # fi
 
-    # INSTALL MDOS FTP
-    if [ -z $INST_STEP_MDOS_FTP ]; then
-        info "Install MDos FTP server..."
-        install_helm_ftp
-        set_env_step_data "INST_STEP_MDOS_FTP" "1"
-    fi
+    # # INSTALL MDOS FTP
+    # if [ -z $INST_STEP_MDOS_FTP ]; then
+    #     info "Install MDos FTP server..."
+    #     install_helm_ftp
+    #     set_env_step_data "INST_STEP_MDOS_FTP" "1"
+    # fi
 
-    # ENABLE REGISTRY AUTH
-    if [ -z $INST_STEP_REG_AUTH ]; then
-        info "Enabeling MDos registry auth..."
-        deploy_reg_chart 1
-        set_env_step_data "INST_STEP_REG_AUTH" "1"
-    fi
+    # # ENABLE REGISTRY AUTH
+    # if [ -z $INST_STEP_REG_AUTH ]; then
+    #     info "Enabeling MDos registry auth..."
+    #     deploy_reg_chart 1
+    #     set_env_step_data "INST_STEP_REG_AUTH" "1"
+    # fi
 
     MDOS_SUCCESS=1
 )
