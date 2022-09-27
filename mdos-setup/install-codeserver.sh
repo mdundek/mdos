@@ -260,7 +260,7 @@ metadata:
     app: code-server
 spec:
   gateways:
-  - istio-system/https-gateway
+  - mdos/https-gateway
   hosts:
   - cs.$DOMAIN
   http:
@@ -324,7 +324,7 @@ metadata:
     app: code-server-proxy
 spec:
   gateways:
-  - istio-system/https-gateway
+  - mdos/https-gateway
   hosts:
   - cs.$DOMAIN
   http:

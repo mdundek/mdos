@@ -790,7 +790,7 @@ metadata:
   namespace: longhorn-system
 spec:
   gateways:
-  - istio-system/https-gateway
+  - mdos/https-gateway
   hosts:
   - longhorn.$DOMAIN
   http:
@@ -810,25 +810,6 @@ EOF
     set -Ee
 
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  labels:
-    app: longhorn-ui
-  name: longhorn-ui-ingress
-  namespace: longhorn-system
-spec:
-  gateways:
-  - istio-system/https-gateway
-  hosts:
-  - longhorn.$DOMAIN
-  http:
-  - name: longhorn-ui-ingress
-    route:
-    - destination:
-        host: longhorn-frontend.longhorn-system.svc.cluster.local
-        port:
-          number: 80
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
@@ -843,9 +824,7 @@ spec:
   selector:
     matchLabels:
       app: longhorn-ui
-
 ---
-
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -951,15 +930,17 @@ install_istio() {
 }
 
 deploy_istio_gateways() {
-    kubectl create -n istio-system secret tls httpbin-credential --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
-
+    if [ "$CERT_MODE" != "CERT_MANAGER" ]; then
+        kubectl create -n mdos secret tls mdos-root-domain-tls --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
+    fi
+    
     # Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: https-gateway
-  namespace: istio-system
+  namespace: mdos
 spec:
   selector:
     istio: ingressgateway
@@ -972,13 +953,13 @@ spec:
     - "*.$DOMAIN"
     tls:
       mode: SIMPLE
-      credentialName: httpbin-credential
+      credentialName: mdos-root-domain-tls
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: https-gateway-mdos
-  namespace: istio-system
+  namespace: mdos
 spec:
   selector:
     istio: ingressgateway
@@ -1813,7 +1794,7 @@ metadata:
     app: ftpd-bot
 spec:
   gateways:
-  - istio-system/https-gateway
+  - mdos/https-gateway
   hosts:
   - mdos-ftp-api.$DOMAIN
   http:

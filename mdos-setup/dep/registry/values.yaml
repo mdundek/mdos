@@ -16,7 +16,7 @@ components:
             svcPort: 443
     ingress:
       - name: ingress
-        gateway: https-gateway-mdos
+        gateway: mdos/https-gateway-mdos
         matchHost: registry.<DOMAIN>
         targetPort: 443
         trafficType: https
@@ -82,7 +82,7 @@ components:
             svcPort: 443
     ingress:
       - name: ingress
-        gateway: https-gateway-mdos
+        gateway: mdos/https-gateway-mdos
         matchHost: registry-auth.<DOMAIN>
         targetPort: 443
         trafficType: https
