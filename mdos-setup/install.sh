@@ -564,7 +564,7 @@ spec:
           command:
           - /bin/sh
           - -c
-          - cp /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
+          - cp -f /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp -f /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
       volumes:
       - name: mdos-crt-dest-volume
         hostPath:
@@ -602,7 +602,7 @@ spec:
             command:
             - /bin/sh
             - -c
-            - cp /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
+            - cp -f /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp -f /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
           volumes:
           - name: mdos-crt-dest-volume
             hostPath:
@@ -909,9 +909,7 @@ install_istio() {
             exit 1
         fi
     done
-
-    # sed -i 's/type: LoadBalancer/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
-    # sed -i 's/type: ClusterIP/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
+    
     helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system &>> $LOG_FILE
 
     info "Waiting for istio ingress gateway to become ready..."
