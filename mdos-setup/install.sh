@@ -238,26 +238,40 @@ collect_user_input() {
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CERT_MANAGER" ]; then
-
-    context_print "This installation script will install cert-manager and generate your MDos root domain (wildcard) certificate for you."
-    context_print "You will have to provide the \"cert-manager\" Issuer (and Secret if applicable) yaml file to use for this, according to your certificate issuer of choice."
-    context_print "Please refer to the documentation on the following link in order to do so:"
-    context_print "https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers"
-    context_print "An example Issuer Yaml file can be found here: "
-
-
-
-
-
-
+        context_print "This installation script will install \"cert-manager\" and generate your MDos root"
+        context_print "domain (wildcard) certificate for you. You will have to provide the \"cert-manager\""
+        context_print "Issuer (and Secret if applicable) yaml file to use for this, according to your certificate"
+        context_print "issuer of choice. Please refer to the documentation on the following link in order to do so:"
+        context_print "https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers"
+        context_print "An example Issuer Yaml file based on CloudFlare can be found here:"
+        context_print "https://raw.githubusercontent.com/mdundek/mdos/cert-manager/mdos-setup/dep/cert-manager/cloudflare-issuer.yaml"
+        echo ""
+        note "Make sure you name your Issuer \"mdos-issuer\" (metadata.name: mdos-issuer)"
+        echo ""
+        unset LOOP_BREAK
+        while [ -z $LOOP_BREAK ]; do
+            user_input ISSUER_YAML_PATH "Please enter the absolute path to your Issuer yaml file (ex. /path/to/my-cert-manager-issuer.yaml):"
+            if [ -f $ISSUER_YAML_PATH ]; then
+                ISSUER_NAME=$(cat $ISSUER_YAML_PATH | yq eval 'select(.kind == "Issuer") | .metadata.name')
+                if [ "$ISSUER_NAME" != "mdos-issuer" ]; then
+                    error "Issuer name has to be \"mdos-issuer\" (metadata.name: mdos-issuer)"
+                else
+                    LOOP_BREAK=1
+                fi
+            else
+                error "File not found"
+            fi
+        done
+        # Domain name
         user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
-        # user_input CF_EMAIL "Enter your Cloudflare account email:"
-        # user_input CF_TOKEN "Enter your Cloudflare API token:"
     elif [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
         set +Ee
         yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
         set -Ee
+        if [ "$DNS_RESOLVABLE" == "no" ]; then
+            NO_DNS=1
+        fi
     else
         warn "It is assumed that your domain for the certificate you wish to use is configured (DNS) to route traffic directly to this host IP"
         user_input DOMAIN "Enter your DNS root domain name for your certificate(ex. mydomain.com):" 
@@ -434,14 +448,14 @@ dependencies() {
 # ############### CERT MANAGER ###############
 # ############################################
 setup_cert_manager() {
-    helm repo add jetstack https://charts.jetstack.io
-    helm repo update
+    helm repo add jetstack https://charts.jetstack.io &>> $LOG_FILE
+    helm repo update &>> $LOG_FILE
     helm install cert-manager jetstack/cert-manager \
         --namespace cert-manager \
         --create-namespace \
         --version v1.9.1 \
         --set installCRDs=true \
-        --atomic
+        --atomic &>> $LOG_FILE
 
     # Wait untill all pods are up and running
     unset FOUND_RUNNING_POD
@@ -479,9 +493,23 @@ setup_cert_manager() {
 cert_manager_mdos_issuer_and_crt() {
     kubectl create ns mdos &>> $LOG_FILE
 
-    # TODO: Install Issuer (Secret + Issuer)
+    # Install Issuer (Secret + Issuer)
+    info "Configure mdos cert-manager issuer..."
+    kubectl apply -f $ISSUER_YAML_PATH -n mdos &>> $LOG_FILE
 
+    # Waiting for issuer to become ready
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        ISSUER_STATUS=$(kubectl get issuers -n mdos -o json | jq -r '.items[0].status.conditions[0].type')
+        if [ "$ISSUER_STATUS" == "Ready" ]; then
+            LOOP_BREAK=1
+        else
+            sleep 2
+        fi
+    done 
+    
     # Create certificate
+    info "Create MDos certificate using issuer for domain $DOMAIN..."
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -498,79 +526,101 @@ spec:
     name: mdos-issuer
     kind: Issuer
 EOF
+
+    # Waiting for certificate to become available
+    while [ "$(kubectl get secret -n mdos | grep 'mdos-root-domain-tls')" == "" ]; do
+        sleep 3
+        ATTEMPTS=$((ATTEMPTS+1))
+        if [ "$ATTEMPTS" -gt 100 ]; then
+            error "Timeout, Certificate was not issued, most probably due to a miss-configuration of the Issuer itself."
+            exit 1
+        fi
+    done
+
+    # Export certificate
+    info "Create Kubernetes CronJob to export certificate for third party components..."
+    mkdir -p /etc/letsencrypt/live/$DOMAIN
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: batch/v1
+kind: Job
+metadata: 
+  name: mdos-crt-export-job
+  namespace: mdos
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: cert-exporter
+          image: busybox:1.28
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - mountPath: /mdos_crt_from_secret
+            name: mdos-crt-src-volume
+            readOnly: true
+          - mountPath: /mdos_crt_dest_dir
+            name: mdos-crt-dest-volume
+          command:
+          - /bin/sh
+          - -c
+          - cp /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
+      volumes:
+      - name: mdos-crt-dest-volume
+        hostPath:
+          path: /etc/letsencrypt/live/$DOMAIN
+      - name: mdos-crt-src-volume
+        secret: 
+          secretName: mdos-root-domain-tls
+EOF
+
+    # Now schedule a chronJob in Kubernetes to export the generated certificate once a day to
+    # the local filesystem so that other services such as Keycloak and the FTP server can use it as well
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mdos-cert-exporter
+  namespace: mdos
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: cert-exporter
+            image: busybox:1.28
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+            - mountPath: /mdos_crt_from_secret
+              name: mdos-crt-src-volume
+              readOnly: true
+            - mountPath: /mdos_crt_dest_dir
+              name: mdos-crt-dest-volume
+            command:
+            - /bin/sh
+            - -c
+            - cp /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
+          volumes:
+          - name: mdos-crt-dest-volume
+            hostPath:
+              path: /etc/letsencrypt/live/$DOMAIN
+          - name: mdos-crt-src-volume
+            secret: 
+              secretName: mdos-root-domain-tls
+EOF
+
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        if [ -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
+            LOOP_BREAK=1
+        else
+            sleep 1
+        fi
+    done
 }
-
-# ############################################
-# ########### CLOUDFLARE & CERTBOT ###########
-# ############################################
-# setup_cloudflare_certbot() {
-    
-#     if [ "$PSYSTEM" == "APT" ]; then
-#         # Install certbot
-#         apt-get install certbot python3-certbot-dns-cloudflare -y &>> $LOG_FILE
-#     fi
-
-#     # Create cloudflare credentials file
-#     echo "dns_cloudflare_email = $CF_EMAIL" > $HOME/.mdos/cloudflare.ini
-#     echo "dns_cloudflare_api_key = $CF_TOKEN" >> $HOME/.mdos/cloudflare.ini
-
-#     # echo "dns_cloudflare_email = mdundek@gmail.com" > $HOME/.mdos/cloudflare.ini
-#     # echo "dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee" >> $HOME/.mdos/cloudflare.ini
-
-#     # Create certificate now (will require manual input)
-#     if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
-#         question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
-#         echo ""
-#         echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
-#         echo ""
-
-#         yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
-        
-#         if [ "$CERT_OK" == "yes" ]; then
-#             if [ ! -f $SSL_ROOT/$FULLCHAIN_FNAME ]; then
-#                 error "Could not find generated certificate under: $SSL_ROOT/$FULLCHAIN_FNAME"
-#                 exit 1
-#             fi
-#             chmod 655 /etc/letsencrypt/archive/$DOMAIN/*.pem
-#         else
-#             warn "Aborting installation"
-#             exit 1
-#         fi
-        
-#     fi
-
-#     if [ ! -f /var/spool/cron/crontabs/root ]; then
-#         # TODO: Need fixing if chrontab creation, opens editor and breaks install script
-#         yes_no CRON_OK "Please create a crontab for user 'root' in a separate terminal using the command: sudo crontab -e. Once done, select 'yes'" 1
-#         if [ "$CRON_OK" == "yes" ]; then
-#             if [ ! -f /var/spool/cron/crontabs/root ]; then
-#                 error "Could not find root user crontab"
-#                 exit 1
-#             fi
-#         else
-#             warn "Aborting installation"
-#             exit 1
-#         fi
-#     fi
-
-#     mkdir -p $HOME/.mdos/cron
-#     # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
-#     cp $_DIR/dep/cron/91_renew_certbot.sh $HOME/.mdos/cron/91_renew_certbot.sh
-#     if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
-#         (crontab -l 2>/dev/null; echo "5 8 * * * $HOME/.mdos/cron/91_renew_certbot.sh") | crontab -
-#     fi
-
-#     # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
-#     cp $_DIR/dep/cron/90_update_ip_cloudflare.sh $HOME/.mdos/cron/90_update_ip_cloudflare.sh
-#     if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
-#         yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
-#         if [ "$IP_UPDATE" == "yes" ]; then
-#             (crontab -l 2>/dev/null; echo "5 6 * * * $HOME/.mdos/cron/90_update_ip_cloudflare.sh") | crontab -
-#         fi
-#     fi
-
-#     /etc/init.d/cron restart &>> $LOG_FILE
-# }
 
 # ############################################
 # ################# ETC_HOSTS ################
@@ -721,7 +771,12 @@ install_longhorn() {
 
     # Wait for all pods to be on
     wait_all_ns_pods_healthy "longhorn-system"
+}
 
+# ############################################
+# ############# PROTEECT LONGHORN ############
+# ############################################
+protect_longhorn() {
     # Create Virtual Service
     set +Ee
     while [ -z $VS_SUCCESS ]; do
@@ -753,12 +808,7 @@ EOF
         fi
     done
     set -Ee
-}
 
-# ############################################
-# ############# PROTEECT LONGHORN ############
-# ############################################
-protect_longhorn() {
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -896,9 +946,14 @@ install_istio() {
         fi
     done
 
+    # Wait for all pods to be on
+    wait_all_ns_pods_healthy "istio-system"
+}
+
+deploy_istio_gateways() {
     kubectl create -n istio-system secret tls httpbin-credential --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
 
-    ## Deploy Istio Gateways
+    # Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
@@ -939,33 +994,12 @@ spec:
     tls:
       mode: PASSTHROUGH
 EOF
-
-    # Wait for all pods to be on
-    wait_all_ns_pods_healthy "istio-system"
 }
 
 # ############################################
 # ############### INSTALL NGINX ##############
 # ############################################
 setup_firewall() {
-    
-
-    # if [ "$PSYSTEM" == "APT" ]; then
-    #     apt install nginx -y &>> $LOG_FILE
-    #     systemctl enable nginx &>> $LOG_FILE
-    #     systemctl start nginx &>> $LOG_FILE
-    # fi
-
-    # if [ ! -f /etc/nginx/conf.d/mdos.conf ]; then
-    #     cp ./dep/proxy/mdos.conf /etc/nginx/conf.d/
-
-    #     sed -i "s|__DOMAIN__|$DOMAIN|g" /etc/nginx/conf.d/mdos.conf
-    #     sed -i "s|__SSL_ROOT__|$SSL_ROOT|g" /etc/nginx/conf.d/mdos.conf
-    #     sed -i "s|__NODE_IP__|127.0.0.1|g" /etc/nginx/conf.d/mdos.conf
-    #     sed -i "s|__FULLCHAIN_FNAME__|$FULLCHAIN_FNAME|g" /etc/nginx/conf.d/mdos.conf
-    #     sed -i "s|__PRIVKEY_FNAME__|$PRIVKEY_FNAME|g" /etc/nginx/conf.d/mdos.conf
-    # fi
-
     # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
     if [ "$USE_FIREWALL" == "yes" ]; then
         if command -v ufw >/dev/null; then
@@ -1065,11 +1099,13 @@ deploy_reg_chart() {
     REG_VALUES="$(cat ./dep/registry/values.yaml)"
 
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].volumes[0].hostPath = "'$SSL_ROOT'"')
+    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[1].hostPath = "'$SSL_ROOT'"')
+    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
+    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
+    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
+    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
 
@@ -1178,8 +1214,9 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
+    # KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
+    # KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].volumes[0].hostPath = "'$SSL_ROOT'"')
 
     collect_api_key() {
         echo ""
@@ -1474,6 +1511,13 @@ config:
     standard_logging = true
     upstreams = [ \"static://200\" ]
     whitelist_domains = [\".$DOMAIN\"]" > $_DIR/oauth2-proxy-values.yaml
+
+    if [ ! -z $NO_DNS ]; then
+        echo "hostAlias:
+  enabled: true
+  ip: \"$LOCAL_IP\"
+  hostname: \"keycloak.$DOMAIN\"" >> $_DIR/oauth2-proxy-values.yaml
+    fi
 
     helm upgrade --install -n oauth2-proxy \
       --version 6.0.1 \
@@ -1914,12 +1958,6 @@ EOF
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
         FULLCHAIN_FNAME=fullchain.pem
         PRIVKEY_FNAME=privkey.pem
-
-        # if [ -z $INST_STEP_CLOUDFLARE ]; then
-        #     info "Certbot installation and setup..."
-        #     setup_cloudflare_certbot
-        #     set_env_step_data "INST_STEP_CLOUDFLARE" "1"
-        # fi
     elif [ "$CERT_MODE" == "CRT_PROVIDED" ]; then
         SSL_ROOT="$(dirname "${OWN_FULLCHAIN_CRT_PATH}")"
         FULLCHAIN_FNAME=$(basename "${OWN_FULLCHAIN_CRT_PATH}")
@@ -1949,9 +1987,9 @@ EOF
     fi
 
     # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
-    # if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
-    #     consigure_core_dns_for_self_signed
-    # fi
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+        consigure_core_dns_for_self_signed
+    fi
 
     # INSTALL HELM
     if [ -z $INST_STEP_HELM ]; then
@@ -1982,85 +2020,92 @@ EOF
 
     # INSTALL CERT-MANAGER
     if [ -z $SETUP_CERT_MANAGER ]; then
+        info "Install cert-manager..."
         setup_cert_manager
         set_env_step_data "SETUP_CERT_MANAGER" "1"
     fi
 
-  
+    # INSTALL CERT-MANAGER ISSUER FOR MDOS IF NECESSARY
+    if [ -z $SETUP_CERT_MANAGER_ISSUER ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
+        cert_manager_mdos_issuer_and_crt
+        set_env_step_data "SETUP_CERT_MANAGER_ISSUER" "1"
+    fi
 
-
-
-
-
-    # INSTALL REGISTRY
-    # if [ -z $INST_STEP_REGISTRY ]; then
-    #     info "Install Registry..."
-    #     install_registry
-    #     set_env_step_data "INST_STEP_REGISTRY" "1"
-    # fi
-
-    # # INSTALL KEYCLOAK
-    # REALM="mdos"
-    # CLIENT_ID="mdos"
-    # if [ -z $INST_STEP_KEYCLOAK ]; then
-    #     info "Install Keycloak..."
-    #     install_keycloak
-    #     set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
-    #     set_env_step_data "INST_STEP_KEYCLOAK" "1"
-    # fi
-
-    # # LOAD OAUTH2 DATA
-    # if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
-    #     OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}:30999/realms/mdos/.well-known/openid-configuration")
-    #     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
-    #     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
-    #     OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
-    #     COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
-       
-    #     OIDC_ISSUER_URL=${OIDC_ISSUER_URL//$KC_NODEPORT/}
-    #     OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
-    #     OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
-    # else
-    #     OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
-    #     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
-    #     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
-    #     OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
-    #     COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
-    # fi
+    # SETUP ISTIO GATEWAYS
+    if [ -z $SETUP_ISTIO_GATEWAYS ]; then
+        deploy_istio_gateways
+        set_env_step_data "SETUP_ISTIO_GATEWAYS" "1"
+    fi
     
-    # # INSTALL OAUTH2 PROXY
-    # if [ -z $INST_STEP_OAUTH ]; then
-    #     info "Install OAuth2 proxy..."
-    #     install_oauth2_proxy
-    #     set_env_step_data "INST_STEP_OAUTH" "1"
-    # fi
+    # INSTALL REGISTRY
+    if [ -z $INST_STEP_REGISTRY ]; then
+        info "Install Registry..."
+        install_registry
+        set_env_step_data "INST_STEP_REGISTRY" "1"
+    fi
 
-    # # PROTECT LONGHORN UI
-    # if [ -z $INST_STEP_LONGHORN_PROTECT ]; then
-    #     info "Protect Longhorn UI..."
-    #     protect_longhorn
-    #     set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
-    # fi
+    # INSTALL KEYCLOAK
+    REALM="mdos"
+    CLIENT_ID="mdos"
+    if [ -z $INST_STEP_KEYCLOAK ]; then
+        info "Install Keycloak..."
+        install_keycloak
+        set_env_step_data "MDOS_CLIENT_SECRET" "$MDOS_CLIENT_SECRET"
+        set_env_step_data "INST_STEP_KEYCLOAK" "1"
+    fi
 
-    # # INSTALL MDOS
-    # if [ -z $INST_STEP_MDOS ]; then
-    #     info "Install MDos API server..."
-    #     install_mdos
-    # fi
+    # LOAD OAUTH2 DATA
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}:30999/realms/mdos/.well-known/openid-configuration")
+        OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+        OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+        OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
+        COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+       
+        OIDC_ISSUER_URL=${OIDC_ISSUER_URL//$KC_NODEPORT/}
+        OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
+        OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
+    else
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
+        OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
+        OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
+        OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
+        COOKIE_SECRET=$(openssl rand -base64 32 | tr -- '+/' '-_')
+    fi
+    
+    # INSTALL OAUTH2 PROXY
+    if [ -z $INST_STEP_OAUTH ]; then
+        info "Install OAuth2 proxy..."
+        install_oauth2_proxy
+        set_env_step_data "INST_STEP_OAUTH" "1"
+    fi
 
-    # # INSTALL MDOS FTP
-    # if [ -z $INST_STEP_MDOS_FTP ]; then
-    #     info "Install MDos FTP server..."
-    #     install_helm_ftp
-    #     set_env_step_data "INST_STEP_MDOS_FTP" "1"
-    # fi
+    # PROTECT LONGHORN UI
+    if [ -z $INST_STEP_LONGHORN_PROTECT ]; then
+        info "Protect Longhorn UI..."
+        protect_longhorn
+        set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
+    fi
 
-    # # ENABLE REGISTRY AUTH
-    # if [ -z $INST_STEP_REG_AUTH ]; then
-    #     info "Enabeling MDos registry auth..."
-    #     deploy_reg_chart 1
-    #     set_env_step_data "INST_STEP_REG_AUTH" "1"
-    # fi
+    # INSTALL MDOS
+    if [ -z $INST_STEP_MDOS ]; then
+        info "Install MDos API server..."
+        install_mdos
+    fi
+
+    # INSTALL MDOS FTP
+    if [ -z $INST_STEP_MDOS_FTP ]; then
+        info "Install MDos FTP server..."
+        install_helm_ftp
+        set_env_step_data "INST_STEP_MDOS_FTP" "1"
+    fi
+
+    # ENABLE REGISTRY AUTH
+    if [ -z $INST_STEP_REG_AUTH ]; then
+        info "Enabeling MDos registry auth..."
+        deploy_reg_chart 1
+        set_env_step_data "INST_STEP_REG_AUTH" "1"
+    fi
 
     MDOS_SUCCESS=1
 )
