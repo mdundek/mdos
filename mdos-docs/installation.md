@@ -22,21 +22,13 @@ sudo ./mdos-setup/install.sh
 
 During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.
 
-<img src="img/installation/ip.png" alt="ip" width="400"/>
+<img src="img/installation/ip.png" alt="ip" width="600"/>
 
 #### Administrator credentials 
 
 The platform will create a overall admin account on the platform. Please provide the admin username, email and password first:
 
-```
-Admin user account
--------------------------------------
-Enter a admin username for the platform: mdundek
-
-Enter the admin email address for the default keycloak client user: mdundek@mymail.com
-
-Enter a admin password for the platform: supersecret
-```
+<img src="img/installation/account.png" alt="account" width="600"/>
 
 #### Domain & certificate setup
 
@@ -51,24 +43,7 @@ The installation script will give you multiple choices here:
 > For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.  
 > For production, you will have to use a fully valid certificate in order to use all of MDos features. 
 
-```
-Domain name and certificate
--------------------------------------
->   You already have a certificate and a wild card domain
->   You have a Cloudflare domain, but no certificates
->   Generate and use self signed, do not have a domain
-
-Enter your DNS root domain name (ex. mydomain.com): mydomain.com
-
-Is your domain "mydomain.com" resolvable through a public or private DNS server?
->   Yes
->   No
-
-MDos will need to know how to reach it's FTP server from within the
-cluster without DNS resolution. An IP address is therefore required.
-
-Please enter the local IP address for this machine: XXX.XXX.XXX.XXX
-```
+<img src="img/installation/selfsigned.png" alt="selfsigned" width="600"/>
 
 > **Note**
 > This example is based on the 3rd option, a self signed certificate. Other questions will be asked according to your choices.
@@ -78,40 +53,14 @@ Please enter the local IP address for this machine: XXX.XXX.XXX.XXX
 When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.  
 MDos uses `Longhorn` from Rancher for this as a storage class. Longhorn will allocate your container volumes in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
 
-```
-Kubernetes Storage
--------------------------------------
-MDos uses Longhorn as the primary storage class for your Kubernetes workload data volumes.
-You can use Longhorn's default storage folder for this (/var/lib/longhorn), or specify
-your own folder path in case you want to mount a external disk as the storage target for
-your platform storage needs.
-
-Would you like to customize the directory path used by longhorn to mount your filesystems at?
->   Yes
->   No
-
-Specify the path where you wish to store your cluster storage data at (absolute path): /content/kubestorage
-
-WARN: This directory path does not exist.
-Would you like to create this folder?
->   Yes
->   No
-```
+<img src="img/installation/storage.png" alt="storage" width="600"/>
 
 #### Private registry max size
 
 MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.  
 The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).
 
-```
-Private registry
--------------------------------------
-MDos provides you with a private registry that you can use to store your application
-images on. This registry is shared amongst all tenants on your cluster (ACL is
-implemented to protect tenant specific images).
-
-How many Gi (Gigabytes) do you want to allocate to your registry volume: 10
-```
+<img src="img/installation/registry.png" alt="registry" width="600"/>
 
 > **Note**
 > Please note that this storage capacity will be located on your main Kubernetes storage path specified above
@@ -129,27 +78,7 @@ This is achieved by providing a centralized storage space on the mdos platform w
 Here you are being asked to provide a directory path to where this centralized data will be hosted.  
 Again, this is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
 
-```
-FTP volume sync server
--------------------------------------
-Users will be able to easiely synchronize / mirror their static datasets with application
-during deployments. This requires that the data is stored on the MDos platform so that
-the user who deploys his/her applications can synchronize that data with the platform
-upfront. Once done, the deploying application can automatically update / mirror those
-changes to your PODs before your application actually starts.
-Please note that this data will remain on the MDos platform until the namespace / tenant
-is deleted, or that you explicitely requested a volume folder to be deleted.
-Keeping the data available enables you to easiely do delta sync operations iteratively
-without having to upload it all every time you change your datasets.
-You can store this buffered data on any partition folder you like.
-
-Enter a full path to use to store all tenant/namespace volume data for synchronization purposes: /content/ftpstorage
-
-WARN: This directory path does not exist.
-Would you like to create this folder?
->   Yes
->   No
-```
+<img src="img/installation/ftp.png" alt="ftp" width="600"/>
 
 #### Configure Keycloak and set up the master token
 
