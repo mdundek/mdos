@@ -36,7 +36,7 @@ Some of the components such as the registry auth server require a TLS certificat
 The installation script will give you multiple choices here:
 
 1. You have a valid certificate at hand that you would like to use
-2. You have a domain name on `Cloudflare`, and would like to set it up using `LetsEncrypt`
+2. You want to set up `cert-manager` to generate and manage your certificate (Let's Encrypt, CloudFlare, Vault, AWS, Google...)
 3. You have no certificate and would like to create a self-signed certificate (only suited for developement purposes)
 
 > **Warning**

@@ -491,8 +491,6 @@ setup_cert_manager() {
 # ######### CERT MANAGER MDOS ISSUER #########
 # ############################################
 cert_manager_mdos_issuer_and_crt() {
-    kubectl create ns mdos &>> $LOG_FILE
-
     # Install Issuer (Secret + Issuer)
     info "Configure mdos cert-manager issuer..."
     kubectl apply -f $ISSUER_YAML_PATH -n mdos &>> $LOG_FILE
@@ -2003,6 +2001,9 @@ EOF
         setup_cert_manager
         set_env_step_data "SETUP_CERT_MANAGER" "1"
     fi
+
+    # Create mdos namespace
+    kubectl create ns mdos &>> $LOG_FILE
 
     # INSTALL CERT-MANAGER ISSUER FOR MDOS IF NECESSARY
     if [ -z $SETUP_CERT_MANAGER_ISSUER ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
