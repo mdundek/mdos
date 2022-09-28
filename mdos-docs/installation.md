@@ -20,7 +20,9 @@ Install the platform by calling the following script as root:
 sudo ./mdos-setup/install.sh
 ```
 
-During the installation procedure, you will be asked to provide a few details.  
+During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.
+
+<img src="img/installation/ip.png" alt="ip" width="400"/>
 
 #### Administrator credentials 
 
