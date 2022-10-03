@@ -47,37 +47,37 @@ The installation script will give you multiple choices here:
 
 This example is based on the 3rd option, a self signed certificate. If you want to use `cert-manager` instead (good option for production environement), you will be asked to enter the path to your cert-manager `Issuer` Yaml file to use in order to issue your certificate.
 
-<img src="img/installation/certmanager.png" alt="selfsigned" width="600"/>
+<img src="img/installation/certmanager.png" alt="selfsigned" width="800"/>
 
 > **Note**
 > Your `Issuer` must use the name `mdos-issuer`, the rest is up to you. Here is an example Issuer yaml file that uses `CloudFlare` as the DNS registrar & `Let's Encrypt` to generate and sign your certificate:
-> > ```yaml
-> > apiVersion: v1
-> > kind: Secret
-> > metadata:
-> >   name: cloudflare-api-key-secret
-> > type: Opaque
-> > stringData:
-> >   api-key: 6df5h6dh6d4fgh64dfd6fgh6df4h6d5
-> > ---
-> > apiVersion: cert-manager.io/v1
-> > kind: Issuer
-> > metadata:
-> >   name: mdos-issuer
-> > spec:
-> >   acme:
-> >     email: mdundek@mymail.org
-> >     server: https://acme-v02.api.letsencrypt.org/directory
-> >     privateKeySecretRef:
-> >       name: letsencrypt-prod
-> >     solvers:
-> >     - dns01:
-> >         cloudflare:
-> >           email: mdundek@mymail.org
-> >           apiKeySecretRef:
-> >             name: cloudflare-api-key-secret
-> >             key: api-key
-> > ```
+> ```yaml
+> apiVersion: v1
+> kind: Secret
+> metadata:
+>   name: cloudflare-api-key-secret
+> type: Opaque
+> stringData:
+>   api-key: <YOUR CLOUDFLARE API KEY>
+> ---
+> apiVersion: cert-manager.io/v1
+> kind: Issuer
+> metadata:
+>   name: mdos-issuer
+> spec:
+>   acme:
+>     email: <YOUR LETS-ENCRYPT EMAIL ADDRESS>
+>     server: https://acme-v02.api.letsencrypt.org/directory
+>     privateKeySecretRef:
+>       name: letsencrypt-prod
+>     solvers:
+>     - dns01:
+>         cloudflare:
+>           email: <YOUR CLOUDFLARE EMAIL ADDRESS>
+>           apiKeySecretRef:
+>             name: cloudflare-api-key-secret
+>             key: api-key
+> ```
 
 #### Kubernetes workload storage directory path
 
@@ -109,7 +109,7 @@ This is achieved by providing a centralized storage space on the mdos platform w
 Here you are being asked to provide a directory path to where this centralized data will be hosted.  
 Again, this is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
 
-<img src="img/installation/ftp.png" alt="ftp" width="600"/>
+<img src="img/installation/ftp.png" alt="ftp" width="700"/>
 
 #### Configure Keycloak and set up the master token
 
