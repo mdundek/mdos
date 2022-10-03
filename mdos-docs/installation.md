@@ -12,6 +12,12 @@ First, clone this repo on your target machine:
 git clone https://github.com/mdundek/mdos.git
 ```
 
+### Before you start
+
+The installation will require that you configure a valid domain name and a certificate for the mdos base platform (for developement purposes you can choose to work with a self-signed certificate).
+
+If you plan on using `cert-manager` to manage your certificate, then you will have to prepare a `Issuer` yaml file upfront before you go ahead and start the installation script (see section [Cert-manager example](#domain--certificate-setup) for more details).
+
 ### Master node & MDos control plane
 
 Install the platform by calling the following script as root:
