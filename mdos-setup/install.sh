@@ -1534,12 +1534,6 @@ install_mdos() {
     docker push registry.$DOMAIN/mdos-mirror-lftp:latest &>> $LOG_FILE
     cd ../../..
 
-    # Now prepare deployment config
-    k8s_cluster_scope_exist ELM_EXISTS ns "mdos"
-    if [ -z $ELM_EXISTS ]; then
-        kubectl create ns mdos &>> $LOG_FILE
-    fi
-
     k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
     if [ -z $ELM_EXISTS ]; then
 cat <<EOF | kubectl create -f &>> $LOG_FILE -
@@ -2001,7 +1995,7 @@ EOF
     fi
 
     # Create mdos namespace
-    kubectl create ns mdos &>> $LOG_FILE
+    kubectl create ns mdos || true &>> $LOG_FILE
 
     # INSTALL CERT-MANAGER ISSUER FOR MDOS IF NECESSARY
     if [ -z $SETUP_CERT_MANAGER_ISSUER ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
