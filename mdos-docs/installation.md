@@ -43,11 +43,17 @@ The installation script will give you multiple choices here:
 > For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.  
 > For production, you will have to use a fully valid certificate in order to use all of MDos features. 
 
+##### Self-signed certificate example
+
 <img src="img/installation/selfsigned.png" alt="selfsigned" width="600"/>
 
 This example is based on the 3rd option, a self signed certificate. If you want to use `cert-manager` instead (good option for production environement), you will be asked to enter the path to your cert-manager `Issuer` Yaml file to use in order to issue your certificate.
 
+##### Cert-manager example
+
 <img src="img/installation/certmanager.png" alt="selfsigned" width="800"/>
+
+Here we are using `cert-manager` to generate and manage the certificate for you
 
 > **Note**
 > Your `Issuer` must use the name `mdos-issuer`, the rest is up to you. Here is an example Issuer yaml file that uses `CloudFlare` as the DNS registrar & `Let's Encrypt` to generate and sign your certificate:
