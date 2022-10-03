@@ -1995,7 +1995,7 @@ EOF
     fi
 
     # Create mdos namespace
-    kubectl create ns mdos || true &>> $LOG_FILE
+    kubectl create ns mdos > /dev/null 2>&1 || true
 
     # INSTALL CERT-MANAGER ISSUER FOR MDOS IF NECESSARY
     if [ -z $SETUP_CERT_MANAGER_ISSUER ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
