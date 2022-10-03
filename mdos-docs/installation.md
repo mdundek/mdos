@@ -45,8 +45,15 @@ The installation script will give you multiple choices here:
 
 <img src="img/installation/selfsigned.png" alt="selfsigned" width="600"/>
 
+This example is based on the 3rd option, a self signed certificate. If you want to use `cert-manager` instead (good option for production environement), you will be asked to enter the path to your cert-manager `Issuer` Yaml file to use in order to issue your certificate.
+
+<img src="img/installation/certmanager.png" alt="selfsigned" width="600"/>
+
 > **Note**
-> This example is based on the 3rd option, a self signed certificate. Other questions will be asked according to your choices.
+> Your `Issuer` must use the name `mdos-issuer`, the rest is up to you. Here is an example Issuer yaml file that uses `CloudFlare` as the DNS registrar & `Let's Encrypt` to generate and sign your certificate:
+> > ```
+> > 
+> > ```
 
 #### Kubernetes workload storage directory path
 

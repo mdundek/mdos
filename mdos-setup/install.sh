@@ -1405,7 +1405,17 @@ stringData:
 EOF
     }
 
-    echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
+    # Docker login
+    set +Ee
+    while [ -z $DOCKER_LOGIN_SUCCESS ]; do
+        echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DOCKER_LOGIN_SUCCESS=1
+        else
+            sleep 5
+        fi
+    done
+    set -Ee
 
     # Pull & push images to registry
     docker pull postgres:13.2-alpine &>> $LOG_FILE
@@ -1516,19 +1526,7 @@ install_mdos() {
     cp infra/dep/helm/helm .
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
     rm -rf helm
-
-    set +Ee
-    PUSHING_DOCKER=1
-    while [ -z $MDOS_API_PUSH_SUCCESS ]; do
-        docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
-        if [ $? -eq 0 ]; then
-            MDOS_API_PUSH_SUCCESS=1
-        else
-            sleep 10
-        fi
-    done
-    unset PUSHING_DOCKER
-    set -Ee
+    docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
 
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
@@ -1918,17 +1916,17 @@ EOF
     trap _catch ERR
     trap _finally EXIT
 
-    # COLLECT USER DATA
-    collect_user_input
-
-    print_section_title "Installation"
-
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
         info "Update system and install dependencies..."
         dependencies
         set_env_step_data "INST_STEP_DEPENDENCY" "1"
     fi
+
+    # COLLECT USER DATA
+    collect_user_input
+
+    print_section_title "Installation"
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CERT_MANAGER" ]; then
