@@ -84,6 +84,9 @@ Here we are using `cert-manager` to generate and manage the certificate for you
 >             name: cloudflare-api-key-secret
 >             key: api-key
 > ```
+> 
+> Other examples for various providers can be found at: [https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers](https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers)
+> 
 
 #### Kubernetes workload storage directory path
 
