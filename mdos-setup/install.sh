@@ -534,6 +534,17 @@ EOF
             exit 1
         fi
     done
+}
+
+cert_manager_secret_replicator_job() {
+    # Build cert-manager secret replicator job image
+    cd ./dep/images/cert-job-manager
+    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/cert-manager-replicate-bot:latest . &>> $LOG_FILE
+    docker push registry.$DOMAIN/cert-manager-replicate-bot:latest &>> $LOG_FILE
+
+
+
 
     # Export certificate
     info "Create Kubernetes CronJob to export certificate for third party components..."
@@ -551,7 +562,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: cert-exporter
-          image: busybox:1.28
+          image: registry.$DOMAIN/cert-manager-replicate-bot:latest
           imagePullPolicy: IfNotPresent
           volumeMounts:
           - mountPath: /mdos_crt_from_secret
@@ -589,7 +600,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: cert-exporter
-            image: busybox:1.28
+            image: registry.$DOMAIN/cert-manager-replicate-bot:latest
             imagePullPolicy: IfNotPresent
             volumeMounts:
             - mountPath: /mdos_crt_from_secret
@@ -2016,6 +2027,13 @@ EOF
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
 
+    # SETUP CERTMANAGER SECRET BOT REPLICATOR
+    if [ -z $INST_STEP_SEC_BOT_REP ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
+        info "Configure cert-manager secret replication jobs..."
+        cert_manager_secret_replicator_job
+        set_env_step_data "INST_STEP_SEC_BOT_REP" "1"
+    fi
+    
     # INSTALL KEYCLOAK
     REALM="mdos"
     CLIENT_ID="mdos"
