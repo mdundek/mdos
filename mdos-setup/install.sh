@@ -1640,6 +1640,85 @@ install_mdos() {
 }
 
 # ############################################
+# ############# INSTALL RABBITMQ #############
+# ############################################
+install_rabbitmq() {
+    helm repo add bitnami https://charts.bitnami.com/bitnami
+    helm install rabbit-operator bitnami/rabbitmq-cluster-operator --namespace rabbitmq --create-namespace --atomic
+
+    # Wait untill available
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        DEP_STATUS=$(kubectl get deploy rabbit-operator-rabbitmq-cluster-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
+        if [ "$DEP_STATUS" == "1" ]; then
+            DEP_STATUS=$(kubectl get deploy rabbit-operator-rabbitmq-messaging-topology-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
+            if [ "$DEP_STATUS" == "1" ]; then
+                LOOP_BREAK=1
+            else
+                sleep 2
+            fi
+        else
+            sleep 2
+        fi
+    done 
+
+    # Instantiate cluster
+    cat <<EOF | k3s kubectl apply -f -
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-cluster
+  namespace: rabbitmq
+spec:
+  replicas: 1
+  override:
+    statefulSet:
+      spec:
+        podManagementPolicy: OrderedReady
+  service:
+    type: ClusterIP
+  persistence:
+    storageClassName: longhorn
+    storage: 5Gi
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+              - rabbitmq-cluster
+        topologyKey: kubernetes.io/hostname
+  rabbitmq:
+    additionalPlugins:
+    - rabbitmq_federation
+    additionalConfig: |
+      disk_free_limit.absolute = 500MB
+      vm_memory_high_watermark.relative = 0.6
+EOF
+
+    # Wait for pod rabbitmq-cluster-server-0
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        DEP_STATUS=$(kubectl get pod rabbitmq-cluster-server-0 --namespace rabbitmq -o json | jq -r '.status.phase')
+        if [ "$DEP_STATUS" == "Running" ]; then
+            LOOP_BREAK=1
+        else
+            sleep 2
+        fi
+    done 
+
+    # Copy credentials secret over to mdos namespace
+    SECRET_YAML=$(kubectl get secret rabbitmq-cluster-default-user -n rabbitmq -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s')
+    SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.ownerReferences)')
+    SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.labels)')
+    cat <<EOF | k3s kubectl apply -n mdos -f -
+$SECRET_YAML
+EOF
+}
+
+# ############################################
 # ############ COREDNS DOMAIN CFG ############
 # ############################################
 consigure_core_dns_for_self_signed() {
@@ -2083,10 +2162,18 @@ EOF
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
     fi
 
+    # INSTALL RABBITMQ
+    if [ -z $INST_STEP_RABBITMQ ]; then
+        info "Install RabbitMQ..."
+        install_rabbitmq
+        set_env_step_data "INST_STEP_RABBITMQ" "1"
+    fi
+
     # INSTALL MDOS
     if [ -z $INST_STEP_MDOS ]; then
         info "Install MDos API server..."
         install_mdos
+        set_env_step_data "INST_STEP_MDOS" "1"
     fi
 
     # INSTALL MDOS FTP

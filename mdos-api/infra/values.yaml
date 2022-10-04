@@ -60,23 +60,35 @@ components:
             filename: client-ca.crt
             value: |-
               -----BEGIN CERTIFICATE-----
-              MIIBdzCCAR2gAwIBAgIBADAKBggqhkjOPQQDAjAjMSEwHwYDVQQDDBhrM3MtY2xp
-              ZW50LWNhQDE2NTk2MTg0MzgwHhcNMjIwODA0MTMwNzE4WhcNMzIwODAxMTMwNzE4
-              WjAjMSEwHwYDVQQDDBhrM3MtY2xpZW50LWNhQDE2NTk2MTg0MzgwWTATBgcqhkjO
-              PQIBBggqhkjOPQMBBwNCAAQrBEn/jiZ+I8HOW4WIZ8dIcvqimp921mOz+w3y5zTL
-              89meFB/Rw89ErR3sq3gruFrUmzyPuLWx/UDuXC745hWRo0IwQDAOBgNVHQ8BAf8E
-              BAMCAqQwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUivl7BkMVvm56BIaExFC1
-              VwAjgGwwCgYIKoZIzj0EAwIDSAAwRQIhANWWzBaEhe4Ws2e5aivmaaSo0d4DlLSw
-              ocKIDktJDlVTAiB0SmoAu4y+V+WCGHmdBfCH5Iu73eJj1TlbozMUuSlczA==
+              MIIBdjCCAR2gAwIBAgIBADAKBggqhkjOPQQDAjAjMSEwHwYDVQQDDBhrM3MtY2xp
+              ZW50LWNhQDE2NjQ4OTEzNzEwHhcNMjIxMDA0MTM0OTMxWhcNMzIxMDAxMTM0OTMx
+              WjAjMSEwHwYDVQQDDBhrM3MtY2xpZW50LWNhQDE2NjQ4OTEzNzEwWTATBgcqhkjO
+              PQIBBggqhkjOPQMBBwNCAARS1BakGbSB5JU1Pmeb7bZs39j65FvshraZQ5Z86pWb
+              Q/KspeoLG+X6iYUoDChioIzCqhovAwaueL7CBo5Ybauko0IwQDAOBgNVHQ8BAf8E
+              BAMCAqQwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU2e2vB6ez7YpjURl3GEmX
+              LIlIHVkwCgYIKoZIzj0EAwIDRwAwRAIgMn8EQhxBD0g/fkzACLDEIytKB9dAvOwQ
+              GXbD2z2LoUkCIHLe3J8SggB4Ff8Rh5YQm1B/4wntAJfeajFjAOolVF33
               -----END CERTIFICATE-----
           - name: client-key
             filename: client-ca.key
             value: |-
               -----BEGIN EC PRIVATE KEY-----
-              MHcCAQEEIOpDba6DwEB76ARAglSsmz9oq4B5+rgpOurvvKCP9prhoAoGCCqGSM49
-              AwEHoUQDQgAEKwRJ/44mfiPBzluFiGfHSHL6opqfdtZjs/sN8uc0y/PZnhQf0cPP
-              RK0d7Kt4K7ha1Js8j7i1sf1A7lwu+OYVkQ==
+              MHcCAQEEIK6insBao51Whvf8F6LPDWH7ht19M7vuZQwOg8eUEIYPoAoGCCqGSM49
+              AwEHoUQDQgAEUtQWpBm0geSVNT5nm+22bN/Y+uRb7Ia2mUOWfOqVm0PyrKXqCxvl
+              +omFKAwoYqCMwqoaLwMGrni+wgaOWG2rpA==
               -----END EC PRIVATE KEY-----
+      - name: rabbitmq-creds
+        type: env
+        ref: rabbitmq-cluster-default-user
+        entries:
+          - name: RABBIT_PORT
+            key: port
+          - name: RABBIT_HOST
+            key: host
+          - name: RABBIT_USERNAME
+            key: username
+          - name: RABBIT_PASSWORD
+            key: password
         
     volumes:
       - name: mhc-generic-chart
