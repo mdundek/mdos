@@ -153,13 +153,23 @@ mdos_deploy_app() {
                 --docker-server=registry.$DOMAIN \
                 --docker-username=$KEYCLOAK_USER \
                 --docker-password=$KEYCLOAK_PASS \
-                -n $I_NS 1>/dev/null
+                -n $I_NS &>> $LOG_FILE
         fi
     fi
 
-    helm upgrade --install $I_APP ./dep/mhc-generic/chart \
-        --values ./target_values.yaml \
-        -n $I_NS --atomic 1> /dev/null
+    set +Ee
+    unset DEPLOY_SUCCESS
+    while [ -z $DEPLOY_SUCCESS ]; do
+        helm upgrade --install $I_APP ./dep/mhc-generic/chart \
+            --values ./target_values.yaml \
+            -n $I_NS --atomic &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DEPLOY_SUCCESS=1
+        else
+            sleep 5
+        fi
+    done
+    set -Ee
 }
 
 # ############### EXEC IN POD ################
@@ -277,7 +287,7 @@ collect_user_input() {
         context_print "An example Issuer Yaml file based on CloudFlare can be found here:"
         context_print "https://raw.githubusercontent.com/mdundek/mdos/cert-manager/mdos-setup/dep/cert-manager/cloudflare-issuer.yaml"
         echo ""
-        note "Make sure you name your Issuer \"mdos-issuer\" (metadata.name: mdos-issuer)"
+        warn "Make sure you name your Issuer \"mdos-issuer\" (metadata.name: mdos-issuer)"
         echo ""
         unset LOOP_BREAK
         while [ -z $LOOP_BREAK ]; do
@@ -1179,13 +1189,7 @@ deploy_reg_chart() {
     REG_VALUES="$(cat ./dep/registry/values.yaml)"
 
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
-    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].volumes[0].hostPath = "'$SSL_ROOT'"')
-    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[1].hostPath = "'$SSL_ROOT'"')
-    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
-    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
-    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
-    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
 
@@ -1208,17 +1212,17 @@ read u p
 if [ -z \"\$u\" ]; then
     exit 0
 else
-    MDOS_URL=\"http://mdos-api-http.mdos:3030\"
+    MDOS_URL=\"http://mdos-api-http.mdos.svc.cluster.local:3030\"
     MDOS_HEAD=\"\$(wget -S --spider \$MDOS_URL 2>&1 | grep 'HTTP/1.1 200 OK')\"
     if [ \"\$MDOS_HEAD\" == \"\" ]; then
         exit 0
     else
         BCREDS=\$(echo '{ \"username\": \"'\$u'\", \"password\": \"'\$p'\" }' | base64 -w 0)
-        RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://mdos-api-http.mdos:3030/reg-authentication?creds=\$BCREDS)
+        RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://\$MDOS_URL/reg-authentication?creds=\$BCREDS)
         if [ \$? -ne 0 ]; then
-                exit 1
+            exit 1
         else
-                exit 0
+            exit 0
         fi
     fi
 fi
@@ -1238,13 +1242,13 @@ exit 0" > ./authorization.sh
 #!/bin/sh
 read a
 
-MDOS_URL=\"http://mdos-api-http.mdos:3030\"
+MDOS_URL=\"http://mdos-api-http.mdos.svc.cluster.local:3030\"
 MDOS_HEAD=\"\$(wget -S --spider \$MDOS_URL 2>&1 | grep 'HTTP/1.1 200 OK')\"
 if [ \"\$MDOS_HEAD\" == \"\" ]; then
     exit 0
 else
     BCREDS=\$(echo \"\$a\" | base64 -w 0)
-    RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://mdos-api-http.mdos:3030/reg-authorization?data=\$BCREDS)
+    RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://\$MDOS_URL/reg-authorization?data=\$BCREDS)
     if [ \$? -ne 0 ]; then
         exit 1
     else
