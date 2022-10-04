@@ -20,8 +20,8 @@ export default class Deploy extends Command {
 
     // ******* FLAGS *******
     static flags = {
-        username: Flags.string({ char: 'u', description: 'Registry username' }),
-        password: Flags.string({ char: 'p', description: 'Registry password' }),
+        username: Flags.string({ char: 'u', description: 'Mdos username' }),
+        password: Flags.string({ char: 'p', description: 'MDos password' }),
     }
     // *********************
 
@@ -79,8 +79,9 @@ export default class Deploy extends Command {
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
+        let userCreds = null
         try {
-            await this.validateJwt()
+            userCreds = await this.validateJwt(false, flags)
         } catch (error) {
             this.showError(error)
             process.exit(1)
@@ -152,7 +153,7 @@ export default class Deploy extends Command {
             } else if (!appComp.publicRegistry) {
                 targetRegistry = userInfo.data.registry
             }
-            const regCreds = await this.collectRegistryCredentials(flags)
+            const regCreds = userCreds ? userCreds : await this.collectRegistryCredentials(flags)
             await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir, appYaml.tenantName)
         }
  
@@ -498,7 +499,6 @@ export default class Deploy extends Command {
     async collectRegistryCredentials(flags: { username: string | undefined; password: string | undefined }) {
         if (!this.regCreds) {
             context('To push your images to the mdos registry, you need to provide your mdos username and password first')
-
 
             const questions = []
             if(!flags.username) {

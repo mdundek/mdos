@@ -139,7 +139,7 @@ class MdosCore extends CommonCore {
                 const oidcProvider = await this.app.get('kube').getOidcProviders()
                 const targetProvider = oidcProvider.find((p) => p.name == component.oidc.provider)
                 if (!targetProvider) {
-                    throw new NotFound(`ERROR: OIDC Provider "${component.oidc.provider}" not found`)
+                    throw new NotFound(`ERROR: OIDC Provider "${component.oidc.provider}" not found. It needs to be created first using the command 'mdos oidc add'.`)
                 }
                 if (component.oidc.provider.indexOf('kc-') == 0) {
                     const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}:${process.env.KC_PORT}/realms/mdos/.well-known/openid-configuration`)
