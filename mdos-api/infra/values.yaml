@@ -29,8 +29,6 @@ components:
         entries:
           - key: ROOT_DOMAIN
             value: "mdundek.network"
-          - key: SSL_CERT_FOLDER
-            value: "/etc/letsencrypt/live/mdundek.network"
           - key: GEN_HELM_PATH_PATH
             value: "/usr/src/dep/mhc-generic"
           - key: ISTIO_CHART_PATH
@@ -81,9 +79,6 @@ components:
               -----END EC PRIVATE KEY-----
         
     volumes:
-      - name: crt-volume
-        mountPath: /etc/letsencrypt/live/mdundek.network
-        hostPath: /etc/letsencrypt/live/mdundek.network
       - name: mhc-generic-chart
         mountPath: /usr/src/dep/mhc-generic
         hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/mhc-generic/chart

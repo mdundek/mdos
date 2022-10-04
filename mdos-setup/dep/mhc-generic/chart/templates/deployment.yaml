@@ -542,12 +542,14 @@ spec:
       {{- range .secrets }}
         {{- if eq .type "file" }}
           {{- $mountPath := .mountPath -}}
-          {{- $name := lower .name -}}
-          {{- range .entries }}
+          {{- if .entries }}
+            {{- $name := lower .name -}}
+            {{- range .entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
               subPath: {{ .name | quote }}
-          {{- end }}
+            {{- end }}
+          {{- end }}  
         {{- end }}
         {{- if eq .type "dir" }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ lower .name }}
@@ -686,7 +688,11 @@ spec:
         {{- if or (eq .type "file") (eq .type "dir") }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
+          {{- if .ref }}
+            secretName: {{ .ref }}
+          {{- else }}
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- end }}
           {{- if .defaultMode }}
             defaultMode: {{ .defaultMode }}
           {{- end }}

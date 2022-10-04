@@ -35,35 +35,24 @@ components:
           - key: REGISTRY_AUTH_TOKEN_ISSUER
             value: "Auth Service"
           - key: REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE
-            value: "/etc/letsencrypt/live/mdos-crt/fullchain.pem"
+            value: "/cert/tls.crt"
           - key: REGISTRY_HTTP_TLS_CERTIFICATE
-            value: "/etc/letsencrypt/live/mdos-crt/fullchain.pem"
+            value: "/cert/tls.crt"
           - key: REGISTRY_HTTP_TLS_KEY
-            value: "/etc/letsencrypt/live/mdos-crt/privkey.pem"
+            value: "/cert/tls.key"
           - key: REGISTRY_HTTP_SECRET
             value: "w87reoqweifgqoe"
           - key: REGISTRY_STORAGE_DELETE_ENABLED
             value: "true"
-    # secrets:
-    #   - name: reg-ca
-    #     type: dir
-    #     mountPath: /cert
-    #     entries:
-    #       - name: tls.crt
-    #         value: |-
-    #           -----BEGIN CERTIFICATE-----
-    #           -----END CERTIFICATE-----
-    #       - name: tls.key
-    #         value: |-
-    #           -----BEGIN PRIVATE KEY-----
-    #           -----END PRIVATE KEY-----
+    secrets:
+      - name: reg-ca
+        type: dir
+        ref: mdos-root-domain-tls
+        mountPath: /cert
     volumes:
       - name: repo-vol
         mountPath: /var/lib/registry
         size: 10Gi
-      - name: crt-volume
-        mountPath: /etc/letsencrypt/live/mdos-crt
-        hostPath: /etc/letsencrypt/live/mydomain.com
     hostAliases:
       - ip: ""
         hostNames:
@@ -96,8 +85,8 @@ components:
             value: |-
               server:
                 addr: ":5001"
-                certificate: "/etc/letsencrypt/live/mdos-crt/fullchain.pem"
-                key: "/etc/letsencrypt/live/mdos-crt/privkey.pem"
+                certificate: "/cert/tls.crt"
+                key: "/cert/tls.key"
               token:
                 issuer: "Auth Service"
                 expiration: 900
@@ -140,20 +129,8 @@ components:
                   exit 0
               fi
               exit 0
-    volumes:
-      - name: crt-volume
-        mountPath: /etc/letsencrypt/live/mdos-crt
-        hostPath: /etc/letsencrypt/live/mydomain.com
-    # secrets:
-    #   - name: reg-ca
-    #     type: dir
-    #     mountPath: /cert
-    #     entries:
-    #       - name: tls.crt
-    #         value: |-
-    #           -----BEGIN CERTIFICATE-----
-    #           -----END CERTIFICATE-----
-    #       - name: tls.key
-    #         value: |-
-    #           -----BEGIN PRIVATE KEY-----
-    #           -----END PRIVATE KEY-----
+    secrets:
+      - name: reg-ca
+        type: dir
+        ref: mdos-root-domain-tls
+        mountPath: /cert

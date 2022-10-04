@@ -76,13 +76,9 @@ components:
         type: env
         entries:
           - key: KC_HTTPS_CERTIFICATE_FILE
-            value: "/etc/letsencrypt/live/mydomain.com/fullchain.pem"
+            value: "/etc/x509/https/tls.crt"
           - key: KC_HTTPS_CERTIFICATE_KEY_FILE
-            value: "/etc/letsencrypt/live/mydomain.com/privkey.pem"
-          # - key: KC_HTTPS_CERTIFICATE_FILE
-          #   value: "/etc/x509/https/tls.crt"
-          # - key: KC_HTTPS_CERTIFICATE_KEY_FILE
-          #   value: "/etc/x509/https/tls.key"
+            value: "/etc/x509/https/tls.key"
           - key: KC_DB
             value: "postgres"
           - key: KC_DB_URL
@@ -99,19 +95,7 @@ components:
             value: "admin"
           - key: KC_DB_PASSWORD
             value: "admin"
-      # - name: mdos-ca
-      #   type: dir
-      #   mountPath: /etc/x509/https
-      #   entries:
-      #     - name: tls.crt
-      #       value: |-
-      #         -----BEGIN CERTIFICATE-----
-      #         -----END CERTIFICATE-----
-      #     - name: tls.key
-      #       value: |-
-      #         -----BEGIN CERTIFICATE-----
-      #         -----END CERTIFICATE-----
-    volumes:
-      - name: crt-volume
-        mountPath: /etc/letsencrypt/live/mydomain.com
-        hostPath: /etc/letsencrypt/live/mydomain.com
+      - name: mdos-ca
+        type: dir
+        mountPath: /etc/x509/https
+        ref: mdos-root-domain-tls

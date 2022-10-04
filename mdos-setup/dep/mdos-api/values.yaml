@@ -28,8 +28,6 @@ components:
         entries:
           - key: ROOT_DOMAIN
             value: "mydomain.com"
-          - key: SSL_CERT_FOLDER
-            value: "/etc/letsencrypt/live/mydomain.com"
           - key: GEN_HELM_PATH_PATH
             value: "/usr/src/dep/mhc-generic"
           - key: ISTIO_CHART_PATH
@@ -69,9 +67,6 @@ components:
               -----END EC PRIVATE KEY-----
         
     volumes:
-      - name: crt-volume
-        mountPath: /etc/letsencrypt/live/mydomain.com
-        hostPath: /etc/letsencrypt/live/mydomain.com
       - name: mhc-generic-chart
         mountPath: /usr/src/dep/mhc-generic
         hostPath: <path to setup folder>/dep/mhc-generic/chart

@@ -183,6 +183,37 @@ exec_in_pod() {
     fi
 }
 
+# ############### LOGIN TO LOCAL REGISTRY IN FALESAFE MANNER ################
+failsafe_docker_login() {
+    set +Ee
+    while [ -z $DOCKER_LOGIN_SUCCESS ]; do
+        echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DOCKER_LOGIN_SUCCESS=1
+        else
+            sleep 5
+        fi
+    done
+    set -Ee
+}
+
+# ############### PUSH TO LOCAL REGISTRY IN FALESAFE MANNER ################
+failsafe_docker_push() {
+    set +Ee
+    unset DKPUSH_SUCCESS
+    PUSHING_DOCKER=1
+    while [ -z $DKPUSH_SUCCESS ]; do
+        docker push $1 &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DKPUSH_SUCCESS=1
+        else
+            sleep 10
+        fi
+    done
+    unset PUSHING_DOCKER
+    set -Ee
+}
+
 # ############################################
 # ############# COLLECT USER DATA ############
 # ############################################
@@ -488,9 +519,97 @@ setup_cert_manager() {
 }
 
 # ############################################
+# ############ PREPARE NAMESPACES ############
+# ############################################
+prepare_namespaces(){
+    kubectl create ns mdos > /dev/null 2>&1 || true
+    kubectl create ns mdos-registry > /dev/null 2>&1 || true
+    kubectl create ns keycloak > /dev/null 2>&1 || true
+
+    # Registry secret
+    unset ELM_EXISTS
+    k8s_ns_scope_exist ELM_EXISTS secret "regcred" "mdos"
+    if [ -z $ELM_EXISTS ]; then
+        kubectl create secret docker-registry \
+            regcred \
+            --docker-server=registry.$DOMAIN \
+            --docker-username=$KEYCLOAK_USER \
+            --docker-password=$KEYCLOAK_PASS \
+            -n mdos &>> $LOG_FILE
+    fi
+
+    # Certificate secret if not using cert-manager
+    if [ "$CERT_MODE" != "CERT_MANAGER" ]; then
+        unset ELM_EXISTS
+        k8s_ns_scope_exist ELM_EXISTS secret "mdos-root-domain-tls" "mdos"
+        if [ -z $ELM_EXISTS ]; then
+            kubectl create -n mdos secret tls mdos-root-domain-tls --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
+        fi
+    fi
+
+    # default secret for SA
+    unset ELM_EXISTS
+    k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
+    if [ -z $ELM_EXISTS ]; then
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: default
+  namespace: mdos
+  annotations:
+    kubernetes.io/service-account.name: "default"
+type: kubernetes.io/service-account-token
+EOF
+    fi
+
+    # Admin role
+    unset ELM_EXISTS
+    k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"
+    if [ -z $ELM_EXISTS ]; then
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mdos-admin-role
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'
+EOF
+    fi
+
+    # Admin role binding
+    k8s_cluster_scope_exist ELM_EXISTS clusterrolebinding "mdos-admin-role-binding"
+    if [ -z $ELM_EXISTS ]; then
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: scds-admin-role-binding
+roleRef:
+  kind: ClusterRole
+  name: mdos-admin-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: mdos
+EOF
+    fi
+}
+
+# ############################################
 # ######### CERT MANAGER MDOS ISSUER #########
 # ############################################
-cert_manager_mdos_issuer_and_crt() {
+cert_manager_mdos_issuer_and_crt_secret() {
     # Install Issuer (Secret + Issuer)
     info "Configure mdos cert-manager issuer..."
     kubectl apply -f $ISSUER_YAML_PATH -n mdos &>> $LOG_FILE
@@ -536,15 +655,16 @@ EOF
     done
 }
 
-cert_manager_secret_replicator_job() {
+mdos_secret_replicator_job() {
     # Build cert-manager secret replicator job image
     cd ./dep/images/cert-job-manager
-    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/cert-manager-replicate-bot:latest . &>> $LOG_FILE
-    docker push registry.$DOMAIN/cert-manager-replicate-bot:latest &>> $LOG_FILE
 
-
-
+    # Load image to containerd image context
+    docker save registry.$DOMAIN/cert-manager-replicate-bot:latest > ./cert-manager-replicate-bot.tar
+    k3s ctr images import ./cert-manager-replicate-bot.tar &>> $LOG_FILE
+    rm -rf ./cert-manager-replicate-bot.tar
+    cd ../../..
 
     # Export certificate
     info "Create Kubernetes CronJob to export certificate for third party components..."
@@ -561,27 +681,27 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: cert-exporter
-          image: registry.$DOMAIN/cert-manager-replicate-bot:latest
-          imagePullPolicy: IfNotPresent
-          volumeMounts:
-          - mountPath: /mdos_crt_from_secret
-            name: mdos-crt-src-volume
-            readOnly: true
-          - mountPath: /mdos_crt_dest_dir
-            name: mdos-crt-dest-volume
-          command:
-          - /bin/sh
-          - -c
-          - cp -f /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp -f /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
-      volumes:
-      - name: mdos-crt-dest-volume
-        hostPath:
-          path: /etc/letsencrypt/live/$DOMAIN
-      - name: mdos-crt-src-volume
-        secret: 
-          secretName: mdos-root-domain-tls
+      - name: cert-exporter
+        image: registry.$DOMAIN/cert-manager-replicate-bot:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=mdos-registry -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=keycloak -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=istio-system -f -
+      imagePullSecrets:
+      - name: regcred
 EOF
+
+    # Waiting for issuer to become ready
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        JOB_STATUS=$(kubectl get job mdos-crt-export-job -n mdos -o json | jq -r '.status.conditions[0].type')
+        if [ "$JOB_STATUS" == "Complete" ]; then
+            LOOP_BREAK=1
+        else
+            sleep 2
+        fi
+    done
 
     # Now schedule a chronJob in Kubernetes to export the generated certificate once a day to
     # the local filesystem so that other services such as Keycloak and the FTP server can use it as well
@@ -589,7 +709,7 @@ EOF
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: mdos-cert-exporter
+  name: mdos-crt-exporter
   namespace: mdos
 spec:
   schedule: "0 0 * * *"
@@ -602,33 +722,18 @@ spec:
           - name: cert-exporter
             image: registry.$DOMAIN/cert-manager-replicate-bot:latest
             imagePullPolicy: IfNotPresent
-            volumeMounts:
-            - mountPath: /mdos_crt_from_secret
-              name: mdos-crt-src-volume
-              readOnly: true
-            - mountPath: /mdos_crt_dest_dir
-              name: mdos-crt-dest-volume
             command:
             - /bin/sh
             - -c
-            - cp -f /mdos_crt_from_secret/tls.crt /mdos_crt_dest_dir/fullchain.pem;cp -f /mdos_crt_from_secret/tls.key /mdos_crt_dest_dir/privkey.pem
-          volumes:
-          - name: mdos-crt-dest-volume
-            hostPath:
-              path: /etc/letsencrypt/live/$DOMAIN
-          - name: mdos-crt-src-volume
-            secret: 
-              secretName: mdos-root-domain-tls
+            - kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=mdos-registry -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=keycloak -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=istio-system -f -
+          imagePullSecrets:
+          - name: regcred
 EOF
+}
 
-    unset LOOP_BREAK
-    while [ -z $LOOP_BREAK ]; do
-        if [ -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
-            LOOP_BREAK=1
-        else
-            sleep 1
-        fi
-    done
+cert_manager_secret_replicator_reg_push() {
+    # Registry might need some time to be up and ready, we therefore loop untill success for first push
+    failsafe_docker_push registry.$DOMAIN/cert-manager-replicate-bot:latest
 }
 
 # ############################################
@@ -908,7 +1013,6 @@ install_istio() {
     helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -f $_DIR/istiod-values.yaml -n istio-system &>> $LOG_FILE
     rm -rf $_DIR/istiod-values.yaml
 
-    info "Waiting for istiod to become ready..."
     ATTEMPTS=0
     while [ "$(kubectl get pod -n istio-system | grep 'istiod-' | grep 'Running')" == "" ]; do
         sleep 3
@@ -921,7 +1025,6 @@ install_istio() {
     
     helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system &>> $LOG_FILE
 
-    info "Waiting for istio ingress gateway to become ready..."
     ATTEMPTS=0
     while [ "$(kubectl get pod -n istio-system | grep 'istio-ingressgateway-' | grep 'Running')" == "" ]; do
         sleep 3
@@ -937,10 +1040,6 @@ install_istio() {
 }
 
 deploy_istio_gateways() {
-    if [ "$CERT_MODE" != "CERT_MANAGER" ]; then
-        kubectl create -n mdos secret tls mdos-root-domain-tls --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
-    fi
-    
     # Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
@@ -1029,13 +1128,6 @@ setup_firewall() {
 # ############# INSTALL REGISTRY #############
 # ############################################
 install_registry() {
-    # Create kubernetes namespace & secrets for registry
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "mdos-registry"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create namespace mdos-registry &>> $LOG_FILE
-    fi
-
     # Deploy registry
     deploy_reg_chart
 
@@ -1087,8 +1179,8 @@ deploy_reg_chart() {
     REG_VALUES="$(cat ./dep/registry/values.yaml)"
 
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].volumes[0].hostPath = "'$SSL_ROOT'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[1].hostPath = "'$SSL_ROOT'"')
+    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].volumes[0].hostPath = "'$SSL_ROOT'"')
+    # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[1].hostPath = "'$SSL_ROOT'"')
     # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
     # REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
@@ -1173,13 +1265,6 @@ EOL
 # ################# KEYCLOAK #################
 # ############################################
 install_keycloak() {
-    # Create keycloak namespace & secrets for registry
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "keycloak"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create namespace keycloak &>> $LOG_FILE
-    fi
-
     # Compute remaining parameters
     POSTGRES_USER=$KEYCLOAK_USER
     POSTGRES_PASSWORD=$KEYCLOAK_PASS
@@ -1202,9 +1287,6 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
-    # KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[0].value = "'"$(< $SSL_ROOT/$FULLCHAIN_FNAME)"'"')
-    # KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/$PRIVKEY_FNAME)"'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].volumes[0].hostPath = "'$SSL_ROOT'"')
 
     collect_api_key() {
         echo ""
@@ -1416,39 +1498,16 @@ stringData:
 EOF
     }
 
-    # Docker login
-    set +Ee
-    while [ -z $DOCKER_LOGIN_SUCCESS ]; do
-        echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
-        if [ $? -eq 0 ]; then
-            DOCKER_LOGIN_SUCCESS=1
-        else
-            sleep 5
-        fi
-    done
-    set -Ee
-
     # Pull & push images to registry
     docker pull postgres:13.2-alpine &>> $LOG_FILE
     docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
 
     # Registry might need some time to be up and ready, we therefore loop untill success for first push
-    set +Ee
-    PUSHING_DOCKER=1
-    while [ -z $KC_PG_SUCCESS ]; do
-        docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
-        if [ $? -eq 0 ]; then
-            KC_PG_SUCCESS=1
-        else
-            sleep 10
-        fi
-    done
-    unset PUSHING_DOCKER
-    set -Ee
+    failsafe_docker_push registry.$DOMAIN/postgres:13.2-alpine
 
     docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
     docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-    docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/keycloak:18.0.2
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
@@ -1533,72 +1592,16 @@ config:
 install_mdos() {
     # Build mdos-api image
     cd ../mdos-api
-    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
     cp infra/dep/helm/helm .
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
     rm -rf helm
-    docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/mdos-api:latest
 
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-mirror-lftp:latest . &>> $LOG_FILE
-    docker push registry.$DOMAIN/mdos-mirror-lftp:latest &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/mdos-mirror-lftp:latest
     cd ../../..
-
-    k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
-    if [ -z $ELM_EXISTS ]; then
-cat <<EOF | kubectl create -f &>> $LOG_FILE -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: default
-  namespace: mdos
-  annotations:
-    kubernetes.io/service-account.name: "default"
-type: kubernetes.io/service-account-token
-EOF
-    fi
-
-    # Admin role
-    k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"
-    if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f &>> $LOG_FILE -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: mdos-admin-role
-rules:
-- apiGroups:
-  - '*'
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- nonResourceURLs:
-  - '*'
-  verbs:
-  - '*'
-EOF
-    fi
-
-    # Admin role binding
-    k8s_cluster_scope_exist ELM_EXISTS clusterrolebinding "mdos-admin-role-binding"
-    if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f &>> $LOG_FILE -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: scds-admin-role-binding
-roleRef:
-  kind: ClusterRole
-  name: mdos-admin-role
-  apiGroup: rbac.authorization.k8s.io
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: mdos
-EOF
-    fi
 
     # Deploy mdos-api server
     MDOS_VALUES="$(cat ./dep/mdos-api/values.yaml)"
@@ -1615,22 +1618,19 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "'$SSL_ROOT'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].mountPath = "'$SSL_ROOT'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$SSL_ROOT'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 
-    mdos_deploy_app "true" "true"
+    mdos_deploy_app "true" "false"
 
     rm -rf ./target_values.yaml
 }
@@ -1639,7 +1639,6 @@ EOF
 # ############ COREDNS DOMAIN CFG ############
 # ############################################
 consigure_core_dns_for_self_signed() {
-    echo "===> 1" &>> $LOG_FILE
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 kind: ConfigMap
@@ -1673,7 +1672,7 @@ data:
         loadbalance
     }
 EOF
-    echo "===> 2" &>> $LOG_FILE
+   
     sleep 1
     # Restart the CoreDNS pod
     unset FOUND_RUNNING_POD
@@ -1687,10 +1686,10 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
-    echo "===> 3" &>> $LOG_FILE
+    
     kubectl delete pod $COREDNS_POD_NAME -n kube-system &>> $LOG_FILE
     sleep 2
-    echo "===> 4" &>> $LOG_FILE
+    
     unset FOUND_RUNNING_POD
     while [ -z $FOUND_RUNNING_POD ]; do
         while read POD_LINE ; do
@@ -1701,7 +1700,6 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
-    echo "===> 5" &>> $LOG_FILE
 }
 
 # ############################################
@@ -1712,22 +1710,9 @@ install_helm_ftp() {
     
     # Build mdos-api image
     cd ../mdos-ftp
-    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-ftp-bot:latest . &>> $LOG_FILE
 
-    set +Ee
-    unset DKPUSH_SUCCESS
-    PUSHING_DOCKER=1
-    while [ -z $DKPUSH_SUCCESS ]; do
-        docker push registry.$DOMAIN/mdos-ftp-bot:latest &>> $LOG_FILE
-        if [ $? -eq 0 ]; then
-            DKPUSH_SUCCESS=1
-        else
-            sleep 10
-        fi
-    done
-    unset PUSHING_DOCKER
-    set -Ee
+    failsafe_docker_push registry.$DOMAIN/mdos-ftp-bot:latest
 
     cd ../mdos-setup
 
@@ -1843,6 +1828,7 @@ EOF
 
         rm -rf $_DIR/istiod-values.yaml
         rm -rf $_DIR/oauth2-proxy-values.yaml
+        rm -rf $_DIR/dep/images/cert-job-manager/cert-manager-replicate-bot.tar
 
         ALL_IMAGES="$(docker images)"
 
@@ -1931,7 +1917,9 @@ EOF
     # COLLECT USER DATA
     collect_user_input
 
-    print_section_title "Installation"
+    echo ""
+    warn_print "Installation"
+    warn_print "====================================="
 
     # PREPARE CERTIFICATES & DOMAIN
     if [ "$CERT_MODE" == "CERT_MANAGER" ]; then
@@ -1998,6 +1986,13 @@ EOF
         set_env_step_data "SETUP_FIREWALL_RULES" "1"
     fi
 
+    # PREPARE NAMESPACES
+    if [ -z $SETUP_PREP_NS ]; then
+        info "Preparing namespaces..."
+        prepare_namespaces
+        set_env_step_data "SETUP_PREP_NS" "1"
+    fi
+
     # INSTALL CERT-MANAGER
     if [ -z $SETUP_CERT_MANAGER ]; then
         info "Install cert-manager..."
@@ -2005,13 +2000,17 @@ EOF
         set_env_step_data "SETUP_CERT_MANAGER" "1"
     fi
 
-    # Create mdos namespace
-    kubectl create ns mdos > /dev/null 2>&1 || true
-
     # INSTALL CERT-MANAGER ISSUER FOR MDOS IF NECESSARY
     if [ -z $SETUP_CERT_MANAGER_ISSUER ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
-        cert_manager_mdos_issuer_and_crt
+        cert_manager_mdos_issuer_and_crt_secret
         set_env_step_data "SETUP_CERT_MANAGER_ISSUER" "1"
+    fi
+
+    # SETUP MDOS SECRET BOT REPLICATOR
+    if [ -z $INST_STEP_SEC_BOT_REP ]; then
+        info "Configure certificate secret replication jobs..."
+        mdos_secret_replicator_job
+        set_env_step_data "INST_STEP_SEC_BOT_REP" "1"
     fi
 
     # SETUP ISTIO GATEWAYS
@@ -2027,11 +2026,14 @@ EOF
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
 
-    # SETUP CERTMANAGER SECRET BOT REPLICATOR
-    if [ -z $INST_STEP_SEC_BOT_REP ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
-        info "Configure cert-manager secret replication jobs..."
-        cert_manager_secret_replicator_job
-        set_env_step_data "INST_STEP_SEC_BOT_REP" "1"
+    # LOGIN TO PRIVATE REGISTRY
+    failsafe_docker_login
+
+    # PUSH CERT MANAGER REPLICA BOT IMG TO REGISTRY
+    if [ -z $INST_STEP_SEC_BOT_REP_IMG_PUSH ]; then
+        info "Pushing cert-manager secret replication image to registry..."
+        cert_manager_secret_replicator_reg_push
+        set_env_step_data "INST_STEP_SEC_BOT_REP_IMG_PUSH" "1"
     fi
     
     # INSTALL KEYCLOAK

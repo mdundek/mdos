@@ -27,7 +27,6 @@ class Keycloak {
         this.app = app
 
         this.rootDomain = process.env.ROOT_DOMAIN
-        this.sslCertFolder = process.env.SSL_CERT_FOLDER
 
         this.regUser = process.env.REG_USER
         this.regPass = process.env.REG_PASS
