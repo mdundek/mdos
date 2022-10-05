@@ -7,8 +7,6 @@ const port = app.get('port')
 const server = app.listen(port)
 var path = require('path')
 
-console.log(process.env);
-
 // Set a timeout of 10 minutes for requests
 server.setTimeout(1000 * 60 * 10)
 

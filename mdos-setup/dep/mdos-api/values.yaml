@@ -65,6 +65,18 @@ components:
             value: |-
               -----BEGIN EC PRIVATE KEY-----
               -----END EC PRIVATE KEY-----
+      - name: rabbitmq-creds
+        type: env
+        ref: rabbitmq-cluster-default-user
+        entries:
+          - name: RABBIT_PORT
+            key: port
+          - name: RABBIT_HOST
+            key: host
+          - name: RABBIT_USERNAME
+            key: username
+          - name: RABBIT_PASSWORD
+            key: password
         
     volumes:
       - name: mhc-generic-chart

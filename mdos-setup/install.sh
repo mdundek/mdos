@@ -1676,7 +1676,7 @@ spec:
       spec:
         podManagementPolicy: OrderedReady
   service:
-    type: ClusterIP
+    type: NodePort
   persistence:
     storageClassName: longhorn
     storage: 5Gi
