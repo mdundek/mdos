@@ -17,6 +17,18 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
     }
 
     /**
+     * Find
+     *
+     * @param {*} params
+     * @param {*} context
+     * @return {*} 
+     */
+    async find(params, context) {
+        const oidcProviders = await this.app.get('kube').getOidcProviders()
+        return oidcProviders
+    }
+
+    /**
      * Create
      *
      * @param {*} body
