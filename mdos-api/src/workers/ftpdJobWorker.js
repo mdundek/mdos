@@ -59,7 +59,7 @@ const { CHANNEL } = require('../middleware/rb-broker/constant');
      * deleteCredentials
      */
      async deleteCredentials() {
-        console.log("=> deleteCredentials");
+        await this.app.get("ftpServer").removeFtpdCredentials(this.msg.context.namespace)
     }
 };
 

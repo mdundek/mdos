@@ -4,7 +4,7 @@ const SocketManager = require('./socket')
 const SchemaValidator = require('./schemaValidator/index')
 const FtpServer = require('./ftpServer.js')
 const MDosBrokerClient = require('./rb-broker/brokerClient')
-const SubscriptionManager = require('./rb-broker/subscriptionManager')
+const SubscriptionManager = require('./subscriptionManager')
 
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
