@@ -45,7 +45,7 @@ class Kube extends KubeBase {
      * @param {*} providerName
      * @memberof Kube
      */
-    async removeOidcProviders(providerName) {
+    async removeIstioOidcProviders(providerName) {
         try {
             const istioConfigMap = await this.getConfigMap('istio-system', 'istio')
 
@@ -154,10 +154,11 @@ class Kube extends KubeBase {
      *
      * @param {*} type
      * @param {*} realm
-     * @param {*} data
+     * @param {*} name
+     * @param {*} clientId
      * @memberof Kube
      */
-    async deployOauth2Proxy(type, realm, data) {
+    async deployOauth2Proxy(type, realm, name, clientId) {
         if (type == 'keycloak') {
             const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/.well-known/openid-configuration`)
             const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
@@ -166,7 +167,7 @@ class Kube extends KubeBase {
             const oauthData = YAML.parse(`service:
     portNumber: 4180
 config:
-    clientID: "${data.clientId}"
+    clientID: "${clientId}"
     clientSecret: "${clientSecret}"
     cookieSecret: "${cookieSecret}"
     cookieName: "_oauth2_proxy"
@@ -200,7 +201,7 @@ config:
 
             // Deploy oauth2-proxy instance for new provider
             if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
-            await this.helmInstall('oauth2-proxy', data.name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
+            await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
         }
     }
 

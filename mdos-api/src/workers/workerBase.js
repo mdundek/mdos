@@ -91,11 +91,6 @@ class WorkerBase {
         } else {
             await this.publishWorkflowDone(msgClone)
         }
-
-
-
-        // const currentRollbackJob = msgClone.rollbackWorkflow.length > 0 ? msgClone.rollbackWorkflow[0] : null;
-        
     }
 
     /**

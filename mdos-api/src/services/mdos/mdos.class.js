@@ -4,7 +4,6 @@ const MdosCore = require('./mdos.class.core')
 
 /* eslint-disable no-unused-vars */
 exports.Mdos = class Mdos extends MdosCore {
-
     /**
      * Creates an instance of Mdos.
      * @param {*} options
@@ -21,7 +20,7 @@ exports.Mdos = class Mdos extends MdosCore {
      *
      * @param {*} id
      * @param {*} params
-     * @return {*} 
+     * @return {*}
      */
     async get(id, params) {
         if (id == 'user-info') {
@@ -30,13 +29,13 @@ exports.Mdos = class Mdos extends MdosCore {
             throw new BadRequest('ERROR: Malformed API request')
         }
     }
-    
+
     /**
      * Create
      *
      * @param {*} data
      * @param {*} params
-     * @return {*} 
+     * @return {*}
      */
     async create(data, params) {
         if (data.type == 'deploy') {
@@ -44,7 +43,7 @@ exports.Mdos = class Mdos extends MdosCore {
             let valuesYaml = YAML.parse(Buffer.from(data.values, 'base64').toString('ascii'))
 
             // Ensure namespace is ready
-            await this.prepareNamespaceForDeployment(valuesYaml)
+            await this.validateNamespaceForDeployment(valuesYaml)
 
             // Make sure we have at least one component
             if (!valuesYaml.components || valuesYaml.components.length == 0) {
@@ -72,7 +71,7 @@ exports.Mdos = class Mdos extends MdosCore {
             try {
                 await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId)
             } catch (helmError) {
-                if (Array.isArray(helmError)) throw new GeneralError("ERROR: " + helmError.join('\n'))
+                if (Array.isArray(helmError)) throw new GeneralError('ERROR: ' + helmError.join('\n'))
                 else throw helmError
             }
         } else {

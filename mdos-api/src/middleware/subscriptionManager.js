@@ -38,7 +38,11 @@ class BrokerSubscriptions {
             CHANNEL.JOB_K3S_CREATE_SECRET,
             CHANNEL.JOB_K3S_REPLACE_SECRET,
             CHANNEL.JOB_K3S_DELETE_SECRET,
-            CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS
+            CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS,
+            CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY,
+            CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY,
+            CHANNEL.JOB_K3S_ADD_ISTIO_OIDC_PROVIDER,
+            CHANNEL.JOB_K3S_REMOVE_ISTIO_OIDC_PROVIDER,
         ], async (msg) => {
             const worker = new K3SJobWorker(this.app, msg);
             try {

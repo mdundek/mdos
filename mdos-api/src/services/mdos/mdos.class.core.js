@@ -30,12 +30,12 @@ class MdosCore extends CommonCore {
         allNs = allNs.map((o) => o.metadata.name)
 
         const userData = {
-            registry: `registry.${process.env.ROOT_DOMAIN}`
+            registry: `registry.${process.env.ROOT_DOMAIN}`,
         }
 
         // For dev purposes only, used if auth is disabled
         if (process.env.NO_ADMIN_AUTH == 'true') {
-            userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
+            userData.lftpCreds = await this.app.get('kube').getSecret('mdos', `ftpd-${params.namespace}-creds`)
             userData.roles = [`mdostnt-name-${params.namespace}`, 'mdostnt-volume-sync']
             return userData
         }
@@ -46,22 +46,22 @@ class MdosCore extends CommonCore {
             }
 
             // Get JWT token
-            let access_token = headers['authorization'].split(" ")[1]
+            let access_token = headers['authorization'].split(' ')[1]
             if (access_token.slice(-1) === ';') {
-                access_token = access_token.substring(0, access_token.length-1)
+                access_token = access_token.substring(0, access_token.length - 1)
             }
             const jwtToken = await this.app.get('keycloak').userTokenInstrospect('mdos', access_token, true)
 
             userData.roles = jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles ? jwtToken.resource_access.mdos.roles : []
 
             for (let ns of allNs) {
-                if(params.namespace == ns) {
+                if (params.namespace == ns) {
                     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
-                        userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
+                        userData.lftpCreds = await this.app.get('kube').getSecret('mdos', `ftpd-${params.namespace}-creds`)
                     } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('admin')) {
-                        userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
+                        userData.lftpCreds = await this.app.get('kube').getSecret('mdos', `ftpd-${params.namespace}-creds`)
                     } else if (jwtToken.resource_access[ns] && jwtToken.resource_access[ns].roles.includes('ftp-write')) {
-                        userData.lftpCreds = await this.app.get('kube').getSecret("mdos", `ftpd-${params.namespace}-creds`)
+                        userData.lftpCreds = await this.app.get('kube').getSecret('mdos', `ftpd-${params.namespace}-creds`)
                     }
                 }
             }
@@ -70,10 +70,10 @@ class MdosCore extends CommonCore {
     }
 
     /**
-     * prepareNamespaceForDeployment
+     * validateNamespaceForDeployment
      * @param {*} valuesYaml
      */
-    async prepareNamespaceForDeployment(valuesYaml) {
+    async validateNamespaceForDeployment(valuesYaml) {
         // Create namespace if not exist
         const nsFound = await this.app.get('kube').hasNamespace(valuesYaml.tenantName)
         if (!nsFound) {
@@ -103,7 +103,7 @@ class MdosCore extends CommonCore {
 
         // If sync volues , make sure we have a minio secret
         if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
-            valuesYaml.ftpCredentials = await this.app.get('kube').getSecret("mdos", `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
+            valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
 
         // Iterate over components and proces one by one
@@ -111,10 +111,8 @@ class MdosCore extends CommonCore {
             // Add registry credentials if necessary
             if (!component.imagePullSecrets && !component.publicRegistry) {
                 // MDos registry target, append namespace name to image path
-                if(component.image.indexOf('/') == 0)
-                    component.image = `${valuesYaml.tenantName}${component.image}`
-                else
-                    component.image = `${valuesYaml.tenantName}/${component.image}`
+                if (component.image.indexOf('/') == 0) component.image = `${valuesYaml.tenantName}${component.image}`
+                else component.image = `${valuesYaml.tenantName}/${component.image}`
                 // Skip images from public registries or with specific secrets
                 component.imagePullSecrets = [
                     {

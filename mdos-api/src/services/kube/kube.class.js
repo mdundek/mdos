@@ -253,40 +253,6 @@ exports.Kube = class Kube extends KubeCore {
                     throw new Error("ERROR: An unknown error occured")
                 }
             }
-
-
-
-            // // Delete keycloak client
-            // if (clientFound) await this.app.get('keycloak').deleteClient(params.query.realm, clientFound.id)
-
-            // // Delete FTPD secrets & credentials, make non fatal / non blocking
-            // try {
-            //     const nsName = clientFound.id.toLowerCase()
-            //     // Detete pure-ftpd credentials
-            //     await this.app.get('ftpServer').removeFtpdCredentials(nsName)
-            //     // Detete ftp credentials from mdos namespace
-            //     await this.app.get('kube').deleteSecret("mdos", `ftpd-${nsName}-creds`)
-            // } catch (_e) {
-            //     console.log(_e)
-            // }
-
-            // // Delete SA keycloak user
-            // if (nsExists) {
-            //     // Delete SA keycloak user
-            //     try {
-            //         const regSaSecret = await this.app.get('kube').getSecret(id, 'mdos-regcred')
-            //         if (regSaSecret) {
-            //             const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username
-            //             const userObj = await this.app.get('keycloak').getUser(params.query.realm, null, username)
-            //             await this.app.get('keycloak').deleteUser(params.query.realm, userObj.id)
-            //         }
-            //     } catch (_e) {
-            //         console.log(_e)
-            //     }
-            // }
-
-            // // Delete namespace
-            // if (nsExists) await this.app.get('kube').deleteNamespace(id.toLowerCase())
         }
         /******************************************
          *  UNINSTALL / DELETE APPLICATION

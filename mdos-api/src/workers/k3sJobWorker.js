@@ -52,6 +52,18 @@ const KubeCore = require('../services/kube/kube.class.core')
             case CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS:
                 await this.applyUserRoleBindings();
                 break;
+            case CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY:
+                await this.installOauthProvider();
+                break;
+            case CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY:
+                await this.uninstallOauthProvider();
+                break;
+            case CHANNEL.JOB_K3S_ADD_ISTIO_OIDC_PROVIDER:
+                await this.addIstioOidcProvider();
+                break;
+            case CHANNEL.JOB_K3S_REMOVE_ISTIO_OIDC_PROVIDER:
+                await this.removeIstioOidcProvider();
+                break;
             default:
                 throw new Error("Missplaced topic for this job worker");
         }
@@ -106,6 +118,34 @@ const KubeCore = require('../services/kube/kube.class.core')
      */
      async applyUserRoleBindings() {
         await this.app.get('kube').applyUserRoleBindingsForNamespaces()
+    }
+
+    /**
+     * installOauthProvider
+     */
+     async installOauthProvider() {
+        await this.app.get('kube').deployOauth2Proxy(this.msg.context.oidcTarget, this.msg.context.realm, this.msg.context.providerName, this.msg.context.kcClientId)
+    }
+
+    /**
+     * uninstallOauthProvider
+     */
+     async uninstallOauthProvider() {
+        await this.app.get('kube').uninstallOauth2Proxy(this.msg.context.providerName)
+    }
+
+    /**
+     * addIstioOidcProvider
+     */
+     async addIstioOidcProvider() {
+        await this.app.get('kube').addIstiodOidcProvider(this.msg.context.providerName)
+    }
+
+    /**
+     * removeIstioOidcProvider
+     */
+     async removeIstioOidcProvider() {
+        await this.app.get('kube').removeIstioOidcProviders(this.msg.context.providerName)
     }
 };
 
