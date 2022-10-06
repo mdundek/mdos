@@ -10,7 +10,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/1.1.14 darwin-x64 node-v18.9.0
+mdos-cli/1.2.0 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -43,11 +43,19 @@ USAGE
 * [`mdos application deploy`](#mdos-application-deploy)
 * [`mdos application list`](#mdos-application-list)
 * [`mdos application protect`](#mdos-application-protect)
-* [`mdos application sso`](#mdos-application-sso)
 * [`mdos applications delete`](#mdos-applications-delete)
 * [`mdos applications deploy`](#mdos-applications-deploy)
 * [`mdos applications list`](#mdos-applications-list)
 * [`mdos apps list`](#mdos-apps-list)
+* [`mdos auth tenant create-role`](#mdos-auth-tenant-create-role)
+* [`mdos auth tenant delete-role`](#mdos-auth-tenant-delete-role)
+* [`mdos auth tenant list-roles`](#mdos-auth-tenant-list-roles)
+* [`mdos auth user add-role`](#mdos-auth-user-add-role)
+* [`mdos auth user create`](#mdos-auth-user-create)
+* [`mdos auth user delete`](#mdos-auth-user-delete)
+* [`mdos auth user list`](#mdos-auth-user-list)
+* [`mdos auth user list-roles`](#mdos-auth-user-list-roles)
+* [`mdos auth user remove-role`](#mdos-auth-user-remove-role)
 * [`mdos client add`](#mdos-client-add)
 * [`mdos client add-role`](#mdos-client-add-role)
 * [`mdos client add role`](#mdos-client-add-role-1)
@@ -72,6 +80,7 @@ USAGE
 * [`mdos config generate`](#mdos-config-generate)
 * [`mdos configuration add`](#mdos-configuration-add)
 * [`mdos configuration generate`](#mdos-configuration-generate)
+* [`mdos configure api-endpoint [URI]`](#mdos-configure-api-endpoint-uri)
 * [`mdos create app`](#mdos-create-app)
 * [`mdos create application`](#mdos-create-application)
 * [`mdos create client`](#mdos-create-client)
@@ -113,29 +122,20 @@ USAGE
 * [`mdos ingress generate`](#mdos-ingress-generate)
 * [`mdos kc client add-role`](#mdos-kc-client-add-role)
 * [`mdos kc client add role`](#mdos-kc-client-add-role-1)
-* [`mdos kc client create-role`](#mdos-kc-client-create-role)
-* [`mdos kc client create role`](#mdos-kc-client-create-role-1)
-* [`mdos kc client delete-role`](#mdos-kc-client-delete-role)
-* [`mdos kc client delete role`](#mdos-kc-client-delete-role-1)
-* [`mdos kc client list-roles`](#mdos-kc-client-list-roles)
-* [`mdos kc client list roles`](#mdos-kc-client-list-roles-1)
+* [`mdos kc client create role`](#mdos-kc-client-create-role)
+* [`mdos kc client delete role`](#mdos-kc-client-delete-role)
+* [`mdos kc client list roles`](#mdos-kc-client-list-roles)
 * [`mdos kc client remove-role`](#mdos-kc-client-remove-role)
 * [`mdos kc client remove role`](#mdos-kc-client-remove-role-1)
 * [`mdos kc client show-roles`](#mdos-kc-client-show-roles)
 * [`mdos kc client show roles`](#mdos-kc-client-show-roles-1)
 * [`mdos kc user add`](#mdos-kc-user-add)
-* [`mdos kc user add-role`](#mdos-kc-user-add-role)
-* [`mdos kc user add role`](#mdos-kc-user-add-role-1)
-* [`mdos kc user create`](#mdos-kc-user-create)
+* [`mdos kc user add role`](#mdos-kc-user-add-role)
 * [`mdos kc user create role`](#mdos-kc-user-create-role)
-* [`mdos kc user delete`](#mdos-kc-user-delete)
 * [`mdos kc user delete role`](#mdos-kc-user-delete-role)
-* [`mdos kc user list`](#mdos-kc-user-list)
-* [`mdos kc user list-roles`](#mdos-kc-user-list-roles)
-* [`mdos kc user list roles`](#mdos-kc-user-list-roles-1)
+* [`mdos kc user list roles`](#mdos-kc-user-list-roles)
 * [`mdos kc user remove`](#mdos-kc-user-remove)
-* [`mdos kc user remove-role`](#mdos-kc-user-remove-role)
-* [`mdos kc user remove role`](#mdos-kc-user-remove-role-1)
+* [`mdos kc user remove role`](#mdos-kc-user-remove-role)
 * [`mdos kc user show-roles`](#mdos-kc-user-show-roles)
 * [`mdos kc user show roles`](#mdos-kc-user-show-roles-1)
 * [`mdos list app`](#mdos-list-app)
@@ -182,7 +182,6 @@ USAGE
 * [`mdos service add`](#mdos-service-add)
 * [`mdos service generate`](#mdos-service-generate)
 * [`mdos set-kubeconfig`](#mdos-set-kubeconfig)
-* [`mdos set domain [DOMAIN]`](#mdos-set-domain-domain)
 * [`mdos show-config`](#mdos-show-config)
 * [`mdos show client`](#mdos-show-client)
 * [`mdos show config`](#mdos-show-config-1)
@@ -587,8 +586,8 @@ USAGE
   $ mdos app deploy [-u <value>] [-p <value>]
 
 FLAGS
-  -p, --password=<value>  Registry password
-  -u, --username=<value>  Registry username
+  -p, --password=<value>  MDos password
+  -u, --username=<value>  Mdos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -639,7 +638,6 @@ DESCRIPTION
 ALIASES
   $ mdos app sso
   $ mdos app protect
-  $ mdos application protect
   $ mdos sso app
   $ mdos protect app
   $ mdos protect application
@@ -659,7 +657,6 @@ DESCRIPTION
 ALIASES
   $ mdos app sso
   $ mdos app protect
-  $ mdos application protect
   $ mdos sso app
   $ mdos protect app
   $ mdos protect application
@@ -696,8 +693,8 @@ USAGE
   $ mdos application deploy [-u <value>] [-p <value>]
 
 FLAGS
-  -p, --password=<value>  Registry password
-  -u, --username=<value>  Registry username
+  -p, --password=<value>  MDos password
+  -u, --username=<value>  Mdos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -748,27 +745,6 @@ DESCRIPTION
 ALIASES
   $ mdos app sso
   $ mdos app protect
-  $ mdos application protect
-  $ mdos sso app
-  $ mdos protect app
-  $ mdos protect application
-```
-
-## `mdos application sso`
-
-Protect an ingress hostname
-
-```
-USAGE
-  $ mdos application sso
-
-DESCRIPTION
-  Protect an ingress hostname
-
-ALIASES
-  $ mdos app sso
-  $ mdos app protect
-  $ mdos application protect
   $ mdos sso app
   $ mdos protect app
   $ mdos protect application
@@ -805,8 +781,8 @@ USAGE
   $ mdos applications deploy [-u <value>] [-p <value>]
 
 FLAGS
-  -p, --password=<value>  Registry password
-  -u, --username=<value>  Registry username
+  -p, --password=<value>  MDos password
+  -u, --username=<value>  Mdos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -865,6 +841,216 @@ ALIASES
   $ mdos list application
   $ mdos list applications
   $ mdos applications list
+```
+
+## `mdos auth tenant create-role`
+
+Create custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
+
+```
+USAGE
+  $ mdos auth tenant create-role [-c <value>] [-n <value>]
+
+FLAGS
+  -c, --clientId=<value>  Keycloak client ID
+  -n, --name=<value>      Keycloak clientrole name
+
+DESCRIPTION
+  Create custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
+
+ALIASES
+  $ mdos client create-role
+  $ mdos client create role
+  $ mdos client add-role
+  $ mdos client add role
+  $ mdos kc client create role
+  $ mdos kc client add-role
+  $ mdos kc client add role
+```
+
+## `mdos auth tenant delete-role`
+
+Delete custom roles from your namespace / client / tenant (Used for OIDC authentication and ACL)
+
+```
+USAGE
+  $ mdos auth tenant delete-role [-c <value>] [-r <value>] [-f]
+
+FLAGS
+  -c, --clientId=<value>  Keycloak client ID
+  -f, --force             Do not ask for comfirmation
+  -r, --role=<value>      Client role to delete
+
+DESCRIPTION
+  Delete custom roles from your namespace / client / tenant (Used for OIDC authentication and ACL)
+
+ALIASES
+  $ mdos client delete-role
+  $ mdos client delete role
+  $ mdos client remove-role
+  $ mdos client remove role
+  $ mdos kc client delete role
+  $ mdos kc client remove-role
+  $ mdos kc client remove role
+```
+
+## `mdos auth tenant list-roles`
+
+List your custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
+
+```
+USAGE
+  $ mdos auth tenant list-roles [-c <value>]
+
+FLAGS
+  -c, --clientId=<value>  Keycloak aclient ID
+
+DESCRIPTION
+  List your custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
+
+ALIASES
+  $ mdos client list-roles
+  $ mdos client list roles
+  $ mdos client show-roles
+  $ mdos client show roles
+  $ mdos kc client list roles
+  $ mdos kc client show-roles
+  $ mdos kc client show roles
+```
+
+## `mdos auth user add-role`
+
+Add roles to your users for specific namespaces / clients / tenant
+
+```
+USAGE
+  $ mdos auth user add-role [-t <value>] [-u <value>] [-c <value>] [-r <value>]
+
+FLAGS
+  -c, --clientId=<value>  Keycloak clientId of the user
+  -r, --role=<value>      Keycloak role name to add to this user
+  -t, --target=<value>    Keycloak client target
+  -u, --username=<value>  Keycloak username to add role for
+
+DESCRIPTION
+  Add roles to your users for specific namespaces / clients / tenant
+
+ALIASES
+  $ mdos user add role
+  $ mdos kc user add role
+  $ mdos user create-role
+  $ mdos user create role
+  $ mdos kc user create role
+```
+
+## `mdos auth user create`
+
+Create a new user on the platform
+
+```
+USAGE
+  $ mdos auth user create [-u <value>] [-p <value>] [-e <value>]
+
+FLAGS
+  -e, --email=<value>     Keycloak user email
+  -p, --password=<value>  Keycloak password
+  -u, --username=<value>  Keycloak username
+
+DESCRIPTION
+  Create a new user on the platform
+
+ALIASES
+  $ mdos user create
+  $ mdos user add
+  $ mdos kc user add
+```
+
+## `mdos auth user delete`
+
+Delete a user from the platform
+
+```
+USAGE
+  $ mdos auth user delete [-u <value>] [-f]
+
+FLAGS
+  -f, --force             Do not ask for comfirmation
+  -u, --username=<value>  Keycloak username to delete
+
+DESCRIPTION
+  Delete a user from the platform
+
+ALIASES
+  $ mdos user delete
+  $ mdos user remove
+  $ mdos kc user remove
+```
+
+## `mdos auth user list`
+
+List all platform users
+
+```
+USAGE
+  $ mdos auth user list [-c <value>]
+
+FLAGS
+  -c, --clientId=<value>  Keycloak client ID
+
+DESCRIPTION
+  List all platform users
+
+ALIASES
+  $ mdos user list
+```
+
+## `mdos auth user list-roles`
+
+List user assigned roles for specific namespaces / clients / tenant
+
+```
+USAGE
+  $ mdos auth user list-roles [-u <value>]
+
+FLAGS
+  -u, --username=<value>  Keycloak username to get roles for
+
+DESCRIPTION
+  List user assigned roles for specific namespaces / clients / tenant
+
+ALIASES
+  $ mdos user list-roles
+  $ mdos user list roles
+  $ mdos user show-roles
+  $ mdos user show roles
+  $ mdos kc user list roles
+  $ mdos kc user show-roles
+  $ mdos kc user show roles
+```
+
+## `mdos auth user remove-role`
+
+Remove roles from your users for specific namespaces / clients / tenant
+
+```
+USAGE
+  $ mdos auth user remove-role [-u <value>] [-c <value>] [-r <value>] [-f]
+
+FLAGS
+  -c, --clientId=<value>  Keycloak client ID
+  -f, --force             Do not ask for comfirmation
+  -r, --role=<value>      Role name to remove
+  -u, --username=<value>  Keycloak username
+
+DESCRIPTION
+  Remove roles from your users for specific namespaces / clients / tenant
+
+ALIASES
+  $ mdos user remove role
+  $ mdos kc user remove role
+  $ mdos user delete-role
+  $ mdos user delete role
+  $ mdos kc user delete role
 ```
 
 ## `mdos client add`
@@ -1509,6 +1695,21 @@ ALIASES
   $ mdos env generate
 ```
 
+## `mdos configure api-endpoint [URI]`
+
+Set the MDos API endpoint URL to use
+
+```
+USAGE
+  $ mdos configure api-endpoint [URI] [--dev]
+
+FLAGS
+  --dev  Developement mode, append ports to URLs
+
+DESCRIPTION
+  Set the MDos API endpoint URL to use
+```
+
 ## `mdos create app`
 
 Scaffold a new application in the current directory
@@ -1841,8 +2042,8 @@ USAGE
   $ mdos deploy app [-u <value>] [-p <value>]
 
 FLAGS
-  -p, --password=<value>  Registry password
-  -u, --username=<value>  Registry username
+  -p, --password=<value>  MDos password
+  -u, --username=<value>  Mdos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -1864,8 +2065,8 @@ USAGE
   $ mdos deploy application [-u <value>] [-p <value>]
 
 FLAGS
-  -p, --password=<value>  Registry password
-  -u, --username=<value>  Registry username
+  -p, --password=<value>  MDos password
+  -u, --username=<value>  Mdos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -1887,8 +2088,8 @@ USAGE
   $ mdos deploy applications [-u <value>] [-p <value>]
 
 FLAGS
-  -p, --password=<value>  Registry password
-  -u, --username=<value>  Registry username
+  -p, --password=<value>  MDos password
+  -u, --username=<value>  Mdos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -2346,12 +2547,7 @@ Get configutation parameter(s) for your local CLI environement
 
 ```
 USAGE
-  $ mdos get-config [--auth] [--backend] [--keycloak]
-
-FLAGS
-  --auth      authentication mode
-  --backend   API backend URI
-  --keycloak  Keycloak backend URI
+  $ mdos get-config
 
 DESCRIPTION
   Get configutation parameter(s) for your local CLI environement
@@ -2362,7 +2558,7 @@ ALIASES
   $ mdos show-config
 ```
 
-_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.1.14/dist/commands/get-config.ts)_
+_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/get-config.ts)_
 
 ## `mdos get config`
 
@@ -2370,12 +2566,7 @@ Get configutation parameter(s) for your local CLI environement
 
 ```
 USAGE
-  $ mdos get config [--auth] [--backend] [--keycloak]
-
-FLAGS
-  --auth      authentication mode
-  --backend   API backend URI
-  --keycloak  Keycloak backend URI
+  $ mdos get config
 
 DESCRIPTION
   Get configutation parameter(s) for your local CLI environement
@@ -2502,31 +2693,6 @@ ALIASES
   $ mdos kc client add role
 ```
 
-## `mdos kc client create-role`
-
-Create custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
-
-```
-USAGE
-  $ mdos kc client create-role [-c <value>] [-n <value>]
-
-FLAGS
-  -c, --clientId=<value>  Keycloak client ID
-  -n, --name=<value>      Keycloak clientrole name
-
-DESCRIPTION
-  Create custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
-
-ALIASES
-  $ mdos client create-role
-  $ mdos client create role
-  $ mdos client add-role
-  $ mdos client add role
-  $ mdos kc client create role
-  $ mdos kc client add-role
-  $ mdos kc client add role
-```
-
 ## `mdos kc client create role`
 
 Create custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
@@ -2550,32 +2716,6 @@ ALIASES
   $ mdos kc client create role
   $ mdos kc client add-role
   $ mdos kc client add role
-```
-
-## `mdos kc client delete-role`
-
-Delete custom roles from your namespace / client / tenant (Used for OIDC authentication and ACL)
-
-```
-USAGE
-  $ mdos kc client delete-role [-c <value>] [-r <value>] [-f]
-
-FLAGS
-  -c, --clientId=<value>  Keycloak client ID
-  -f, --force             Do not ask for comfirmation
-  -r, --role=<value>      Client role to delete
-
-DESCRIPTION
-  Delete custom roles from your namespace / client / tenant (Used for OIDC authentication and ACL)
-
-ALIASES
-  $ mdos client delete-role
-  $ mdos client delete role
-  $ mdos client remove-role
-  $ mdos client remove role
-  $ mdos kc client delete role
-  $ mdos kc client remove-role
-  $ mdos kc client remove role
 ```
 
 ## `mdos kc client delete role`
@@ -2602,30 +2742,6 @@ ALIASES
   $ mdos kc client delete role
   $ mdos kc client remove-role
   $ mdos kc client remove role
-```
-
-## `mdos kc client list-roles`
-
-List your custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
-
-```
-USAGE
-  $ mdos kc client list-roles [-c <value>]
-
-FLAGS
-  -c, --clientId=<value>  Keycloak aclient ID
-
-DESCRIPTION
-  List your custom roles for your namespace / client / tenant (Used for OIDC authentication and ACL)
-
-ALIASES
-  $ mdos client list-roles
-  $ mdos client list roles
-  $ mdos client show-roles
-  $ mdos client show roles
-  $ mdos kc client list roles
-  $ mdos kc client show-roles
-  $ mdos kc client show roles
 ```
 
 ## `mdos kc client list roles`
@@ -2774,31 +2890,6 @@ ALIASES
   $ mdos kc user add
 ```
 
-## `mdos kc user add-role`
-
-Add roles to your users for specific namespaces / clients / tenant
-
-```
-USAGE
-  $ mdos kc user add-role [-t <value>] [-u <value>] [-c <value>] [-r <value>]
-
-FLAGS
-  -c, --clientId=<value>  Keycloak clientId of the user
-  -r, --role=<value>      Keycloak role name to add to this user
-  -t, --target=<value>    Keycloak client target
-  -u, --username=<value>  Keycloak username to add role for
-
-DESCRIPTION
-  Add roles to your users for specific namespaces / clients / tenant
-
-ALIASES
-  $ mdos user add role
-  $ mdos kc user add role
-  $ mdos user create-role
-  $ mdos user create role
-  $ mdos kc user create role
-```
-
 ## `mdos kc user add role`
 
 Add roles to your users for specific namespaces / clients / tenant
@@ -2822,28 +2913,6 @@ ALIASES
   $ mdos user create-role
   $ mdos user create role
   $ mdos kc user create role
-```
-
-## `mdos kc user create`
-
-Create a new user on the platform
-
-```
-USAGE
-  $ mdos kc user create [-u <value>] [-p <value>] [-e <value>]
-
-FLAGS
-  -e, --email=<value>     Keycloak user email
-  -p, --password=<value>  Keycloak password
-  -u, --username=<value>  Keycloak username
-
-DESCRIPTION
-  Create a new user on the platform
-
-ALIASES
-  $ mdos user create
-  $ mdos user add
-  $ mdos kc user add
 ```
 
 ## `mdos kc user create role`
@@ -2871,27 +2940,6 @@ ALIASES
   $ mdos kc user create role
 ```
 
-## `mdos kc user delete`
-
-Delete a user from the platform
-
-```
-USAGE
-  $ mdos kc user delete [-u <value>] [-f]
-
-FLAGS
-  -f, --force             Do not ask for comfirmation
-  -u, --username=<value>  Keycloak username to delete
-
-DESCRIPTION
-  Delete a user from the platform
-
-ALIASES
-  $ mdos user delete
-  $ mdos user remove
-  $ mdos kc user remove
-```
-
 ## `mdos kc user delete role`
 
 Remove roles from your users for specific namespaces / clients / tenant
@@ -2915,48 +2963,6 @@ ALIASES
   $ mdos user delete-role
   $ mdos user delete role
   $ mdos kc user delete role
-```
-
-## `mdos kc user list`
-
-List all platform users
-
-```
-USAGE
-  $ mdos kc user list [-c <value>]
-
-FLAGS
-  -c, --clientId=<value>  Keycloak client ID
-
-DESCRIPTION
-  List all platform users
-
-ALIASES
-  $ mdos user list
-```
-
-## `mdos kc user list-roles`
-
-List user assigned roles for specific namespaces / clients / tenant
-
-```
-USAGE
-  $ mdos kc user list-roles [-u <value>]
-
-FLAGS
-  -u, --username=<value>  Keycloak username to get roles for
-
-DESCRIPTION
-  List user assigned roles for specific namespaces / clients / tenant
-
-ALIASES
-  $ mdos user list-roles
-  $ mdos user list roles
-  $ mdos user show-roles
-  $ mdos user show roles
-  $ mdos kc user list roles
-  $ mdos kc user show-roles
-  $ mdos kc user show roles
 ```
 
 ## `mdos kc user list roles`
@@ -3002,31 +3008,6 @@ ALIASES
   $ mdos user delete
   $ mdos user remove
   $ mdos kc user remove
-```
-
-## `mdos kc user remove-role`
-
-Remove roles from your users for specific namespaces / clients / tenant
-
-```
-USAGE
-  $ mdos kc user remove-role [-u <value>] [-c <value>] [-r <value>] [-f]
-
-FLAGS
-  -c, --clientId=<value>  Keycloak client ID
-  -f, --force             Do not ask for comfirmation
-  -r, --role=<value>      Role name to remove
-  -u, --username=<value>  Keycloak username
-
-DESCRIPTION
-  Remove roles from your users for specific namespaces / clients / tenant
-
-ALIASES
-  $ mdos user remove role
-  $ mdos kc user remove role
-  $ mdos user delete-role
-  $ mdos user delete role
-  $ mdos kc user delete role
 ```
 
 ## `mdos kc user remove role`
@@ -3318,7 +3299,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.1.14/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3332,7 +3313,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.1.14/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -3954,7 +3935,6 @@ DESCRIPTION
 ALIASES
   $ mdos app sso
   $ mdos app protect
-  $ mdos application protect
   $ mdos sso app
   $ mdos protect app
   $ mdos protect application
@@ -3974,7 +3954,6 @@ DESCRIPTION
 ALIASES
   $ mdos app sso
   $ mdos app protect
-  $ mdos application protect
   $ mdos sso app
   $ mdos protect app
   $ mdos protect application
@@ -4155,22 +4134,7 @@ DESCRIPTION
   Retrieve user kubeconfig file and set up
 ```
 
-_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.1.14/dist/commands/set-kubeconfig.ts)_
-
-## `mdos set domain [DOMAIN]`
-
-Set a configutation parameter for your local CLI environement
-
-```
-USAGE
-  $ mdos set domain [DOMAIN] [--dev]
-
-FLAGS
-  --dev  Developement mode, append ports to URLs
-
-DESCRIPTION
-  Set a configutation parameter for your local CLI environement
-```
+_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/set-kubeconfig.ts)_
 
 ## `mdos show-config`
 
@@ -4178,12 +4142,7 @@ Get configutation parameter(s) for your local CLI environement
 
 ```
 USAGE
-  $ mdos show-config [--auth] [--backend] [--keycloak]
-
-FLAGS
-  --auth      authentication mode
-  --backend   API backend URI
-  --keycloak  Keycloak backend URI
+  $ mdos show-config
 
 DESCRIPTION
   Get configutation parameter(s) for your local CLI environement
@@ -4227,12 +4186,7 @@ Get configutation parameter(s) for your local CLI environement
 
 ```
 USAGE
-  $ mdos show config [--auth] [--backend] [--keycloak]
-
-FLAGS
-  --auth      authentication mode
-  --backend   API backend URI
-  --keycloak  Keycloak backend URI
+  $ mdos show config
 
 DESCRIPTION
   Get configutation parameter(s) for your local CLI environement
@@ -4311,7 +4265,6 @@ DESCRIPTION
 ALIASES
   $ mdos app sso
   $ mdos app protect
-  $ mdos application protect
   $ mdos sso app
   $ mdos protect app
   $ mdos protect application
