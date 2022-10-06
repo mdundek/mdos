@@ -60,6 +60,13 @@ elif [ "$DISTRO" != "Ubuntu" ]; then
     exit 1
 fi
 
+# CHECK THAT SUFFICIENT MEMORY AND DISK IS AVAILABLE
+FREE_MB=$(awk '/MemFree/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
+if [ "$FREE_MB" -lt "3999" ]; then
+    error "Insufficient memory, minimum 4GB of available (free) memory is required for this installation"
+    exit 1
+fi
+
 LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_install.log"
 
 # Parse user input
@@ -384,9 +391,23 @@ collect_user_input() {
                 exit 1
             fi
         fi
+        AVAIL_DISK_SPACE=$(df $LONGHORN_DEFAULT_DIR | sed -n 2p | awk '{printf "%.0f \n", $4/1024/1024}')
+    else
+        LONGHORN_DEFAULT_DIR="/var/lib/longhorn"
+        AVAIL_DISK_SPACE=$(df /var | sed -n 2p | awk '{printf "%.0f \n", $4/1024/1024}')
+    fi
+
+    # Substract 10Gb as reserve from the available disk space
+    AVAIL_DISK_SPACE=$((AVAIL_DISK_SPACE-10))
+
+    # Make sure we have enougth disk space
+    if [ "$AVAIL_DISK_SPACE" -lt "30" ]; then
+        error "Insufficient disk space, a minimum of 30Gb of available disk space is required"
+        exit 1
     fi
 
     # REGISTRY
+    REMAINING_DISK=$((AVAIL_DISK_SPACE-5)) # Keep min 5 Gi for RabbitMQ
     print_section_title "Private registry"
     if [ -z $REGISTRY_SIZE ]; then
         context_print "MDos provides you with a private registry that you can use to store your application"
@@ -399,7 +420,16 @@ collect_user_input() {
             error "Invalide number, ingeger representing Gigabytes is expected"
             user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
         done
+
+        while [ "$((REMAINING_DISK-REGISTRY_SIZE))" -lt "0" ]; do
+            error "Insufficient disk space, you can allocate a maximum of ${REMAINING_DISK}Gi"
+            user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
+        done
+    elif [ "$((REMAINING_DISK-REGISTRY_SIZE))" -lt "0" ]; then
+        error "Insufficient disk space, you can allocate a maximum of ${REMAINING_DISK}Gi"
+        exit 1
     fi
+    REMAINING_DISK=$((AVAIL_DISK_SPACE-REGISTRY_SIZE))
 
     # FTP
     print_section_title "FTP volume sync server"
@@ -434,6 +464,20 @@ collect_user_input() {
         else
             exit 1
         fi
+    fi
+
+    # RABBITMQ
+    if [ "$REMAINING_DISK" -lt "10" ]; then
+        error "You are running low on disk space, you only have ${REMAINING_DISK}Gi left on your Kubernetes storage device, which is insufficient to run the platform in a stable manner"
+        exit 1
+    elif [ "$REMAINING_DISK" -lt "20" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-10))Gi left on your Kubernetes storage device"
+        RABBITMQ_STORAGE_SIZE="10"
+    elif [ "$REMAINING_DISK" -lt "30" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-15))Gi left on your Kubernetes storage device"
+        RABBITMQ_STORAGE_SIZE="15"
+    else
+        RABBITMQ_STORAGE_SIZE="20"
     fi
 }
 
@@ -1679,7 +1723,7 @@ spec:
     type: NodePort
   persistence:
     storageClassName: longhorn
-    storage: 2Gi
+    storage: ${RABBITMQ_STORAGE_SIZE}Gi
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
