@@ -89,7 +89,7 @@ export default class Remove extends Command {
         }
 
         if (confirmed) {
-            CliUx.ux.action.start('Deleting Keycloak client')
+            CliUx.ux.action.start('Uninstalling OIDC provider proxy')
             try {
                 await this.api(`oidc-provider/${targetProvider.name}`, 'delete')
                 CliUx.ux.action.stop()

@@ -119,7 +119,7 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
         // Kick off event driven workflow
         const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY, {
             context: {
-                providerName: body.data.name,
+                providerName: id,
                 rollback: false
             },
             workflow: [
