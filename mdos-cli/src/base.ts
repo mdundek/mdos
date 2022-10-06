@@ -45,7 +45,6 @@ export default abstract class extends Command {
         this.configPath = path.join(os.homedir(), '.mdos', 'cli.json')
         if(!fs.existsSync(this.configPath)){
             fs.writeFileSync(this.configPath, JSON.stringify({
-                "MDOS_KC_URI": "",
                 "MDOS_API_URI": "",
                 "ACCESS_TOKEN": ""
               }, null, 4))
@@ -145,27 +144,27 @@ export default abstract class extends Command {
     /**
      * validateJwt
      */
-    async validateJwt(skipAuthMsg?: boolean) {
-        const _validateCookie = async (takeNoAction?: boolean) => {
+    async validateJwt(skipAuthMsg?: boolean, flags?: any) {
+        // Reset potential OAUTH Cookie if username provided
+        if(flags && (flags.username || flags.password)) {
+            this.setConfig('ACCESS_TOKEN', null)
+            skipAuthMsg = true
+        }
+
+        const _validateCookie = async () => {
             const testResponse = await this.api('token-introspect', 'post', { access_token: this.getConfig('ACCESS_TOKEN') }, true)
 
-            if(testResponse.data.active) {
-                if (takeNoAction) {
-                    return true
-                }
-            } else {
-                if (takeNoAction) {
-                    return false
-                } else {
-                    // token expired
-                    this.setConfig('ACCESS_TOKEN', null)
-                    warn('Your current token has expired or is invalid. You need to re-authenticate')
-                    await this.validateJwt(true)
-                }
+            if(!testResponse.data.active) {
+                // token expired
+                this.setConfig('ACCESS_TOKEN', null)
+                warn('Your current token has expired or is invalid. You need to re-authenticate')
+                const userCreds: any = await this.validateJwt(true, flags)
+                return userCreds
             }
         }
 
         const token = this.getConfig('ACCESS_TOKEN')
+        
         if (!token || token.length == 0) {
 
             if(!skipAuthMsg)
@@ -194,12 +193,14 @@ export default abstract class extends Command {
                         return true
                     },
                 },
-            ])
+            ]
+            .filter(q => (q.name == "username" && flags && flags.username) ? false : true)
+            .filter(q => (q.name == "password" && flags && flags.password) ? false : true))
 
             const loginResponse = await this.api('authentication', 'post', { 
                 "strategy": "keycloak", 
-                "username": responses.username, 
-                "password": responses.password
+                "username": responses.username ? responses.username : flags.username, 
+                "password": responses.password ? responses.password : flags.password
             }, true)
             if (loginResponse.data.error) {
                 error(loginResponse.data.error_description)
@@ -207,8 +208,13 @@ export default abstract class extends Command {
             }
             this.setConfig('ACCESS_TOKEN', loginResponse.data.access_token)
             console.log()
+            return { 
+                "username": responses.username ? responses.username : flags.username, 
+                "password": responses.password ? responses.password : flags.password
+            }
         } else {
-            await _validateCookie()
+            const _userCreds = await _validateCookie()
+            return _userCreds
         }
     }
 

@@ -16,7 +16,7 @@ components:
             svcPort: 443
     ingress:
       - name: ingress
-        gateway: https-gateway-mdos
+        gateway: mdos/https-gateway-mdos
         matchHost: registry.<DOMAIN>
         targetPort: 443
         trafficType: https
@@ -47,16 +47,8 @@ components:
     secrets:
       - name: reg-ca
         type: dir
+        ref: mdos-root-domain-tls
         mountPath: /cert
-        entries:
-          - name: tls.crt
-            value: |-
-              -----BEGIN CERTIFICATE-----
-              -----END CERTIFICATE-----
-          - name: tls.key
-            value: |-
-              -----BEGIN PRIVATE KEY-----
-              -----END PRIVATE KEY-----
     volumes:
       - name: repo-vol
         mountPath: /var/lib/registry
@@ -79,7 +71,7 @@ components:
             svcPort: 443
     ingress:
       - name: ingress
-        gateway: https-gateway-mdos
+        gateway: mdos/https-gateway-mdos
         matchHost: registry-auth.<DOMAIN>
         targetPort: 443
         trafficType: https
@@ -140,13 +132,5 @@ components:
     secrets:
       - name: reg-ca
         type: dir
+        ref: mdos-root-domain-tls
         mountPath: /cert
-        entries:
-          - name: tls.crt
-            value: |-
-              -----BEGIN CERTIFICATE-----
-              -----END CERTIFICATE-----
-          - name: tls.key
-            value: |-
-              -----BEGIN PRIVATE KEY-----
-              -----END PRIVATE KEY-----

@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Mdos API server",
-    "version": "1.1.11",
+    "version": "1.2.0",
   "homepage": "",
   "private": true,
   "main": "src",
@@ -46,6 +46,8 @@
     "@feathersjs/feathers": "^4.5.15",
     "@feathersjs/socketio": "^4.5.15",
     "@feathersjs/transport-commons": "^4.5.15",
+    "amqplib": "^0.10.3",
+    "async-exit-hook": "^2.0.1",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",

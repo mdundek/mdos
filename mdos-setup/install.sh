@@ -60,9 +60,16 @@ elif [ "$DISTRO" != "Ubuntu" ]; then
     exit 1
 fi
 
+# CHECK THAT SUFFICIENT MEMORY AND DISK IS AVAILABLE
+FREE_MB=$(awk '/MemFree/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
+if [ "$FREE_MB" -lt "3200" ]; then
+    error "Insufficient memory, minimum 4GB of available (free) memory is required for this installation"
+    exit 1
+fi
+
 LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_install.log"
 
-# Parse user input
+# PARSE USER INPUT
 while [ "$1" != "" ]; do
     case $1 in
         --reset )
@@ -153,13 +160,23 @@ mdos_deploy_app() {
                 --docker-server=registry.$DOMAIN \
                 --docker-username=$KEYCLOAK_USER \
                 --docker-password=$KEYCLOAK_PASS \
-                -n $I_NS 1>/dev/null
+                -n $I_NS &>> $LOG_FILE
         fi
     fi
 
-    helm upgrade --install $I_APP ./dep/mhc-generic/chart \
-        --values ./target_values.yaml \
-        -n $I_NS --atomic 1> /dev/null
+    set +Ee
+    unset DEPLOY_SUCCESS
+    while [ -z $DEPLOY_SUCCESS ]; do
+        helm upgrade --install $I_APP ./dep/mhc-generic/chart \
+            --values ./target_values.yaml \
+            -n $I_NS --atomic &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DEPLOY_SUCCESS=1
+        else
+            sleep 5
+        fi
+    done
+    set -Ee
 }
 
 # ############### EXEC IN POD ################
@@ -183,11 +200,70 @@ exec_in_pod() {
     fi
 }
 
+# ############### LOGIN TO LOCAL REGISTRY IN FALESAFE MANNER ################
+failsafe_docker_login() {
+    set +Ee
+    while [ -z $DOCKER_LOGIN_SUCCESS ]; do
+        echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DOCKER_LOGIN_SUCCESS=1
+        else
+            sleep 5
+        fi
+    done
+    set -Ee
+}
+
+# ############### PUSH TO LOCAL REGISTRY IN FALESAFE MANNER ################
+failsafe_docker_push() {
+    set +Ee
+    unset DKPUSH_SUCCESS
+    PUSHING_DOCKER=1
+    while [ -z $DKPUSH_SUCCESS ]; do
+        docker push $1 &>> $LOG_FILE
+        if [ $? -eq 0 ]; then
+            DKPUSH_SUCCESS=1
+        else
+            sleep 10
+        fi
+    done
+    unset PUSHING_DOCKER
+    set -Ee
+}
+
 # ############################################
 # ############# COLLECT USER DATA ############
 # ############################################
 collect_user_input() {
     pathRe='^/[A-Za-z0-9/_-]+$'
+
+    # COLLECT LOCAL IP FOR K3S ENDPOINTS
+    if command -v getent >/dev/null; then
+        if command -v ip >/dev/null; then
+            # Get the default network interface in use to connect to the internet
+            host_ip=$(getent ahosts "google.com" | awk '{print $1; exit}')
+            INETINTERFACE=$(ip route get "$host_ip" | grep -Po '(?<=(dev ))(\S+)')
+            LOC_IP=$(ip addr show $INETINTERFACE | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+        fi
+    fi
+    
+    context_print "MDos will need to know how to reach services running on the host directly"
+    context_print "from within the cluster. An IP address is therefore required."
+    echo ""
+
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        if [ -z $LOC_IP ]; then
+            user_input LOCAL_IP "MDos Host IP address:"
+        else
+            user_input LOCAL_IP "MDos Host IP address:" "$LOC_IP"
+        fi
+        if [[ $LOCAL_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            LOOP_BREAK=1
+        else
+            error "Invalid IP address"
+        fi
+    done
 
     # COLLECT ADMIN CREDS
     print_section_title "Admin user account"
@@ -197,8 +273,8 @@ collect_user_input() {
 
     # CERT MODE
     print_section_title "Domain name and certificate"
-    OPTIONS_STRING="You already have a certificate and a wild card domain;You have a Cloudflare domain, but no certificates;Generate and use self signed, do not have a domain"
-    OPTIONS_VALUES=("SSL_PROVIDED" "CLOUDFLARE" "SELF_SIGNED")
+    OPTIONS_STRING="You already have a certificate and a wild card domain;Use \"cert-manager\" to manage generare & manage your certificate;Generate and use self signed certificate, I do not have a domain"
+    OPTIONS_VALUES=("CRT_PROVIDED" "CERT_MANAGER" "SELF_SIGNED")
     set +Ee
     prompt_for_select CMD_SELECT "$OPTIONS_STRING"
     set -Ee
@@ -209,33 +285,78 @@ collect_user_input() {
     done
 
     # PREPARE CERTIFICATES & DOMAIN
-    if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
+    if [ "$CERT_MODE" == "CERT_MANAGER" ]; then
+        context_print "This installation script will install \"cert-manager\" and generate your MDos root"
+        context_print "domain (wildcard) certificate for you. You will have to provide the \"cert-manager\""
+        context_print "Issuer (and Secret if applicable) yaml file to use for this, according to your certificate"
+        context_print "issuer of choice. Please refer to the documentation on the following link in order to do so:"
+        context_print "https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers"
+        context_print "An example Issuer Yaml file based on CloudFlare can be found here:"
+        context_print "https://raw.githubusercontent.com/mdundek/mdos/cert-manager/mdos-setup/dep/cert-manager/cloudflare-issuer.yaml"
+        echo ""
+        warn "Make sure you name your Issuer \"mdos-issuer\" (metadata.name: mdos-issuer)"
+        echo ""
+        unset LOOP_BREAK
+        while [ -z $LOOP_BREAK ]; do
+            user_input ISSUER_YAML_PATH "Please enter the absolute path to your Issuer yaml file (ex. /path/to/my-cert-manager-issuer.yaml):"
+            if [ -f $ISSUER_YAML_PATH ]; then
+                ISSUER_NAME=$(cat $ISSUER_YAML_PATH | yq eval 'select(.kind == "Issuer") | .metadata.name')
+                if [ "$ISSUER_NAME" != "mdos-issuer" ]; then
+                    error "Issuer name has to be \"mdos-issuer\" (metadata.name: mdos-issuer)"
+                else
+                    LOOP_BREAK=1
+                fi
+            else
+                error "File not found"
+            fi
+        done
+        # Domain name
         user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
-        user_input CF_EMAIL "Enter your Cloudflare account email:"
-        user_input CF_TOKEN "Enter your Cloudflare API token:"
     elif [ "$CERT_MODE" == "SELF_SIGNED" ]; then
         user_input DOMAIN "Enter your DNS root domain name (ex. mydomain.com):" 
         set +Ee
         yes_no DNS_RESOLVABLE "Is your domain \"$DOMAIN\" resolvable through a public or private DNS server?"
         set -Ee
         if [ "$DNS_RESOLVABLE" == "no" ]; then
-            context_print "MDos will need to know how to reach it's FTP server from within the"
-            context_print "cluster without DNS resolution. An IP address is therefore required."
-            echo ""
-
-            unset LOOP_BREAK
-            while [ -z $LOOP_BREAK ]; do
-                user_input NODNS_LOCAL_IP "Please enter the local IP address for this machine:"
-                if [[ $NODNS_LOCAL_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                    LOOP_BREAK=1
-                else
-                    error "Invalid IP address"
-                fi
-            done
+            NO_DNS=1
         fi
     else
-        warn "Not implemented yet!"
-        exit 1
+        warn "It is assumed that your domain for the certificate you wish to use is configured (DNS) to route traffic directly to this host IP"
+        user_input DOMAIN "Enter your DNS root domain name for your certificate(ex. mydomain.com):" 
+
+        unset LOOP_BREAK
+        while [ -z $LOOP_BREAK ]; do
+            user_input OWN_FULLCHAIN_CRT_PATH "Please enter the absolute path to your fullchain PEM certificate (ex. /path/to/fullchain.pem):"
+            if [ -f $OWN_FULLCHAIN_CRT_PATH ]; then
+                LOOP_BREAK=1
+            else
+                error "File not found"
+            fi
+        done
+
+        unset LOOP_BREAK
+        while [ -z $LOOP_BREAK ]; do
+            user_input OWN_PRIVKEY_PATH "Please enter the absolute path to your private key (ex. /path/to/privkey.pem):"
+            if [ -f $OWN_PRIVKEY_PATH ]; then
+                LOOP_BREAK=1
+            else
+                error "File not found"
+            fi
+        done
+
+        if [ "$(dirname "${OWN_FULLCHAIN_CRT_PATH}")" != "$(dirname "${OWN_PRIVKEY_PATH}")" ]; then
+            error "The fullchain certificate and private key file need to located in the same directory"
+            exit 1
+        fi
+
+        set +Ee
+        yes_no PROV_CERT_IS_SELFSIGNED "Is the domain \"$DOMAIN\" properly configured on a DNS provider to point to this server?"
+        set -Ee
+        if [ "$PROV_CERT_IS_SELFSIGNED" == "no" ]; then
+            PROV_CERT_IS_SELFSIGNED=1
+        else
+            unset PROV_CERT_IS_SELFSIGNED
+        fi
     fi
 
     # LONGHORN
@@ -270,9 +391,24 @@ collect_user_input() {
                 exit 1
             fi
         fi
+        AVAIL_DISK_SPACE=$(df $LONGHORN_DEFAULT_DIR | sed -n 2p | awk '{printf "%.0f \n", $4/1024/1024}')
+    else
+        LONGHORN_DEFAULT_DIR="/var/lib/longhorn"
+        AVAIL_DISK_SPACE=$(df /var | sed -n 2p | awk '{printf "%.0f \n", $4/1024/1024}')
+    fi
+
+    # Substract 10Gb as reserve from the available disk space
+    AVAIL_DISK_SPACE=$((AVAIL_DISK_SPACE-5))
+
+    # Make sure we have enougth disk space
+    if [ "$AVAIL_DISK_SPACE" -lt "20" ]; then
+        EARLY_EXIT=1
+        error "Insufficient disk space, a minimum of 20Gb of available disk space is required, but only ${AVAIL_DISK_SPACE}Gi are available"
+        exit 1
     fi
 
     # REGISTRY
+    REMAINING_DISK=$((AVAIL_DISK_SPACE-5)) # Keep min 5 Gi for RabbitMQ
     print_section_title "Private registry"
     if [ -z $REGISTRY_SIZE ]; then
         context_print "MDos provides you with a private registry that you can use to store your application"
@@ -285,7 +421,17 @@ collect_user_input() {
             error "Invalide number, ingeger representing Gigabytes is expected"
             user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
         done
+
+        while [ "$((REMAINING_DISK-REGISTRY_SIZE))" -lt "0" ]; do
+            error "Insufficient disk space, you can allocate a maximum of ${REMAINING_DISK}Gi"
+            user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
+        done
+    elif [ "$((REMAINING_DISK-REGISTRY_SIZE))" -lt "0" ]; then
+        EARLY_EXIT=1
+        error "Insufficient disk space, you can allocate a maximum of ${REMAINING_DISK}Gi"
+        exit 1
     fi
+    REMAINING_DISK=$((AVAIL_DISK_SPACE-REGISTRY_SIZE))
 
     # FTP
     print_section_title "FTP volume sync server"
@@ -318,8 +464,30 @@ collect_user_input() {
         if [ "$CREATE_FTP_PATH" == "yes" ]; then
             mkdir -p $FTP_DATA_HOME
         else
+            EARLY_EXIT=1
             exit 1
         fi
+    fi
+
+    # RABBITMQ
+    if [ "$REMAINING_DISK" -lt "5" ]; then
+        EARLY_EXIT=1
+        error "You are running low on disk space, you only have ${REMAINING_DISK}Gi left on your Kubernetes storage device, which is insufficient to run the platform in a stable manner"
+        exit 1
+    elif [ "$REMAINING_DISK" -lt "8" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-3))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        RABBITMQ_STORAGE_SIZE="3"
+    elif [ "$REMAINING_DISK" -lt "10" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-5))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        RABBITMQ_STORAGE_SIZE="5"
+    elif [ "$REMAINING_DISK" -lt "20" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-10))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        RABBITMQ_STORAGE_SIZE="10"
+    elif [ "$REMAINING_DISK" -lt "30" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-15))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        RABBITMQ_STORAGE_SIZE="15"
+    else
+        RABBITMQ_STORAGE_SIZE="20"
     fi
 }
 
@@ -372,75 +540,264 @@ dependencies() {
 }
 
 # ############################################
-# ########### CLOUDFLARE & CERTBOT ###########
+# ############### CERT MANAGER ###############
 # ############################################
-setup_cloudflare_certbot() {
+setup_cert_manager() {
+    helm repo add jetstack https://charts.jetstack.io &>> $LOG_FILE
+    helm repo update &>> $LOG_FILE
+    helm install cert-manager jetstack/cert-manager \
+        --namespace cert-manager \
+        --create-namespace \
+        --version v1.9.1 \
+        --set installCRDs=true \
+        --atomic &>> $LOG_FILE
+
+    # Wait untill all pods are up and running
+    unset FOUND_RUNNING_POD
+    while [ -z $FOUND_RUNNING_POD ]; do
+        unset CM_POD_UP
+        unset CM_INJ_POD_UP
+        unset CM_WEBHOOK_POD_UP
+        while read POD_LINE ; do
+            POD_NAME=`echo "$POD_LINE" | awk 'END {print $1}'`
+            POD_STATUS=`echo "$POD_LINE" | awk 'END {print $3}'`
+            if [[ "$POD_NAME" == *"cert-manager-cainjector-"* ]]; then
+                if [ "$POD_STATUS" == "Running" ]; then
+                    CM_INJ_POD_UP=1
+                fi
+            elif [[ "$POD_NAME" == *"cert-manager-webhook-"* ]]; then
+                if [ "$POD_STATUS" == "Running" ]; then
+                    CM_WEBHOOK_POD_UP=1
+                fi
+            elif [[ "$POD_NAME" == *"cert-manager-"* ]]; then
+                if [ "$POD_STATUS" == "Running" ]; then
+                    CM_POD_UP=1
+                fi
+            fi
+        done < <(kubectl get pods -n cert-manager 2>/dev/null)
+        if [ ! -z $CM_POD_UP ] && [ ! -z $CM_INJ_POD_UP ] && [ ! -z $CM_WEBHOOK_POD_UP ]; then
+            FOUND_RUNNING_POD=1
+        fi
+        sleep 2
+    done
+}
+
+# ############################################
+# ############ PREPARE NAMESPACES ############
+# ############################################
+prepare_namespaces(){
+    kubectl create ns mdos > /dev/null 2>&1 || true
+    kubectl create ns mdos-registry > /dev/null 2>&1 || true
+    kubectl create ns keycloak > /dev/null 2>&1 || true
+
+    # Registry secret
+    unset ELM_EXISTS
+    k8s_ns_scope_exist ELM_EXISTS secret "regcred" "mdos"
+    if [ -z $ELM_EXISTS ]; then
+        kubectl create secret docker-registry \
+            regcred \
+            --docker-server=registry.$DOMAIN \
+            --docker-username=$KEYCLOAK_USER \
+            --docker-password=$KEYCLOAK_PASS \
+            -n mdos &>> $LOG_FILE
+    fi
+
+    # Certificate secret if not using cert-manager
+    if [ "$CERT_MODE" != "CERT_MANAGER" ]; then
+        unset ELM_EXISTS
+        k8s_ns_scope_exist ELM_EXISTS secret "mdos-root-domain-tls" "mdos"
+        if [ -z $ELM_EXISTS ]; then
+            kubectl create -n mdos secret tls mdos-root-domain-tls --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
+        fi
+    fi
+
+    # default secret for SA
+    unset ELM_EXISTS
+    k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
+    if [ -z $ELM_EXISTS ]; then
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: default
+  namespace: mdos
+  annotations:
+    kubernetes.io/service-account.name: "default"
+type: kubernetes.io/service-account-token
+EOF
+    fi
+
+    # Admin role
+    unset ELM_EXISTS
+    k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"
+    if [ -z $ELM_EXISTS ]; then
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mdos-admin-role
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'
+EOF
+    fi
+
+    # Admin role binding
+    k8s_cluster_scope_exist ELM_EXISTS clusterrolebinding "mdos-admin-role-binding"
+    if [ -z $ELM_EXISTS ]; then
+        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: scds-admin-role-binding
+roleRef:
+  kind: ClusterRole
+  name: mdos-admin-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: mdos
+EOF
+    fi
+}
+
+# ############################################
+# ######### CERT MANAGER MDOS ISSUER #########
+# ############################################
+cert_manager_mdos_issuer_and_crt_secret() {
+    # Install Issuer (Secret + Issuer)
+    info "Configure mdos cert-manager issuer..."
+    kubectl apply -f $ISSUER_YAML_PATH -n mdos &>> $LOG_FILE
+
+    # Waiting for issuer to become ready
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        ISSUER_STATUS=$(kubectl get issuers -n mdos -o json | jq -r '.items[0].status.conditions[0].type')
+        if [ "$ISSUER_STATUS" == "Ready" ]; then
+            LOOP_BREAK=1
+        else
+            sleep 2
+        fi
+    done 
     
-    if [ "$PSYSTEM" == "APT" ]; then
-        # Install certbot
-        apt-get install certbot python3-certbot-dns-cloudflare -y &>> $LOG_FILE
-    fi
+    # Create certificate
+    info "Create MDos certificate using issuer for domain $DOMAIN..."
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mdos-root-domain
+  namespace: mdos
+spec:
+  secretName: mdos-root-domain-tls
+  duration: 2160h
+  renewBefore: 360h
+  dnsNames:
+    - "*.$DOMAIN"
+  issuerRef:
+    name: mdos-issuer
+    kind: Issuer
+EOF
 
-    # Create cloudflare credentials file
-    echo "dns_cloudflare_email = $CF_EMAIL" > $HOME/.mdos/cloudflare.ini
-    echo "dns_cloudflare_api_key = $CF_TOKEN" >> $HOME/.mdos/cloudflare.ini
-
-    echo "dns_cloudflare_email = mdundek@gmail.com" > $HOME/.mdos/cloudflare.ini
-    echo "dns_cloudflare_api_key = fe5beef86732475a7073b122139f64f9f49ee" >> $HOME/.mdos/cloudflare.ini
-
-    # Create certificate now (will require manual input)
-    if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
-        question "Please run the following command in a separate terminal on this machine to generate your valid certificate:"
-        echo ""
-        echo "sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials $HOME/.mdos/cloudflare.ini -d $DOMAIN -d *.$DOMAIN --email $CF_EMAIL --agree-tos -n"
-        echo ""
-
-        yes_no CERT_OK "Select 'yes' if the certificate has been generated successfully to continue the installation" 1
-        
-        if [ "$CERT_OK" == "yes" ]; then
-            if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
-                error "Could not find generated certificate under: /etc/letsencrypt/live/$DOMAIN/fullchain.pem"
-                exit 1
-            fi
-            chmod 655 /etc/letsencrypt/archive/$DOMAIN/*.pem
-        else
-            warn "Aborting installation"
+    # Waiting for certificate to become available
+    while [ "$(kubectl get secret -n mdos | grep 'mdos-root-domain-tls')" == "" ]; do
+        sleep 3
+        ATTEMPTS=$((ATTEMPTS+1))
+        if [ "$ATTEMPTS" -gt 100 ]; then
+            error "Timeout, Certificate was not issued, most probably due to a miss-configuration of the Issuer itself."
             exit 1
         fi
-        
-    fi
+    done
+}
 
-    if [ ! -f /var/spool/cron/crontabs/root ]; then
-        # TODO: Need fixing if chrontab creation, opens editor and breaks install script
-        yes_no CRON_OK "Please create a crontab for user 'root' in a separate terminal using the command: sudo crontab -e. Once done, select 'yes'" 1
-        if [ "$CRON_OK" == "yes" ]; then
-            if [ ! -f /var/spool/cron/crontabs/root ]; then
-                error "Could not find root user crontab"
-                exit 1
-            fi
+mdos_secret_replicator_job() {
+    # Build cert-manager secret replicator job image
+    cd ./dep/images/cert-job-manager
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/cert-manager-replicate-bot:latest . &>> $LOG_FILE
+
+    # Load image to containerd image context
+    docker save registry.$DOMAIN/cert-manager-replicate-bot:latest > ./cert-manager-replicate-bot.tar
+    k3s ctr images import ./cert-manager-replicate-bot.tar &>> $LOG_FILE
+    rm -rf ./cert-manager-replicate-bot.tar
+    cd ../../..
+
+    # Export certificate
+    info "Create Kubernetes CronJob to export certificate for third party components..."
+    mkdir -p /etc/letsencrypt/live/$DOMAIN
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: batch/v1
+kind: Job
+metadata: 
+  name: mdos-crt-export-job
+  namespace: mdos
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: cert-exporter
+        image: registry.$DOMAIN/cert-manager-replicate-bot:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=mdos-registry -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=keycloak -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=istio-system -f -
+      imagePullSecrets:
+      - name: regcred
+EOF
+
+    # Waiting for issuer to become ready
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        JOB_STATUS=$(kubectl get job mdos-crt-export-job -n mdos -o json | jq -r '.status.conditions[0].type')
+        if [ "$JOB_STATUS" == "Complete" ]; then
+            LOOP_BREAK=1
         else
-            warn "Aborting installation"
-            exit 1
+            sleep 2
         fi
-    fi
+    done
 
-    mkdir -p $HOME/.mdos/cron
-    # Set up auto renewal of certificate (the script will be run as the user who created the crontab)
-    cp $_DIR/dep/cron/91_renew_certbot.sh $HOME/.mdos/cron/91_renew_certbot.sh
-    if [ "$(crontab -l | grep '91_renew_certbot.sh')" == "" ]; then
-        (crontab -l 2>/dev/null; echo "5 8 * * * $HOME/.mdos/cron/91_renew_certbot.sh") | crontab -
-    fi
+    # Now schedule a chronJob in Kubernetes to export the generated certificate once a day to
+    # the local filesystem so that other services such as Keycloak and the FTP server can use it as well
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mdos-crt-exporter
+  namespace: mdos
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: cert-exporter
+            image: registry.$DOMAIN/cert-manager-replicate-bot:latest
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=mdos-registry -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=keycloak -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=istio-system -f -
+          imagePullSecrets:
+          - name: regcred
+EOF
+}
 
-    # Set up auto IP update on cloudflare (the script will be run as the user who created the crontab)
-    cp $_DIR/dep/cron/90_update_ip_cloudflare.sh $HOME/.mdos/cron/90_update_ip_cloudflare.sh
-    if [ "$(crontab -l | grep '90_update_ip_cloudflare.sh')" == "" ]; then
-        yes_no IP_UPDATE "Do you want to update your DNS records with your public IP address automatically in case it is not static?" 1
-        if [ "$IP_UPDATE" == "yes" ]; then
-            (crontab -l 2>/dev/null; echo "5 6 * * * $HOME/.mdos/cron/90_update_ip_cloudflare.sh") | crontab -
-        fi
-    fi
-
-    /etc/init.d/cron restart &>> $LOG_FILE
+cert_manager_secret_replicator_reg_push() {
+    # Registry might need some time to be up and ready, we therefore loop untill success for first push
+    failsafe_docker_push registry.$DOMAIN/cert-manager-replicate-bot:latest
 }
 
 # ############################################
@@ -499,8 +856,8 @@ DNS.1 = $DOMAIN
 DNS.2 = *.$DOMAIN" > $SSL_ROOT/config.cfg
     /usr/bin/docker run --rm -v $SSL_ROOT:/export -i nginx:latest openssl req -new -nodes -x509 -days 365 -keyout /export/$DOMAIN.key -out /export/$DOMAIN.crt -config /export/config.cfg &>> $LOG_FILE
 
-    cp $SSL_ROOT/$DOMAIN.key $SSL_ROOT/privkey.pem
-    cp $SSL_ROOT/$DOMAIN.crt $SSL_ROOT/fullchain.pem
+    cp $SSL_ROOT/$DOMAIN.key $SSL_ROOT/$PRIVKEY_FNAME
+    cp $SSL_ROOT/$DOMAIN.crt $SSL_ROOT/$FULLCHAIN_FNAME
     chmod 655 $SSL_ROOT/*.pem
 }
 
@@ -575,8 +932,6 @@ install_longhorn() {
 
     if [ "$CUSTOM_LH_PATH" == "yes" ]; then
         helm install longhorn longhorn/longhorn \
-            --set service.ui.type=NodePort \
-            --set service.ui.nodePort=30584 \
             --set persistence.defaultClassReplicaCount=2 \
             --set defaultSettings.guaranteedEngineManagerCPU=125m \
             --set defaultSettings.guaranteedReplicaManagerCPU=125m \
@@ -584,8 +939,6 @@ install_longhorn() {
             --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
     else
         helm install longhorn longhorn/longhorn \
-            --set service.ui.type=NodePort \
-            --set service.ui.nodePort=30584 \
             --set persistence.defaultClassReplicaCount=2 \
             --set defaultSettings.guaranteedEngineManagerCPU=125m \
             --set defaultSettings.guaranteedReplicaManagerCPU=125m \
@@ -596,7 +949,12 @@ install_longhorn() {
 
     # Wait for all pods to be on
     wait_all_ns_pods_healthy "longhorn-system"
+}
 
+# ############################################
+# ############# PROTEECT LONGHORN ############
+# ############################################
+protect_longhorn() {
     # Create Virtual Service
     set +Ee
     while [ -z $VS_SUCCESS ]; do
@@ -610,7 +968,7 @@ metadata:
   namespace: longhorn-system
 spec:
   gateways:
-  - istio-system/https-gateway
+  - mdos/https-gateway
   hosts:
   - longhorn.$DOMAIN
   http:
@@ -628,32 +986,8 @@ EOF
         fi
     done
     set -Ee
-}
 
-# ############################################
-# ############# PROTEECT LONGHORN ############
-# ############################################
-protect_longhorn() {
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  labels:
-    app: longhorn-ui
-  name: longhorn-ui-ingress
-  namespace: longhorn-system
-spec:
-  gateways:
-  - istio-system/https-gateway
-  hosts:
-  - longhorn.$DOMAIN
-  http:
-  - name: longhorn-ui-ingress
-    route:
-    - destination:
-        host: longhorn-frontend.longhorn-system.svc.cluster.local
-        port:
-          number: 80
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
@@ -663,14 +997,12 @@ metadata:
   namespace: longhorn-system
 spec:
   jwtRules:
-  - issuer: https://keycloak.$DOMAIN/realms/mdos
-    jwksUri: https://keycloak.$DOMAIN/realms/mdos/protocol/openid-connect/certs
+  - issuer: https://keycloak.$DOMAIN:30999/realms/mdos
+    jwksUri: https://keycloak.$DOMAIN:30999/realms/mdos/protocol/openid-connect/certs
   selector:
     matchLabels:
       app: longhorn-ui
-
 ---
-
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -745,7 +1077,6 @@ install_istio() {
     helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -f $_DIR/istiod-values.yaml -n istio-system &>> $LOG_FILE
     rm -rf $_DIR/istiod-values.yaml
 
-    info "Waiting for istiod to become ready..."
     ATTEMPTS=0
     while [ "$(kubectl get pod -n istio-system | grep 'istiod-' | grep 'Running')" == "" ]; do
         sleep 3
@@ -755,12 +1086,9 @@ install_istio() {
             exit 1
         fi
     done
-
-    sed -i 's/type: LoadBalancer/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
-    sed -i 's/type: ClusterIP/type: NodePort/g' ./dep/istio_helm/gateways/istio-ingress/values.yaml
+    
     helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system &>> $LOG_FILE
 
-    info "Waiting for istio ingress gateway to become ready..."
     ATTEMPTS=0
     while [ "$(kubectl get pod -n istio-system | grep 'istio-ingressgateway-' | grep 'Running')" == "" ]; do
         sleep 3
@@ -771,15 +1099,18 @@ install_istio() {
         fi
     done
 
-    kubectl create -n istio-system secret tls httpbin-credential --key=$SSL_ROOT/privkey.pem --cert=$SSL_ROOT/fullchain.pem &>> $LOG_FILE
+    # Wait for all pods to be on
+    wait_all_ns_pods_healthy "istio-system"
+}
 
-    ## Deploy Istio Gateways
+deploy_istio_gateways() {
+    # Deploy Istio Gateways
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: https-gateway
-  namespace: istio-system
+  namespace: mdos
 spec:
   selector:
     istio: ingressgateway
@@ -792,13 +1123,13 @@ spec:
     - "*.$DOMAIN"
     tls:
       mode: SIMPLE
-      credentialName: httpbin-credential
+      credentialName: mdos-root-domain-tls
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: https-gateway-mdos
-  namespace: istio-system
+  namespace: mdos
 spec:
   selector:
     istio: ingressgateway
@@ -810,41 +1141,28 @@ spec:
     hosts:
     - "registry.$DOMAIN"
     - "registry-auth.$DOMAIN"
+    - "keycloak.$DOMAIN"
     tls:
       mode: PASSTHROUGH
 EOF
-
-    # Wait for all pods to be on
-    wait_all_ns_pods_healthy "istio-system"
 }
 
 # ############################################
 # ############### INSTALL NGINX ##############
 # ############################################
-install_nginx() {
-    info "Setting up NGinx..."
-
-    if [ "$PSYSTEM" == "APT" ]; then
-        apt install nginx -y &>> $LOG_FILE
-        systemctl enable nginx &>> $LOG_FILE
-        systemctl start nginx &>> $LOG_FILE
-    fi
-
-    if [ ! -f /etc/nginx/conf.d/mdos.conf ]; then
-        cp ./dep/proxy/mdos.conf /etc/nginx/conf.d/
-
-        sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/mdos.conf
-        sed -i "s/__NODE_IP__/127.0.0.1/g" /etc/nginx/conf.d/mdos.conf
-    fi
-
+setup_firewall() {
     # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
     if [ "$USE_FIREWALL" == "yes" ]; then
         if command -v ufw >/dev/null; then
+            info "Setting up firewall rules..."
             if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
                 ufw allow 443 &>> $LOG_FILE
             fi
             if [ "$(ufw status | grep 'HTTPS\|6443' | grep 'ALLOW')" == "" ]; then
                 ufw allow 6443 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep 'HTTPS\|30999' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30999 &>> $LOG_FILE
             fi
             if [ "$(ufw status | grep '3915' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3915 &>> $LOG_FILE
@@ -867,29 +1185,22 @@ install_nginx() {
         fi
     fi
     
-    systemctl restart nginx &>> $LOG_FILE
+    # systemctl restart nginx &>> $LOG_FILE
 }
 
 # ############################################
 # ############# INSTALL REGISTRY #############
 # ############################################
 install_registry() {
-    # Create kubernetes namespace & secrets for registry
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "mdos-registry"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create namespace mdos-registry &>> $LOG_FILE
-    fi
-
     # Deploy registry
     deploy_reg_chart
 
     # Update docker and K3S registry for self signed cert
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
         # Configure self signed cert with local docker deamon
         if [ ! -d /etc/docker/certs.d/registry.$DOMAIN ]; then
             mkdir -p /etc/docker/certs.d/registry.$DOMAIN
-            cp $SSL_ROOT/fullchain.pem /etc/docker/certs.d/registry.$DOMAIN/ca.crt
+            cp $SSL_ROOT/$FULLCHAIN_FNAME /etc/docker/certs.d/registry.$DOMAIN/ca.crt
 
             # Allow self signed cert registry for docker daemon
             echo "{
@@ -915,9 +1226,9 @@ configs:
       username: $KEYCLOAK_USER
       password: $KEYCLOAK_PASS
     tls:
-      cert_file: $SSL_ROOT/fullchain.pem
-      key_file: $SSL_ROOT/privkey.pem
-      ca_file: $SSL_ROOT/fullchain.pem" > /etc/rancher/k3s/registries.yaml
+      cert_file: $SSL_ROOT/$FULLCHAIN_FNAME
+      key_file: $SSL_ROOT/$PRIVKEY_FNAME
+      ca_file: $SSL_ROOT/$FULLCHAIN_FNAME" > /etc/rancher/k3s/registries.yaml
             systemctl restart k3s &>> $LOG_FILE
         fi
     fi
@@ -932,16 +1243,12 @@ deploy_reg_chart() {
     REG_VALUES="$(cat ./dep/registry/values.yaml)"
 
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].secrets[0].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
     REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
 
-    if [ ! -z $NODNS_LOCAL_IP ]; then
-        REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].ip = "'$NODNS_LOCAL_IP'"')
+    if [ ! -z $NO_DNS ]; then
+        REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
         REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].hostNames[0] = "registry-auth.'$DOMAIN'"')
     else
         REG_VALUES=$(echo "$REG_VALUES" | yq eval 'del(.components[0].hostAliases)')
@@ -959,17 +1266,17 @@ read u p
 if [ -z \"\$u\" ]; then
     exit 0
 else
-    MDOS_URL=\"http://mdos-api-http.mdos:3030\"
+    MDOS_URL=\"http://mdos-api-http.mdos.svc.cluster.local:3030\"
     MDOS_HEAD=\"\$(wget -S --spider \$MDOS_URL 2>&1 | grep 'HTTP/1.1 200 OK')\"
     if [ \"\$MDOS_HEAD\" == \"\" ]; then
         exit 0
     else
         BCREDS=\$(echo '{ \"username\": \"'\$u'\", \"password\": \"'\$p'\" }' | base64 -w 0)
-        RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://mdos-api-http.mdos:3030/reg-authentication?creds=\$BCREDS)
+        RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://\$MDOS_URL/reg-authentication?creds=\$BCREDS)
         if [ \$? -ne 0 ]; then
-                exit 1
+            exit 1
         else
-                exit 0
+            exit 0
         fi
     fi
 fi
@@ -989,13 +1296,13 @@ exit 0" > ./authorization.sh
 #!/bin/sh
 read a
 
-MDOS_URL=\"http://mdos-api-http.mdos:3030\"
+MDOS_URL=\"http://mdos-api-http.mdos.svc.cluster.local:3030\"
 MDOS_HEAD=\"\$(wget -S --spider \$MDOS_URL 2>&1 | grep 'HTTP/1.1 200 OK')\"
 if [ \"\$MDOS_HEAD\" == \"\" ]; then
     exit 0
 else
     BCREDS=\$(echo \"\$a\" | base64 -w 0)
-    RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://mdos-api-http.mdos:3030/reg-authorization?data=\$BCREDS)
+    RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://\$MDOS_URL/reg-authorization?data=\$BCREDS)
     if [ \$? -ne 0 ]; then
         exit 1
     else
@@ -1016,13 +1323,6 @@ EOL
 # ################# KEYCLOAK #################
 # ############################################
 install_keycloak() {
-    # Create keycloak namespace & secrets for registry
-    unset NS_EXISTS
-    check_kube_namespace NS_EXISTS "keycloak"
-    if [ -z $NS_EXISTS ]; then
-        kubectl create namespace keycloak &>> $LOG_FILE
-    fi
-
     # Compute remaining parameters
     POSTGRES_USER=$KEYCLOAK_USER
     POSTGRES_PASSWORD=$KEYCLOAK_PASS
@@ -1040,12 +1340,11 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].volumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
 
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].ingress[0].matchHost = "keycloak.'$DOMAIN'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[0].value = "'"$(< $SSL_ROOT/fullchain.pem)"'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[1].entries[1].value = "'"$(< $SSL_ROOT/privkey.pem)"'"')
 
     collect_api_key() {
         echo ""
@@ -1070,7 +1369,7 @@ install_keycloak() {
 
     gen_api_token() {
         KC_TOKEN=$(curl -s -k -X POST \
-            "https://keycloak.$DOMAIN/realms/master/protocol/openid-connect/token" \
+            "https://keycloak.$DOMAIN:30999/realms/master/protocol/openid-connect/token" \
             -H "Content-Type: application/x-www-form-urlencoded"  \
             -d "grant_type=client_credentials" \
             -d "client_id=master-realm" \
@@ -1083,7 +1382,7 @@ install_keycloak() {
     setup_keycloak_mdos_realm() {
         # Create mdos realm
         curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms \
+            https://keycloak.$DOMAIN:30999/admin/realms \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1092,7 +1391,7 @@ install_keycloak() {
         # Create mdos client
         gen_api_token
         curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1146,11 +1445,11 @@ install_keycloak() {
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients?clientId=$CLIENT_ID | jq '.[0].id' | sed 's/[\"]//g')
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients?clientId=$CLIENT_ID | jq '.[0].id' | sed 's/[\"]//g')
 
         # Get mdos client secret
         MDOS_CLIENT_SECRET=$(curl -k -s --location --request GET \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/client-secret \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/client-secret \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" | jq '.value' | sed 's/[\"]//g')
@@ -1158,7 +1457,7 @@ install_keycloak() {
         # Create admin user
         gen_api_token
         curl -k -s --request POST \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/users \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1183,14 +1482,14 @@ install_keycloak() {
         # Get admin user UUID
         gen_api_token
         MDOS_USER_UUID=$(curl -k -s --location --request GET \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/users \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" | jq '.[0].id' | sed 's/[\"]//g')
 
         # Set admin user password
         curl -s -k --request PUT \
-            https://keycloak.$DOMAIN/admin/realms/$REALM/users/$MDOS_USER_UUID/reset-password \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users/$MDOS_USER_UUID/reset-password \
             -H "Accept: application/json" \
             -H "Content-Type:application/json" \
             -H "Authorization: Bearer $KC_TOKEN" \
@@ -1205,7 +1504,7 @@ install_keycloak() {
                 -H "Content-Type:application/json" \
                 -H "Authorization: Bearer $KC_TOKEN" \
                 -d '{"id": "'$1'", "name": "'$1'", "clientRole": true}' \
-                https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles
+                https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles
 
             # Create client role mapping for mdos admin user
             if [ ! -z $2 ]; then
@@ -1216,14 +1515,14 @@ install_keycloak() {
                     -H "Accept: application/json" \
                     -H "Content-Type:application/json" \
                     -H "Authorization: Bearer $KC_TOKEN" \
-                    https://keycloak.$DOMAIN/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles/$1 | jq '.id' | sed 's/[\"]//g')
+                    https://keycloak.$DOMAIN:30999/admin/realms/$REALM/clients/$MDOS_CLIENT_UUID/roles/$1 | jq '.id' | sed 's/[\"]//g')
 
                 curl -s -k --request POST \
                     -H "Accept: application/json" \
                     -H "Content-Type:application/json" \
                     -H "Authorization: Bearer $KC_TOKEN" \
                     -d '[{"id":"'$ROLE_UUID'","name":"'$1'"}]' \
-                    https://keycloak.$DOMAIN/admin/realms/$REALM/users/$2/role-mappings/clients/$MDOS_CLIENT_UUID
+                    https://keycloak.$DOMAIN:30999/admin/realms/$REALM/users/$2/role-mappings/clients/$MDOS_CLIENT_UUID
             fi
         }
 
@@ -1257,29 +1556,16 @@ stringData:
 EOF
     }
 
-    echo "${KEYCLOAK_PASS}" | docker login registry.$DOMAIN --username ${KEYCLOAK_USER} --password-stdin &>> $LOG_FILE
-
     # Pull & push images to registry
     docker pull postgres:13.2-alpine &>> $LOG_FILE
     docker tag postgres:13.2-alpine registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
 
     # Registry might need some time to be up and ready, we therefore loop untill success for first push
-    set +Ee
-    PUSHING_DOCKER=1
-    while [ -z $KC_PG_SUCCESS ]; do
-        docker push registry.$DOMAIN/postgres:13.2-alpine &>> $LOG_FILE
-        if [ $? -eq 0 ]; then
-            KC_PG_SUCCESS=1
-        else
-            sleep 10
-        fi
-    done
-    unset PUSHING_DOCKER
-    set -Ee
+    failsafe_docker_push registry.$DOMAIN/postgres:13.2-alpine
 
     docker pull quay.io/keycloak/keycloak:18.0.2 &>> $LOG_FILE
     docker tag quay.io/keycloak/keycloak:18.0.2 registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
-    docker push registry.$DOMAIN/keycloak:18.0.2 &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/keycloak:18.0.2
     mkdir -p $HOME/.mdos/keycloak/db
 
     # Deploy keycloak
@@ -1341,8 +1627,15 @@ config:
     upstreams = [ \"static://200\" ]
     whitelist_domains = [\".$DOMAIN\"]" > $_DIR/oauth2-proxy-values.yaml
 
+    if [ ! -z $NO_DNS ]; then
+        echo "hostAlias:
+  enabled: true
+  ip: \"$LOCAL_IP\"
+  hostname: \"keycloak.$DOMAIN\"" >> $_DIR/oauth2-proxy-values.yaml
+    fi
+
     helm upgrade --install -n oauth2-proxy \
-      --version 6.0.1 \
+      --version 6.2.7 \
       --values $_DIR/oauth2-proxy-values.yaml \
       kc-mdos oauth2-proxy/oauth2-proxy --atomic &>> $LOG_FILE
 
@@ -1357,99 +1650,24 @@ config:
 install_mdos() {
     # Build mdos-api image
     cd ../mdos-api
-    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
     cp infra/dep/helm/helm .
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
     rm -rf helm
-
-    set +Ee
-    PUSHING_DOCKER=1
-    while [ -z $MDOS_API_PUSH_SUCCESS ]; do
-        docker push registry.$DOMAIN/mdos-api:latest &>> $LOG_FILE
-        if [ $? -eq 0 ]; then
-            MDOS_API_PUSH_SUCCESS=1
-        else
-            sleep 10
-        fi
-    done
-    unset PUSHING_DOCKER
-    set -Ee
+    failsafe_docker_push registry.$DOMAIN/mdos-api:latest
 
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-mirror-lftp:latest . &>> $LOG_FILE
-    docker push registry.$DOMAIN/mdos-mirror-lftp:latest &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/mdos-mirror-lftp:latest
     cd ../../..
-
-    # Now prepare deployment config
-    k8s_cluster_scope_exist ELM_EXISTS ns "mdos"
-    if [ -z $ELM_EXISTS ]; then
-        kubectl create ns mdos &>> $LOG_FILE
-        # kubectl label ns mdos istio-injection=enabled &>> $LOG_FILE
-    fi
-
-    k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
-    if [ -z $ELM_EXISTS ]; then
-cat <<EOF | kubectl create -f &>> $LOG_FILE -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: default
-  namespace: mdos
-  annotations:
-    kubernetes.io/service-account.name: "default"
-type: kubernetes.io/service-account-token
-EOF
-    fi
-
-    # Admin role
-    k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"
-    if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f &>> $LOG_FILE -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: mdos-admin-role
-rules:
-- apiGroups:
-  - '*'
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- nonResourceURLs:
-  - '*'
-  verbs:
-  - '*'
-EOF
-    fi
-
-    # Admin role binding
-    k8s_cluster_scope_exist ELM_EXISTS clusterrolebinding "mdos-admin-role-binding"
-    if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f &>> $LOG_FILE -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: scds-admin-role-binding
-roleRef:
-  kind: ClusterRole
-  name: mdos-admin-role
-  apiGroup: rbac.authorization.k8s.io
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: mdos
-EOF
-    fi
 
     # Deploy mdos-api server
     MDOS_VALUES="$(cat ./dep/mdos-api/values.yaml)"
 
     K3S_REG_DOMAIN="registry.$DOMAIN"
 
-    if [ ! -z $NODNS_LOCAL_IP ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].ip = "'$NODNS_LOCAL_IP'"')
+    if [ ! -z $NO_DNS ]; then
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
     else
         MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].hostAliases)')
@@ -1458,28 +1676,106 @@ EOF
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[1].value = "/etc/letsencrypt/live/'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].mountPath = "/etc/letsencrypt/live/'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "/etc/letsencrypt/live/'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[2].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 
-    mdos_deploy_app "true" "true"
+    mdos_deploy_app "true" "false"
 
     rm -rf ./target_values.yaml
+}
+
+# ############################################
+# ############# INSTALL RABBITMQ #############
+# ############################################
+install_rabbitmq() {
+    helm repo add bitnami https://charts.bitnami.com/bitnami &>> $LOG_FILE
+    helm install rabbit-operator bitnami/rabbitmq-cluster-operator --namespace rabbitmq --create-namespace --atomic &>> $LOG_FILE
+
+    # Wait untill available
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        DEP_STATUS=$(kubectl get deploy rabbit-operator-rabbitmq-cluster-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
+        if [ "$DEP_STATUS" == "1" ]; then
+            DEP_STATUS=$(kubectl get deploy rabbit-operator-rabbitmq-messaging-topology-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
+            if [ "$DEP_STATUS" == "1" ]; then
+                LOOP_BREAK=1
+            else
+                sleep 2
+            fi
+        else
+            sleep 2
+        fi
+    done 
+
+    # Instantiate cluster
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-cluster
+  namespace: rabbitmq
+spec:
+  replicas: 1
+  override:
+    statefulSet:
+      spec:
+        podManagementPolicy: OrderedReady
+  service:
+    type: NodePort
+  persistence:
+    storageClassName: longhorn
+    storage: ${RABBITMQ_STORAGE_SIZE}Gi
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+              - rabbitmq-cluster
+        topologyKey: kubernetes.io/hostname
+  rabbitmq:
+    additionalPlugins:
+    - rabbitmq_federation
+    additionalConfig: |
+      disk_free_limit.absolute = 500MB
+      vm_memory_high_watermark.relative = 0.6
+EOF
+
+    # Wait for pod rabbitmq-cluster-server-0
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        DEP_STATUS=$(kubectl get pod rabbitmq-cluster-server-0 --namespace rabbitmq -o json 2> $LOG_FILE | jq -r '.status.phase')
+        if [ "$DEP_STATUS" == "Running" ]; then
+            LOOP_BREAK=1
+        else
+            sleep 2
+        fi
+    done 
+
+    # Copy credentials secret over to mdos namespace
+    SECRET_YAML=$(kubectl get secret rabbitmq-cluster-default-user -n rabbitmq -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s')
+    SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.ownerReferences)')
+    SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.labels)')
+    cat <<EOF | k3s kubectl apply -n mdos -f &>> $LOG_FILE -
+$SECRET_YAML
+EOF
 }
 
 # ############################################
 # ############ COREDNS DOMAIN CFG ############
 # ############################################
 consigure_core_dns_for_self_signed() {
-    echo "===> 1" &>> $LOG_FILE
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 kind: ConfigMap
@@ -1513,7 +1809,7 @@ data:
         loadbalance
     }
 EOF
-    echo "===> 2" &>> $LOG_FILE
+   
     sleep 1
     # Restart the CoreDNS pod
     unset FOUND_RUNNING_POD
@@ -1527,10 +1823,10 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
-    echo "===> 3" &>> $LOG_FILE
+    
     kubectl delete pod $COREDNS_POD_NAME -n kube-system &>> $LOG_FILE
     sleep 2
-    echo "===> 4" &>> $LOG_FILE
+    
     unset FOUND_RUNNING_POD
     while [ -z $FOUND_RUNNING_POD ]; do
         while read POD_LINE ; do
@@ -1541,7 +1837,6 @@ EOF
         done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
-    echo "===> 5" &>> $LOG_FILE
 }
 
 # ############################################
@@ -1552,22 +1847,9 @@ install_helm_ftp() {
     
     # Build mdos-api image
     cd ../mdos-ftp
-    echo "$KEYCLOAK_PASS" | docker login registry.$DOMAIN --username $KEYCLOAK_USER --password-stdin &>> $LOG_FILE
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-ftp-bot:latest . &>> $LOG_FILE
 
-    set +Ee
-    unset DKPUSH_SUCCESS
-    PUSHING_DOCKER=1
-    while [ -z $DKPUSH_SUCCESS ]; do
-        docker push registry.$DOMAIN/mdos-ftp-bot:latest &>> $LOG_FILE
-        if [ $? -eq 0 ]; then
-            DKPUSH_SUCCESS=1
-        else
-            sleep 10
-        fi
-    done
-    unset PUSHING_DOCKER
-    set -Ee
+    failsafe_docker_push registry.$DOMAIN/mdos-ftp-bot:latest
 
     cd ../mdos-setup
 
@@ -1579,11 +1861,13 @@ install_helm_ftp() {
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.image = "registry.'$DOMAIN'/mdos-ftp-bot:latest"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[0] = "'$FTP_DATA_HOME':/home/ftp_data/"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[1] = "'$HOME'/.mdos/pure-ftpd/passwd:/etc/pure-ftpd/passwd"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[2] = "'$SSL_ROOT'/'$FULLCHAIN_FNAME':/etc/ssl/private/pure-ftpd-cert.pem"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[3] = "'$SSL_ROOT'/'$PRIVKEY_FNAME':/etc/ssl/private/pure-ftpd-key.pem"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_USER = "'$KEYCLOAK_USER'"')
     FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_PASSWORD = "'$KEYCLOAK_PASS'"')
     
-    if [ ! -z $NODNS_LOCAL_IP ]; then
-        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "'$NODNS_LOCAL_IP'"')
+    if [ ! -z $NO_DNS ]; then
+        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "'$LOCAL_IP'"')
     else
         FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "mdos-ftp.'$DOMAIN'"')
     fi
@@ -1591,6 +1875,58 @@ install_helm_ftp() {
     printf "$FTP_DOCKER_COMPOSE_VAL\n" > ./docker-compose.yaml
 
     docker compose up -d &>> $LOG_FILE
+
+    # Install endpoint to use K3S ingress for this
+    cat <<EOF | kubectl apply -f &>> $LOG_FILE -
+apiVersion: v1
+kind: Service
+metadata:
+  name: ftpd-bot-service-egress
+  namespace: mdos
+  labels:
+    app: ftpd-bot
+spec:
+   clusterIP: None
+   ports:
+   - protocol: TCP
+     port: 3039
+     targetPort: 3039
+   type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: ftpd-bot-service-egress
+  namespace: mdos
+  labels:
+    app: ftpd-bot
+subsets:
+  - addresses:
+    - ip: $LOCAL_IP
+    ports:
+      - port: 3039
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ftpd-bot
+  namespace: mdos
+  labels:
+    app: ftpd-bot
+spec:
+  gateways:
+  - mdos/https-gateway
+  hosts:
+  - mdos-ftp-api.$DOMAIN
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: ftpd-bot-service-egress.mdos.svc.cluster.local
+        port:
+          number: 3039
+EOF
 
     cd $C_DIR
 }
@@ -1616,7 +1952,9 @@ install_helm_ftp() {
 
     function _finally {
         # Cleanup
-        info "Cleaning up..."
+        if [ -z $EARLY_EXIT ]; then
+            info "Cleaning up..."
+        fi
 
         set +Ee
         IN_CLEANUP=1
@@ -1629,6 +1967,7 @@ install_helm_ftp() {
 
         rm -rf $_DIR/istiod-values.yaml
         rm -rf $_DIR/oauth2-proxy-values.yaml
+        rm -rf $_DIR/dep/images/cert-job-manager/cert-manager-replicate-bot.tar
 
         ALL_IMAGES="$(docker images)"
 
@@ -1655,56 +1994,59 @@ install_helm_ftp() {
                 echo "-------------------------------------------------------------------"
                 echo ""
             fi
-            if [ -z $GLOBAL_ERROR ] && [ "$CERT_MODE" == "SELF_SIGNED" ]; then
-                warn "You choose to generate a self signed certificate for this installation."
-                echo "      All certificates are located under the folder $SSL_ROOT."
-                echo "      You can use those certificates to allow your external tools to"
-                echo "      communicate with the platform (ex. docker)."
-                echo ""
-                echo "      Self-signed certificates also impose limitations, the most significant"
-                echo "      one being the inability to use OIDC authentication on your applications."
-                echo ""
-                echo "      To talk to your platform from an environement other than this one, you will"
-                echo "      also need to configure your 'hosts' file in that remote environement with"
-                echo "      the following resolvers:"
-                echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
-                echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
-                echo "          <MDOS_VM_IP> registry.$DOMAIN"
-                echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
-                echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
-                echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
-                echo ""
+            
+            if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+                if [ -z $GLOBAL_ERROR ]; then
+                    warn "You choose to generate a self signed certificate for this installation."
+                    echo "      All certificates are located under the folder $SSL_ROOT."
+                    echo "      You can use those certificates to allow your external tools to"
+                    echo "      communicate with the platform (ex. docker)."
+                    echo ""
+                    echo "      Self-signed certificates also impose limitations, the most significant"
+                    echo "      one being the inability to use OIDC authentication on your applications."
+                    echo ""
+                    echo "      To talk to your platform from an environement other than this one, you will"
+                    echo "      also need to configure your 'hosts' file in that remote environement with"
+                    echo "      the following resolvers:"
+                    echo "          <MDOS_VM_IP> mdos-api.$DOMAIN"
+                    echo "          <MDOS_VM_IP> mdos-ftp-api.$DOMAIN"
+                    echo "          <MDOS_VM_IP> mdos-ftp.$DOMAIN"
+                    echo "          <MDOS_VM_IP> registry.$DOMAIN"
+                    echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
+                    echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
+                    echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
+                    echo ""
+                fi
             fi
             if [ -z $GLOBAL_ERROR ]; then
                 info "The following services are available on the platform:"
                 echo "          - mdos-api.$DOMAIN"
-                echo "          - mdos-ftp.$DOMAIN:3915"
+                echo "          - mdos-ftp-api.$DOMAIN"
+                echo "          - mdos-ftp.$DOMAIN:3915-3920"
                 echo "          - registry.$DOMAIN"
                 echo "          - registry-auth.$DOMAIN"
-                echo "          - keycloak.$DOMAIN"
+                echo "          - keycloak.$DOMAIN:30999"
                 echo "          - longhorn.$DOMAIN"
                 echo ""
                 echo "      You will have to allow inbound traffic on the following ports:"
                 echo "          - 443 (HTTPS traffic for the MDos API)"
                 echo "          - 6443 (HTTPS traffic for Kubernetes API server)"
+                echo "          - 30999 (HTTPS traffic for Keycloak OIDC Oauth2 FLow)"
                 echo "          - 3915:3920 (TCP - FTP PSV traffic)"
             fi
         fi
 
-        note_print "Log details of the installation can be found here: $LOG_FILE"
+        if [ -z $EARLY_EXIT ]; then
+            note_print "Log details of the installation can be found here: $LOG_FILE"
 
-        if [ -z $GLOBAL_ERROR ]; then
-            info "Done!"
+            if [ -z $GLOBAL_ERROR ]; then
+                info "Done!"
+            fi
         fi
     }
 
     trap _catch ERR
     trap _finally EXIT
-
-    # COLLECT USER DATA
-    collect_user_input
-
-    print_section_title "Installation"
 
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
@@ -1713,22 +2055,29 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_DEPENDENCY" "1"
     fi
 
-    # PREPARE CERTIFICATES & DOMAIN
-    if [ "$CERT_MODE" == "CLOUDFLARE" ]; then
-        SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
+    # COLLECT USER DATA
+    collect_user_input
 
-        if [ -z $INST_STEP_CLOUDFLARE ]; then
-            info "Certbot installation and setup..."
-            setup_cloudflare_certbot
-            set_env_step_data "INST_STEP_CLOUDFLARE" "1"
+    echo ""
+    warn_print "Installation"
+    warn_print "====================================="
+
+    # PREPARE CERTIFICATES & DOMAIN
+    if [ "$CERT_MODE" == "CERT_MANAGER" ]; then
+        SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
+        FULLCHAIN_FNAME=fullchain.pem
+        PRIVKEY_FNAME=privkey.pem
+    elif [ "$CERT_MODE" == "CRT_PROVIDED" ]; then
+        SSL_ROOT="$(dirname "${OWN_FULLCHAIN_CRT_PATH}")"
+        FULLCHAIN_FNAME=$(basename "${OWN_FULLCHAIN_CRT_PATH}")
+        PRIVKEY_FNAME=$(basename "${OWN_PRIVKEY_PATH}")
+        if [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+            configure_etc_hosts
         fi
-    elif [ "$CERT_MODE" == "SSL_PROVIDED" ]; then
-        error "Not implemented yet"
-        # Collect ffullchain and privkey
-        # Ask if self signed or not
-        exit 1
     else
         SSL_ROOT=/etc/letsencrypt/live/$DOMAIN
+        FULLCHAIN_FNAME=fullchain.pem
+        PRIVKEY_FNAME=privkey.pem
 
         if [ -z $INST_STEP_SS_CERT ]; then
             info "Generating self signed certificate..."
@@ -1747,7 +2096,7 @@ install_helm_ftp() {
     fi
 
     # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
         consigure_core_dns_for_self_signed
     fi
 
@@ -1772,13 +2121,45 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_LONGHORN" "1"
     fi
 
-    # INSTALL PROXY
-    if [ -z $INST_STEP_PROXY ]; then
-        info "Install NGinx proxy..."
-        install_nginx
-        set_env_step_data "INST_STEP_PROXY" "1"
+    # SETUP FIREWALL
+    if [ -z $SETUP_FIREWALL_RULES ]; then
+        setup_firewall
+        set_env_step_data "SETUP_FIREWALL_RULES" "1"
     fi
 
+    # PREPARE NAMESPACES
+    if [ -z $SETUP_PREP_NS ]; then
+        info "Preparing namespaces..."
+        prepare_namespaces
+        set_env_step_data "SETUP_PREP_NS" "1"
+    fi
+
+    # INSTALL CERT-MANAGER
+    if [ -z $SETUP_CERT_MANAGER ]; then
+        info "Install cert-manager..."
+        setup_cert_manager
+        set_env_step_data "SETUP_CERT_MANAGER" "1"
+    fi
+
+    # INSTALL CERT-MANAGER ISSUER FOR MDOS IF NECESSARY
+    if [ -z $SETUP_CERT_MANAGER_ISSUER ] && [ "$CERT_MODE" == "CERT_MANAGER" ]; then
+        cert_manager_mdos_issuer_and_crt_secret
+        set_env_step_data "SETUP_CERT_MANAGER_ISSUER" "1"
+    fi
+
+    # SETUP MDOS SECRET BOT REPLICATOR
+    if [ -z $INST_STEP_SEC_BOT_REP ]; then
+        info "Configure certificate secret replication jobs..."
+        mdos_secret_replicator_job
+        set_env_step_data "INST_STEP_SEC_BOT_REP" "1"
+    fi
+
+    # SETUP ISTIO GATEWAYS
+    if [ -z $SETUP_ISTIO_GATEWAYS ]; then
+        deploy_istio_gateways
+        set_env_step_data "SETUP_ISTIO_GATEWAYS" "1"
+    fi
+    
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
         info "Install Registry..."
@@ -1786,6 +2167,16 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_REGISTRY" "1"
     fi
 
+    # LOGIN TO PRIVATE REGISTRY
+    failsafe_docker_login
+
+    # PUSH CERT MANAGER REPLICA BOT IMG TO REGISTRY
+    if [ -z $INST_STEP_SEC_BOT_REP_IMG_PUSH ]; then
+        info "Pushing cert-manager secret replication image to registry..."
+        cert_manager_secret_replicator_reg_push
+        set_env_step_data "INST_STEP_SEC_BOT_REP_IMG_PUSH" "1"
+    fi
+    
     # INSTALL KEYCLOAK
     REALM="mdos"
     CLIENT_ID="mdos"
@@ -1797,9 +2188,8 @@ install_helm_ftp() {
     fi
 
     # LOAD OAUTH2 DATA
-    if [ "$CERT_MODE" == "SELF_SIGNED" ]; then
-        KC_NODEPORT=":30998"
-        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}${KC_NODEPORT}/realms/mdos/.well-known/openid-configuration")
+    if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.${DOMAIN}:30999/realms/mdos/.well-known/openid-configuration")
         OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
         OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
         OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
@@ -1809,7 +2199,7 @@ install_helm_ftp() {
         OIDC_JWKS_URI=${OIDC_JWKS_URI//$KC_NODEPORT/}
         OIDC_USERINPUT_URI=${OIDC_USERINPUT_URI//$KC_NODEPORT/}
     else
-        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+        OIDC_DISCOVERY=$(curl -s -k "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
         OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
         OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
         OIDC_USERINPUT_URI=$(echo $OIDC_DISCOVERY | jq -r .userinfo_endpoint)
@@ -1830,10 +2220,18 @@ install_helm_ftp() {
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
     fi
 
+    # INSTALL RABBITMQ
+    if [ -z $INST_STEP_RABBITMQ ]; then
+        info "Install RabbitMQ..."
+        install_rabbitmq
+        set_env_step_data "INST_STEP_RABBITMQ" "1"
+    fi
+
     # INSTALL MDOS
     if [ -z $INST_STEP_MDOS ]; then
         info "Install MDos API server..."
         install_mdos
+        set_env_step_data "INST_STEP_MDOS" "1"
     fi
 
     # INSTALL MDOS FTP

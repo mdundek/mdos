@@ -35,9 +35,9 @@ mdos_deploy_app() {
     done < <(kubectl get ns 2>/dev/null)
 
     if [ -z $NS_EXISTS ]; then
-        kubectl create ns $I_NS &>> $LOG_FILE
+        kubectl create ns $I_NS
         if [ ! -z $1 ]; then
-            kubectl label ns $I_NS istio-injection=enabled &>> $LOG_FILE
+            kubectl label ns $I_NS istio-injection=enabled
         fi
     fi
 
@@ -84,7 +84,7 @@ cd ./infra
 
 if [ ! -z $DO_DEPLOY ]; then
     DOMAIN=mdundek.network
-    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN/realms/mdos/.well-known/openid-configuration")
+    OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
 

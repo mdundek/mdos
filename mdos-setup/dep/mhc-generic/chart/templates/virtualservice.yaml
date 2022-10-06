@@ -38,10 +38,10 @@ metadata:
 spec:
       {{- if .gateway }}
   gateways:
-    - istio-system/{{ .gateway }}
+    - {{ .gateway }}
       {{- else }}
   gateways:
-    - istio-system/https-gateway
+    - mdos/https-gateway
       {{- end }}
   hosts:  
     - {{ .matchHost | quote -}}

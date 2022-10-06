@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-key-secret
+type: Opaque
+stringData:
+  api-key: <CLOUDFLARE API KEY>
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: mdos-issuer
+spec:
+  acme:
+    email: <ADMIN EMAIL>
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        cloudflare:
+          email: <CLOUDFLARE EMAIL>
+          apiKeySecretRef:
+            name: cloudflare-api-key-secret
+            key: api-key

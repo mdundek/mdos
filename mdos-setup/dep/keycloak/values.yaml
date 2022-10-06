@@ -56,11 +56,17 @@ components:
         ports:
           - name: http-8080
             port: 8080
-            nodePort: 30999
+            nodePort: 30998
           - name: http-8443
             port: 8443
             svcPort: 443
-            nodePort: 30998
+            nodePort: 30999
+    ingress:
+      - name: ingress
+        gateway: mdos/https-gateway-mdos
+        matchHost: keycloak.<DOMAIN>
+        targetPort: 443
+        trafficType: https
     readinessProbe:
       type: http
       path: /realms/master
@@ -92,12 +98,4 @@ components:
       - name: mdos-ca
         type: dir
         mountPath: /etc/x509/https
-        entries:
-          - name: tls.crt
-            value: |-
-              -----BEGIN CERTIFICATE-----
-              -----END CERTIFICATE-----
-          - name: tls.key
-            value: |-
-              -----BEGIN CERTIFICATE-----
-              -----END CERTIFICATE-----
+        ref: mdos-root-domain-tls

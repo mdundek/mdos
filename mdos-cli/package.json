@@ -1,6 +1,6 @@
 {
     "name": "mdos-cli",
-    "version": "1.1.14",
+    "version": "1.2.0",
     "description": "mdos cli tool",
     "author": "Michael Dundek",
     "bin": {
@@ -72,26 +72,23 @@
             "generate": {
                 "description": "Scaffold applications and components"
             },
-            "kc": {
-                "description": "Manage Keycloak users and roles"
+            "auth": {
+                "description": "Manage platform users and roles"
             },
-            "kc:client": {
-                "description": "Manage Keycloak client roles"
+            "auth:tenant": {
+                "description": "Manage platform tenant scope roles"
             },
-            "kc:user": {
-                "description": "Assig Keycloak client roles to users"
+            "auth:user": {
+                "description": "Assig platform tenant roles to users"
             },
             "namespace": {
-                "description": "Manage your tenant kubernetes namespaces"
+                "description": "Manage your kubernetes namespaces"
             },
             "oidc": {
                 "description": "Manage OIDC authentication providers and protect your applications"
             },
             "oidc:provider": {
                 "description": "Manage OIDC authentication providers and protect your applications"
-            },
-            "set": {
-                "description": "Configure local mdos CLI context parameters"
             }
         }
     },

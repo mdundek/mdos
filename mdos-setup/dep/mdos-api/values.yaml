@@ -28,8 +28,6 @@ components:
         entries:
           - key: ROOT_DOMAIN
             value: "mydomain.com"
-          - key: SSL_CERT_FOLDER
-            value: "/etc/letsencrypt/live/mydomain.com"
           - key: GEN_HELM_PATH_PATH
             value: "/usr/src/dep/mhc-generic"
           - key: ISTIO_CHART_PATH
@@ -42,6 +40,8 @@ components:
             value: "/usr/src/dep/k3s/client-ca.crt"
           - key: K3S_CLIENT_KEY_PATH
             value: "/usr/src/dep/k3s/client-ca.key"
+          - key: KC_PORT
+            value: "30999"
 
     secrets:
       - name: creds
@@ -65,11 +65,20 @@ components:
             value: |-
               -----BEGIN EC PRIVATE KEY-----
               -----END EC PRIVATE KEY-----
+      - name: rabbitmq-creds
+        type: env
+        ref: rabbitmq-cluster-default-user
+        entries:
+          - name: RABBIT_PORT
+            key: port
+          - name: RABBIT_HOST
+            key: host
+          - name: RABBIT_USERNAME
+            key: username
+          - name: RABBIT_PASSWORD
+            key: password
         
     volumes:
-      - name: crt-volume
-        mountPath: /etc/letsencrypt/live/mydomain.com
-        hostPath: /etc/letsencrypt/live/mydomain.com
       - name: mhc-generic-chart
         mountPath: /usr/src/dep/mhc-generic
         hostPath: <path to setup folder>/dep/mhc-generic/chart
@@ -83,8 +92,8 @@ components:
           - ""
           
     oidc:
-      issuer: https://keycloak.mydomain.com/realms/mdos
-      jwksUri: https://keycloak.mydomain.com/realms/mdos/protocol/openid-connect/certs
+      issuer: https://keycloak.mydomain.com:30999/realms/mdos
+      jwksUri: https://keycloak.mydomain.com:30999/realms/mdos/protocol/openid-connect/certs
       provider: kc-mdos
       hosts:
         - mdos-api.mydomain.com

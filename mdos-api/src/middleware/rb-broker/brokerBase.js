@@ -11,7 +11,7 @@ class BrokerBase {
 
         // Connect
         while(true) {
-            console.log(`MDOS-Broker-Client: attempt to connect to ${this.brokerUrl} ...`);
+            console.log(`MDOS-Broker-Client: attempt to connect...`);
             try{
                 this.connectionHangWatcher = setTimeout(() => {
                     console.log('MDOS-Broker-Client: broker client connect is hanging, exiting application to reschedule the POD');
