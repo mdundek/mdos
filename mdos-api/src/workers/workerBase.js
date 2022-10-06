@@ -67,12 +67,35 @@ class WorkerBase {
         const msgClone = JSON.parse(JSON.stringify(this.msg))
         msgClone.context.rollback = true
 
-        const currentRollbackJob = msgClone.rollbackWorkflow.length > 0 ? msgClone.rollbackWorkflow[0] : null;
-        if(currentRollbackJob) { // There is at least one rollback job
-            await this.app.get("brokerClient").publish(currentRollbackJob.topic, msgClone)
-        } else { // No rollback jobs, we are done
+        // Check achieved milestone index to determine where to start rollback
+        let achievedMilestone = null
+        for(const job of msgClone.workflow) {
+            if(job.status == "SUCCESS" && job.milestone)
+                achievedMilestone = job.milestone
+        }
+      
+        if(achievedMilestone != null) {
+            // Flag unachieved jobs to SKIP
+            for(let index = 0; index < msgClone.rollbackWorkflow.length; index++) {
+                if(msgClone.rollbackWorkflow[index].milestone > achievedMilestone) {
+                    msgClone.rollbackWorkflow[index].status = "SKIP";
+                }
+            }
+
+            const currentRollbackJob = msgClone.rollbackWorkflow.find(job => job.milestone <= achievedMilestone && job.status == "PENDING")
+            if(currentRollbackJob) { // There is at least one rollback job
+                await this.app.get("brokerClient").publish(currentRollbackJob.topic, msgClone)
+            } else { // No rollback jobs, we are done
+                await this.publishWorkflowDone(msgClone)
+            }
+        } else {
             await this.publishWorkflowDone(msgClone)
         }
+
+
+
+        // const currentRollbackJob = msgClone.rollbackWorkflow.length > 0 ? msgClone.rollbackWorkflow[0] : null;
+        
     }
 
     /**
