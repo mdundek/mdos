@@ -162,7 +162,7 @@ class Kube extends KubeBase {
         if (type == 'keycloak') {
             const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/.well-known/openid-configuration`)
             const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
-            const clientSecret = await this.app.get('keycloak').getClientSecret(realm, data.clientId)
+            const clientSecret = await this.app.get('keycloak').getClientSecret(realm, clientId)
 
             const oauthData = YAML.parse(`service:
     portNumber: 4180
