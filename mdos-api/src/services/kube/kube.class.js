@@ -112,11 +112,13 @@ exports.Kube = class Kube extends KubeCore {
                     workflow: [
                         {
                             topic: CHANNEL.JOB_K3S_CREATE_NAMESPACE,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 1
                         },
                         {
                             topic: CHANNEL.JOB_KC_CREATE_CLIENT,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 2
                         },
                         {
                             topic: CHANNEL.JOB_KC_CREATE_CLIENT_ROLES,
@@ -124,11 +126,13 @@ exports.Kube = class Kube extends KubeCore {
                         },
                         {
                             topic: CHANNEL.JOB_FTPD_CREATE_CREDENTIALS,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 3
                         },
                         {
                             topic: CHANNEL.JOB_KC_CREATE_CLIENT_SA,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 4
                         },
                         {
                             topic: CHANNEL.JOB_K3S_CREATE_REG_SECRET,
@@ -142,19 +146,23 @@ exports.Kube = class Kube extends KubeCore {
                     rollbackWorkflow: [
                         {
                             topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 4
                         },
                         {
                             topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 3
                         },
                         {
                             topic: CHANNEL.JOB_KC_DELETE_CLIENT,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 2
                         },
                         {
                             topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
-                            status: "PENDING"
+                            status: "PENDING",
+                            milestone: 1
                         }
                     ]
                 })
