@@ -83,7 +83,7 @@ const KubeCore = require('../services/kube/kube.class.core')
      * deleteClientSa
      */
      async deleteClientSa() {
-        await new KubeCore(this.app).deleteKeycloakSAUser(this.msg.context.realm, this.msg.context.namespace)
+        await new KCCore(this.app).deleteKeycloakSAUser(this.msg.context.realm, this.msg.context.namespace)
     }
 
     /**

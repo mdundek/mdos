@@ -318,7 +318,17 @@ exports.Kube = class Kube extends KubeCore {
 
             // Delete SA keycloak user
             if (nsExists) {
-                await this.deleteKeycloakSAUser(params.query.realm, id)
+                // Delete SA keycloak user
+                try {
+                    const regSaSecret = await this.app.get('kube').getSecret(id, 'mdos-regcred')
+                    if (regSaSecret) {
+                        const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username
+                        const userObj = await this.app.get('keycloak').getUser(params.query.realm, null, username)
+                        await this.app.get('keycloak').deleteUser(params.query.realm, userObj.id)
+                    }
+                } catch (_e) {
+                    console.log(_e)
+                }
             }
 
             // Delete namespace
