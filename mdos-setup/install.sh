@@ -1581,7 +1581,7 @@ config:
     fi
 
     helm upgrade --install -n oauth2-proxy \
-      --version 6.0.1 \
+      --version 6.2.7 \
       --values $_DIR/oauth2-proxy-values.yaml \
       kc-mdos oauth2-proxy/oauth2-proxy --atomic &>> $LOG_FILE
 
@@ -1643,8 +1643,8 @@ install_mdos() {
 # ############# INSTALL RABBITMQ #############
 # ############################################
 install_rabbitmq() {
-    helm repo add bitnami https://charts.bitnami.com/bitnami
-    helm install rabbit-operator bitnami/rabbitmq-cluster-operator --namespace rabbitmq --create-namespace --atomic
+    helm repo add bitnami https://charts.bitnami.com/bitnami &>> $LOG_FILE
+    helm install rabbit-operator bitnami/rabbitmq-cluster-operator --namespace rabbitmq --create-namespace --atomic &>> $LOG_FILE
 
     # Wait untill available
     unset LOOP_BREAK
@@ -1663,7 +1663,7 @@ install_rabbitmq() {
     done 
 
     # Instantiate cluster
-    cat <<EOF | k3s kubectl apply -f -
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
 metadata:
@@ -1679,7 +1679,7 @@ spec:
     type: NodePort
   persistence:
     storageClassName: longhorn
-    storage: 5Gi
+    storage: 2Gi
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -1701,7 +1701,7 @@ EOF
     # Wait for pod rabbitmq-cluster-server-0
     unset LOOP_BREAK
     while [ -z $LOOP_BREAK ]; do
-        DEP_STATUS=$(kubectl get pod rabbitmq-cluster-server-0 --namespace rabbitmq -o json | jq -r '.status.phase')
+        DEP_STATUS=$(kubectl get pod rabbitmq-cluster-server-0 --namespace rabbitmq -o json 2> $LOG_FILE | jq -r '.status.phase')
         if [ "$DEP_STATUS" == "Running" ]; then
             LOOP_BREAK=1
         else
@@ -1713,7 +1713,7 @@ EOF
     SECRET_YAML=$(kubectl get secret rabbitmq-cluster-default-user -n rabbitmq -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s')
     SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.ownerReferences)')
     SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.labels)')
-    cat <<EOF | k3s kubectl apply -n mdos -f -
+    cat <<EOF | k3s kubectl apply -n mdos -f &>> $LOG_FILE -
 $SECRET_YAML
 EOF
 }
