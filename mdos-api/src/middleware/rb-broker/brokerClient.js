@@ -67,15 +67,34 @@ class MDosBrokerClient extends BrokerBase {
      * @param {*} prefetch 
      */
     async subscribe(topic, cb, prefetch){
-        if(this.connected && this.channel[topic]) {
-            await this._consume(topic, cb, prefetch);
-            this.consumerInstances[topic] = {
-                cb: cb,
-                prefetch: prefetch ? (typeof prefetch === 'string' ? parseInt(prefetch) : prefetch) : 1
-            };
-        } else {
+        if(!this.connected) {
             throw new Error("Broker disconected");
-        }  
+        }
+
+        if (topic.constructor.name == "Array") {
+            for(const t of topic) {
+                if(!this.channel[t]) {
+                    throw new Error("Broker disconected");
+                }
+            }
+            for(const t of topic) {
+                await this._consume(t, cb, prefetch);
+                this.consumerInstances[t] = {
+                    cb: cb,
+                    prefetch: prefetch ? (typeof prefetch === 'string' ? parseInt(prefetch) : prefetch) : 1
+                };
+            }
+        } else {
+            if(this.channel[topic]) {
+                await this._consume(topic, cb, prefetch);
+                this.consumerInstances[topic] = {
+                    cb: cb,
+                    prefetch: prefetch ? (typeof prefetch === 'string' ? parseInt(prefetch) : prefetch) : 1
+                };
+            } else {
+                throw new Error("Broker disconected");
+            } 
+        }
     }
 
     /**

@@ -142,25 +142,6 @@ class KubeCore extends CommonCore {
     }
 
     /**
-     * deleteKeycloakSAUser
-     * @param {*} realm
-     * @param {*} namespace
-     */
-    async deleteKeycloakSAUser(realm, namespace) {
-        // Delete SA keycloak user
-        try {
-            const regSaSecret = await this.app.get('kube').getSecret(namespace, 'mdos-regcred')
-            if (regSaSecret) {
-                const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username
-                const userObj = await this.app.get('keycloak').getUser(realm, null, username)
-                await this.app.get('keycloak').deleteUser(realm, userObj.id)
-            }
-        } catch (_e) {
-            console.log(_e)
-        }
-    }
-
-    /**
      * createNamespace
      * @param {*} namespace
      * @returns
@@ -234,6 +215,25 @@ class KubeCore extends CommonCore {
         const saUsersObj = await this.app.get('keycloak').getUser(realm, null, saUser)
         const roleObj = await this.app.get('keycloak').getClientRole(realm, clientId, 'registry-pull')
         await this.app.get('keycloak').createClientRoleBindingForUser(realm, clientUuid, saUsersObj.id, roleObj.id, 'registry-pull')
+    }
+
+    /**
+     * deleteKeycloakSAUser
+     * @param {*} realm
+     * @param {*} namespace
+     */
+     async deleteKeycloakSAUser(realm, namespace) {
+        // Delete SA keycloak user
+        try {
+            const regSaSecret = await this.app.get('kube').getSecret(namespace, 'mdos-regcred')
+            if (regSaSecret) {
+                const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username
+                const userObj = await this.app.get('keycloak').getUser(realm, null, username)
+                await this.app.get('keycloak').deleteUser(realm, userObj.id)
+            }
+        } catch (_e) {
+            console.log(_e)
+        }
     }
 }
 

@@ -19,8 +19,6 @@ const channels = require('./channels')
 
 const authentication = require('./authentication');
 
-const SubscriptionManager = require('./workers/index')
-
 const app = express(feathers())
 
 // Load app configuration
@@ -81,12 +79,5 @@ app.use(express.notFound())
 app.use(express.errorHandler({ logger }))
 
 app.hooks(appHooks)
-
-// Start subscription manager
-new SubscriptionManager(app).start()
-
-// setTimeout(async () => {
-//     await app.get("brokerClient").publish("create-namespace", {foo: "bar"})
-// }, 2000)
 
 module.exports = app

@@ -35,9 +35,9 @@ mdos_deploy_app() {
     done < <(kubectl get ns 2>/dev/null)
 
     if [ -z $NS_EXISTS ]; then
-        kubectl create ns $I_NS &>> $LOG_FILE
+        kubectl create ns $I_NS
         if [ ! -z $1 ]; then
-            kubectl label ns $I_NS istio-injection=enabled &>> $LOG_FILE
+            kubectl label ns $I_NS istio-injection=enabled
         fi
     fi
 
