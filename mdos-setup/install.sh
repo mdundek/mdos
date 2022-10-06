@@ -62,14 +62,14 @@ fi
 
 # CHECK THAT SUFFICIENT MEMORY AND DISK IS AVAILABLE
 FREE_MB=$(awk '/MemFree/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
-if [ "$FREE_MB" -lt "3999" ]; then
+if [ "$FREE_MB" -lt "3200" ]; then
     error "Insufficient memory, minimum 4GB of available (free) memory is required for this installation"
     exit 1
 fi
 
 LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_install.log"
 
-# Parse user input
+# PARSE USER INPUT
 while [ "$1" != "" ]; do
     case $1 in
         --reset )
@@ -398,11 +398,12 @@ collect_user_input() {
     fi
 
     # Substract 10Gb as reserve from the available disk space
-    AVAIL_DISK_SPACE=$((AVAIL_DISK_SPACE-10))
+    AVAIL_DISK_SPACE=$((AVAIL_DISK_SPACE-5))
 
     # Make sure we have enougth disk space
-    if [ "$AVAIL_DISK_SPACE" -lt "30" ]; then
-        error "Insufficient disk space, a minimum of 30Gb of available disk space is required"
+    if [ "$AVAIL_DISK_SPACE" -lt "20" ]; then
+        EARLY_EXIT=1
+        error "Insufficient disk space, a minimum of 20Gb of available disk space is required, but only ${AVAIL_DISK_SPACE}Gi are available"
         exit 1
     fi
 
@@ -426,6 +427,7 @@ collect_user_input() {
             user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
         done
     elif [ "$((REMAINING_DISK-REGISTRY_SIZE))" -lt "0" ]; then
+        EARLY_EXIT=1
         error "Insufficient disk space, you can allocate a maximum of ${REMAINING_DISK}Gi"
         exit 1
     fi
@@ -462,19 +464,27 @@ collect_user_input() {
         if [ "$CREATE_FTP_PATH" == "yes" ]; then
             mkdir -p $FTP_DATA_HOME
         else
+            EARLY_EXIT=1
             exit 1
         fi
     fi
 
     # RABBITMQ
-    if [ "$REMAINING_DISK" -lt "10" ]; then
+    if [ "$REMAINING_DISK" -lt "5" ]; then
+        EARLY_EXIT=1
         error "You are running low on disk space, you only have ${REMAINING_DISK}Gi left on your Kubernetes storage device, which is insufficient to run the platform in a stable manner"
         exit 1
+    elif [ "$REMAINING_DISK" -lt "8" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-3))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        RABBITMQ_STORAGE_SIZE="3"
+    elif [ "$REMAINING_DISK" -lt "10" ]; then
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-5))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        RABBITMQ_STORAGE_SIZE="5"
     elif [ "$REMAINING_DISK" -lt "20" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-10))Gi left on your Kubernetes storage device"
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-10))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
         RABBITMQ_STORAGE_SIZE="10"
     elif [ "$REMAINING_DISK" -lt "30" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-15))Gi left on your Kubernetes storage device"
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-15))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
         RABBITMQ_STORAGE_SIZE="15"
     else
         RABBITMQ_STORAGE_SIZE="20"
@@ -1942,7 +1952,9 @@ EOF
 
     function _finally {
         # Cleanup
-        info "Cleaning up..."
+        if [ -z $EARLY_EXIT ]; then
+            info "Cleaning up..."
+        fi
 
         set +Ee
         IN_CLEANUP=1
@@ -2024,10 +2036,12 @@ EOF
             fi
         fi
 
-        note_print "Log details of the installation can be found here: $LOG_FILE"
+        if [ -z $EARLY_EXIT ]; then
+            note_print "Log details of the installation can be found here: $LOG_FILE"
 
-        if [ -z $GLOBAL_ERROR ]; then
-            info "Done!"
+            if [ -z $GLOBAL_ERROR ]; then
+                info "Done!"
+            fi
         fi
     }
 
