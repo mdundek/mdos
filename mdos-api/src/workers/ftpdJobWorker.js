@@ -60,6 +60,10 @@ const { CHANNEL } = require('../middleware/rb-broker/constant');
      */
      async deleteCredentials() {
         await this.app.get("ftpServer").removeFtpdCredentials(this.msg.context.namespace)
+        const secretName = `ftpd-${this.msg.context.namespace}-creds`
+        const secretExists = await this.app.get('kube').hasSecret("mdos", secretName)
+        if(secretExists)
+            await this.app.get('kube').deleteSecret("mdos", secretName)
     }
 };
 

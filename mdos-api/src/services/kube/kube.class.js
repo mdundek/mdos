@@ -98,176 +98,85 @@ exports.Kube = class Kube extends KubeCore {
             const saUser = nanoid().toLowerCase()
             const saPass = nanoid().toLowerCase()
 
-            try {
-                const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_CREATE_NAMESPACE, {
-                    context: {
-                        namespace: "foobar",
-                        realm: "mdos",
-                        registryUser: saUser,
-                        registryPass: saPass,
-                        kcSaUser: saUser,
-                        kcSaPass: saUser,
-                        rollback: false
+            // Kick off event driven workflow
+            const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_CREATE_NAMESPACE, {
+                context: {
+                    namespace: data.namespace,
+                    realm: data.realm,
+                    registryUser: saUser,
+                    registryPass: saPass,
+                    kcSaUser: saUser,
+                    kcSaPass: saUser,
+                    rollback: false
+                },
+                workflow: [
+                    {
+                        topic: CHANNEL.JOB_K3S_CREATE_NAMESPACE,
+                        status: "PENDING",
+                        milestone: 1
                     },
-                    workflow: [
-                        {
-                            topic: CHANNEL.JOB_K3S_CREATE_NAMESPACE,
-                            status: "PENDING",
-                            milestone: 1
-                        },
-                        {
-                            topic: CHANNEL.JOB_KC_CREATE_CLIENT,
-                            status: "PENDING",
-                            milestone: 2
-                        },
-                        {
-                            topic: CHANNEL.JOB_KC_CREATE_CLIENT_ROLES,
-                            status: "PENDING"
-                        },
-                        {
-                            topic: CHANNEL.JOB_FTPD_CREATE_CREDENTIALS,
-                            status: "PENDING",
-                            milestone: 3
-                        },
-                        {
-                            topic: CHANNEL.JOB_KC_CREATE_CLIENT_SA,
-                            status: "PENDING",
-                            milestone: 4
-                        },
-                        {
-                            topic: CHANNEL.JOB_K3S_CREATE_REG_SECRET,
-                            status: "PENDING"
-                        },
-                        {
-                            topic: CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS,
-                            status: "PENDING"
-                        }
-                    ],
-                    rollbackWorkflow: [
-                        {
-                            topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
-                            status: "PENDING",
-                            milestone: 4
-                        },
-                        {
-                            topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
-                            status: "PENDING",
-                            milestone: 3
-                        },
-                        {
-                            topic: CHANNEL.JOB_KC_DELETE_CLIENT,
-                            status: "PENDING",
-                            milestone: 2
-                        },
-                        {
-                            topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
-                            status: "PENDING",
-                            milestone: 1
-                        }
-                    ]
-                })
+                    {
+                        topic: CHANNEL.JOB_KC_CREATE_CLIENT,
+                        status: "PENDING",
+                        milestone: 2
+                    },
+                    {
+                        topic: CHANNEL.JOB_KC_CREATE_CLIENT_ROLES,
+                        status: "PENDING"
+                    },
+                    {
+                        topic: CHANNEL.JOB_FTPD_CREATE_CREDENTIALS,
+                        status: "PENDING",
+                        milestone: 3
+                    },
+                    {
+                        topic: CHANNEL.JOB_KC_CREATE_CLIENT_SA,
+                        status: "PENDING",
+                        milestone: 4
+                    },
+                    {
+                        topic: CHANNEL.JOB_K3S_CREATE_REG_SECRET,
+                        status: "PENDING"
+                    },
+                    {
+                        topic: CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS,
+                        status: "PENDING"
+                    }
+                ],
+                rollbackWorkflow: [
+                    {
+                        topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
+                        status: "PENDING",
+                        milestone: 4
+                    },
+                    {
+                        topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
+                        status: "PENDING",
+                        milestone: 3
+                    },
+                    {
+                        topic: CHANNEL.JOB_KC_DELETE_CLIENT,
+                        status: "PENDING",
+                        milestone: 2
+                    },
+                    {
+                        topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
+                        status: "PENDING",
+                        milestone: 1
+                    }
+                ]
+            })
 
-                console.log("RESULT =>", result)
-            } catch (error) {
-                console.log("ERROR =>", error)
-                throw error
+            // Check if error occured or not
+            if(result.context.rollback) {
+                console.error(result.workflow)
+                const errorJob = result.workflow.find(job => job.status  == "ERROR")
+                if(errorJob && errorJob.errorMessage) {
+                    throw new Error("ERROR: " + errorJob.errorMessage)
+                } else {
+                    throw new Error("ERROR: An unknown error occured")
+                }
             }
-            
-
-
-
-                // // Create namespace if not exist
-                // let nsCreated = await this.createNamespace(data.namespace)
-
-                // // Create keycloak client
-                // try {
-                //     await this.app.get('keycloak').createClient(data.realm, data.namespace.toLowerCase())
-                // } catch (error) {
-                //     // Clean up
-                //     if (nsCreated)
-                //         try {
-                //             await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
-                //         } catch (err) {}
-                //     throw error
-                // }
-
-                // // Create roles for clientId
-                // let tClient = null
-                // try {
-                //     tClient = await this.app.get('keycloak').getClient(data.realm, data.namespace.toLowerCase())
-                //     await this.createKeycloakClientRoles(data.realm, tClient.id)
-                // } catch (error) {
-                //     // Clean up
-                //     if (nsCreated)
-                //         try {
-                //             await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
-                //         } catch (err) {}
-
-                //     try {
-                //         if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
-                //     } catch (err) {}
-                //     throw error
-                // }
-
-                // // Create ftpd credentials
-                // try {
-                //     const nsName = data.namespace.toLowerCase()
-                //     const secretName = `ftpd-${nsName}-creds`
-                //     const credentials = await this.app.get("ftpServer").createFtpdCredentials(nsName)
-                //     const secretExists = await this.app.get('kube').hasSecret("mdos", secretName)
-                //     if(secretExists)
-                //         await this.app.get('kube').replaceSecret("mdos", secretName, credentials)
-                //     else
-                //         await this.app.get('kube').createSecret("mdos", secretName, credentials)
-                // } catch (error) {
-                //     // Clean up
-                //     if (nsCreated)
-                //         try {
-                //             await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
-                //         } catch (err) {}
-
-                //     try {
-                //         if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
-                //     } catch (err) {}
-                //     throw error
-                // }
-
-                // // Create SA user for registry and give it registry-pull role
-                // const saUser = nanoid().toLowerCase()
-                // const saPass = nanoid().toLowerCase()
-                // try {
-                //     await this.createKeycloakSaForNamespace(data.realm, tClient.clientId, tClient.id, saUser, saPass)
-                // } catch (error) {
-                //     // Clean up
-                //     if (nsCreated)
-                //         try {
-                //             await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
-                //         } catch (err) {}
-
-                //     try {
-                //         if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
-                //     } catch (err) {}
-                //     throw error
-                // }
-
-                // // Create secret for registry SA
-                // try {
-                //     await this.app.get('kube').createRegistrySecret(data.namespace.toLowerCase(), 'mdos-regcred', saUser, saPass)
-                // } catch (error) {
-                //     // Clean up
-                //     if (nsCreated)
-                //         try {
-                //             await this.app.get('kube').deleteNamespace(data.namespace.toLowerCase())
-                //         } catch (err) {}
-
-                //     try {
-                //         if (tClient) await this.app.get('keycloak').deleteClient(data.realm, tClient.id)
-                //     } catch (err) {}
-                //     throw error
-                // }
-
-                // // Regenerate namespace rolebindings in cluster
-                // await this.app.get('kube').applyUserRoleBindingsForNamespaces()
         } else {
             throw new BadRequest('ERROR: Malformed API request')
         }
@@ -302,37 +211,82 @@ exports.Kube = class Kube extends KubeCore {
                 nsExists = false
             }
 
-            // Delete keycloak client
-            if (clientFound) await this.app.get('keycloak').deleteClient(params.query.realm, clientFound.id)
-
-            // Delete FTPD secrets & credentials, make non fatal / non blocking
-            try {
-                const nsName = clientFound.id.toLowerCase()
-                // Detete pure-ftpd credentials
-                await this.app.get('ftpServer').removeFtpdCredentials(nsName)
-                // Detete ftp credentials from mdos namespace
-                await this.app.get('kube').deleteSecret("mdos", `ftpd-${nsName}-creds`)
-            } catch (_e) {
-                console.log(_e)
-            }
-
-            // Delete SA keycloak user
-            if (nsExists) {
-                // Delete SA keycloak user
-                try {
-                    const regSaSecret = await this.app.get('kube').getSecret(id, 'mdos-regcred')
-                    if (regSaSecret) {
-                        const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username
-                        const userObj = await this.app.get('keycloak').getUser(params.query.realm, null, username)
-                        await this.app.get('keycloak').deleteUser(params.query.realm, userObj.id)
+            // Kick off event driven workflow
+            const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_DELETE_NAMESPACE, {
+                context: {
+                    namespace: id,
+                    realm: params.query.realm,
+                    rollback: false
+                },
+                workflow: [
+                    {
+                        topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
+                        status: "PENDING",
+                        milestone: 1
+                    },
+                    {
+                        topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
+                        status: "PENDING",
+                        milestone: 2
+                    },
+                    {
+                        topic: CHANNEL.JOB_KC_DELETE_CLIENT,
+                        status: "PENDING",
+                        milestone: 3
+                    },
+                    {
+                        topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
+                        status: "PENDING",
+                        milestone: 4
                     }
-                } catch (_e) {
-                    console.log(_e)
+                ],
+                rollbackWorkflow: []
+            })
+
+            // Check if error occured or not
+            if(result.context.rollback) {
+                console.error(result.workflow)
+                const errorJob = result.workflow.find(job => job.status  == "ERROR")
+                if(errorJob && errorJob.errorMessage) {
+                    throw new Error("ERROR: " + errorJob.errorMessage)
+                } else {
+                    throw new Error("ERROR: An unknown error occured")
                 }
             }
 
-            // Delete namespace
-            if (nsExists) await this.app.get('kube').deleteNamespace(id.toLowerCase())
+
+
+            // // Delete keycloak client
+            // if (clientFound) await this.app.get('keycloak').deleteClient(params.query.realm, clientFound.id)
+
+            // // Delete FTPD secrets & credentials, make non fatal / non blocking
+            // try {
+            //     const nsName = clientFound.id.toLowerCase()
+            //     // Detete pure-ftpd credentials
+            //     await this.app.get('ftpServer').removeFtpdCredentials(nsName)
+            //     // Detete ftp credentials from mdos namespace
+            //     await this.app.get('kube').deleteSecret("mdos", `ftpd-${nsName}-creds`)
+            // } catch (_e) {
+            //     console.log(_e)
+            // }
+
+            // // Delete SA keycloak user
+            // if (nsExists) {
+            //     // Delete SA keycloak user
+            //     try {
+            //         const regSaSecret = await this.app.get('kube').getSecret(id, 'mdos-regcred')
+            //         if (regSaSecret) {
+            //             const username = JSON.parse(regSaSecret['.dockerconfigjson']).auths[`registry.${process.env.ROOT_DOMAIN}`].username
+            //             const userObj = await this.app.get('keycloak').getUser(params.query.realm, null, username)
+            //             await this.app.get('keycloak').deleteUser(params.query.realm, userObj.id)
+            //         }
+            //     } catch (_e) {
+            //         console.log(_e)
+            //     }
+            // }
+
+            // // Delete namespace
+            // if (nsExists) await this.app.get('kube').deleteNamespace(id.toLowerCase())
         }
         /******************************************
          *  UNINSTALL / DELETE APPLICATION
