@@ -1,5 +1,6 @@
 const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
 const OidcProviderCore = require('./oidc-provider.class.core')
+const { CHANNEL } = require('../../middleware/rb-broker/constant');
 
 /* eslint-disable no-unused-vars */
 exports.OidcProvider = class OidcProvider extends OidcProviderCore {
