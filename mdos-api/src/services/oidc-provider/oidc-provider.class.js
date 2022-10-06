@@ -1,4 +1,4 @@
-const { NotFound, GeneralError, BadRequest, Conflict, Unavailable } = require('@feathersjs/errors')
+const { Unavailable } = require('@feathersjs/errors')
 const OidcProviderCore = require('./oidc-provider.class.core')
 const { CHANNEL } = require('../../middleware/rb-broker/constant');
 
@@ -86,20 +86,6 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
                     throw new Error("ERROR: An unknown error occured")
                 }
             }
-
-            // // Deploy OAuth2 proxy
-            // await this.app.get('kube').deployOauth2Proxy('keycloak', body.realm, body.data.name, body.data.clientId)
-
-            // // Add provider config to Istio
-            // try {
-            //     await this.app.get('kube').addIstiodOidcProvider(body.data.name)
-            // } catch (error) {
-            //     // Cleanup
-            //     try {
-            //         await this.app.get('kube').uninstallOauth2Proxy(body.data.name)
-            //     } catch (_e) {}
-            //     throw error
-            // }
         } else {
             throw new Unavailable('ERROR: Provider type not implemented yet')
         }
@@ -147,9 +133,6 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
                 throw new Error("ERROR: An unknown error occured")
             }
         }
-
-        // await this.app.get('kube').uninstallOauth2Proxy(id)
-        // await this.app.get('kube').removeIstioOidcProviders(id)
 
         return { id }
     }

@@ -1,4 +1,4 @@
-const { NotFound, GeneralError, BadRequest, Forbidden, Unavailable } = require('@feathersjs/errors')
+const { NotFound, BadRequest, Forbidden } = require('@feathersjs/errors')
 const nanoid_1 = require('nanoid')
 const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10)
 const KubeCore = require('./kube.class.core')
