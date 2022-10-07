@@ -152,19 +152,17 @@ class Kube extends KubeBase {
     /**
      *
      *
-     * @param {*} type
      * @param {*} realm
      * @param {*} name
      * @param {*} clientId
      * @memberof Kube
      */
-    async deployOauth2Proxy(type, realm, name, clientId) {
-        if (type == 'keycloak') {
-            const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/.well-known/openid-configuration`)
-            const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
-            const clientSecret = await this.app.get('keycloak').getClientSecret(realm, clientId)
+    async deployKeycloakOauth2Proxy(realm, name, clientId) {
+        const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/.well-known/openid-configuration`)
+        const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
+        const clientSecret = await this.app.get('keycloak').getClientSecret(realm, clientId)
 
-            const oauthData = YAML.parse(`service:
+        const oauthData = YAML.parse(`service:
     portNumber: 4180
 config:
     clientID: "${clientId}"
@@ -199,10 +197,61 @@ config:
         upstreams = [ "static://200" ]
         whitelist_domains = [".${this.rootDomain}"]`)
 
-            // Deploy oauth2-proxy instance for new provider
-            if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
-            await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
-        }
+        // Deploy oauth2-proxy instance for new provider
+        if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
+        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
+    }
+
+    /**
+     *
+     *
+     * @param {*} name
+     * @param {*} clientId
+     * @param {*} redirectUris
+     * @memberof Kube
+     */
+     async deployGoogleOauth2Proxy(clientId, clientSecret, redirectUris) { 
+        const realmUrls = await axios.get(`https://accounts.google.com/.well-known/openid-configuration`)
+        const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
+
+        const oauthData = YAML.parse(`service:
+    portNumber: 4180
+config:
+    clientID: "${clientId}"
+    clientSecret: "${clientSecret}"
+    cookieSecret: "${cookieSecret}"
+    cookieName: "_oauth2_proxy"
+    configFile: |-
+        provider = "oidc"
+        oidc_issuer_url="${realmUrls.data.issuer}"
+        profile_url="${realmUrls.data.userinfo_endpoint}"
+        validate_url="${realmUrls.data.userinfo_endpoint}"
+        scope="openid email profile roles"
+        pass_host_header = true
+        reverse_proxy = true
+        auth_logging = true
+        cookie_httponly = true
+        cookie_refresh = "4m"
+        cookie_secure = true
+        email_domains = "*"
+        pass_access_token = true
+        pass_authorization_header = true
+        request_logging = true
+        session_store_type = "cookie"
+        set_authorization_header = true
+        set_xauthrequest = true
+        silence_ping_logging = true
+        skip_provider_button = true
+        skip_auth_strip_headers = false
+        skip_jwt_bearer_tokens = true
+        ssl_insecure_skip_verify = true
+        standard_logging = true
+        upstreams = [ "static://200" ]
+        whitelist_domains = ${JSON.stringify(redirectUris)}`)
+       
+        // Deploy oauth2-proxy instance for new provider
+        if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
+        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
     }
 
     /**

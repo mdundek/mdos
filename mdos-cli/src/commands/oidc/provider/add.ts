@@ -2,6 +2,8 @@ import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
 const inquirer = require('inquirer')
 const { warn, filterQuestions, mergeFlags } = require('../../../lib/tools')
+const fs = require('fs')
+const path = require('path')
 
 /**
  * Command
@@ -34,14 +36,21 @@ export default class Add extends Command {
             },
         },
         {
-            group: 'kc_oidc',
+            group: 'oidc',
             type: 'text',
-            name: 'clientId',
-            message: 'Enter a Keycloak client ID (application)?',
+            name: 'jsonSecretPath',
+            message: 'Enter the path to your Google JSON credentials file:',
+            when: (values: any) => {
+                return values.target == 'Google'
+            },
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                if (!fs.existsSync(path.join(process.cwd(), value))) {
+                    return 'File not found'
+                }
+                if(!value.toLowerCase().endsWith('.json')) {
+                    return 'Expect a JSON file'
+                }
                 return true
             },
         },
@@ -93,7 +102,13 @@ export default class Add extends Command {
                 this.showError(error)
                 process.exit(1)
             }
-        } else {
+        } 
+        else if (oidcResponses.target == 'Google') {
+            const authJson = fs.readFileSync(oidcResponses.jsonSecretPath)
+
+            console.log(authJson)
+        }
+        else {
             warn('OIDC provider not implemented yet')
             process.exit(1)
         }
