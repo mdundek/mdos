@@ -143,6 +143,10 @@ class MdosCore extends CommonCore {
                     const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}:${process.env.KC_PORT}/realms/mdos/.well-known/openid-configuration`)
                     component.oidc.issuer = oidcLinks.data.issuer
                     component.oidc.jwksUri = oidcLinks.data.jwks_uri
+                } else if (component.oidc.provider.indexOf('google-') == 0) {
+                    const oidcLinks = await axios.get(`https://accounts.google.com/.well-known/openid-configuration`)
+                    component.oidc.issuer = oidcLinks.data.issuer
+                    component.oidc.jwksUri = oidcLinks.data.jwks_uri
                 } else {
                     throw new Unavailable('ERROR: Provider not supported')
                 }
