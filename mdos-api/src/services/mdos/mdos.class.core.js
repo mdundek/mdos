@@ -106,7 +106,7 @@ class MdosCore extends CommonCore {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
 
-        // Iterate over components and proces one by one
+        // Iterate over components and process one by one
         for (const component of valuesYaml.components) {
             // Add registry credentials if necessary
             if (!component.imagePullSecrets && !component.publicRegistry) {
@@ -157,6 +157,17 @@ class MdosCore extends CommonCore {
                 component.ingress = component.ingress.map((i) => {
                     if (!i.trafficType) i.trafficType = 'http'
                     return i
+                })
+            }
+
+            // Set component details for networkPolicy limitet
+            if (component.networkPolicy && component.networkPolicy.scope == "limited") {
+                component.networkPolicy.allow = valuesYaml.components.filter(_c => _c.uuid != component.uuid).map(_c => {
+                    return {
+                        namespace: valuesYaml.tenantName,
+                        appUuid: valuesYaml.uuid,
+                        compUuid: _c.uuid
+                    }
                 })
             }
         }

@@ -1,4 +1,4 @@
-{{- $appName := lower $.Values.appName }}
+{{- $appName := $.Values.appName }}
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
   {{- $uuid := .uuid -}}

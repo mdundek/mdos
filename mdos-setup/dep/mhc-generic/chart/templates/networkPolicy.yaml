@@ -1,0 +1,65 @@
+{{- $appName := .Values.appName -}}
+
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+  {{- $uuid := .uuid -}}
+  {{- if .networkPolicy }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}
+  labels:
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ $uuid }}
+    tenantName: {{ $.Values.tenantName }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ $appComponentName }}
+      appUuid: {{ $.Values.uuid }}
+      compUuid: {{ $uuid }}
+      tenantName: {{ $.Values.tenantName }}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - {}
+  ingress: 
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+    {{- if eq .networkPolicy.scope "limited" }}
+      {{- range .networkPolicy.allow }}
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: {{ .namespace }}
+        podSelector:
+          matchLabels:
+            appUuid: {{ .appUuid }}
+            tenantName: {{ .namespace }}
+            compUuid: {{ .compUuid }}
+      {{- end }}
+    {{- else if eq .networkPolicy.scope "open" }}
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: {{ $.Values.tenantName }}
+    {{- else if eq .networkPolicy.scope "custom" }}
+      {{- range .networkPolicy.allow }}
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: {{ .namespace }}
+        podSelector:
+          matchLabels:
+            appUuid: {{ .appUuid }}
+            tenantName: {{ .namespace }}
+            compUuid: {{ .compUuid }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

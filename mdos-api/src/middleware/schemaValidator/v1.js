@@ -153,6 +153,30 @@ class SchemaV1 {
                                 required: ['provider', 'hosts'],
                                 additionalProperties: false,
                             },
+                            networkPolicy: {
+                                type: 'object',
+                                properties: {
+                                    scope: {
+                                        type: 'string',
+                                        enum: ['private', 'limited', 'open', 'custom']
+                                    },
+                                    allow: {
+                                        type: 'array',
+                                        items: {
+                                            type: 'object',
+                                            properties: {
+                                                namespace: { type: 'string' },
+                                                appUuid: { type: 'string' },
+                                                compUuid: { type: 'string' },
+                                            },
+                                            required: ['namespace', 'appUuid', 'compUuid'],
+                                            additionalProperties: false
+                                        },
+                                    }
+                                },
+                                required: ['scope'],
+                                additionalProperties: false
+                            },
                             preBuildCmd: {
                                 type: 'array',
                                 items: {
@@ -168,8 +192,10 @@ class SchemaV1 {
                                             type: 'string',
                                             pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
                                         },
-                                        type: { type: 'string', enum: ['env', 'file'] },
+                                        type: { type: 'string', enum: ['env', 'file', 'dir'] },
                                         mountPath: { type: 'string' },
+                                        ref: { type: 'string' },
+                                        defaultMode: { type: 'string' },
                                         entries: {
                                             type: 'array',
                                             items: {
@@ -194,7 +220,7 @@ class SchemaV1 {
                                             },
                                         },
                                     },
-                                    required: ['name', 'type', 'entries'],
+                                    required: ['name', 'type'],
                                     additionalProperties: false,
                                 },
                             },
@@ -207,8 +233,10 @@ class SchemaV1 {
                                             type: 'string',
                                             pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
                                         },
-                                        type: { type: 'string', enum: ['env', 'file'] },
+                                        type: { type: 'string', enum: ['env', 'file', 'dir'] },
                                         mountPath: { type: 'string' },
+                                        ref: { type: 'string' },
+                                        defaultMode: { type: 'string' },
                                         entries: {
                                             type: 'array',
                                             items: {
@@ -233,7 +261,7 @@ class SchemaV1 {
                                             },
                                         },
                                     },
-                                    required: ['name', 'type', 'entries'],
+                                    required: ['name', 'type'],
                                     additionalProperties: false,
                                 },
                             },
@@ -270,74 +298,78 @@ class SchemaV1 {
             for (const component of jsonData.components) {
                 if (component.configs) {
                     for (const config of component.configs) {
-                        for (const entry of config.entries) {
-                            if (config.type == 'file' && !entry.filename) {
-                                errors.push({
-                                    message: "'filename' property is required",
-                                    instance: entry,
-                                    stack: "'filename' property is required",
-                                })
-                            }
+                        if(!config.ref) {
+                            for (const entry of config.entries) {
+                                if (config.type == 'file' && !entry.filename) {
+                                    errors.push({
+                                        message: "'filename' property is required",
+                                        instance: entry,
+                                        stack: "'filename' property is required",
+                                    })
+                                }
 
-                            if (config.type == 'file' && entry.key) {
-                                errors.push({
-                                    message: "'key' property is not compatible with 'file' type config",
-                                    instance: entry,
-                                    stack: "'key' property is not compatible with 'file' type config",
-                                })
-                            }
+                                if (config.type == 'file' && entry.key) {
+                                    errors.push({
+                                        message: "'key' property is not compatible with 'file' type config",
+                                        instance: entry,
+                                        stack: "'key' property is not compatible with 'file' type config",
+                                    })
+                                }
 
-                            if (config.type == 'env' && entry.filename) {
-                                errors.push({
-                                    message: "'filename' property is not compatible with 'env' type config",
-                                    instance: entry,
-                                    stack: "'filename' property is not compatible with 'env' type config",
-                                })
-                            }
+                                if (config.type == 'env' && entry.filename) {
+                                    errors.push({
+                                        message: "'filename' property is not compatible with 'env' type config",
+                                        instance: entry,
+                                        stack: "'filename' property is not compatible with 'env' type config",
+                                    })
+                                }
 
-                            if (config.type == 'env' && !entry.key) {
-                                errors.push({
-                                    message: "'key' property is required with 'env' type config",
-                                    instance: entry,
-                                    stack: "'key' property is required with 'env' type config",
-                                })
+                                if (config.type == 'env' && !entry.key) {
+                                    errors.push({
+                                        message: "'key' property is required with 'env' type config",
+                                        instance: entry,
+                                        stack: "'key' property is required with 'env' type config",
+                                    })
+                                }
                             }
                         }
                     }
                 }
                 if (component.secrets) {
-                    for (const config of component.secrets) {
-                        for (const entry of config.entries) {
-                            if (config.type == 'file' && !entry.filename) {
-                                errors.push({
-                                    message: "'filename' property is required",
-                                    instance: entry,
-                                    stack: "'filename' property is required",
-                                })
-                            }
+                    for (const secret of component.secrets) {
+                        if(!secret.ref) {
+                            for (const entry of secret.entries) {
+                                if (secret.type == 'file' && !entry.filename) {
+                                    errors.push({
+                                        message: "'filename' property is required",
+                                        instance: entry,
+                                        stack: "'filename' property is required",
+                                    })
+                                }
 
-                            if (config.type == 'file' && entry.key) {
-                                errors.push({
-                                    message: "'key' property is not compatible with 'file' type secret",
-                                    instance: entry,
-                                    stack: "'key' property is not compatible with 'file' type secret",
-                                })
-                            }
+                                if (secret.type == 'file' && entry.key) {
+                                    errors.push({
+                                        message: "'key' property is not compatible with 'file' type secret",
+                                        instance: entry,
+                                        stack: "'key' property is not compatible with 'file' type secret",
+                                    })
+                                }
 
-                            if (config.type == 'env' && entry.filename) {
-                                errors.push({
-                                    message: "'filename' property is not compatible with 'env' type secret",
-                                    instance: entry,
-                                    stack: "'filename' property is not compatible with 'env' type secret",
-                                })
-                            }
+                                if (secret.type == 'env' && entry.filename) {
+                                    errors.push({
+                                        message: "'filename' property is not compatible with 'env' type secret",
+                                        instance: entry,
+                                        stack: "'filename' property is not compatible with 'env' type secret",
+                                    })
+                                }
 
-                            if (config.type == 'env' && !entry.key) {
-                                errors.push({
-                                    message: "'key' property is required with 'env' type secret",
-                                    instance: entry,
-                                    stack: "'key' property is required with 'env' type secret",
-                                })
+                                if (secret.type == 'env' && !entry.key) {
+                                    errors.push({
+                                        message: "'key' property is required with 'env' type secret",
+                                        instance: entry,
+                                        stack: "'key' property is required with 'env' type secret",
+                                    })
+                                }
                             }
                         }
                     }
@@ -353,6 +385,17 @@ class SchemaV1 {
                                 stack: "'syncVolume' property is not compatible when using hostpaths",
                             })
                         }
+                    }
+                }
+
+                // NetworkPolicy
+                if (component.networkPolicy) {
+                    if(component.networkPolicy.scope == 'custom' && (!component.networkPolicy.allow || component.networkPolicy.allow.length == 0)) {
+                        errors.push({
+                            message: "'networkPolicy.allow' property is missing",
+                            instance: component.networkPolicy,
+                            stack: "'networkPolicy.allow' property is missing",
+                        })
                     }
                 }
             }

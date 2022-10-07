@@ -1,4 +1,4 @@
-{{- $appName := lower .Values.appName -}}
+{{- $appName := .Values.appName -}}
 
 {{- $ftpCredentials := "" }}
 {{- if .Values.ftpCredentials }}
@@ -293,24 +293,36 @@ spec:
           {{- /* -=-=-=- ENV VARS -=-=-= */}}
 
           {{- if eq .type "env" }}
-            {{- if .appComp }}
-              {{- $rangeKey := .key }}
-              {{- range .appComp }}
-                {{- if eq .name $appComponentName }}
+            {{- if not .ref }}
+              {{- if .appComp }}
+                {{- $rangeKey := .key }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ $rangeKey }}
+                  {{- end }}
                 {{- end }}
-              {{- end }}
-            {{- else }}
+              {{- else }}
             - name: {{ .key }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ .key }}
-                  {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- if .ref }}
+              {{- $secref := .ref }}
+              {{- range .entries }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secref }}
+                  key: {{ .key }}
+              {{- end }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -322,12 +334,24 @@ spec:
       {{- range .configs }}
         {{- $name := .name }}
         {{- if eq .type "env" }}
-          {{- range .entries }}
-            - name: {{ .key }}
+          {{- if not .ref }}
+            {{- range .entries }}
+              - name: {{ .key }}
+                valueFrom:
+                  configMapKeyRef:
+                    name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                    key: {{ .key }}
+            {{- end }}
+          {{- end }}
+          {{- if .ref }}
+            {{- $cfmref := .ref }}
+            {{- range .entries }}
+            - name: {{ .name }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  name: {{ $cfmref }}
                   key: {{ .key }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -341,23 +365,35 @@ spec:
           {{- /* -=-=-=- ENV VARS -=-=-= */}}
 
           {{- if eq .type "env" }}
-            {{- if .appComp }}
-              {{- $rangeKey := .key }}
-              {{- range .appComp }}
-                {{- if eq .name $appComponentName }}
+            {{- if not .ref }}
+              {{- if .appComp }}
+                {{- $rangeKey := .key }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ $rangeKey }}
+                  {{- end }}
                 {{- end }}
-              {{- end }}
-            {{- else }}
+              {{- else }}
             - name: {{ .key }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ .key }}
+              {{- end }}
+            {{- end }}
+            {{- if .ref }}
+              {{- $cfmref := .ref }}
+              {{- range .entries }}
+            - name: {{ .name }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $cfmref }}
+                  key: {{ .key }}
+              {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -656,7 +692,11 @@ spec:
         {{- if or (eq .type "file") (eq .type "dir") }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
+          {{- if .ref }}
+            name: {{ .ref }}
+          {{- else }}
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- end }}
           {{- if .defaultMode }}
             defaultMode: {{ .defaultMode }}
           {{- end }}
@@ -675,7 +715,11 @@ spec:
               {{- if eq .name $appComponentName }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
           configMap:
+                {{- if $config.ref }}
+            name: {{ $config.ref }}
+                {{- else }}
             name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
+                {{- end }}
                 {{- if $config.defaultMode }}
             defaultMode: {{ $config.defaultMode }}
                 {{- end }}
@@ -684,7 +728,11 @@ spec:
           {{- else }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
+            {{- if .ref }}
+            name: {{ .ref }}
+            {{- else }}
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            {{- end }}
             {{- if .defaultMode }}
             defaultMode: {{ .defaultMode }}
             {{- end }}
@@ -723,7 +771,11 @@ spec:
               {{- if eq .name $appComponentName }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
+                {{- if $secret.ref }}
+            secretName: {{ $secret.ref }}
+                {{- else }}
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
+                {{- end }}
                 {{- if $secret.defaultMode }}
             defaultMode: {{ $secret.defaultMode }}
                 {{- end }}
@@ -732,7 +784,11 @@ spec:
           {{- else }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
+            {{- if .ref }}
+            secretName: {{ .ref }}
+            {{- else }}
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            {{- end }}
             {{- if .defaultMode }}
             defaultMode: {{ .defaultMode }}
             {{- end }}
