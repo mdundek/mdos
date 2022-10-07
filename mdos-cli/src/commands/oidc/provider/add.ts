@@ -1,7 +1,7 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
 const inquirer = require('inquirer')
-const { warn, filterQuestions, mergeFlags } = require('../../../lib/tools')
+const { warn, context, info, filterQuestions, mergeFlags } = require('../../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 
@@ -56,6 +56,11 @@ export default class Add extends Command {
             name: 'jsonSecretPath',
             message: 'Enter the path to your Google JSON credentials file:',
             when: (values: any) => {
+                if(values.target == "google") {
+                    info(`Download your Google OAuth JSON credentials file from your Google Cloud Console, and enter the path to this file now.`, false, true)
+                    context(`Make sure you add all redirect URLs that you intend to use, including the "/oauth2/callback" section (ex. https://my-app-1.mydomain.com/oauth2/callback)`, true, true)
+                    context(`If you use this provider on a ingress with a different domain name, it will not work.`, true, false)
+                }
                 return values.target == 'google'
             },
             validate: (value: any) => {

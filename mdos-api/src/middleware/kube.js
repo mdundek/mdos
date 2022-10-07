@@ -199,7 +199,7 @@ config:
 
         // Deploy oauth2-proxy instance for new provider
         if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
-        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
+        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.2.7')
     }
 
     /**
@@ -227,7 +227,7 @@ config:
         oidc_issuer_url="${realmUrls.data.issuer}"
         profile_url="${realmUrls.data.userinfo_endpoint}"
         validate_url="${realmUrls.data.userinfo_endpoint}"
-        scope="openid email profile roles"
+        scope="openid email profile"
         pass_host_header = true
         reverse_proxy = true
         auth_logging = true
@@ -252,7 +252,7 @@ config:
        
         // Deploy oauth2-proxy instance for new provider
         if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ 'name': 'oauth2-proxy' })
-        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
+        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.2.7')
     }
 
     /**
