@@ -38,14 +38,29 @@ export default class Add extends Command {
         {
             group: 'oidc',
             type: 'text',
-            name: 'jsonSecretPath',
-            message: 'Enter the path to your Google JSON credentials file:',
+            name: 'providerName',
+            message: 'Enter a name for this provider:',
             when: (values: any) => {
-                return values.target == 'Google'
+                return values.target == 'google'
             },
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                if (!fs.existsSync(path.join(process.cwd(), value))) {
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,10}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 10 characters)'
+                return true
+            }
+        },
+        {
+            group: 'oidc',
+            type: 'text',
+            name: 'jsonSecretPath',
+            message: 'Enter the path to your Google JSON credentials file:',
+            when: (values: any) => {
+                return values.target == 'google'
+            },
+            validate: (value: any) => {
+                if (value.trim().length == 0) return `Mandatory field`
+                if (!fs.existsSync(value)) {
                     return 'File not found'
                 }
                 if(!value.toLowerCase().endsWith('.json')) {
@@ -103,13 +118,35 @@ export default class Add extends Command {
                 process.exit(1)
             }
         } 
-        else if (oidcResponses.target == 'Google') {
-            const authJson = fs.readFileSync(oidcResponses.jsonSecretPath)
-
-            console.log(authJson)
+        else if (oidcResponses.target == 'google') {
+            const authJsonText = fs.readFileSync(oidcResponses.jsonSecretPath, {encoding:'utf8', flag:'r'})
+            let authJson = null
+            try {
+                authJson = JSON.parse(authJsonText)
+            } catch (error) {
+                
+            }
+            // Create new client in Keycloak
+            CliUx.ux.action.start('Creating Google OIDC provider')
+            try {
+                await this.api(`oidc-provider`, 'post', {
+                    type: 'google',
+                    data: {
+                        name: `google-${oidcResponses.providerName}`,
+                        googleClientId: authJson.web.client_id,
+                        googleClientSecret: authJson.web.client_secret,
+                        redirectUris: authJson.web.redirect_uris
+                    },
+                })
+                CliUx.ux.action.stop()
+            } catch (error) {
+                CliUx.ux.action.stop('error')
+                this.showError(error)
+                process.exit(1)
+            }
         }
         else {
-            warn('OIDC provider not implemented yet')
+            warn(`OIDC provider "${oidcResponses.target}" not implemented yet`)
             process.exit(1)
         }
     }

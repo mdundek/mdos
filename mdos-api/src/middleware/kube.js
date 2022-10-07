@@ -207,10 +207,11 @@ config:
      *
      * @param {*} name
      * @param {*} clientId
+     * @param {*} clientSecret
      * @param {*} redirectUris
      * @memberof Kube
      */
-     async deployGoogleOauth2Proxy(clientId, clientSecret, redirectUris) { 
+     async deployGoogleOauth2Proxy(name, clientId, clientSecret, redirectUris) { 
         const realmUrls = await axios.get(`https://accounts.google.com/.well-known/openid-configuration`)
         const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
 
@@ -250,7 +251,7 @@ config:
         whitelist_domains = ${JSON.stringify(redirectUris)}`)
        
         // Deploy oauth2-proxy instance for new provider
-        if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
+        if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ 'name': 'oauth2-proxy' })
         await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
     }
 
