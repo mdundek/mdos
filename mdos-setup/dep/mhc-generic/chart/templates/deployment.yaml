@@ -264,11 +264,7 @@ spec:
         {{- if eq .type "env" }}
           {{- if not .ref }}
             {{- range .entries }}
-            - name: {{ .key }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
-                  key: {{ .key }}
+            
             {{- end }}
           {{- end }}
           
