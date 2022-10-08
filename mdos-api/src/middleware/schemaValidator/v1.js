@@ -392,9 +392,9 @@ class SchemaV1 {
                 if (component.networkPolicy) {
                     if(component.networkPolicy.scope == 'custom' && (!component.networkPolicy.allow || component.networkPolicy.allow.length == 0)) {
                         errors.push({
-                            message: "'networkPolicy.allow' property is missing",
+                            message: "'networkPolicy.allow' property is empty or missing",
                             instance: component.networkPolicy,
-                            stack: "'networkPolicy.allow' property is missing",
+                            stack: "'networkPolicy.allow' property is empty or missing",
                         })
                     }
                 }
