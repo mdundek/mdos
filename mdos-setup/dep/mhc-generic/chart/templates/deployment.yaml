@@ -262,7 +262,7 @@ spec:
       {{- range .secrets }}
         {{- $name := .name }}
         {{- if eq .type "env" }}
-          {{- if not hasKey . "ref" }}
+          {{- if not (hasKey . "ref") }}
           
             {{- range .entries }}
             - name: {{ .key }}
