@@ -191,7 +191,7 @@ components:
 The `custom` scope let's you specify specifically what application components from what namespaces are allowed to communicate with this component.  
 Here are a few examples to demonstrate the use of those fields:
 
-<img src="img/networkPolicy/custom.png" alt="custom" width="400"/>
+<img src="img/networkPolicies/custom.png" alt="custom" width="400"/>
 
 ---
 
