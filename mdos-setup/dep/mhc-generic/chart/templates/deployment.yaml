@@ -262,10 +262,7 @@ spec:
       {{- range .secrets }}
         {{- $name := .name }}
         {{- if eq .type "env" }}
-          {{- if not .ref }}
           
-            
-          {{- end }}
           {{- if .ref }}
             {{- $secref := .ref }}
             {{- range .entries }}
