@@ -262,6 +262,10 @@ spec:
       {{- range .secrets }}
         {{- $name := .name }}
         {{- if eq .type "env" }}
+          {{- if not .ref }}
+          
+            
+          {{- end }}
           {{- if .ref }}
             {{- $secref := .ref }}
             {{- range .entries }}
@@ -269,14 +273,6 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ $secref }}
-                  key: {{ .key }}
-            {{- end }}
-          {{- else }}
-            {{- range .entries }}
-            - name: {{ .key }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ .key }}
             {{- end }}
           {{- end }}
