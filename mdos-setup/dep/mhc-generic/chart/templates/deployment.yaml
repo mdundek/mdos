@@ -6,7 +6,7 @@
 {{- end }}
 
 {{- range .Values.components }}
-  {{- $appComponentName := .name -}}
+  {{- $appComponentName := lower .name -}}
   {{- $uuid := .uuid }}
 ---
 apiVersion: apps/v1
@@ -253,18 +253,34 @@ spec:
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ENV VARS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
+
           env:
+
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
     {{- if .secrets }}
       {{- range .secrets }}
         {{- $name := .name }}
         {{- if eq .type "env" }}
           {{- if not .ref }}
             {{- range .entries }}
-         
+            - name: {{ .key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ .key }}
             {{- end }}
           {{- end }}
-          
+          {{- if .ref }}
+            {{- $secref := .ref }}
+            {{- range .entries }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secref }}
+                  key: {{ .key }}
+            {{- end }}
+          {{- end }}
         {{- end }}
       {{- end }}
 
@@ -320,11 +336,11 @@ spec:
         {{- if eq .type "env" }}
           {{- if not .ref }}
             {{- range .entries }}
-              - name: {{ .key }}
-                valueFrom:
-                  configMapKeyRef:
-                    name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
-                    key: {{ .key }}
+            - name: {{ .key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
+                  key: {{ .key }}
             {{- end }}
           {{- end }}
           {{- if .ref }}
