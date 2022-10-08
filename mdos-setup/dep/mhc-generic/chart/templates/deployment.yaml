@@ -264,15 +264,13 @@ spec:
         {{- if eq .type "env" }}
           {{- if not .ref }}
             {{- range .entries }}
-            - name: {{ .key }}
-             
+            
             {{- end }}
           {{- end }}
           {{- if .ref }}
             {{- $secref := .ref }}
             {{- range .entries }}
-            - name: {{ .name }}
-              
+            
             {{- end }}
           {{- end }}
         {{- end }}
