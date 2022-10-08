@@ -264,8 +264,8 @@ spec:
         {{- if eq .type "env" }}
           {{- if not .ref }}
             {{- range .entries }}
-            - name: foo
-              value: fgg
+          - name: foo
+            value: fgg
             {{- end }}
           {{- end }}
           
