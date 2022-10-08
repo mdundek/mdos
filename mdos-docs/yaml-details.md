@@ -189,9 +189,9 @@ components:
 | custom    | You can specify which components in what namespaces can talk to this component |
 
 The `custom` scope let's you specify specifically what application components from what namespaces are allowed to communicate with this component.  
-Here are a few examples to demonstrate the use of those fields:
+Here is a more complex example that uses a `custom` scoped NetworkPolicy:
 
-<img src="img/networkPolicies/custom.png" alt="custom" width="400"/>
+<img src="img/networkPolicies/custom.png" alt="custom" width="800"/>
 
 ---
 
