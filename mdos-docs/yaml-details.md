@@ -94,11 +94,11 @@ MDos comes with a private integrated Docker registry. If no `registry` parameter
 
 #### Use a custom registry
 
-If you have your own private registry that you would like to use for your application images, you can do so by specifying a `registry` value on your component, along with an __optionnal__ `registryPullSecrets` value that should be used to authenticate with your registry:
+If you have your own private registry that you would like to use for your application images, you can do so by specifying a `registry` value on your component, along with an __optionnal__ `imagePullSecrets` value that should be used to authenticate with your registry:
 
 ```yaml
 registry: my.private.registry
-imagePullSecrets: # Optionnal# Optionnal
+imagePullSecrets: # Optionnal
   - name: my-registry-secret
 ```
 
@@ -107,7 +107,7 @@ imagePullSecrets: # Optionnal# Optionnal
 
 #### Use a public registry
 
-The third option is to use a public registry, again with an __optionnal__ `registryPullSecrets` value that should be used to authenticate with the public registry:
+The third option is to use a public registry, again with an __optionnal__ `imagePullSecrets` value that should be used to authenticate with the public registry:
 
 ```yaml
 publicRegistry: true
