@@ -263,16 +263,6 @@ spec:
         {{- $name := .name }}
         {{- if eq .type "env" }}
           
-          {{- if .ref }}
-            {{- $secref := .ref }}
-            {{- range .entries }}
-            - name: {{ .name }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $secref }}
-                  key: {{ .key }}
-            {{- end }}
-          {{- end }}
         {{- end }}
       {{- end }}
 
