@@ -262,15 +262,12 @@ spec:
       {{- range .secrets }}
         {{- $name := .name }}
         {{- if eq .type "env" }}
-        
-            {{- range .entries }}
-            - name: {{ .key }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
-                  key: {{ .key }}
-            {{- end }}
-          
+          {{- if not .ref }}
+            
+          {{- end }}
+          {{- if .ref }}
+            
+          {{- end }}
         {{- end }}
       {{- end }}
 
