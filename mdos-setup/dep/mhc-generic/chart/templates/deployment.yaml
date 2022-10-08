@@ -263,10 +263,10 @@ spec:
         {{- $name := .name }}
         {{- if eq .type "env" }}
           {{- if not .ref }}
-            
+            {{- range .entries }}
             - name: foo
-              value: fgg
-            
+              value: "fgg"
+            {{- end }}
           {{- end }}
           
         {{- end }}
