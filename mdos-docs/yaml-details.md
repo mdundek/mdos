@@ -57,11 +57,7 @@ components: [...]
 The `tenant-name` field maps directly to a kubernetes target `namespace`.  
 The `uuid` field is a unique identifier for this application, all dependant resources that this application will create and manage will be tied to this application `uuid`. 
 
-> :hash: **MDos CLI command:**
-> 
-> `mdos generate application`
-
-| :hash: MDos CLI command:  `mdos generate application` |
+| :hash: CLI command:  `mdos generate application` |
 | --- |
 
 ---
