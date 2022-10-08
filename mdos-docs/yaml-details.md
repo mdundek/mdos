@@ -164,12 +164,16 @@ components:
 
 ### NetworkPolicy
 
-On a multi-tenant cluster environement, it is important that you protect your components from being accessed from other application components. There are 4 available configuration settings available to you here:
+On a multi-tenant cluster environement, it is important that you protect your components from being accessed from other application components. There are 4 available configuration settings available for you to use:
 
-1. private
-2. limited
-3. open
-4. custom
+| **Scope** | **Description**                                                                |
+|-----------|--------------------------------------------------------------------------------|
+| private   | No one can talk to this component                                              |
+| limited   | Only components belonging to this application can talk to this component       |
+| open      | All application components in this tenant namespace can talk to this component |
+| custom    | You can specify which components in what namespaces can talk to this component |
+
+This is how you configure this on your component:
 
 ```yaml
 ...
@@ -180,13 +184,6 @@ components:
       scope: private # limited | open | custom
     ...
 ```
-
-| **Scope** | **Description**                                                                |
-|-----------|--------------------------------------------------------------------------------|
-| private   | No one can talk to this component                                              |
-| limited   | Only components belonging to this application can talk to this component       |
-| open      | All application components in this tenant namespace can talk to this component |
-| custom    | You can specify which components in what namespaces can talk to this component |
 
 The `custom` scope let's you specify specifically what application components from what namespaces are allowed to communicate with this component.  
 Here is a more complex example that uses a `custom` scoped NetworkPolicy:
