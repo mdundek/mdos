@@ -6,7 +6,7 @@
 {{- end }}
 
 {{- range .Values.components }}
-  {{- $appComponentName := lower .name -}}
+  {{- $appComponentName := .name -}}
   {{- $uuid := .uuid }}
 ---
 apiVersion: apps/v1
@@ -255,9 +255,22 @@ spec:
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
 
           env:
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .secrets }}
+      {{- range .secrets }}
+        {{- $name := .name }}
+        {{- if eq .type "env" }}
+          {{- if not .ref }}
+            {{- range .entries }}
           - name: foo
             value: "fgg"
-           
+            {{- end }}
+          {{- end }}
+          
+        {{- end }}
+      {{- end }}
 
       {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL SECRETS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
 
