@@ -41,13 +41,65 @@ class SchemaV1 {
                                 type: 'string',
                                 pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
                             },
-                            image: { type: 'string' },
-                            tag: { type: 'string' },
                             uuid: {
                                 type: 'string',
                                 pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
                             },
+                            image: { type: 'string' },
+                            tag: { type: 'string' },
+                            registry: { type: 'string' },
                             publicRegistry: { type: 'boolean' },
+                            imagePullSecrets: {
+                                type: 'array',
+                                items: {
+                                    type: 'object',
+                                    properties: {
+                                        name: {
+                                            type: 'string'
+                                        }
+                                    },
+                                    required: ['name'],
+                                    additionalProperties: false,
+                                }
+                            },
+                            command: {
+                                type: 'array'
+                            },
+                            commandArgs: {
+                                type: 'array'
+                            },
+                            workingDir: {
+                                type: 'string'
+                            },
+                            resources: {
+                                type: 'object',
+                                properties: {
+                                    requests: {
+                                        type: 'object',
+                                        properties: {
+                                            memory: {
+                                                type: 'string'
+                                            },
+                                            cpu: {
+                                                type: 'string'
+                                            }
+                                        }
+                                    },
+                                    limits: {
+                                        type: 'object',
+                                        properties: {
+                                            memory: {
+                                                type: 'string'
+                                            },
+                                            cpu: {
+                                                type: 'string'
+                                            }
+                                        }
+                                    }
+                                },
+                                required: ['requests', 'limits'],
+                                additionalProperties: false,
+                            },
                             services: {
                                 type: 'array',
                                 items: {
