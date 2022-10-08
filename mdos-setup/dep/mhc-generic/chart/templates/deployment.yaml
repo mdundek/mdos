@@ -264,7 +264,11 @@ spec:
         {{- if eq .type "env" }}
           {{- if not .ref }}
             {{- range .entries }}
-            
+            - name: foo
+              valueFrom:
+                secretKeyRef:
+                  name: bar
+                  key: foo
             {{- end }}
           {{- end }}
           
