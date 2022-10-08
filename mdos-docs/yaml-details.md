@@ -80,19 +80,19 @@ components:
     ...
 ```
 
-Among those, you will define your component `name`, `image` name and image `tag`.
+Among those, you will define your component `name`, `image` name and image `tag` to use.
 
 ---
 
 ### Registries
 
-Registries are where your applications will pull their image from. Multiple choices are available here.
+Registries are where your MDos will push and pull your application images from. Multiple choices are available here.
 
-#### MDos registry
+#### Use the MDos registry
 
-MDos comes with a private integrated Docker registry. If no `registry` parameter is specified on your components then this private internal registry will be used to pull the images from. No extra configuration parameters are required if this is the registry you want to use.
+MDos comes with a private integrated Docker registry. If no `registry` parameter is set on your component `yaml` block, then this private internal registry will be used to push / pull the images from. No extra configuration parameters are required if this is the registry you want to use.
 
-#### Custom registry
+#### Use a custom registry
 
 If you have your own private registry that you would like to use for your application images, you can do so by specifying a `registry` value on your component, along with an __optionnal__ `registryPullSecrets` value that should be used to authenticate with your registry:
 
@@ -105,7 +105,7 @@ imagePullSecrets: # Optionnal# Optionnal
 > **Note**
 > Since you are using your own private registry, it will be up to you to provision your private registry `Secret` on the target namespace.
 
-#### Public registry
+#### Use a public registry
 
 The third option is to use a public registry, again with an __optionnal__ `registryPullSecrets` value that should be used to authenticate with the public registry:
 
