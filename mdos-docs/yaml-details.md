@@ -195,7 +195,9 @@ Here is a more complex example that uses a `custom` scoped NetworkPolicy (please
 
 ### Persisted Volumes
 
-#### Pre-populate volume data
+#### Standard volumes
+
+##### Pre-populate volume data
 
 #### HostPath mounts
 
