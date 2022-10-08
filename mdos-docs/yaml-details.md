@@ -193,11 +193,15 @@ Here is a more complex example that uses a `custom` scoped NetworkPolicy (please
 
 ---
 
-### Volumes
+### Persisted Volumes
 
 #### Pre-populate volume data
 
 #### HostPath mounts
+
+---
+
+### ReadOnly volumes & files
 
 #### Using Secrets
 
