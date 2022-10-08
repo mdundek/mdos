@@ -83,6 +83,9 @@ components:
 
 Among those, you will define your component `name`, `image` name and image `tag` to use.
 
+| :hash: CLI command:  `mdos generate component` |
+| --- |
+
 ---
 
 ### Registries
@@ -129,12 +132,31 @@ components:
 
 ### Overwrite container default command on start
 
+If you wish to overwrite the `command` used by a container on startup, you can so so like this:
+
 ```yaml
 ...
 components:
   - name: comp-1
     ...
-    
+    command:
+      - "sh"
+      - "-c"
+      - "mycommand"
+    workingDir: /from/this/dir # optional
+    ...
+```
+
+or along with command aguments:
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    command: ["printenv"]
+    commandArgs: ["HOSTNAME", "KUBERNETES_PORT"]
+    workingDir: /from/this/dir # optional
     ...
 ```
 
@@ -142,14 +164,34 @@ components:
 
 ### NetworkPolicy
 
+On a multi-tenant cluster environement, it is important that you protect your components from being accessed from other application components. There are 4 available configuration settings available to you here:
+
+1. private
+2. limited
+3. open
+4. custom
+
 ```yaml
 ...
 components:
   - name: comp-1
     ...
-    
+    networkPolicy: 
+      scope: private # limited | open | custom
     ...
 ```
+
+| **Scope** | **Description**                                                                |
+|-----------|--------------------------------------------------------------------------------|
+| private   | No one can talk to this component                                              |
+| limited   | Only components belonging to this application can talk to this component       |
+| open      | All application components in this tenant namespace can talk to this component |
+| custom    | You can specify which components in what namespaces can talk to this component |
+
+The `custom` scope let's you specify specifically what application components from what namespaces are allowed to communicate with this component.  
+Here are a few examples to demonstrate the use of those fields:
+
+<img src="img/networkPolicy/custom.png" alt="custom" width="400"/>
 
 ---
 
