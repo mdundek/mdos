@@ -186,7 +186,8 @@ components:
 ```
 
 The `custom` scope let's you specify specifically what application components from what namespaces are allowed to communicate with this component.  
-Here is a more complex example that uses a `custom` scoped NetworkPolicy:
+
+Here is a more complex example that uses a `custom` scoped NetworkPolicy:  
 
 <img src="img/networkPolicies/custom.png" alt="custom" width="800"/>
 
