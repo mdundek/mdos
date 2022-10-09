@@ -86,6 +86,9 @@ Among those, you will define your component `name`, `image` name and image `tag`
 | :hash: CLI command:  `mdos generate component` |
 | --- |
 
+> **Note**
+> When using the MDos CLI to scaffold your application component, then the CLI will be asked to select amonst multiple network isolation options. You can read more about `NetworkPolicy` isolation configurations in the section [here](#networkpolicy)
+
 ---
 
 ### Registries
@@ -162,7 +165,301 @@ components:
 
 ---
 
-### NetworkPolicy
+### Persisted Volumes
+
+| :hash: CLI command:  `mdos generate volume` |
+| --- |
+
+#### Standard volumes
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    volumes:
+      - name: database-storage
+        mountPath: /usr/data/db
+        size: 10Gi
+    ...
+```
+
+#### Shared volumes
+
+```sh
+mdos shared-volume create
+```
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    volumes:
+      - name: database-storage
+        mountPath: /usr/data/db
+        ref: my-shared-volume # existing secret / configMap name to reference
+    ...
+```
+
+#### Pre-populate volumes
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    volumes:
+      - name: static-website
+        mountPath: /usr/share/nginx/html
+        syncVolume: true
+        size: 10Gi
+    ...
+```
+
+```title="Project structure"
+...
+├── volumes
+│   └── static-website
+│       └── index.html
+│       └── ...
+└── mdos.yaml
+```
+
+#### HostPath mounts
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    volumes:
+      - name: database-storage
+        mountPath: /usr/data/db
+        hostPath: /path/to/folder/on/node
+    ...
+```
+
+---
+
+### ReadOnly volumes & files
+
+#### Using Secrets
+
+Mount as directory:
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    secrets:
+      - name: my-ca
+        type: dir
+        mountPath: /etc/x509/https
+        entries:
+          - name: ca.crt
+            value: |-
+              -----BEGIN CERTIFICATE-----
+              ...
+              -----END CERTIFICATE-----
+          - name: ca.key
+            value: |-
+              -----BEGIN EC PRIVATE KEY-----
+              ...
+              -----END EC PRIVATE KEY-----
+    ...
+```
+
+Mount as individual files:
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    secrets:
+      - name: my-ca
+        type: file
+        mountPath: /etc/x509/https
+        entries:
+          - name: client-ca
+            filename: ca.crt
+            value: |-
+              -----BEGIN CERTIFICATE-----
+              ...
+              -----END CERTIFICATE-----
+          - name: client-key
+            filename: ca.key
+            value: |-
+              -----BEGIN EC PRIVATE KEY-----
+              ...
+              -----END EC PRIVATE KEY-----
+    ...
+```
+
+#### Using ConfigMaps
+
+Mount as directory:
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    configs:
+      - name: my-ca
+        type: dir
+        mountPath: /etc/my-scripts
+        defaultMode: 0744 # optional
+        entries:
+          - name: foo.sh
+            value: |-
+              #!/bin/sh
+              echo "Hello world from foo!"
+          - name: bar.sh
+            value: |-
+              #!/bin/sh
+              echo "Hello world from bar!"
+    ...
+```
+
+Mount as individual files:
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    configs:
+      - name: my-ca
+        type: file
+        mountPath: /etc/my-scripts
+        defaultMode: 0744 # optional
+        entries:
+          - name: foo-script
+            filename: foo.sh
+            value: |-
+              #!/bin/sh
+              echo "Hello world from foo!"
+          - name: bar-script
+            filename: bar.sh
+            value: |-
+              #!/bin/sh
+              echo "Hello world from bar!"
+    ...
+```
+
+#### From existing ConfigMap or Secret
+
+Mount as directory:
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    secrets: # or configs
+      - name: my-ca
+        type: dir
+        mountPath: /etc/x509/https
+        ref: my-root-domain-tls-secret # existing secret / configMap name to reference
+    ...
+```
+
+Mount as files:
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    secrets: # or configs
+      - name: my-ca
+        type: file
+        mountPath: /etc/x509/https
+        ref: my-root-domain-tls-secret # existing secret / configMap name to reference
+        entries:
+          - name: ca-crt # name of the configMap / secret key that contains the value
+            filename: ca.crt # name of the file to use to mount this value as
+    ...
+```
+
+---
+
+### Environement Variables
+
+#### Using ConfigMaps or Secrets
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    secrets: # or configs
+      - name: config-params
+        type: env
+        entries:
+          - key: MY_VAR_1
+            value: "my vlaue"
+          - key: MY_VAR_2
+            value: "my other vlaue"
+    ...
+```
+
+#### From existing ConfigMap or Secret
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    secrets: # or configs
+      - name: rabbitmq-creds
+        type: env
+        ref: rabbitmq-cluster-default-user # existing secret / configMap name to reference
+        entries:
+          - name: RABBIT_PORT # variable name to set
+            key: PORT # variable key name from the ref. secret / config
+          - name: RABBIT_HOST
+            key: HOST
+...
+```
+
+---
+
+### Networking
+
+#### Exposing ports using services
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    services:
+      - name: http
+        ports:
+          - port: 80
+...
+```
+
+#### Configure Ingress
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    ingress:
+      - name: main
+        matchHost: nginx.mydomain.com
+        targetPort: 80
+        trafficType: http
+...
+```
+
+#### NetworkPolicy
 
 On a multi-tenant cluster environement, it is important that you protect your components from being accessed from other application components. There are 4 available configuration settings available for you to use:
 
@@ -193,56 +490,55 @@ Here is a more complex example that uses a `custom` scoped NetworkPolicy (please
 
 ---
 
-### Persisted Volumes
-
-#### Standard volumes
-
-#### Shared volumes
-
-#### Pre-populate volumes
-
-#### HostPath mounts
-
----
-
-### ReadOnly volumes & files
-
-#### Using Secrets
-
-#### Using ConfigMaps
-
-#### From existing ConfigMap or Secret
-
----
-
-### Environement Variables
-
-#### Using ConfigMaps
-
-#### Using Secrets
-
-#### From existing ConfigMap or Secret
-
----
-
-### Networking
-
-#### Exposing ports using services
-
-#### Configure Ingress
-
----
-
 ### OAuth2 OIDC
 
 #### Configure a OIDC provider
 
 #### Protect your ingress with a OIDC provider
 
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    oidc:
+      provider: google-test-provider
+      hosts:
+        - nginx.mydomain.com
+...
+```
+
 ---
 
 ### Set pod resources
 
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+...
+```
+
 ---
 
-### Execute pre-deployment scripts
+### Execute pre-build commands
+
+```yaml
+...
+components:
+  - name: comp-1
+    ...
+    preBuildCmd:
+      - mkdocs build
+      - rm -rf ../volumes/docs/*
+      - cp -r ./site/* ../volumes/docs
+...
+```

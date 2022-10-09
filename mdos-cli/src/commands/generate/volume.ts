@@ -118,10 +118,26 @@ export default class Volume extends Command {
                 name: 'inject',
                 default: false,
                 when: (values: any) => {
-                    context('Content will be copied over to the cluster host on deployment', false, true)
-                    return true
+                    if(!values.useHostpath) {
+                        context('Content will be copied over to the cluster host on deployment', false, true)
+                        return true
+                    } else {
+                        return false
+                    }
                 },
                 message: 'Do you want to populate your volume with some static content before the container starts?',
+            },
+            {
+                type: 'number',
+                name: 'size',
+                when: (values: any) => {
+                    return !values.useHostpath
+                },
+                message: 'Size in Gb (ex. 0.2, 1, 100...) to allocate to this volume:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    return true
+                },
             },
         ])
 
@@ -132,7 +148,8 @@ export default class Volume extends Command {
             syncVolume?: boolean
             name?: string
             mountPath: string
-            hostPath?: string
+            hostPath?: string,
+            size?: string
         }
 
         const vol: Volume = {
@@ -157,6 +174,8 @@ export default class Volume extends Command {
                 process.exit(1)
             }
         }
+
+        if (responses.size) vol.size = `${responses.size}Gi`
 
         if (responses.useHostpath) vol.hostPath = responses.hostpath
 
