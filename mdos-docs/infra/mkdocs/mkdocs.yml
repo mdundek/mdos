@@ -29,5 +29,6 @@ nav:
     - Home: index.md
     - Install: installation.md
     - Getting started: getting-started.md
+    - Reference documentation: reference-documentation.md
 plugins:
   - external-markdown

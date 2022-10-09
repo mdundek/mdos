@@ -181,18 +181,6 @@
   </li>
 
       
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="minio/" class="md-tabs__link">
-      Minio S3
-    </a>
-  </li>
-
-      
     </ul>
   </div>
 </nav>
@@ -273,13 +261,6 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#table-of-contents" class="md-nav__link">
-    Table of Contents
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#overview" class="md-nav__link">
@@ -387,21 +368,6 @@
   
 
     
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="minio/" class="md-nav__link">
-        Minio S3
-      </a>
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -429,13 +395,6 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#table-of-contents" class="md-nav__link">
-    Table of Contents
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#overview" class="md-nav__link">
@@ -522,79 +481,10 @@
 <h1 id="welcome-to-the-mdos-platform">Welcome to the MDos platform</h1>
 <p>MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency</p>
 <hr />
-<h2 id="table-of-contents">Table of Contents</h2>
-<ul>
-<li><a href="#overview">Overview</a></li>
-<li><a href="#why-would-you-want-to-use-it">Why would you want to use it?</a></li>
-<li><a href="#features">Features</a><ul>
-<li><a href="#1-application-specific-resource-configurations">Application specific resource configurations</a></li>
-<li><a href="#2-deploy-and-debug-your-applications">Deploy and debug your applications</a></li>
-<li><a href="#3-advanced-volume-and-storage-workflows">Advanced volume and storage workflows</a></li>
-<li><a href="#4-multi-tenant-based-segregation">Multi-tenant based segregation</a></li>
-<li><a href="#5-oidc--oauth2-authentication--application-rbac">OIDC / OAuth2 authentication &amp; Application RBAC</a></li>
-</ul>
-</li>
-<li><a href="#overview">Installation &amp; setup</a></li>
-<li><a href="#overview">MDos platform</a><ul>
-<li><a href="#overview">Master node &amp; MDos control plane</a></li>
-<li><a href="#overview">Worker nodes</a></li>
-</ul>
-</li>
-<li><a href="#overview">MDos CLI</a></li>
-<li><a href="#overview">Getting started</a></li>
-<li><a href="#overview">Hello world</a><ul>
-<li><a href="#overview">Create a new tenant namespace</a></li>
-<li><a href="#overview">Scaffold an application and application component</a></li>
-<li><a href="#overview">Deploy your hello world application</a></li>
-</ul>
-</li>
-<li><a href="#overview">MDos CLI commands</a><ul>
-<li><a href="#overview">Tenants namespaces</a></li>
-<li><a href="#overview">Create a new tenant namespace</a></li>
-<li><a href="#overview">Delete a tenant namespace</a></li>
-<li><a href="#overview">List tenant namespaces</a></li>
-<li><a href="#overview">Tenant roles</a></li>
-<li><a href="#overview">Create tenant roles</a></li>
-<li><a href="#overview">List tenant roles</a></li>
-<li><a href="#overview">Delete tenant roles</a></li>
-<li><a href="#overview">MDos users and user roles</a></li>
-<li><a href="#overview">Create new users</a></li>
-<li><a href="#overview">Delete users</a></li>
-<li><a href="#overview">List available users</a></li>
-<li><a href="#overview">Assign tenant roles to users</a></li>
-<li><a href="#overview">List tenant roles for a user</a></li>
-<li><a href="#overview">Remove tenant roles for a user</a></li>
-<li><a href="#overview">Manage applications</a></li>
-<li><a href="#overview">Scaffold a new application workspace</a></li>
-<li><a href="#overview">Manage applcation components</a><ul>
-<li><a href="#overview">Scaffold a new application component</a></li>
-<li><a href="#overview">Configure configurations</a></li>
-<li><a href="#overview">Configure secrets</a></li>
-<li><a href="#overview">Configure service ports</a></li>
-<li><a href="#overview">Configure ingress rules</a></li>
-<li><a href="#overview">Configure volumes &amp; sync data with PODS</a></li>
-</ul>
-</li>
-<li><a href="#overview">Build &amp; Deploy applications</a></li>
-<li><a href="#overview">Delete deployed applications</a></li>
-<li><a href="#overview">List deployed applications</a></li>
-<li><a href="#overview">Configure a OIDC OAuth2 Provider to protect your application components</a></li>
-<li><a href="#overview">OIDC OAuth2 Providers</a></li>
-<li><a href="#overview">Deploy a new OIDC OAuth2 proxy provider</a><ul>
-<li><a href="#overview">Keycloak OIDC</a></li>
-<li><a href="#overview">Google OIDC</a></li>
-</ul>
-</li>
-<li><a href="#overview">List all deployed OIDC OAuth2 proxy providers</a></li>
-<li><a href="#overview">Delete a deployed OIDC OAuth2 proxy provider</a></li>
-</ul>
-</li>
-</ul>
-<hr />
 <h2 id="overview">Overview</h2>
 <div style="display: flex; align-items: center; justify-content: center">
   <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
-    <img src="https://raw.githubusercontent.com/mdundek/mdos/main/docs/img/overview.png" style="max-width: 100%">
+    <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/img/overview.png?raw=true" style="max-width: 100%">
   </div>
   <div style="padding-right: 20px;">
     <ul>
@@ -609,7 +499,6 @@
   </div>
 </div>
 
-<hr />
 <h3 id="why-would-you-want-to-use-it">Why would you want to use it?</h3>
 <p>Let's face it, Kubernetes is great, most probably one of the best Container runtime platforms ever build with almost endless capabilities. It is no surprising that 70% of all companies use Kubernetes in production somewhere in their public / private cloud environement.<br />
 That said, it's complexity is often a deterant, and leads to badly designed deployment scenarios, regularly exposing security threaths as well as miss-usage of certain cluster based capabilities, leading to under-utilization of it's capabilities.  </p>

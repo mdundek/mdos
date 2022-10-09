@@ -1,4 +1,4 @@
-# mdos.yaml configuration
+# MDos Applicattion reference documentation
 
 ## Anatomy of an application
 

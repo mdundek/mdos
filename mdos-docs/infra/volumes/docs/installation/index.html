@@ -181,18 +181,6 @@
   </li>
 
       
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../minio/" class="md-tabs__link">
-      Minio S3
-    </a>
-  </li>
-
-      
     </ul>
   </div>
 </nav>
@@ -290,120 +278,160 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#install-the-mdos-server-platform" class="md-nav__link">
+    Install the MDos (server) platform
+  </a>
+  
+    <nav class="md-nav" aria-label="Install the MDos (server) platform">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-you-start" class="md-nav__link">
+    Before you start
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#master-node-mdos-control-plane" class="md-nav__link">
+    Master node &amp; MDos control plane
+  </a>
+  
+    <nav class="md-nav" aria-label="Master node &amp; MDos control plane">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#administrator-credentials" class="md-nav__link">
+    Administrator credentials
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#domain-certificate-setup" class="md-nav__link">
+    Domain &amp; certificate setup
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain &amp; certificate setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#self-signed-certificate-example" class="md-nav__link">
+    &gt; Self-signed certificate example
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cert-manager-example" class="md-nav__link">
+    &gt; Cert-manager example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kubernetes-workload-storage-directory-path" class="md-nav__link">
+    Kubernetes workload storage directory path
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#private-registry-max-size" class="md-nav__link">
+    Private registry max size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ftp-sync-server-for-kubernetes-pod-data-provisionning" class="md-nav__link">
+    FTP sync server for Kubernetes POD data provisionning
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-keycloak-and-set-up-the-master-token" class="md-nav__link">
+    Configure Keycloak and set up the master token
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#worker-nodes" class="md-nav__link">
+    Worker nodes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-mdos-cli" class="md-nav__link">
     Install the MDos CLI
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#set-up-the-mdos-platform" class="md-nav__link">
-    Set up the MDos platform
-  </a>
-  
-    <nav class="md-nav" aria-label="Set up the MDos platform">
+    <nav class="md-nav" aria-label="Install the MDos CLI">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#01-cloudflare-certbot-ssl" class="md-nav__link">
-    01 - Cloudflare &amp; certbot SSL
+  <a href="#linux-mac-osx" class="md-nav__link">
+    Linux &amp; Mac OSX
   </a>
   
-    <nav class="md-nav" aria-label="01 - Cloudflare &amp; certbot SSL">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    Windows
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-your-installation" class="md-nav__link">
+    Verify Your Installation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name" class="md-nav__link">
+    Special notes about self-signed certificates without a resolvable DNS name
+  </a>
+  
+    <nav class="md-nav" aria-label="Special notes about self-signed certificates without a resolvable DNS name">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#router-config" class="md-nav__link">
-    Router config
+  <a href="#linux-mac-osx_1" class="md-nav__link">
+    Linux &amp; Mac OSX
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#cloudflare-dns-config" class="md-nav__link">
-    Cloudflare DNS config
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cloudflare-api-config" class="md-nav__link">
-    Cloudflare API config
+  <a href="#windows_1" class="md-nav__link">
+    Windows
   </a>
   
 </li>
         
       </ul>
     </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#02-code-server-setup" class="md-nav__link">
-    02 - Code-server setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#03-k3s-calico-setup" class="md-nav__link">
-    03 - K3S &amp; Calico setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#04-helm-setup" class="md-nav__link">
-    04 - HELM setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05-istio-ingress-setup" class="md-nav__link">
-    05 - Istio Ingress setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#06-nginx-reverse-proxy-setup" class="md-nav__link">
-    06 - NGinx reverse proxy setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#07-private-docker-registry-setup" class="md-nav__link">
-    07 - Private docker registry setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#08-minio-s3-backup-server-setup" class="md-nav__link">
-    08 - Minio S3 backup server setup
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extra" class="md-nav__link">
-    Extra
-  </a>
-  
-    <nav class="md-nav" aria-label="Extra">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disk-mounts" class="md-nav__link">
-    disk mounts
-  </a>
   
 </li>
         
@@ -430,21 +458,6 @@
     <li class="md-nav__item">
       <a href="../getting-started/" class="md-nav__link">
         Getting started
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../minio/" class="md-nav__link">
-        Minio S3
       </a>
     </li>
   
@@ -479,120 +492,160 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#install-the-mdos-server-platform" class="md-nav__link">
+    Install the MDos (server) platform
+  </a>
+  
+    <nav class="md-nav" aria-label="Install the MDos (server) platform">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-you-start" class="md-nav__link">
+    Before you start
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#master-node-mdos-control-plane" class="md-nav__link">
+    Master node &amp; MDos control plane
+  </a>
+  
+    <nav class="md-nav" aria-label="Master node &amp; MDos control plane">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#administrator-credentials" class="md-nav__link">
+    Administrator credentials
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#domain-certificate-setup" class="md-nav__link">
+    Domain &amp; certificate setup
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain &amp; certificate setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#self-signed-certificate-example" class="md-nav__link">
+    &gt; Self-signed certificate example
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cert-manager-example" class="md-nav__link">
+    &gt; Cert-manager example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kubernetes-workload-storage-directory-path" class="md-nav__link">
+    Kubernetes workload storage directory path
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#private-registry-max-size" class="md-nav__link">
+    Private registry max size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ftp-sync-server-for-kubernetes-pod-data-provisionning" class="md-nav__link">
+    FTP sync server for Kubernetes POD data provisionning
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-keycloak-and-set-up-the-master-token" class="md-nav__link">
+    Configure Keycloak and set up the master token
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#worker-nodes" class="md-nav__link">
+    Worker nodes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-mdos-cli" class="md-nav__link">
     Install the MDos CLI
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#set-up-the-mdos-platform" class="md-nav__link">
-    Set up the MDos platform
-  </a>
-  
-    <nav class="md-nav" aria-label="Set up the MDos platform">
+    <nav class="md-nav" aria-label="Install the MDos CLI">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#01-cloudflare-certbot-ssl" class="md-nav__link">
-    01 - Cloudflare &amp; certbot SSL
+  <a href="#linux-mac-osx" class="md-nav__link">
+    Linux &amp; Mac OSX
   </a>
   
-    <nav class="md-nav" aria-label="01 - Cloudflare &amp; certbot SSL">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    Windows
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-your-installation" class="md-nav__link">
+    Verify Your Installation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name" class="md-nav__link">
+    Special notes about self-signed certificates without a resolvable DNS name
+  </a>
+  
+    <nav class="md-nav" aria-label="Special notes about self-signed certificates without a resolvable DNS name">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#router-config" class="md-nav__link">
-    Router config
+  <a href="#linux-mac-osx_1" class="md-nav__link">
+    Linux &amp; Mac OSX
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#cloudflare-dns-config" class="md-nav__link">
-    Cloudflare DNS config
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cloudflare-api-config" class="md-nav__link">
-    Cloudflare API config
+  <a href="#windows_1" class="md-nav__link">
+    Windows
   </a>
   
 </li>
         
       </ul>
     </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#02-code-server-setup" class="md-nav__link">
-    02 - Code-server setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#03-k3s-calico-setup" class="md-nav__link">
-    03 - K3S &amp; Calico setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#04-helm-setup" class="md-nav__link">
-    04 - HELM setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05-istio-ingress-setup" class="md-nav__link">
-    05 - Istio Ingress setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#06-nginx-reverse-proxy-setup" class="md-nav__link">
-    06 - NGinx reverse proxy setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#07-private-docker-registry-setup" class="md-nav__link">
-    07 - Private docker registry setup
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#08-minio-s3-backup-server-setup" class="md-nav__link">
-    08 - Minio S3 backup server setup
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extra" class="md-nav__link">
-    Extra
-  </a>
-  
-    <nav class="md-nav" aria-label="Extra">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disk-mounts" class="md-nav__link">
-    disk mounts
-  </a>
   
 </li>
         
@@ -616,136 +669,191 @@
 
 
 <h1 id="installation-setup">Installation &amp; setup</h1>
-<h2 id="install-the-mdos-cli">Install the MDos CLI</h2>
-<p>The easiest way to install the platform is to use the MDos CLI. Do do so, you will have to clone the repo on your target machine:</p>
+<h2 id="install-the-mdos-server-platform">Install the MDos (server) platform</h2>
+<blockquote>
+<p><strong>Warning</strong>
+At the moment, only Ubuntu &gt;= 20.04 is supported for the MDos platform itself. Debian and Alpine are planned next.
+The MDos CLI is available for Max, linux and Windows</p>
+</blockquote>
+<p>First, clone this repo on your target machine:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone https://github.com/mdundek/mdos.git
 </code></pre></div>
-<p>Then install the CLI by executing the following script:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>./mdos/cli/install/01_setup_mdos_cmd.sh
+<h3 id="before-you-start">Before you start</h3>
+<p>The installation will require that you configure a valid domain name and a certificate for the mdos base platform (for developement purposes you can choose to work with a self-signed certificate).</p>
+<p>If you plan on using <code>cert-manager</code> to manage your certificate, then you will have to prepare a <code>Issuer</code> yaml file upfront before you go ahead and start the installation script (see section <a href="#-cert-manager-example">Cert-manager example</a> for more details).</p>
+<h3 id="master-node-mdos-control-plane">Master node &amp; MDos control plane</h3>
+<p>Install the platform by calling the following script as root:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo ./mdos-setup/install.sh
 </code></pre></div>
-<p>During the installation of the CLI, you will be asked to enter your main domain name.  </p>
+<p>During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.</p>
+<p><img src="img/installation/ip.png" alt="ip" width="600"/></p>
+<h4 id="administrator-credentials">Administrator credentials</h4>
+<p>The platform will create a overall admin account on the platform. Please provide the admin username, email and password first:</p>
+<p><img src="img/installation/account.png" alt="account" width="600"/></p>
+<h4 id="domain-certificate-setup">Domain &amp; certificate setup</h4>
+<p>Some of the components such as the registry auth server require a TLS certificate to function.<br />
+The installation script will give you multiple choices here:</p>
+<ol>
+<li>You have a valid certificate at hand that you would like to use</li>
+<li>You want to set up <code>cert-manager</code> to generate and manage your certificate (Let's Encrypt, CloudFlare, Vault, AWS, Google...)</li>
+<li>You have no certificate and would like to create a self-signed certificate (only suited for developement purposes)</li>
+</ol>
 <blockquote>
-<p><em>Ex. yourdomain.com</em><br />
-<em>Enter your root domain name: <code>yourdomain.com</code></em></p>
+<p><strong>Warning</strong>
+For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.<br />
+For production, you will have to use a fully valid certificate in order to use all of MDos features. </p>
 </blockquote>
-<p>Once done, execute the following command to reload your aliases for the mdos CLI:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">source</span> ~/.bashrc
-</code></pre></div>
-<h2 id="set-up-the-mdos-platform">Set up the MDos platform</h2>
-<p>To install the platform, you can use the <code>mdos</code> CLI to do so. For a more granual installation, the setup is split into multiple steps:</p>
+<h5 id="self-signed-certificate-example">&gt; Self-signed certificate example</h5>
+<p><img src="img/installation/selfsigned.png" alt="selfsigned" width="600"/></p>
+<p>This example is based on the 3rd option, a self signed certificate. If you want to use <code>cert-manager</code> instead (good option for production environement), you will be asked to enter the path to your cert-manager <code>Issuer</code> Yaml file to use in order to issue your certificate.</p>
+<h5 id="cert-manager-example">&gt; Cert-manager example</h5>
+<p><img src="img/installation/certmanager.png" alt="selfsigned"/></p>
+<p>Here we are using <code>cert-manager</code> to generate and manage the certificate for you</p>
+<blockquote>
+<p><strong>Note</strong>
+Your <code>Issuer</code> must use the name <code>mdos-issuer</code>, the rest is up to you. Here is an example Issuer yaml file that uses <code>CloudFlare</code> as the DNS registrar &amp; <code>Let's Encrypt</code> to generate and sign your certificate:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span><span class="w"></span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Secret</span><span class="w"></span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nt">metadata</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cloudflare-api-key-secret</span><span class="w"></span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Opaque</span><span class="w"></span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nt">stringData</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="nt">api-key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR CLOUDFLARE API KEY&gt;</span><span class="w"></span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nn">---</span><span class="w"></span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cert-manager.io/v1</span><span class="w"></span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Issuer</span><span class="w"></span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nt">metadata</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mdos-issuer</span><span class="w"></span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="nt">spec</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span><span class="nt">acme</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR LETS-ENCRYPT EMAIL ADDRESS&gt;</span><span class="w"></span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="nt">server</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://acme-v02.api.letsencrypt.org/directory</span><span class="w"></span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="nt">privateKeySecretRef</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">letsencrypt-prod</span><span class="w"></span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="nt">solvers</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dns01</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">        </span><span class="nt">cloudflare</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">          </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR CLOUDFLARE EMAIL ADDRESS&gt;</span><span class="w"></span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">          </span><span class="nt">apiKeySecretRef</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cloudflare-api-key-secret</span><span class="w"></span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">            </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">api-key</span><span class="w"></span>
+</code></pre></div></p>
+<p>Other examples for various providers can be found at: <a href="https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers">https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers</a>
+</p>
+</blockquote>
+<h4 id="kubernetes-workload-storage-directory-path">Kubernetes workload storage directory path</h4>
+<p>When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.<br />
+MDos uses <code>Longhorn</code> from Rancher for this as a storage class. Longhorn will allocate your container volumes in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:</p>
+<p><img src="img/installation/storage.png" alt="storage" width="600"/></p>
+<h4 id="private-registry-max-size">Private registry max size</h4>
+<p>MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.<br />
+The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).</p>
+<p><img src="img/installation/registry.png" alt="registry" width="600"/></p>
+<blockquote>
+<p><strong>Note</strong>
+Please note that this storage capacity will be located on your main Kubernetes storage path specified above</p>
+</blockquote>
+<h4 id="ftp-sync-server-for-kubernetes-pod-data-provisionning">FTP sync server for Kubernetes POD data provisionning</h4>
+<p>When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using <code>hostPath</code> mount points instead. This is an antipatern and does not go well with multi-node cluster environements where you can not easiely predict where your pod is going to start.<br />
+MDos provides you with a means to initialize your application pods with data pre-alocated to it's volumes. This can be very usefull for usecases such as (but not only):</p>
 <ul>
-<li>Install and create your <code>Cloudflare - Certbot SSL certificate</code> &amp; auto-renewal for your domain</li>
-<li>Install <code>Code-server</code> so that you can develop your applications using your favorite browser</li>
-<li>Install the <code>K3S &amp; Calico</code> application runtime environement</li>
-<li>Install <code>HELM</code> for Kubernetes</li>
-<li>Install <code>Istio</code> for ingress</li>
-<li>Install a local <code>NGinx</code> server as a reverse proxy for your platform (also used to load-balance between nodes if you have more than one)</li>
-<li>Install a local <code>private Docker regisytry</code> on the K3S cluster</li>
-<li>Install <code>Minio</code> for file sharing</li>
+<li>Provision a volume with a already pre-established database schema and data set for initialization purposes (or any other type of initialization data sets)</li>
+<li>Provision static data such as websites</li>
+<li>or for anything else for that matter...</li>
 </ul>
-<p><img alt="Platform" src="img/mdos-platform.png" /></p>
-<blockquote>
-<p>NOTE: The GlusterFS shared filesystem is not available at the moment, this is planned for future releases.</p>
-</blockquote>
-<p>The CLI command that will allow you to install each one of these components is <code>mdos core-setup</code>:</p>
-<p><img alt="CLI" src="../img/setup/cli.png" /></p>
-<blockquote>
-<p>You need to execute each one of those commands in the right order. Each component might ask for extra parameters to accomplish it's specific setup.</p>
-</blockquote>
-<h3 id="01-cloudflare-certbot-ssl">01 - Cloudflare &amp; certbot SSL</h3>
-<p>Select <code>01_certbot</code> as the target installation step. You will be asked to enter your:</p>
-<ul>
-<li>Cloudflare email address</li>
-<li>Cloudflare API token</li>
-</ul>
-<p>Your SSL certificate is now setup and will automatically renew when necessary.<br />
-Your crontab has also been updated to automatically update your public IP address on Cloudflare.</p>
-<h4 id="router-config">Router config</h4>
-<blockquote>
-<p>Make sure you configured your router to route ports 80 &amp; 443 to this machine before moving forward with this script.  </p>
-</blockquote>
-<h4 id="cloudflare-dns-config">Cloudflare DNS config</h4>
-<blockquote>
-<p>Also make sure your domain is configured on CloudFlare:
-<img alt="Cloudflare" src="../img/setup/cloudflare.png" /></p>
-</blockquote>
-<h4 id="cloudflare-api-config">Cloudflare API config</h4>
-<blockquote>
-<p>Create a CloudFlare API key as well, you will need it here (<code>My Profile -&gt; API Token</code>):<br />
-<img alt="Cloudflare API" src="../img/setup/cloudflare_api.png" /></p>
-</blockquote>
-<h3 id="02-code-server-setup">02 - Code-server setup</h3>
-<p>Select <code>02_codeserver</code> as the target installation step. You will be asked to specify a code-server password.</p>
-<blockquote>
-<p>Once done, your code-server instance will be up and running, but you will have to wait untill you set up NGinx before being able to access it.<br />
-Once that is done, you will be able to access your Code-server instance on the following URL: <code>https://cs.&lt;your domain&gt;</code></p>
-</blockquote>
-<h3 id="03-k3s-calico-setup">03 - K3S &amp; Calico setup</h3>
-<p>Select <code>03_k3s</code> as the target installation step. You will be asked to enter your:</p>
-<ul>
-<li>The private docker registry username</li>
-<li>The private docker registry password</li>
-</ul>
-<blockquote>
-<p>Those will be used to set up your self signed registry certificate, along with your docker daemon and K3S containerd exceptions for the certificate.</p>
-</blockquote>
-<h3 id="04-helm-setup">04 - HELM setup</h3>
-<p>Select <code>04_helm</code> as the target installation step.<br />
-This is straight forward, HELM is used to install applications on the mdos platform.</p>
-<h3 id="05-istio-ingress-setup">05 - Istio Ingress setup</h3>
-<p>Select <code>05_istio</code> as the target installation step. </p>
-<blockquote>
-<p>If you update the istio HELM yaml files, make sure to set the ingress-gateway nodeports to 30977 (status-port), 30978 (http2) &amp; 30979 (https) in the yaml file <code>files/istio_helm/gateways/istio-ingress/values.yaml</code></p>
-</blockquote>
-<h3 id="06-nginx-reverse-proxy-setup">06 - NGinx reverse proxy setup</h3>
-<p>Select <code>06_nginx</code> as the target installation step. You will be asked to enter your:</p>
-<ul>
-<li>WAN facing username</li>
-<li>WAN facing password</li>
-</ul>
-<p>This NGinx server will capture traffic on port 443 on your machine, and forward this traffic to your local code-server, as well as to all applications running on your K3S cluster. Segregagtion happens on the HOST subdomain used with your CloudFlare main domain name.<br />
-Unless configured otherwise, the NGinx server will also enforce user authentication for all application it serves except for Minio who comes with's it's own authentication mechanism.</p>
-<blockquote>
-<p>NOTE: NGinx is installed navively on the host, rather than as a container in the cluster. </p>
-</blockquote>
-<h3 id="07-private-docker-registry-setup">07 - Private docker registry setup</h3>
-<p>Select <code>07_registry</code> as the target installation step. </p>
-<blockquote>
-<p>This registry is used by Kubernetes to store and distribute your private application images</p>
-</blockquote>
-<h3 id="08-minio-s3-backup-server-setup">08 - Minio S3 backup server setup</h3>
-<p>Select <code>08_minio</code> as the target installation step. You will be asked to enter your:</p>
-<ul>
-<li>The minio storage path to use</li>
-<li>Minio ACCESS_KEY to use</li>
-<li>Minio SECRET_KEY to use</li>
-</ul>
-<blockquote>
-<p>Once that is done, you will be able to access:</p>
-<ul>
-<li>The Minio console: <code>https://minio-console.&lt;your domain&gt;</code></li>
-<li>The Minio S3 server: <code>https://minio-backup.&lt;your domain&gt;</code></li>
-</ul>
-</blockquote>
-<h2 id="extra">Extra</h2>
-<h3 id="disk-mounts">disk mounts</h3>
-<div class="highlight"><span class="filename">Example of disk mounts in linux</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Create mount folders</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>mkdir /media/storage
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>mkdir /media/multimedia
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>mkdir /media/backup
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Get partition UUIDs</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>lsblk -o NAME,FSTYPE,UUID
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># Open fstab file</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>vi /etc/fstab
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="nb">echo</span> <span class="s2">&quot;UUID=5dd2af09-b490-43bf-a688-e8c5f6a557ef /media/storage ext4 defaults 0 2&quot;</span> &gt;&gt; /etc/fstab
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="nb">echo</span> <span class="s2">&quot;UUID=445d3106-669d-492e-b537-b444e9a666b2 /media/multimedia ext4 defaults 0 2&quot;</span> &gt;&gt; /etc/fstab
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="nb">echo</span> <span class="s2">&quot;UUID=67643a4b-4bb9-45b2-9530-838bb48deb05 /media/backup ext4 defaults 0 2&quot;</span> &gt;&gt; /etc/fstab
+<p>This is achieved by providing a centralized storage space on the mdos platform where a FTP server will allow you to (using the mdos CLI) mirror your application volume data from your local machine to the centralized FTP storage device where Kubernetes will then mirror those data volumes onto your POD volumes using <code>initContainers</code> and the FTP protocol.<br />
+Here you are being asked to provide a directory path to where this centralized data will be hosted.<br />
+Again, this is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:</p>
+<p><img src="img/installation/ftp.png" alt="ftp" width="700"/></p>
+<h4 id="configure-keycloak-and-set-up-the-master-token">Configure Keycloak and set up the master token</h4>
+<p>After a few minutes (can take up to 10 minutes, depending on your internet speed), you will be asked to set up Keycloak and provide a secret token to the installation script. <br />
+This token is necessary so that mdos can administer everything it needs on Keycloak.<br />
+The script provides you with detailed instructions on how to do so, simply follow them and enter the secret <code>token</code> from the Keycloak website.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>To finalyze the setup, do the following:
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  1. Open a browser and go to:
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>     https://keycloak.mydomain.com/admin/master/console/#/realms/master/clients
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  2. From the &#39;Clients&#39; section, click on the client &#39;master-realm&#39;
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  3. Change &#39;Access Type&#39; value to &#39;confidential&#39;
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  4. Enable the boolean value &#39;Service Accounts Enabled&#39;
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  5. Set &#39;Valid Redirect URIs&#39; value to &#39;*&#39;
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  6. Save those changes (button at the bottom of the page)
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  7. In tab &#39;Roles&#39;, Click on button &#39;edit&#39; for role &#39;magage realm&#39;.
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>     Enable &#39;Composite roles&#39; and add &#39;admin&#39; realm to associated roles
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>  8. Go to the &#39;Service Account Roles&#39; tab and add the role &#39;admin&#39; to the &#39;Assigned Roles&#39; box
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  9. Click on tab &#39;Credentials&#39;
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a> 10. When ready, copy and paste the &#39;Secret&#39; value into this terminal, then press enter:
 <a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>mount -a
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>SECRET: cXXyx8EtGGL8BgCC9zVYQidKYuctzuXA
 </code></pre></div>
+<p>That's it, once the installation script is finished you are ready to use the platform.</p>
+<h3 id="worker-nodes">Worker nodes</h3>
+<blockquote>
+<p><strong>Note</strong>
+Under construction</p>
+</blockquote>
+<hr />
+<h2 id="install-the-mdos-cli">Install the MDos CLI</h2>
+<h3 id="linux-mac-osx">Linux &amp; Mac OSX</h3>
+<p>The standalone install is a simple tarball with a binary. It contains its own node.js binary and autoupdates.</p>
+<p>To set up the CLI in <code>/usr/local/lib/mdos</code> and <code>/usr/local/bin/mdos</code>, run the following script. The script requires sudo and <strong>isn’t Windows compatible</strong>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh <span class="p">|</span> sh
+</code></pre></div>
+<h3 id="windows">Windows</h3>
+<blockquote>
+<p><strong>Note</strong>
+Under construction</p>
+</blockquote>
+<h3 id="verify-your-installation">Verify Your Installation</h3>
+<p>To verify your CLI installation, use the mdos --version command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>mdos --version
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>mdos-cli/0.0.0 linux-x64 node-v18.9.0
+</code></pre></div>
+<h3 id="special-notes-about-self-signed-certificates-without-a-resolvable-dns-name">Special notes about self-signed certificates without a resolvable DNS name</h3>
+<p>For developement purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your <code>hosts</code> file from wherever you wish to use the CLI from so that it can resolve the various hostnames used by the MDos API platform.</p>
+<blockquote>
+<p><strong>Note</strong>
+Please replace <code>XXX.XXX.XXX.XXX</code> with the MDos Platform server IP address, and <code>mydomain.com</code> with the actual domain used when you deployed the MDos platform. </p>
+</blockquote>
+<h4 id="linux-mac-osx_1">Linux &amp; Mac OSX</h4>
+<p>Open your <code>/etc/hosts</code> file (root user) and add the following entries to it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com registry-auth.mydomain.com mdos-api.mydomain.com mdos-ftp.mydomain.com mdos-ftp-api.mydomain.com longhorn.mydomain.com
+</code></pre></div>
+<blockquote>
+<p><strong>Note</strong>
+Please replace <code>XXX.XXX.XXX.XXX</code> with the MDos Platform server IP address, and <code>mydomain.com</code> with the actual domain used when you deployed the MDos platform. </p>
+</blockquote>
+<h4 id="windows_1">Windows</h4>
+<p>Open your <code>c:\Windows\System32\Drivers\etc\hosts</code> file (root user) and add the following entries to it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>XXX.XXX.XXX.XXX registry-auth.mydomain.com
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>XXX.XXX.XXX.XXX mdos-api.mydomain.com
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>XXX.XXX.XXX.XXX mdos-ftp.mydomain.com
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>XXX.XXX.XXX.XXX mdos-ftp-api.mydomain.com
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>XXX.XXX.XXX.XXX longhorn.mydomain.com
+</code></pre></div>
+<!-- ## Extra
+
+### disk mounts
+
+```sh title="Example of disk mounts in linux"
+# Create mount folders
+mkdir /media/storage
+mkdir /media/multimedia
+mkdir /media/backup
+
+# Get partition UUIDs
+lsblk -o NAME,FSTYPE,UUID
+
+# Open fstab file
+vi /etc/fstab
+
+echo "UUID=5dd2af09-b490-43bf-a688-e8c5f6a557ef /media/storage ext4 defaults 0 2" >> /etc/fstab
+echo "UUID=445d3106-669d-492e-b537-b444e9a666b2 /media/multimedia ext4 defaults 0 2" >> /etc/fstab
+echo "UUID=67643a4b-4bb9-45b2-9530-838bb48deb05 /media/backup ext4 defaults 0 2" >> /etc/fstab
+
+mount -a
+``` -->
 
 
 

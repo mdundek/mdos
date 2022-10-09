@@ -2,22 +2,17 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://doc-mdos.mdundek.network/</loc>
-         <lastmod>2022-09-05</lastmod>
+         <lastmod>2022-10-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://doc-mdos.mdundek.network/getting-started/</loc>
-         <lastmod>2022-09-05</lastmod>
+         <lastmod>2022-10-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://doc-mdos.mdundek.network/installation/</loc>
-         <lastmod>2022-09-05</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://doc-mdos.mdundek.network/minio/</loc>
-         <lastmod>2022-09-05</lastmod>
+         <lastmod>2022-10-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

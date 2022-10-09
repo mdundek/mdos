@@ -25,6 +25,6 @@ components:
         targetPort: 80
         trafficType: http
     oidc:
-      provider: kc-testspace
+      provider: kc-mdos-doc
       hosts:
         - mkdocs-mdos.mdundek.network

@@ -181,18 +181,6 @@
   </li>
 
       
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../minio/" class="md-tabs__link">
-      Minio S3
-    </a>
-  </li>
-
-      
     </ul>
   </div>
 </nav>
@@ -309,34 +297,28 @@
     Anatomy of a mdos application
   </a>
   
-    <nav class="md-nav" aria-label="Anatomy of a mdos application">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#applications-application-components" class="md-nav__link">
-    Applications &amp; application components
-  </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
-    Project layout
+      
+        <li class="md-nav__item">
+  <a href="#configure-your-cli-to-point-to-a-mdos-platform-api-host" class="md-nav__link">
+    Configure your CLI to point to a MDos platform API host
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#build-applications-for-the-platform" class="md-nav__link">
-    Build applications for the platform
+  <a href="#create-a-tenant-namespace" class="md-nav__link">
+    Create a tenant namespace
   </a>
   
-    <nav class="md-nav" aria-label="Build applications for the platform">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scaffold-an-application-application-components" class="md-nav__link">
+    Scaffold an application &amp; application components
+  </a>
+  
+    <nav class="md-nav" aria-label="Scaffold an application &amp; application components">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -359,29 +341,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploy-application-on-the-platform" class="md-nav__link">
-    Deploy application on the platform
+  <a href="#deploy-your-hello-world-application-on-the-cluster" class="md-nav__link">
+    Deploy your hello-world application on the cluster
   </a>
-  
-    <nav class="md-nav" aria-label="Deploy application on the platform">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#build-your-application" class="md-nav__link">
-    Build your application
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deploy-your-application" class="md-nav__link">
-    Deploy your application
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -389,21 +351,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../minio/" class="md-nav__link">
-        Minio S3
-      </a>
     </li>
   
 
@@ -441,34 +388,28 @@
     Anatomy of a mdos application
   </a>
   
-    <nav class="md-nav" aria-label="Anatomy of a mdos application">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#applications-application-components" class="md-nav__link">
-    Applications &amp; application components
-  </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
-    Project layout
+      
+        <li class="md-nav__item">
+  <a href="#configure-your-cli-to-point-to-a-mdos-platform-api-host" class="md-nav__link">
+    Configure your CLI to point to a MDos platform API host
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#build-applications-for-the-platform" class="md-nav__link">
-    Build applications for the platform
+  <a href="#create-a-tenant-namespace" class="md-nav__link">
+    Create a tenant namespace
   </a>
   
-    <nav class="md-nav" aria-label="Build applications for the platform">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scaffold-an-application-application-components" class="md-nav__link">
+    Scaffold an application &amp; application components
+  </a>
+  
+    <nav class="md-nav" aria-label="Scaffold an application &amp; application components">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -491,29 +432,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploy-application-on-the-platform" class="md-nav__link">
-    Deploy application on the platform
+  <a href="#deploy-your-hello-world-application-on-the-cluster" class="md-nav__link">
+    Deploy your hello-world application on the cluster
   </a>
-  
-    <nav class="md-nav" aria-label="Deploy application on the platform">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#build-your-application" class="md-nav__link">
-    Build your application
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deploy-your-application" class="md-nav__link">
-    Deploy your application
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -533,413 +454,212 @@
 
 <h1 id="getting-started">Getting started</h1>
 <h2 id="anatomy-of-a-mdos-application">Anatomy of a mdos application</h2>
-<h3 id="applications-application-components">Applications &amp; application components</h3>
-<p>Applications are to be seen as a higher level concept that is composed of one or more application components. Application components are your actual projects, where one component would be your API backend server, another might be a database server and a third one your front end application for instance.</p>
-<p><img alt="CLI" src="../img/anatomy.png" /></p>
-<p>This architecture allows you to compose quite complex applications to suit most needs.</p>
-<h3 id="project-layout">Project layout</h3>
+<p>Applications are to be seen as a higher level concept, an application in <code>mdos</code> is composed of one or more application components. Application components are your actual project asset placeholders (source code), where one component could be an API backend server for instance, and a second component would hold your front end application and so on.<br />
+Every application component can have one or more volumes attached to it for storage persistance &amp; data mirroring. </p>
+<p><img src="img/anatomy.png" alt="anatomy" width="400"/></p>
+<p>This architecture allows you to compose complex applications to suit your needs.</p>
 <p>A MDos application project layout is composed of one or more folders, each one representing an application component.<br />
-At the root of the application folder is a <code>values.yaml</code> file that holds all runtime configuration parameters for the application and it's components:</p>
+At the root of the application folder is a <code>mdos.yaml</code> file that holds all runtime configuration parameters for the application and it's components:</p>
 <div class="highlight"><span class="filename">Project structure</span><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>my-application/
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── backend
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│   └── Dockerfile
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>├── frontend
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│   └── Dockerfile
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>└── values.yaml
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   └── &lt;your application code files&gt;...
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>├── frontend
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   └── Dockerfile
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│   └── &lt;your application code files&gt;...
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>├── volumes
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│   └── static-website
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│       └── index.html
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│       └── ...
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└── mdos.yaml
 </code></pre></div>
 <p>In this example we have an application named <code>my-application</code>, that is composed of two distinct application components: <code>backend</code> &amp; <code>frontend</code>.<br />
 Each component has it's own Dockerfile.<br />
-At the <code>application</code> level, there is also a <code>values.yaml</code> config file that holds all runtime configuration parameters for the application:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">  1</a></span>
-<span class="normal"><a href="#__codelineno-1-2">  2</a></span>
-<span class="normal"><a href="#__codelineno-1-3">  3</a></span>
-<span class="normal"><a href="#__codelineno-1-4">  4</a></span>
-<span class="normal"><a href="#__codelineno-1-5">  5</a></span>
-<span class="normal"><a href="#__codelineno-1-6">  6</a></span>
-<span class="normal"><a href="#__codelineno-1-7">  7</a></span>
-<span class="normal"><a href="#__codelineno-1-8">  8</a></span>
-<span class="normal"><a href="#__codelineno-1-9">  9</a></span>
-<span class="normal"><a href="#__codelineno-1-10"> 10</a></span>
-<span class="normal"><a href="#__codelineno-1-11"> 11</a></span>
-<span class="normal"><a href="#__codelineno-1-12"> 12</a></span>
-<span class="normal"><a href="#__codelineno-1-13"> 13</a></span>
-<span class="normal"><a href="#__codelineno-1-14"> 14</a></span>
-<span class="normal"><a href="#__codelineno-1-15"> 15</a></span>
-<span class="normal"><a href="#__codelineno-1-16"> 16</a></span>
-<span class="normal"><a href="#__codelineno-1-17"> 17</a></span>
-<span class="normal"><a href="#__codelineno-1-18"> 18</a></span>
-<span class="normal"><a href="#__codelineno-1-19"> 19</a></span>
-<span class="normal"><a href="#__codelineno-1-20"> 20</a></span>
-<span class="normal"><a href="#__codelineno-1-21"> 21</a></span>
-<span class="normal"><a href="#__codelineno-1-22"> 22</a></span>
-<span class="normal"><a href="#__codelineno-1-23"> 23</a></span>
-<span class="normal"><a href="#__codelineno-1-24"> 24</a></span>
-<span class="normal"><a href="#__codelineno-1-25"> 25</a></span>
-<span class="normal"><a href="#__codelineno-1-26"> 26</a></span>
-<span class="normal"><a href="#__codelineno-1-27"> 27</a></span>
-<span class="normal"><a href="#__codelineno-1-28"> 28</a></span>
-<span class="normal"><a href="#__codelineno-1-29"> 29</a></span>
-<span class="normal"><a href="#__codelineno-1-30"> 30</a></span>
-<span class="normal"><a href="#__codelineno-1-31"> 31</a></span>
-<span class="normal"><a href="#__codelineno-1-32"> 32</a></span>
-<span class="normal"><a href="#__codelineno-1-33"> 33</a></span>
-<span class="normal"><a href="#__codelineno-1-34"> 34</a></span>
-<span class="normal"><a href="#__codelineno-1-35"> 35</a></span>
-<span class="normal"><a href="#__codelineno-1-36"> 36</a></span>
-<span class="normal"><a href="#__codelineno-1-37"> 37</a></span>
-<span class="normal"><a href="#__codelineno-1-38"> 38</a></span>
-<span class="normal"><a href="#__codelineno-1-39"> 39</a></span>
-<span class="normal"><a href="#__codelineno-1-40"> 40</a></span>
-<span class="normal"><a href="#__codelineno-1-41"> 41</a></span>
-<span class="normal"><a href="#__codelineno-1-42"> 42</a></span>
-<span class="normal"><a href="#__codelineno-1-43"> 43</a></span>
-<span class="normal"><a href="#__codelineno-1-44"> 44</a></span>
-<span class="normal"><a href="#__codelineno-1-45"> 45</a></span>
-<span class="normal"><a href="#__codelineno-1-46"> 46</a></span>
-<span class="normal"><a href="#__codelineno-1-47"> 47</a></span>
-<span class="normal"><a href="#__codelineno-1-48"> 48</a></span>
-<span class="normal"><a href="#__codelineno-1-49"> 49</a></span>
-<span class="normal"><a href="#__codelineno-1-50"> 50</a></span>
-<span class="normal"><a href="#__codelineno-1-51"> 51</a></span>
-<span class="normal"><a href="#__codelineno-1-52"> 52</a></span>
-<span class="normal"><a href="#__codelineno-1-53"> 53</a></span>
-<span class="normal"><a href="#__codelineno-1-54"> 54</a></span>
-<span class="normal"><a href="#__codelineno-1-55"> 55</a></span>
-<span class="normal"><a href="#__codelineno-1-56"> 56</a></span>
-<span class="normal"><a href="#__codelineno-1-57"> 57</a></span>
-<span class="normal"><a href="#__codelineno-1-58"> 58</a></span>
-<span class="normal"><a href="#__codelineno-1-59"> 59</a></span>
-<span class="normal"><a href="#__codelineno-1-60"> 60</a></span>
-<span class="normal"><a href="#__codelineno-1-61"> 61</a></span>
-<span class="normal"><a href="#__codelineno-1-62"> 62</a></span>
-<span class="normal"><a href="#__codelineno-1-63"> 63</a></span>
-<span class="normal"><a href="#__codelineno-1-64"> 64</a></span>
-<span class="normal"><a href="#__codelineno-1-65"> 65</a></span>
-<span class="normal"><a href="#__codelineno-1-66"> 66</a></span>
-<span class="normal"><a href="#__codelineno-1-67"> 67</a></span>
-<span class="normal"><a href="#__codelineno-1-68"> 68</a></span>
-<span class="normal"><a href="#__codelineno-1-69"> 69</a></span>
-<span class="normal"><a href="#__codelineno-1-70"> 70</a></span>
-<span class="normal"><a href="#__codelineno-1-71"> 71</a></span>
-<span class="normal"><a href="#__codelineno-1-72"> 72</a></span>
-<span class="normal"><a href="#__codelineno-1-73"> 73</a></span>
-<span class="normal"><a href="#__codelineno-1-74"> 74</a></span>
-<span class="normal"><a href="#__codelineno-1-75"> 75</a></span>
-<span class="normal"><a href="#__codelineno-1-76"> 76</a></span>
-<span class="normal"><a href="#__codelineno-1-77"> 77</a></span>
-<span class="normal"><a href="#__codelineno-1-78"> 78</a></span>
-<span class="normal"><a href="#__codelineno-1-79"> 79</a></span>
-<span class="normal"><a href="#__codelineno-1-80"> 80</a></span>
-<span class="normal"><a href="#__codelineno-1-81"> 81</a></span>
-<span class="normal"><a href="#__codelineno-1-82"> 82</a></span>
-<span class="normal"><a href="#__codelineno-1-83"> 83</a></span>
-<span class="normal"><a href="#__codelineno-1-84"> 84</a></span>
-<span class="normal"><a href="#__codelineno-1-85"> 85</a></span>
-<span class="normal"><a href="#__codelineno-1-86"> 86</a></span>
-<span class="normal"><a href="#__codelineno-1-87"> 87</a></span>
-<span class="normal"><a href="#__codelineno-1-88"> 88</a></span>
-<span class="normal"><a href="#__codelineno-1-89"> 89</a></span>
-<span class="normal"><a href="#__codelineno-1-90"> 90</a></span>
-<span class="normal"><a href="#__codelineno-1-91"> 91</a></span>
-<span class="normal"><a href="#__codelineno-1-92"> 92</a></span>
-<span class="normal"><a href="#__codelineno-1-93"> 93</a></span>
-<span class="normal"><a href="#__codelineno-1-94"> 94</a></span>
-<span class="normal"><a href="#__codelineno-1-95"> 95</a></span>
-<span class="normal"><a href="#__codelineno-1-96"> 96</a></span>
-<span class="normal"><a href="#__codelineno-1-97"> 97</a></span>
-<span class="normal"><a href="#__codelineno-1-98"> 98</a></span>
-<span class="normal"><a href="#__codelineno-1-99"> 99</a></span>
-<span class="normal"><a href="#__codelineno-1-100">100</a></span>
-<span class="normal"><a href="#__codelineno-1-101">101</a></span>
-<span class="normal"><a href="#__codelineno-1-102">102</a></span>
-<span class="normal"><a href="#__codelineno-1-103">103</a></span>
-<span class="normal"><a href="#__codelineno-1-104">104</a></span>
-<span class="normal"><a href="#__codelineno-1-105">105</a></span>
-<span class="normal"><a href="#__codelineno-1-106">106</a></span>
-<span class="normal"><a href="#__codelineno-1-107">107</a></span>
-<span class="normal"><a href="#__codelineno-1-108">108</a></span>
-<span class="normal"><a href="#__codelineno-1-109">109</a></span>
-<span class="normal"><a href="#__codelineno-1-110">110</a></span>
-<span class="normal"><a href="#__codelineno-1-111">111</a></span>
-<span class="normal"><a href="#__codelineno-1-112">112</a></span>
-<span class="normal"><a href="#__codelineno-1-113">113</a></span>
-<span class="normal"><a href="#__codelineno-1-114">114</a></span>
-<span class="normal"><a href="#__codelineno-1-115">115</a></span>
-<span class="normal"><a href="#__codelineno-1-116">116</a></span>
-<span class="normal"><a href="#__codelineno-1-117">117</a></span>
-<span class="normal"><a href="#__codelineno-1-118">118</a></span>
-<span class="normal"><a href="#__codelineno-1-119">119</a></span>
-<span class="normal"><a href="#__codelineno-1-120">120</a></span>
-<span class="normal"><a href="#__codelineno-1-121">121</a></span>
-<span class="normal"><a href="#__codelineno-1-122">122</a></span>
-<span class="normal"><a href="#__codelineno-1-123">123</a></span>
-<span class="normal"><a href="#__codelineno-1-124">124</a></span>
-<span class="normal"><a href="#__codelineno-1-125">125</a></span>
-<span class="normal"><a href="#__codelineno-1-126">126</a></span>
-<span class="normal"><a href="#__codelineno-1-127">127</a></span>
-<span class="normal"><a href="#__codelineno-1-128">128</a></span>
-<span class="normal"><a href="#__codelineno-1-129">129</a></span>
-<span class="normal"><a href="#__codelineno-1-130">130</a></span>
-<span class="normal"><a href="#__codelineno-1-131">131</a></span>
-<span class="normal"><a href="#__codelineno-1-132">132</a></span>
-<span class="normal"><a href="#__codelineno-1-133">133</a></span>
-<span class="normal"><a href="#__codelineno-1-134">134</a></span>
-<span class="normal"><a href="#__codelineno-1-135">135</a></span>
-<span class="normal"><a href="#__codelineno-1-136">136</a></span>
-<span class="normal"><a href="#__codelineno-1-137">137</a></span>
-<span class="normal"><a href="#__codelineno-1-138">138</a></span>
-<span class="normal"><a href="#__codelineno-1-139">139</a></span>
-<span class="normal"><a href="#__codelineno-1-140">140</a></span>
-<span class="normal"><a href="#__codelineno-1-141">141</a></span>
-<span class="normal"><a href="#__codelineno-1-142">142</a></span>
-<span class="normal"><a href="#__codelineno-1-143">143</a></span>
-<span class="normal"><a href="#__codelineno-1-144">144</a></span>
-<span class="normal"><a href="#__codelineno-1-145">145</a></span>
-<span class="normal"><a href="#__codelineno-1-146">146</a></span>
-<span class="normal"><a href="#__codelineno-1-147">147</a></span>
-<span class="normal"><a href="#__codelineno-1-148">148</a></span>
-<span class="normal"><a href="#__codelineno-1-149">149</a></span>
-<span class="normal"><a href="#__codelineno-1-150">150</a></span>
-<span class="normal"><a href="#__codelineno-1-151">151</a></span>
-<span class="normal"><a href="#__codelineno-1-152">152</a></span>
-<span class="normal"><a href="#__codelineno-1-153">153</a></span>
-<span class="normal"><a href="#__codelineno-1-154">154</a></span>
-<span class="normal"><a href="#__codelineno-1-155">155</a></span>
-<span class="normal"><a href="#__codelineno-1-156">156</a></span>
-<span class="normal"><a href="#__codelineno-1-157">157</a></span>
-<span class="normal"><a href="#__codelineno-1-158">158</a></span>
-<span class="normal"><a href="#__codelineno-1-159">159</a></span>
-<span class="normal"><a href="#__codelineno-1-160">160</a></span>
-<span class="normal"><a href="#__codelineno-1-161">161</a></span>
-<span class="normal"><a href="#__codelineno-1-162">162</a></span>
-<span class="normal"><a href="#__codelineno-1-163">163</a></span>
-<span class="normal"><a href="#__codelineno-1-164">164</a></span>
-<span class="normal"><a href="#__codelineno-1-165">165</a></span>
-<span class="normal"><a href="#__codelineno-1-166">166</a></span>
-<span class="normal"><a href="#__codelineno-1-167">167</a></span>
-<span class="normal"><a href="#__codelineno-1-168">168</a></span>
-<span class="normal"><a href="#__codelineno-1-169">169</a></span>
-<span class="normal"><a href="#__codelineno-1-170">170</a></span>
-<span class="normal"><a href="#__codelineno-1-171">171</a></span>
-<span class="normal"><a href="#__codelineno-1-172">172</a></span>
-<span class="normal"><a href="#__codelineno-1-173">173</a></span>
-<span class="normal"><a href="#__codelineno-1-174">174</a></span>
-<span class="normal"><a href="#__codelineno-1-175">175</a></span>
-<span class="normal"><a href="#__codelineno-1-176">176</a></span>
-<span class="normal"><a href="#__codelineno-1-177">177</a></span>
-<span class="normal"><a href="#__codelineno-1-178">178</a></span>
-<span class="normal"><a href="#__codelineno-1-179">179</a></span>
-<span class="normal"><a href="#__codelineno-1-180">180</a></span>
-<span class="normal"><a href="#__codelineno-1-181">181</a></span>
-<span class="normal"><a href="#__codelineno-1-182">182</a></span>
-<span class="normal"><a href="#__codelineno-1-183">183</a></span>
-<span class="normal"><a href="#__codelineno-1-184">184</a></span>
-<span class="normal"><a href="#__codelineno-1-185">185</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="nt">appUUID</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8c259ee5-d70f-409b-8eea-3f410e385d0f</span><span class="w"></span>
-<a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="nt">tenantName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-ns</span><span class="w"></span>
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="nt">appName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-app</span><span class="w"></span>
-<a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="nt">appComponents</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">backend</span><span class="w"></span>
-<a id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="w">    </span><span class="nt">appCompUUID</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">552be6bf-4a8d-4003-aeb2-9999a535c299</span><span class="w"></span>
-<a id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="w">    </span><span class="nt">replicaCount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
-<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="w">    </span><span class="c1"># Your image name and tag</span><span class="w"></span>
-<a id="__codelineno-1-9" name="__codelineno-1-9"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="w">      </span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">backend</span><span class="w"></span>
-<a id="__codelineno-1-11" name="__codelineno-1-11"></a><span class="w">      </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">latest</span><span class="w"></span>
-<a id="__codelineno-1-12" name="__codelineno-1-12"></a><span class="w">    </span><span class="c1"># Overwrite the default command for your docker image</span><span class="w"></span>
-<a id="__codelineno-1-13" name="__codelineno-1-13"></a><span class="w">    </span><span class="nt">overwriteCommand</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-14" name="__codelineno-1-14"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"></span>
-<a id="__codelineno-1-15" name="__codelineno-1-15"></a><span class="w">    </span><span class="nt">commandArgs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"></span>
-<a id="__codelineno-1-16" name="__codelineno-1-16"></a><span class="w">    </span><span class="c1"># Services</span><span class="w"></span>
-<a id="__codelineno-1-17" name="__codelineno-1-17"></a><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-18" name="__codelineno-1-18"></a><span class="w">      </span><span class="nt">create</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
-<a id="__codelineno-1-19" name="__codelineno-1-19"></a><span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusterIP</span><span class="w"></span>
-<a id="__codelineno-1-20" name="__codelineno-1-20"></a><span class="w">      </span><span class="nt">portMappings</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-21" name="__codelineno-1-21"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w"></span>
-<a id="__codelineno-1-22" name="__codelineno-1-22"></a><span class="w">          </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w"></span>
-<a id="__codelineno-1-23" name="__codelineno-1-23"></a><span class="w">    </span><span class="c1"># Configure ingress for your application component</span><span class="w"></span>
-<a id="__codelineno-1-24" name="__codelineno-1-24"></a><span class="w">    </span><span class="nt">virtualService</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-25" name="__codelineno-1-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">gateway</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-gateway</span><span class="w"></span>
-<a id="__codelineno-1-26" name="__codelineno-1-26"></a><span class="w">        </span><span class="nt">hosts</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-27" name="__codelineno-1-27"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">backend.yourdomain.com</span><span class="w"></span>
-<a id="__codelineno-1-28" name="__codelineno-1-28"></a><span class="w">        </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
-<a id="__codelineno-1-29" name="__codelineno-1-29"></a><span class="w">        </span><span class="nt">httpMatch</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-30" name="__codelineno-1-30"></a><span class="w">          </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/</span><span class="w"></span>
-<a id="__codelineno-1-31" name="__codelineno-1-31"></a><span class="w">          </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;80&quot;</span><span class="w"></span>
-<a id="__codelineno-1-32" name="__codelineno-1-32"></a><span class="w">        </span><span class="nt">svcPort</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;80&quot;</span><span class="w"></span>
-<a id="__codelineno-1-33" name="__codelineno-1-33"></a><span class="w">    </span><span class="c1"># - gateway: http-gateway | https-gateway | &lt;other&gt;</span><span class="w"></span>
-<a id="__codelineno-1-34" name="__codelineno-1-34"></a><span class="w">    </span><span class="c1">#   hosts:</span><span class="w"></span>
-<a id="__codelineno-1-35" name="__codelineno-1-35"></a><span class="w">    </span><span class="c1">#     - chart-example.com</span><span class="w"></span>
-<a id="__codelineno-1-36" name="__codelineno-1-36"></a><span class="w">    </span><span class="c1">#   protocol: https # http / https / tls / tcp</span><span class="w"></span>
-<a id="__codelineno-1-37" name="__codelineno-1-37"></a><span class="w">    </span><span class="c1">#   tlsMatchHosts: # only for tls/https route</span><span class="w"></span>
-<a id="__codelineno-1-38" name="__codelineno-1-38"></a><span class="w">    </span><span class="c1">#     - host: chart-example.com</span><span class="w"></span>
-<a id="__codelineno-1-39" name="__codelineno-1-39"></a><span class="w">    </span><span class="c1">#       port: 443</span><span class="w"></span>
-<a id="__codelineno-1-40" name="__codelineno-1-40"></a><span class="w">    </span><span class="c1">#       svcPort: 8443</span><span class="w"></span>
-<a id="__codelineno-1-41" name="__codelineno-1-41"></a><span class="w">    </span><span class="c1">#   httpMatch: # only for http route</span><span class="w"></span>
-<a id="__codelineno-1-42" name="__codelineno-1-42"></a><span class="w">    </span><span class="c1">#     prefix: /</span><span class="w"></span>
-<a id="__codelineno-1-43" name="__codelineno-1-43"></a><span class="w">    </span><span class="c1">#     port: 80</span><span class="w"></span>
-<a id="__codelineno-1-44" name="__codelineno-1-44"></a><span class="w">    </span><span class="c1">#   tcpMatchPorts: # only for tcp</span><span class="w"></span>
-<a id="__codelineno-1-45" name="__codelineno-1-45"></a><span class="w">    </span><span class="c1">#     - 27017</span><span class="w"></span>
-<a id="__codelineno-1-46" name="__codelineno-1-46"></a><span class="w">    </span><span class="c1">#   svcPort: 80</span><span class="w"></span>
-<a id="__codelineno-1-47" name="__codelineno-1-47"></a><span class="w">    </span><span class="c1">#   tls: []</span><span class="w"></span>
-<a id="__codelineno-1-48" name="__codelineno-1-48"></a>
-<a id="__codelineno-1-49" name="__codelineno-1-49"></a><span class="w">    </span><span class="c1"># Configuration parameters</span><span class="w"></span>
-<a id="__codelineno-1-50" name="__codelineno-1-50"></a><span class="w">    </span><span class="nt">config</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-51" name="__codelineno-1-51"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-52" name="__codelineno-1-52"></a><span class="w">      </span><span class="nt">data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w"></span>
-<a id="__codelineno-1-53" name="__codelineno-1-53"></a><span class="w">      </span><span class="c1"># data:</span><span class="w"></span>
-<a id="__codelineno-1-54" name="__codelineno-1-54"></a><span class="w">      </span><span class="c1">#   - type: file # will be mounted as a file inside the pod</span><span class="w"></span>
-<a id="__codelineno-1-55" name="__codelineno-1-55"></a><span class="w">      </span><span class="c1">#     key: test.config</span><span class="w"></span>
-<a id="__codelineno-1-56" name="__codelineno-1-56"></a><span class="w">      </span><span class="c1">#     value: &quot;Content of test.config file&quot;</span><span class="w"></span>
-<a id="__codelineno-1-57" name="__codelineno-1-57"></a><span class="w">      </span><span class="c1">#     mountPath: &quot;/etc/myApp/config/&quot;</span><span class="w"></span>
-<a id="__codelineno-1-58" name="__codelineno-1-58"></a><span class="w">      </span><span class="c1">#   - type: env # will be mounted as an ENV var inside the pod</span><span class="w"></span>
-<a id="__codelineno-1-59" name="__codelineno-1-59"></a><span class="w">      </span><span class="c1">#     key: TEST_ENV</span><span class="w"></span>
-<a id="__codelineno-1-60" name="__codelineno-1-60"></a><span class="w">      </span><span class="c1">#     value: &quot;Value of ENV variable TEST_ENV&quot;</span><span class="w"></span>
-<a id="__codelineno-1-61" name="__codelineno-1-61"></a><span class="w">    </span><span class="c1"># Secret configuration parameters</span><span class="w"></span>
-<a id="__codelineno-1-62" name="__codelineno-1-62"></a><span class="w">    </span><span class="nt">secrets</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-63" name="__codelineno-1-63"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-64" name="__codelineno-1-64"></a><span class="w">      </span><span class="nt">data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w"></span>
-<a id="__codelineno-1-65" name="__codelineno-1-65"></a><span class="w">      </span><span class="c1"># data:</span><span class="w"></span>
-<a id="__codelineno-1-66" name="__codelineno-1-66"></a><span class="w">      </span><span class="c1">#   - type: file</span><span class="w"></span>
-<a id="__codelineno-1-67" name="__codelineno-1-67"></a><span class="w">      </span><span class="c1">#     key: test.secret</span><span class="w"></span>
-<a id="__codelineno-1-68" name="__codelineno-1-68"></a><span class="w">      </span><span class="c1">#     value: &quot;Content of test.secret file&quot;</span><span class="w"></span>
-<a id="__codelineno-1-69" name="__codelineno-1-69"></a><span class="w">      </span><span class="c1">#     mountPath: &quot;/etc/myApp/config/&quot;</span><span class="w"></span>
-<a id="__codelineno-1-70" name="__codelineno-1-70"></a><span class="w">      </span><span class="c1">#   - type: env</span><span class="w"></span>
-<a id="__codelineno-1-71" name="__codelineno-1-71"></a><span class="w">      </span><span class="c1">#     key: SECRET_ENV</span><span class="w"></span>
-<a id="__codelineno-1-72" name="__codelineno-1-72"></a><span class="w">      </span><span class="c1">#     value: &quot;Value of ENV variable SECRET_ENV&quot;</span><span class="w"></span>
-<a id="__codelineno-1-73" name="__codelineno-1-73"></a><span class="w">    </span><span class="c1"># Persist data to a persistent volume</span><span class="w"></span>
-<a id="__codelineno-1-74" name="__codelineno-1-74"></a><span class="w">    </span><span class="nt">persistence</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-75" name="__codelineno-1-75"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-76" name="__codelineno-1-76"></a><span class="w">      </span><span class="c1"># volumes:</span><span class="w"></span>
-<a id="__codelineno-1-77" name="__codelineno-1-77"></a><span class="w">      </span><span class="c1">#   - name: data-volume</span><span class="w"></span>
-<a id="__codelineno-1-78" name="__codelineno-1-78"></a><span class="w">      </span><span class="c1">#     size: 1Gi</span><span class="w"></span>
-<a id="__codelineno-1-79" name="__codelineno-1-79"></a><span class="w">      </span><span class="c1">#     mountPath: /tmp</span><span class="w"></span>
-<a id="__codelineno-1-80" name="__codelineno-1-80"></a><span class="w">      </span><span class="c1">#     ldlSync: false</span><span class="w"></span>
-<a id="__codelineno-1-81" name="__codelineno-1-81"></a><span class="w">      </span><span class="c1">#     sourcePath: /mdos/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)</span><span class="w"></span>
-<a id="__codelineno-1-82" name="__codelineno-1-82"></a><span class="w">      </span><span class="c1">#     type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)</span><span class="w"></span>
-<a id="__codelineno-1-83" name="__codelineno-1-83"></a><span class="w">      </span><span class="c1"># hostpathVolumes:</span><span class="w"></span>
-<a id="__codelineno-1-84" name="__codelineno-1-84"></a><span class="w">      </span><span class="c1">#   - name: host-data-volume</span><span class="w"></span>
-<a id="__codelineno-1-85" name="__codelineno-1-85"></a><span class="w">      </span><span class="c1">#     mountPath: /tmp</span><span class="w"></span>
-<a id="__codelineno-1-86" name="__codelineno-1-86"></a><span class="w">      </span><span class="c1">#     hostPath: /mdos/content-volumes/app1</span><span class="w"></span>
-<a id="__codelineno-1-87" name="__codelineno-1-87"></a><span class="w">      </span><span class="c1">#     type: Directory</span><span class="w"></span>
-<a id="__codelineno-1-88" name="__codelineno-1-88"></a><span class="w">    </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w"></span>
-<a id="__codelineno-1-89" name="__codelineno-1-89"></a><span class="w">    </span><span class="c1"># limits:</span><span class="w"></span>
-<a id="__codelineno-1-90" name="__codelineno-1-90"></a><span class="w">    </span><span class="c1">#   cpu: 100m</span><span class="w"></span>
-<a id="__codelineno-1-91" name="__codelineno-1-91"></a><span class="w">    </span><span class="c1">#   memory: 128Mi</span><span class="w"></span>
-<a id="__codelineno-1-92" name="__codelineno-1-92"></a><span class="w">    </span><span class="c1"># requests:</span><span class="w"></span>
-<a id="__codelineno-1-93" name="__codelineno-1-93"></a><span class="w">    </span><span class="c1">#   cpu: 100m</span><span class="w"></span>
-<a id="__codelineno-1-94" name="__codelineno-1-94"></a><span class="w">    </span><span class="c1">#   memory: 128Mi</span><span class="w"></span>
-<a id="__codelineno-1-95" name="__codelineno-1-95"></a>
-<a id="__codelineno-1-96" name="__codelineno-1-96"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">frontend</span><span class="w"></span>
-<a id="__codelineno-1-97" name="__codelineno-1-97"></a><span class="w">    </span><span class="nt">appCompUUID</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5515dedf-9c1e-4afb-9f20-5238bfbd5256</span><span class="w"></span>
-<a id="__codelineno-1-98" name="__codelineno-1-98"></a><span class="w">    </span><span class="nt">replicaCount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
-<a id="__codelineno-1-99" name="__codelineno-1-99"></a><span class="w">    </span><span class="c1"># Your image name and tag</span><span class="w"></span>
-<a id="__codelineno-1-100" name="__codelineno-1-100"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-101" name="__codelineno-1-101"></a><span class="w">      </span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">frontend</span><span class="w"></span>
-<a id="__codelineno-1-102" name="__codelineno-1-102"></a><span class="w">      </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">latest</span><span class="w"></span>
-<a id="__codelineno-1-103" name="__codelineno-1-103"></a><span class="w">    </span><span class="c1"># Overwrite the default command for your docker image</span><span class="w"></span>
-<a id="__codelineno-1-104" name="__codelineno-1-104"></a><span class="w">    </span><span class="nt">overwriteCommand</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-105" name="__codelineno-1-105"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"></span>
-<a id="__codelineno-1-106" name="__codelineno-1-106"></a><span class="w">    </span><span class="nt">commandArgs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"></span>
-<a id="__codelineno-1-107" name="__codelineno-1-107"></a><span class="w">    </span><span class="c1"># Services</span><span class="w"></span>
-<a id="__codelineno-1-108" name="__codelineno-1-108"></a><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-109" name="__codelineno-1-109"></a><span class="w">      </span><span class="nt">create</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
-<a id="__codelineno-1-110" name="__codelineno-1-110"></a><span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusterIP</span><span class="w"></span>
-<a id="__codelineno-1-111" name="__codelineno-1-111"></a><span class="w">      </span><span class="nt">portMappings</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-112" name="__codelineno-1-112"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w"></span>
-<a id="__codelineno-1-113" name="__codelineno-1-113"></a><span class="w">          </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w"></span>
-<a id="__codelineno-1-114" name="__codelineno-1-114"></a><span class="w">    </span><span class="c1"># Configure ingress for your application component</span><span class="w"></span>
-<a id="__codelineno-1-115" name="__codelineno-1-115"></a><span class="w">    </span><span class="nt">virtualService</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-116" name="__codelineno-1-116"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">gateway</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-gateway</span><span class="w"></span>
-<a id="__codelineno-1-117" name="__codelineno-1-117"></a><span class="w">        </span><span class="nt">hosts</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-118" name="__codelineno-1-118"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">frontend.yourdomain.com</span><span class="w"></span>
-<a id="__codelineno-1-119" name="__codelineno-1-119"></a><span class="w">        </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
-<a id="__codelineno-1-120" name="__codelineno-1-120"></a><span class="w">        </span><span class="nt">httpMatch</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-121" name="__codelineno-1-121"></a><span class="w">          </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/</span><span class="w"></span>
-<a id="__codelineno-1-122" name="__codelineno-1-122"></a><span class="w">          </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;80&quot;</span><span class="w"></span>
-<a id="__codelineno-1-123" name="__codelineno-1-123"></a><span class="w">        </span><span class="nt">svcPort</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;80&quot;</span><span class="w"></span>
-<a id="__codelineno-1-124" name="__codelineno-1-124"></a><span class="w">    </span><span class="c1"># - gateway: http-gateway | https-gateway | &lt;other&gt;</span><span class="w"></span>
-<a id="__codelineno-1-125" name="__codelineno-1-125"></a><span class="w">    </span><span class="c1">#   hosts:</span><span class="w"></span>
-<a id="__codelineno-1-126" name="__codelineno-1-126"></a><span class="w">    </span><span class="c1">#     - chart-example.com</span><span class="w"></span>
-<a id="__codelineno-1-127" name="__codelineno-1-127"></a><span class="w">    </span><span class="c1">#   protocol: https # http / https / tls / tcp</span><span class="w"></span>
-<a id="__codelineno-1-128" name="__codelineno-1-128"></a><span class="w">    </span><span class="c1">#   tlsMatchHosts: # only for tls/https route</span><span class="w"></span>
-<a id="__codelineno-1-129" name="__codelineno-1-129"></a><span class="w">    </span><span class="c1">#     - host: chart-example.com</span><span class="w"></span>
-<a id="__codelineno-1-130" name="__codelineno-1-130"></a><span class="w">    </span><span class="c1">#       port: 443</span><span class="w"></span>
-<a id="__codelineno-1-131" name="__codelineno-1-131"></a><span class="w">    </span><span class="c1">#       svcPort: 8443</span><span class="w"></span>
-<a id="__codelineno-1-132" name="__codelineno-1-132"></a><span class="w">    </span><span class="c1">#   httpMatch: # only for http route</span><span class="w"></span>
-<a id="__codelineno-1-133" name="__codelineno-1-133"></a><span class="w">    </span><span class="c1">#     prefix: /</span><span class="w"></span>
-<a id="__codelineno-1-134" name="__codelineno-1-134"></a><span class="w">    </span><span class="c1">#     port: 80</span><span class="w"></span>
-<a id="__codelineno-1-135" name="__codelineno-1-135"></a><span class="w">    </span><span class="c1">#   tcpMatchPorts: # only for tcp</span><span class="w"></span>
-<a id="__codelineno-1-136" name="__codelineno-1-136"></a><span class="w">    </span><span class="c1">#     - 27017</span><span class="w"></span>
-<a id="__codelineno-1-137" name="__codelineno-1-137"></a><span class="w">    </span><span class="c1">#   svcPort: 80</span><span class="w"></span>
-<a id="__codelineno-1-138" name="__codelineno-1-138"></a><span class="w">    </span><span class="c1">#   tls: []</span><span class="w"></span>
-<a id="__codelineno-1-139" name="__codelineno-1-139"></a>
-<a id="__codelineno-1-140" name="__codelineno-1-140"></a><span class="w">    </span><span class="c1"># Configuration parameters</span><span class="w"></span>
-<a id="__codelineno-1-141" name="__codelineno-1-141"></a><span class="w">    </span><span class="nt">config</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-142" name="__codelineno-1-142"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-143" name="__codelineno-1-143"></a><span class="w">      </span><span class="nt">data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w"></span>
-<a id="__codelineno-1-144" name="__codelineno-1-144"></a><span class="w">      </span><span class="c1"># data:</span><span class="w"></span>
-<a id="__codelineno-1-145" name="__codelineno-1-145"></a><span class="w">      </span><span class="c1">#   - type: file # will be mounted as a file inside the pod</span><span class="w"></span>
-<a id="__codelineno-1-146" name="__codelineno-1-146"></a><span class="w">      </span><span class="c1">#     key: test.config</span><span class="w"></span>
-<a id="__codelineno-1-147" name="__codelineno-1-147"></a><span class="w">      </span><span class="c1">#     value: &quot;Content of test.config file&quot;</span><span class="w"></span>
-<a id="__codelineno-1-148" name="__codelineno-1-148"></a><span class="w">      </span><span class="c1">#     mountPath: &quot;/etc/myApp/config/&quot;</span><span class="w"></span>
-<a id="__codelineno-1-149" name="__codelineno-1-149"></a><span class="w">      </span><span class="c1">#   - type: env # will be mounted as an ENV var inside the pod</span><span class="w"></span>
-<a id="__codelineno-1-150" name="__codelineno-1-150"></a><span class="w">      </span><span class="c1">#     key: TEST_ENV</span><span class="w"></span>
-<a id="__codelineno-1-151" name="__codelineno-1-151"></a><span class="w">      </span><span class="c1">#     value: &quot;Value of ENV variable TEST_ENV&quot;</span><span class="w"></span>
-<a id="__codelineno-1-152" name="__codelineno-1-152"></a><span class="w">    </span><span class="c1"># Secret configuration parameters</span><span class="w"></span>
-<a id="__codelineno-1-153" name="__codelineno-1-153"></a><span class="w">    </span><span class="nt">secrets</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-154" name="__codelineno-1-154"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-155" name="__codelineno-1-155"></a><span class="w">      </span><span class="nt">data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w"></span>
-<a id="__codelineno-1-156" name="__codelineno-1-156"></a><span class="w">      </span><span class="c1"># data:</span><span class="w"></span>
-<a id="__codelineno-1-157" name="__codelineno-1-157"></a><span class="w">      </span><span class="c1">#   - type: file</span><span class="w"></span>
-<a id="__codelineno-1-158" name="__codelineno-1-158"></a><span class="w">      </span><span class="c1">#     key: test.secret</span><span class="w"></span>
-<a id="__codelineno-1-159" name="__codelineno-1-159"></a><span class="w">      </span><span class="c1">#     value: &quot;Content of test.secret file&quot;</span><span class="w"></span>
-<a id="__codelineno-1-160" name="__codelineno-1-160"></a><span class="w">      </span><span class="c1">#     mountPath: &quot;/etc/myApp/config/&quot;</span><span class="w"></span>
-<a id="__codelineno-1-161" name="__codelineno-1-161"></a><span class="w">      </span><span class="c1">#   - type: env</span><span class="w"></span>
-<a id="__codelineno-1-162" name="__codelineno-1-162"></a><span class="w">      </span><span class="c1">#     key: SECRET_ENV</span><span class="w"></span>
-<a id="__codelineno-1-163" name="__codelineno-1-163"></a><span class="w">      </span><span class="c1">#     value: &quot;Value of ENV variable SECRET_ENV&quot;</span><span class="w"></span>
-<a id="__codelineno-1-164" name="__codelineno-1-164"></a><span class="w">    </span><span class="c1"># Persist data to a persistent volume</span><span class="w"></span>
-<a id="__codelineno-1-165" name="__codelineno-1-165"></a><span class="w">    </span><span class="nt">persistence</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-1-166" name="__codelineno-1-166"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
-<a id="__codelineno-1-167" name="__codelineno-1-167"></a><span class="w">      </span><span class="c1"># volumes:</span><span class="w"></span>
-<a id="__codelineno-1-168" name="__codelineno-1-168"></a><span class="w">      </span><span class="c1">#   - name: data-volume</span><span class="w"></span>
-<a id="__codelineno-1-169" name="__codelineno-1-169"></a><span class="w">      </span><span class="c1">#     size: 1Gi</span><span class="w"></span>
-<a id="__codelineno-1-170" name="__codelineno-1-170"></a><span class="w">      </span><span class="c1">#     mountPath: /tmp</span><span class="w"></span>
-<a id="__codelineno-1-171" name="__codelineno-1-171"></a><span class="w">      </span><span class="c1">#     ldlSync: false</span><span class="w"></span>
-<a id="__codelineno-1-172" name="__codelineno-1-172"></a><span class="w">      </span><span class="c1">#     sourcePath: /mdos/content-volumes/app1 # path from where data should be collected (ONLY used with ldlSync=true)</span><span class="w"></span>
-<a id="__codelineno-1-173" name="__codelineno-1-173"></a><span class="w">      </span><span class="c1">#     type: full # full / partial depending on the type of file copy (ONLY used with ldlSync=true)</span><span class="w"></span>
-<a id="__codelineno-1-174" name="__codelineno-1-174"></a><span class="w">      </span><span class="c1"># hostpathVolumes:</span><span class="w"></span>
-<a id="__codelineno-1-175" name="__codelineno-1-175"></a><span class="w">      </span><span class="c1">#   - name: host-data-volume</span><span class="w"></span>
-<a id="__codelineno-1-176" name="__codelineno-1-176"></a><span class="w">      </span><span class="c1">#     mountPath: /tmp</span><span class="w"></span>
-<a id="__codelineno-1-177" name="__codelineno-1-177"></a><span class="w">      </span><span class="c1">#     hostPath: /mdos/content-volumes/app1</span><span class="w"></span>
-<a id="__codelineno-1-178" name="__codelineno-1-178"></a><span class="w">      </span><span class="c1">#     type: Directory</span><span class="w"></span>
-<a id="__codelineno-1-179" name="__codelineno-1-179"></a><span class="w">    </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w"></span>
-<a id="__codelineno-1-180" name="__codelineno-1-180"></a><span class="w">    </span><span class="c1"># limits:</span><span class="w"></span>
-<a id="__codelineno-1-181" name="__codelineno-1-181"></a><span class="w">    </span><span class="c1">#   cpu: 100m</span><span class="w"></span>
-<a id="__codelineno-1-182" name="__codelineno-1-182"></a><span class="w">    </span><span class="c1">#   memory: 128Mi</span><span class="w"></span>
-<a id="__codelineno-1-183" name="__codelineno-1-183"></a><span class="w">    </span><span class="c1"># requests:</span><span class="w"></span>
-<a id="__codelineno-1-184" name="__codelineno-1-184"></a><span class="w">    </span><span class="c1">#   cpu: 100m</span><span class="w"></span>
-<a id="__codelineno-1-185" name="__codelineno-1-185"></a><span class="w">    </span><span class="c1">#   memory: 128Mi</span><span class="w"></span>
-</code></pre></div></td></tr></table></div>
-<p>This is where you configure things like volumed, environement variables, secrets such as API tokens or credentials... The generated <code>values.yaml</code> file contains examples of these properties.</p>
+At the <code>application</code> level, there is also a <code>volumes</code> folder where you can store application component volume files to be used within your application, and a <code>mdos.yaml</code> config file that holds all runtime configuration parameters. As an example, here the <code>volumes</code> folder has a subfolder called <code>static-website</code> that is used by the <code>frontend</code> application so serve it's website data.</p>
 <blockquote>
-<p>The <code>mdos</code> CLI will allow you to scafold / create application projects and application components, as well as build and deploy them to your Kubernetes cluster.</p>
+<p><strong>Note</strong>
+Volumes are managed on the <code>application</code> level rather than on the <code>component</code> level in case you wish to share volumes amongst components.</p>
 </blockquote>
-<h2 id="build-applications-for-the-platform">Build applications for the platform</h2>
+<p>We will build a similar <code>hello world</code> example application now, but to keep thinks simple, we will not deploy a backend component along with the frontend component, and not work with volumes yet. Those will be subjects for later on.  </p>
+<p>First, we need to configure our MDos CLI so that it knows how to talk to our MDos API server.</p>
+<h2 id="configure-your-cli-to-point-to-a-mdos-platform-api-host">Configure your CLI to point to a MDos platform API host</h2>
+<p>Before we can start using the mdos CLI, we need to tell it what MDos API server to talk to.</p>
+<blockquote>
+<p><strong>Warning</strong>
+If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine <code>hosts</code> file before you prosceed.<br />
+In Linux and Mac OSX, your can configure those in your <code>/etc/hosts</code> file. In Windows, this file is located under <code>c:\Windows\System32\Drivers\etc\hosts</code>.<br />
+For more information, please refer to the chapter <a href="">Special notes about self-signed certificates without a resolvable DNS name</a></p>
+</blockquote>
+<p>To configure the target MDos platform API server endpoint with your CLI, use the following command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>mdos configure api-endpoint https://mdos-api.mydomain.com
+</code></pre></div>
+<p>Replace <code>mydomain.com</code> with your actual domain name used during the platform installation procedure.  </p>
+<p>You are now ready to start using the platform.</p>
+<h2 id="create-a-tenant-namespace">Create a tenant namespace</h2>
+<p>In Kubernetes, <code>namespaces</code> are used to group assets together so that they can be properly administered &amp; run in their own scoped context.<br />
+In MDos, we assign a dedicated <code>namespace</code> to each tenant on the platform. Applications belong to a tenant namespace, without the namespace we can not deploy our application.  </p>
+<p>To create a new tenant namespace called <code>a-team</code>, run the following command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mdos namespace create
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>WARN : Your current token has expired or is invalid. You need to re-authenticate
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>? Please enter your username: admin-username
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>? Please enter your password: [hidden]
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>? Enter a namespace name to create a-team
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>Creating namespace... done
+</code></pre></div>
+<blockquote>
+<p>If this is the first time you interact with the platform (or if your JWT token has expired like in the example above), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the <code>admin</code> user account that was used during the platform installation procedure (in this example, the admin username is called <code>admin-username</code>, super original, I know...).<br />
+If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  </p>
+</blockquote>
+<p>So what happened on the platform side when you create a namespace using the MDos CLI? Here are some high level details:</p>
+<ol>
+<li>Create a new Client in Keycloak, required to manage users that will interact with this namespace</li>
+<li>Create available default roles for this Keycloak client / namespace (<code>admin</code>, <code>k8s-write</code>, <code>k8s-read</code>, <code>ftp-write</code>, <code>registry-pull</code>, <code>registry-push</code>)</li>
+<li>Create namespace in Kubernetes</li>
+<li>Create namespace roles so that we can apply RBAC permissions to users</li>
+<li>Configure service account / credentials in Keycloak for <code>ftpd</code> and <code>registry</code> access for this namespace</li>
+</ol>
+<blockquote>
+<p>Details about these concepts are out of scope in this chapter</p>
+</blockquote>
+<h2 id="scaffold-an-application-application-components">Scaffold an application &amp; application components</h2>
 <h3 id="create-a-new-application">Create a new application</h3>
 <p>Let's create a new application project using the <code>mdos</code> CLI command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mdos generate application
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mdos generate application
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>? Enter a application name: hello-world
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>? Enter a tenant name that this application belongs to: a-team
 </code></pre></div>
-<p>This will create a new folder with the <code>values.yaml</code> configuration file in it. We are now ready to create application components.</p>
+<p>This will create a new folder with the <code>mdos.yaml</code> configuration file in it. We are now ready to create application components.</p>
 <h3 id="create-a-new-application-component">Create a new application component</h3>
 <p>Inside your application project folder, run the following command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mdos generate component
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span> hello-world
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>mdos generate component
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>? Enter a application component name: hello-world-server
 </code></pre></div>
 <p>The CLI will ask you a couple of things about some base configuration parameters.
-This will create a new component folder with an empty <code>Dockerfile</code> for you to use, as well as update the <code>values.yaml</code> file referencing the component as part of the overall application project along with it's configuration parameters.<br />
-You can no go ahead and build &amp; test your application locally, and complete the <code>Dockerfile</code> that will be used to build your component application image for deployment onto the cluster.</p>
-<h2 id="deploy-application-on-the-platform">Deploy application on the platform</h2>
-<h3 id="build-your-application">Build your application</h3>
-<h3 id="deploy-your-application">Deploy your application</h3>
+This will create a new component folder with an empty <code>Dockerfile</code> for you to use, as well as update the <code>mdos.yaml</code> file referencing the component as part of the overall application project along with it's configuration parameters.  </p>
+<p>You can now go ahead and implement your <code>hello-world-server</code> application component. Let's do just that. We will create a basic NodeJS HTTP server for this demonstration that will return "hello world" when invoked.  </p>
+<p>Create a new file: <code>hello-world/hello-world-server/index.js</code> </p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">http</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Loads the http module </span><span class="w"></span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nx">http</span><span class="p">.</span><span class="nx">createServer</span><span class="p">((</span><span class="nx">request</span><span class="p">,</span><span class="w"> </span><span class="nx">response</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="c1">// 1. Tell the browser everything is OK (Status code 200), and the data is in plain text</span><span class="w"></span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">writeHead</span><span class="p">(</span><span class="mf">200</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">        </span><span class="s1">&#39;Content-Type&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;text/plain&#39;</span><span class="w"></span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="p">});</span><span class="w"></span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span><span class="c1">// 2. Write the announced text to the body of the page</span><span class="w"></span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s1">&#39;Hello, World!\n&#39;</span><span class="p">);</span><span class="w"></span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">    </span><span class="c1">// 3. Tell the server that all of the response headers and body have been sent</span><span class="w"></span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span><span class="w"></span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="p">}).</span><span class="nx">listen</span><span class="p">(</span><span class="mf">8080</span><span class="p">);</span><span class="w"> </span><span class="c1">// 4. Tells the server what port to be on</span><span class="w"></span>
+</code></pre></div>
+<p>Last but not least, we need to populate our component <code>Dockerfile</code> so that we can build our container image during deployments. Open the <code>Dockerfile</code> that is inside the <code>hello-world-server</code> folder and set it's content to the following:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">FROM</span><span class="w"> </span><span class="s">node:16</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c"># Create app directory</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">WORKDIR</span><span class="w"> </span><span class="s">/usr/src/app</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c"># Bundle app source</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">COPY</span><span class="w"> </span>./server.js .
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">EXPOSE</span><span class="w"> </span><span class="s">8080</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;server.js&quot;</span><span class="w"> </span><span class="p">]</span>
+</code></pre></div>
+<p>Ok, we have an application ready to use now. Next, we need to tell out <code>mdos</code> application that we want to expose port <code>8080</code>, and set up an ingress config to expose it outside of the cluster using the hostname <code>hello-world.mydomain.com</code>.</p>
+<blockquote>
+<p><strong>Note</strong>
+As of now, MDos uses the platform wildcard domain name that was configured during the installation of the platform in order to exposes any application you deploy on it. Adding extra domain names for your various applications is under developement and will be available soon. </p>
+</blockquote>
+<p>Let's start with exposing port <code>8080</code> for our application component, which can be done with a kubernetes <code>service</code>. Move into the <code>hello-world-server</code> component folder and execute the following command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mdos generate service
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>? Enter a name for the service to add a port to: http
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>? Specify a port number on which your application needs to be accessible on: 8080
+</code></pre></div>
+<p>And finally, the ingress so that we have a hostname configured to access this application:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>mdos generate ingress
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>? Enter a name for the ingress: http-ingress
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>? What hostname do you want to use to access your component port: hello-world.mydomain.com
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>? Do you want to match a subpath for this host? No
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>? What target port should this traffic be redirected to? 8080
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>? What type of traffic will this ingress handle? http
+</code></pre></div>
+<blockquote>
+<p>Again, replace <code>mydomain.com</code> with whatever domain you configured during the platform installation.</p>
+</blockquote>
+<p>That's it, this is what your project file structure should look like now:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>hello-world
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>├── hello-world-server
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>│   ├── Dockerfile
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>│   └── server.js
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>├── mdos.yaml
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>└── volumes
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    └── README.md
+</code></pre></div>
+<p>Let's have a look at the generated code in the <code>mdos.yaml</code> file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">schemaVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span><span class="w"></span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nt">tenantName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">a-team</span><span class="w"></span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nt">appName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span><span class="w"></span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nt">uuid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mvx10-x2wip</span><span class="w"></span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world-server</span><span class="w"></span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span><span class="w"></span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="nt">uuid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qx8su-jwqvi</span><span class="w"></span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.1</span><span class="w"></span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="nt">services</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"></span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">    </span><span class="nt">ingress</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-ingress</span><span class="w"></span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">        </span><span class="nt">matchHost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world.mydomain.com</span><span class="w"></span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">        </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"></span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">        </span><span class="nt">trafficType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
+</code></pre></div>
+<blockquote>
+<p><strong>Note</strong>
+All application configuration features will live inside this <code>yaml</code> file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.<br />
+To learn more about everything that you can configure for your deployments in this yaml file, please refer back to the specific documentation chapters</p>
+</blockquote>
+<h2 id="deploy-your-hello-world-application-on-the-cluster">Deploy your <code>hello-world</code> application on the cluster</h2>
+<blockquote>
+<p><strong>Note</strong>
+Since this is a basic example, we will skip user management, authentication or any other advanced topics for now. Since we authenticated with the MDos admin user account, we can deploy onto this namespace without creating / assigning users &amp; permissions for this namespace.</p>
+</blockquote>
+<p>Move into the <code>hello-world</code> application and execute the command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>mdos application deploy
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>WARN : Your current token has expired or is invalid. You need to re-authenticate
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>? Please enter your username: admin-username
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>? Please enter your password: [hidden]
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>Synching volumes... done
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>To push your images to the mdos registry, you need to provide your mdos username and password first
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>? Username: admin-username
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>? Password: ********
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>Building application image registry.mydomain.com/a-team/hello-world:0.0.1... done
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>Pushing application image registry.mydomain.com/a-team/hello-world:0.0.1... done
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>Deploying application... scheduled
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>Pod: hello-world-server
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>    Phase: Running
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>    Container: hello-world-hello-world-server
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>        State: running
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>        Details: n/a
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>SUCCESS : Application deployed
+</code></pre></div>
+<p>That's it, your application should now be accessible on the following domain: <code>https://hello-world.mydomain.com</code></p>
+<p><img alt="Hello world" src="img/getting-started/hello-world.png" /></p>
 
 
 
@@ -976,21 +696,6 @@ You can no go ahead and build &amp; test your application locally, and complete 
           </div>
         </a>
       
-      
-        
-        <a href="../minio/" class="md-footer__link md-footer__link--next" aria-label="Next: Minio S3" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Minio S3
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
       
     </nav>
   
