@@ -359,15 +359,20 @@ class SchemaV1 {
                                         stack: "'filename' property is required",
                                     })
                                 }
-
-                                if (config.type == 'file' && entry.key) {
+                                if (config.type == 'file' && config.ref && entry.name) {
                                     errors.push({
-                                        message: "'key' property is not compatible with 'file' type config",
+                                        message: "'name' property is not compatible with 'file' type and external ConfigMap reference",
                                         instance: entry,
-                                        stack: "'key' property is not compatible with 'file' type config",
+                                        stack: "'name' property is not compatible with 'file' type and external ConfigMap reference",
                                     })
                                 }
-
+                                if (config.type == 'file' && config.ref && !entry.key) {
+                                    errors.push({
+                                        message: "'key' property is missing",
+                                        instance: entry,
+                                        stack: "'key' property is missing",
+                                    })
+                                }
                                 if (config.type == 'env' && entry.filename) {
                                     errors.push({
                                         message: "'filename' property is not compatible with 'env' type config",
@@ -375,7 +380,6 @@ class SchemaV1 {
                                         stack: "'filename' property is not compatible with 'env' type config",
                                     })
                                 }
-
                                 if (config.type == 'env' && !entry.key) {
                                     errors.push({
                                         message: "'key' property is required with 'env' type config",
@@ -398,15 +402,20 @@ class SchemaV1 {
                                         stack: "'filename' property is required",
                                     })
                                 }
-
-                                if (secret.type == 'file' && entry.key) {
+                                if (secret.type == 'file' && secret.ref && entry.name) {
                                     errors.push({
-                                        message: "'key' property is not compatible with 'file' type secret",
+                                        message: "'name' property is not compatible with 'file' type and external secret reference",
                                         instance: entry,
-                                        stack: "'key' property is not compatible with 'file' type secret",
+                                        stack: "'name' property is not compatible with 'file' type and external secret reference",
                                     })
                                 }
-
+                                if (secret.type == 'file' && secret.ref && !entry.key) {
+                                    errors.push({
+                                        message: "'key' property is missing",
+                                        instance: entry,
+                                        stack: "'key' property is missing",
+                                    })
+                                }
                                 if (secret.type == 'env' && entry.filename) {
                                     errors.push({
                                         message: "'filename' property is not compatible with 'env' type secret",

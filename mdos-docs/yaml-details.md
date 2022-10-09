@@ -380,7 +380,7 @@ components:
         mountPath: /etc/x509/https
         ref: my-root-domain-tls-secret # existing secret / configMap name to reference
         entries:
-          - name: ca-crt # name of the configMap / secret key that contains the value
+          - key: ca-crt # name of the configMap / secret key that contains the value
             filename: ca.crt # name of the file to use to mount this value as
     ...
 ```

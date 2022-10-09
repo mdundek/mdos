@@ -454,7 +454,7 @@ spec:
           {{- range .entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
           {{- end }}
         {{- end }}
         {{- if eq .type "dir" }}
@@ -478,7 +478,7 @@ spec:
                 {{- range $config.entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
                 {{- end }}
               {{- end }}
             {{- end }}
@@ -487,7 +487,7 @@ spec:
             {{- range .entries }}
               - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
-                subPath: {{ .name | quote }}
+                subPath: {{ .key | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -522,7 +522,7 @@ spec:
             {{- range .entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
             {{- end }}
           {{- end }}  
         {{- end }}
@@ -548,7 +548,7 @@ spec:
                 {{- range $entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
                 {{- end }}
               {{- end }}
             {{- end }}
@@ -557,7 +557,7 @@ spec:
             {{- range .entries }}
               - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
-                subPath: {{ .name | quote }}
+                subPath: {{ .key | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
