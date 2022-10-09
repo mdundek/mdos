@@ -93,15 +93,40 @@ export default class Config extends Command {
                         name: 'read only files',
                         value: 'file',
                     },
+                    {
+                        name: 'read only directory',
+                        value: 'dir',
+                    },
                 ],
             },
             {
                 type: 'string',
                 name: 'mountpath',
                 when: (values: any) => {
-                    return values.type == 'file'
+                    return values.type == 'file' || values.type == 'dir'
                 },
                 message: 'Enter the folder directory path in your container that you want to mount these config files into:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    return true
+                },
+            },
+            {
+                name: 'useRef',
+                message: 'Do you want to reference an existing ConfigMap for this mount point?',
+                type: 'confirm',
+                default: false,
+                when: (values: any) => {
+                    return values.type == 'file' || values.type == 'dir'
+                },
+            },
+            {
+                type: 'string',
+                name: 'ref',
+                when: (values: any) => {
+                    return values.useRef
+                },
+                message: 'Enter the ConfigMap name to user:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
@@ -115,14 +140,20 @@ export default class Config extends Command {
         type Config = {
             name: string
             type: string
-            mountPath?: string
-            entries: any
+            mountPath?: string,
+            ref?: string
+            entries?: any
         }
 
         const env: Config = {
             name: responses.name,
             type: responses.type,
-            entries: [],
+        }
+
+        if(!responses.useRef) {
+            env.entries = []
+        } else {
+            env.ref = responses.ref
         }
 
         if (responses.type == 'env') {
@@ -130,7 +161,7 @@ export default class Config extends Command {
                 key: 'ENV_KEY',
                 value: 'my value',
             })
-        } else {
+        } else if(!responses.useRef) {
             env.mountPath = responses.mountpath
             env.entries.push({
                 name: 'myconfig',

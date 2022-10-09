@@ -167,9 +167,6 @@ components:
 
 ### Persisted Volumes
 
-| :hash: CLI command:  `mdos generate volume` |
-| --- |
-
 #### Standard volumes
 
 ```yaml
@@ -183,6 +180,9 @@ components:
         size: 10Gi
     ...
 ```
+
+| :hash: CLI command:  `mdos generate volume` |
+| --- |
 
 #### Shared volumes
 
@@ -201,6 +201,9 @@ components:
         ref: my-shared-volume # existing secret / configMap name to reference
     ...
 ```
+
+| :hash: CLI command:  `mdos generate volume` |
+| --- |
 
 #### Pre-populate volumes
 
@@ -226,6 +229,9 @@ components:
 └── mdos.yaml
 ```
 
+| :hash: CLI command:  `mdos generate volume` |
+| --- |
+
 #### HostPath mounts
 
 ```yaml
@@ -239,6 +245,9 @@ components:
         hostPath: /path/to/folder/on/node
     ...
 ```
+
+| :hash: CLI command:  `mdos generate volume` |
+| --- |
 
 ---
 
@@ -298,6 +307,9 @@ components:
     ...
 ```
 
+| :hash: CLI command:  `mdos generate secret` |
+| --- |
+
 #### Using ConfigMaps
 
 Mount as directory:
@@ -350,6 +362,9 @@ components:
     ...
 ```
 
+| :hash: CLI command:  `mdos generate config` |
+| --- |
+
 #### From existing ConfigMap or Secret
 
 Mount as directory:
@@ -385,6 +400,9 @@ components:
     ...
 ```
 
+| :hash: CLI command:  `mdos generate secret` or `mdos generate config` |
+| --- |
+
 ---
 
 ### Environement Variables
@@ -407,6 +425,9 @@ components:
     ...
 ```
 
+| :hash: CLI command:  `mdos generate secret` or `mdos generate config` |
+| --- |
+
 #### From existing ConfigMap or Secret
 
 ```yaml
@@ -426,6 +447,9 @@ components:
 ...
 ```
 
+| :hash: CLI command:  `mdos generate secret` or `mdos generate config` |
+| --- |
+
 ---
 
 ### Networking
@@ -444,6 +468,9 @@ components:
 ...
 ```
 
+| :hash: CLI command:  `mdos generate service` |
+| --- |
+
 #### Configure Ingress
 
 ```yaml
@@ -458,6 +485,9 @@ components:
         trafficType: http
 ...
 ```
+
+| :hash: CLI command:  `mdos generate ingress` |
+| --- |
 
 #### NetworkPolicy
 
@@ -507,6 +537,9 @@ components:
         - nginx.mydomain.com
 ...
 ```
+
+| :hash: CLI command:  `mdos application protect` |
+| --- |
 
 ---
 

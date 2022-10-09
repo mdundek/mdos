@@ -95,6 +95,28 @@ export default class Secret extends Command {
                     return true
                 },
             },
+            ,
+            {
+                name: 'useRef',
+                message: 'Do you want to reference an existing Secret for this mount point?',
+                type: 'confirm',
+                default: false,
+                when: (values: any) => {
+                    return values.type == 'file' || values.type == 'dir'
+                },
+            },
+            {
+                type: 'string',
+                name: 'ref',
+                when: (values: any) => {
+                    return values.useRef
+                },
+                message: 'Enter the Secret name to user:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    return true
+                },
+            },
         ])
 
         // Update secrets
@@ -104,30 +126,36 @@ export default class Secret extends Command {
             name: string
             type: string
             mountPath?: string
-            entries: any
+            ref?: string
+            entries?: any
         }
 
-        const env: Secret = {
+        const secret: Secret = {
             name: responses.name,
-            type: responses.type,
-            entries: [],
+            type: responses.type
+        }
+
+        if(!responses.useRef) {
+            secret.entries = []
+        } else {
+            secret.ref = responses.ref
         }
 
         if (responses.type == 'env') {
-            env.entries.push({
+            secret.entries.push({
                 key: 'ENV_KEY',
                 value: 'my value',
             })
-        } else {
-            env.mountPath = responses.mountpath
-            env.entries.push({
+        } else if(!responses.useRef) {
+            secret.mountPath = responses.mountpath
+            secret.entries.push({
                 name: 'mysecret',
                 filename: 'myfile.conf',
                 value: 'some multinene config file\nmore lines here',
             })
         }
 
-        targetCompYaml.secrets.push(env)
+        targetCompYaml.secrets.push(secret)
 
         appYaml.components = appYaml.components.map((comp) => (comp.name == compName ? targetCompYaml : comp))
 
