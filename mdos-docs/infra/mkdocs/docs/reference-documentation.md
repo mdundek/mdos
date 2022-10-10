@@ -16,7 +16,7 @@ This architecture allows you to compose complex applications to suit your needs.
 A MDos application project layout is composed of one or more folders, each one representing an application component.  
 At the root of the application folder is a `mdos.yaml` file that holds all runtime configuration parameters for the application and it's components:
 
-```title="Project structure"
+``` title="Project structure"
 my-application/
 ├── backend
 │   └── Dockerfile
@@ -51,7 +51,7 @@ We will now have a closer look at what you can configure in your application `md
 
 Each `mdos.yaml` file starts with global configuration parameters specific to this application:
 
-```yaml
+```yaml linenums="1"
 schemaVersion: v1
 tenantName: my-team
 appName: my-application
@@ -72,7 +72,7 @@ The `uuid` field is a unique identifier for this application, all dependant reso
 
 Each application component will translate to a specific deployment on the cluster. Just like an application, a `component` hase some base values that need to be set:
 
-```yaml
+```yaml linenums="1"
 ...
 components:
   - name: comp-1
@@ -101,11 +101,11 @@ Among those, you will define your component `name`, `image` name and image `tag`
 
 Registries are where your MDos will push and pull your application images from. Multiple choices are available here.
 
-#### Use the MDos registry
+#### :material-arrow-right-thin: Use the MDos registry
 
 MDos comes with a private integrated Docker registry. If no `registry` parameter is set on your component `yaml` block, then this private internal registry will be used to push / pull the images from. No extra configuration parameters are required if this is the registry you want to use.
 
-```yaml
+```yaml linenums="1"
 ...
 components:
   - name: comp-1
@@ -115,11 +115,11 @@ components:
     ...
 ```
 
-#### Use a custom registry
+#### :material-arrow-right-thin: Use a custom registry
 
 If you have your own private registry that you would like to use for your application images, you can do so by specifying a `registry` value on your component, along with an __optionnal__ `imagePullSecrets` value that should be used to authenticate with your registry:
 
-```yaml
+```yaml hl_lines="7 8 9" linenums="1"
 ...
 components:
   - name: comp-1
@@ -136,11 +136,11 @@ components:
 
     Since you are using your own private registry, it will be up to you to provision your private registry `Secret` on the target namespace.
 
-#### Use a public registry
+#### :material-arrow-right-thin: Use a public registry
 
 The third option is to use a public registry, again with an __optionnal__ `imagePullSecrets` value that should be used to authenticate with the public registry:
 
-```yaml
+```yaml hl_lines="6 7 8" linenums="1"
 components:
   - name: comp-1
     ...
@@ -158,7 +158,7 @@ components:
 
 If you wish to overwrite the `command` used by a container on startup, you can so so like this:
 
-```yaml
+```yaml hl_lines="5 6 7 8 9" linenums="1"
 ...
 components:
   - name: comp-1
@@ -173,7 +173,7 @@ components:
 
 or along with command aguments:
 
-```yaml
+```yaml hl_lines="5 6 7" linenums="1"
 ...
 components:
   - name: comp-1
@@ -188,9 +188,9 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Persisted Volumes
 
-#### Standard volumes
+#### :material-arrow-right-thin: Standard volumes
 
-```yaml
+```yaml hl_lines="5 6 7 8" linenums="1"
 ...
 components:
   - name: comp-1
@@ -206,13 +206,13 @@ components:
 
     **mdos generate volume**
 
-#### Shared volumes
+#### :material-arrow-right-thin: Shared volumes
 
 ```sh
 mdos shared-volume create
 ```
 
-```yaml
+```yaml hl_lines="5 6 7 8" linenums="1"
 ...
 components:
   - name: comp-1
@@ -228,9 +228,9 @@ components:
 
     **mdos generate volume**
 
-#### Pre-populate volumes
+#### :material-arrow-right-thin: Pre-populate volumes
 
-```yaml
+```yaml hl_lines="5 6 7 8 9" linenums="1"
 ...
 components:
   - name: comp-1
@@ -243,7 +243,7 @@ components:
     ...
 ```
 
-```title="Project structure"
+```title="Project structure" hl_lines="3 4 5" linenums="1"
 ...
 ├── volumes
 │   └── static-website
@@ -256,9 +256,9 @@ components:
 
     **mdos generate volume**
 
-#### HostPath mounts
+#### :material-arrow-right-thin: HostPath mounts
 
-```yaml
+```yaml hl_lines="5 6 7 8" linenums="1"
 ...
 components:
   - name: comp-1
@@ -278,11 +278,11 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } ReadOnly volumes & files
 
-#### Using Secrets
+#### :material-arrow-right-thin: Using Secrets
 
 === "Mount as directory"
 
-    ```yaml
+    ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18 19" linenums="1"
     ...
     components:
       - name: comp-1
@@ -307,7 +307,7 @@ components:
 
 === "Mount as files"
 
-    ```yaml
+    ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21" linenums="1"
     ...
     components:
       - name: comp-1
@@ -336,11 +336,11 @@ components:
 
     **mdos generate secret**
 
-#### Using ConfigMaps
+#### :material-arrow-right-thin: Using ConfigMaps
 
 === "Mount as directory"
 
-    ```yaml
+    ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18" linenums="1"
     ...
     components:
       - name: comp-1
@@ -364,7 +364,7 @@ components:
 
 === "Mount as files"
 
-    ```yaml
+    ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" linenums="1"
     ...
     components:
       - name: comp-1
@@ -392,11 +392,11 @@ components:
 
     **mdos generate config**
 
-#### From existing ConfigMap or Secret
+#### :material-arrow-right-thin: From existing ConfigMap or Secret
 
 === "Mount as directory"
 
-    ```yaml
+    ```yaml hl_lines="5 6 7 8 9" linenums="1"
     ...
     components:
       - name: comp-1
@@ -411,7 +411,7 @@ components:
 
 === "Mount as files"
 
-    ```yaml
+    ```yaml hl_lines="5 6 7 8 9 10 11 12" linenums="1"
     ...
     components:
       - name: comp-1
@@ -435,9 +435,9 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Environement Variables
 
-#### Using ConfigMaps or Secrets
+#### :material-arrow-right-thin: Using ConfigMaps or Secrets
 
-```yaml
+```yaml hl_lines="5 6 7 8 9 10 11 12" linenums="1"
 ...
 components:
   - name: comp-1
@@ -457,9 +457,9 @@ components:
 
     **mdos generate secret** or **mdos generate config**
 
-#### From existing ConfigMap or Secret
+#### :material-arrow-right-thin: From existing ConfigMap or Secret
 
-```yaml
+```yaml hl_lines="5 6 7 8 9 10 11 12 13" linenums="1"
 ...
 components:
   - name: comp-1
@@ -484,9 +484,9 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Networking
 
-#### Exposing ports using services
+#### :material-arrow-right-thin: Exposing ports using services
 
-```yaml
+```yaml hl_lines="5 6 7 8" linenums="1"
 ...
 components:
   - name: comp-1
@@ -502,9 +502,9 @@ components:
 
     **mdos generate service**
 
-#### Configure Ingress
+#### :material-arrow-right-thin: Configure Ingress
 
-```yaml
+```yaml hl_lines="5 6 7 8 9" linenums="1"
 ...
 components:
   - name: comp-1
@@ -521,7 +521,7 @@ components:
 
     **mdos generate ingress**
 
-#### NetworkPolicy
+#### :material-arrow-right-thin: NetworkPolicy
 
 On a multi-tenant cluster environement, it is important that you protect your components from being accessed from other application components. There are 4 available configuration settings available for you to use:
 
@@ -534,7 +534,7 @@ On a multi-tenant cluster environement, it is important that you protect your co
 
 This is how you configure this on your component:
 
-```yaml
+```yaml hl_lines="5 6" linenums="1"
 ...
 components:
   - name: comp-1
@@ -554,11 +554,11 @@ Here is a more complex example that uses a `custom` scoped NetworkPolicy (please
 
 ### :octicons-codescan-16:{ .section-icon } OAuth2 OIDC
 
-#### Configure a OIDC provider
+#### :material-arrow-right-thin: Configure a OIDC provider
 
-#### Protect your ingress with a OIDC provider
+#### :material-arrow-right-thin: Protect your ingress with a OIDC provider
 
-```yaml
+```yaml hl_lines="5 6 7 8" linenums="1"
 ...
 components:
   - name: comp-1
@@ -578,7 +578,7 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Set pod resources
 
-```yaml
+```yaml hl_lines="5 6 7 8 9 10 11" linenums="1"
 ...
 components:
   - name: comp-1
@@ -597,7 +597,7 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Execute pre-build commands
 
-```yaml
+```yaml hl_lines="5 6 7 8" linenums="1"
 ...
 components:
   - name: comp-1

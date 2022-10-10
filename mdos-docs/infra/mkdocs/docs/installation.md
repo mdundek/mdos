@@ -37,13 +37,13 @@ During the installation procedure, you will be asked to provide a few details. Y
 
 <img src="/img/installation/ip.png" alt="ip" width="600"/>
 
-#### Administrator credentials 
+#### :material-arrow-right-thin: Administrator credentials 
 
 The platform will create a overall admin account on the platform. Please provide the admin username, email and password first:
 
 <img src="/img/installation/account.png" alt="account" width="600"/>
 
-#### Domain & certificate setup
+#### :material-arrow-right-thin: Domain & certificate setup
 
 Some of the components such as the registry auth server require a TLS certificate to function.  
 The installation script will give you multiple choices here:
@@ -67,7 +67,7 @@ The installation script will give you multiple choices here:
 
         `Issuer` must use the name `mdos-issuer`, the rest is up to you. Here is an example Issuer yaml file that uses `CloudFlare` as the DNS registrar & `Let's Encrypt` to generate and sign your certificate:
         
-          ```yaml
+          ``` yaml title="issuer.yaml"
           apiVersion: v1
           kind: Secret
           metadata:
@@ -103,14 +103,14 @@ The installation script will give you multiple choices here:
 
     This example is based on the 3rd option, a self signed certificate. If you want to use `cert-manager` instead (good option for production environement), you will be asked to enter the path to your cert-manager `Issuer` Yaml file to use in order to issue your certificate.
 
-#### Kubernetes workload storage directory path
+#### :material-arrow-right-thin: Kubernetes workload storage directory path
 
 When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.  
 MDos uses `Longhorn` from Rancher for this as a storage class. Longhorn will allocate your container volumes in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
 
 <img src="/img/installation/storage.png" alt="storage" width="600"/>
 
-#### Private registry max size
+#### :material-arrow-right-thin: Private registry max size
 
 MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.  
 The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).
@@ -121,7 +121,7 @@ The registry runs in Kubernetes, it therefore needs to allocate some storage to 
 
     Please note that this storage capacity will be located on your main Kubernetes storage path specified above
 
-#### FTP sync server for Kubernetes POD data provisionning
+#### :material-arrow-right-thin: FTP sync server for Kubernetes POD data provisionning
 
 When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using `hostPath` mount points instead. This is an antipatern and does not go well with multi-node cluster environements where you can not easiely predict where your pod is going to start.  
 MDos provides you with a means to initialize your application pods with data pre-alocated to it's volumes. This can be very usefull for usecases such as (but not only):
@@ -136,7 +136,7 @@ Again, this is your chance to customize this directory path in case you want to 
 
 <img src="/img/installation/ftp.png" alt="ftp" width="700"/>
 
-#### Configure Keycloak and set up the master token
+#### :material-arrow-right-thin: Configure Keycloak and set up the master token
 
 After a few minutes (can take up to 10 minutes, depending on your internet speed), you will be asked to set up Keycloak and provide a secret token to the installation script.   
 This token is necessary so that mdos can administer everything it needs on Keycloak.  
@@ -207,7 +207,7 @@ For developement purposes, you can use self-signed certificates without a public
 
     Please replace `XXX.XXX.XXX.XXX` with the MDos Platform server IP address, and `mydomain.com` with the actual domain used when you deployed the MDos platform. 
 
-#### Linux & Mac OSX
+#### :material-arrow-right-thin: Linux & Mac OSX
 
 Open your `/etc/hosts` file (root user) and add the following entries to it:
 
@@ -219,7 +219,7 @@ XXX.XXX.XXX.XXX registry.mydomain.com registry-auth.mydomain.com mdos-api.mydoma
 
     Please replace `XXX.XXX.XXX.XXX` with the MDos Platform server IP address, and `mydomain.com` with the actual domain used when you deployed the MDos platform. 
 
-#### Windows
+#### :material-arrow-right-thin: Windows
 
 Open your `c:\Windows\System32\Drivers\etc\hosts` file (root user) and add the following entries to it:
 

@@ -38,7 +38,7 @@ In MDos, we assign a dedicated `namespace` to each tenant on the platform. Appli
 
 To create a new tenant namespace called `a-team`, run the following command:
 
-```
+``` hl_lines="1"
 mdos namespace create
 
 WARN : Your current token has expired or is invalid. You need to re-authenticate
@@ -71,7 +71,7 @@ So what happened on the platform side when you create a namespace using the MDos
 
 Let's create a new application project using the `mdos` CLI command:
 
-```sh
+``` hl_lines="1"
 mdos generate application
 ? Enter a application name: hello-world
 ? Enter a tenant name that this application belongs to: a-team
@@ -83,7 +83,7 @@ This will create a new folder with the `mdos.yaml` configuration file in it. We 
 
 Inside your application project folder, run the following command:
 
-```sh
+``` hl_lines="3"
 cd hello-world
 
 mdos generate component
@@ -97,7 +97,7 @@ You can now go ahead and implement your `hello-world-server` application compone
 
 Create a new file: `hello-world/hello-world-server/index.js` 
 
-```javascript
+``` javascript linenums="1" title="index.js"
 const http = require('http'); // Loads the http module 
 
 http.createServer((request, response) => {
@@ -119,7 +119,7 @@ http.createServer((request, response) => {
 
 Last but not least, we need to populate our component `Dockerfile` so that we can build our container image during deployments. Open the `Dockerfile` that is inside the `hello-world-server` folder and set it's content to the following:
 
-```dockerfile
+``` dockerfile linenums="1" title="Dockerfile"
 FROM node:16
 
 # Create app directory
@@ -140,7 +140,7 @@ Ok, we have an application ready to use now. Next, we need to tell out `mdos` ap
 
 Let's start with exposing port `8080` for our application component, which can be done with a kubernetes `service`. Move into the `hello-world-server` component folder and execute the following command:
 
-```
+``` hl_lines="1"
 mdos generate service
 ? Enter a name for the service to add a port to: http
 ? Specify a port number on which your application needs to be accessible on: 8080
@@ -148,7 +148,7 @@ mdos generate service
 
 And finally, the ingress so that we have a hostname configured to access this application:
 
-```
+``` hl_lines="1"
 mdos generate ingress
 ? Enter a name for the ingress: http-ingress
 ? What hostname do you want to use to access your component port: hello-world.mydomain.com
@@ -163,7 +163,7 @@ mdos generate ingress
 
 That's it, this is what your project file structure should look like now:
 
-```
+``` title="Project structure"
 hello-world
 ├── hello-world-server
 │   ├── Dockerfile
@@ -175,7 +175,7 @@ hello-world
 
 Let's have a look at the generated code in the `mdos.yaml` file:
 
-```yaml
+``` yaml linenums="1" title="mdos.yaml"
 schemaVersion: v1
 tenantName: a-team
 appName: hello-world
@@ -209,7 +209,7 @@ components:
 
 Move into the `hello-world` application and execute the command:
 
-```
+``` hl_lines="1"
 mdos application deploy
 
 WARN : Your current token has expired or is invalid. You need to re-authenticate
@@ -239,7 +239,6 @@ SUCCESS : Application deployed
 That's it, your application should now be accessible on the following domain: `https://hello-world.mydomain.com`
 
 ![Hello world](/img/getting-started/hello-world.png)
-
 
 ## OIDC Providers for authentication
 
