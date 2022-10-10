@@ -8,10 +8,10 @@
       
       
       
-        <link rel="canonical" href="https://doc-mdos.mdundek.network/installation/">
+        <link rel="canonical" href="https://mkdocs-mdos.mdundek.network/installation/">
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.1">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
     
     
       
@@ -19,13 +19,14 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.69437709.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.20d9efc8.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
         
       
       
+
     
     
     
@@ -44,6 +45,7 @@
     
       
 
+    
     
     
   </head>
@@ -133,6 +135,39 @@
       </form>
     
     
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
     
     
   </nav>
@@ -323,26 +358,6 @@
   <a href="#domain-certificate-setup" class="md-nav__link">
     Domain &amp; certificate setup
   </a>
-  
-    <nav class="md-nav" aria-label="Domain &amp; certificate setup">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#self-signed-certificate-example" class="md-nav__link">
-    &gt; Self-signed certificate example
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cert-manager-example" class="md-nav__link">
-    &gt; Cert-manager example
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -553,26 +568,6 @@
     Domain &amp; certificate setup
   </a>
   
-    <nav class="md-nav" aria-label="Domain &amp; certificate setup">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#self-signed-certificate-example" class="md-nav__link">
-    &gt; Self-signed certificate example
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cert-manager-example" class="md-nav__link">
-    &gt; Cert-manager example
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -689,19 +684,20 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
-              
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
+                  
 
 
 <h1 id="installation-setup">Installation &amp; setup</h1>
 <h2 id="install-the-mdos-server-platform">Install the MDos (server) platform</h2>
-<blockquote>
-<p><strong>Warning</strong>
-At the moment, only Ubuntu &gt;= 20.04 is supported for the MDos platform itself. Debian and Alpine are planned next.
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>At the moment, only Ubuntu &gt;= 20.04 is supported for the MDos platform itself. Debian and Alpine are planned next.
 The MDos CLI is available for Max, linux and Windows</p>
-</blockquote>
+</div>
 <p>First, clone this repo on your target machine:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone https://github.com/mdundek/mdos.git
 </code></pre></div>
@@ -713,10 +709,10 @@ The MDos CLI is available for Max, linux and Windows</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo ./mdos-setup/install.sh
 </code></pre></div>
 <p>During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.</p>
-<p><img src="img/installation/ip.png" alt="ip" width="600"/></p>
+<p><img src="/img/installation/ip.png" alt="ip" width="600"/></p>
 <h4 id="administrator-credentials">Administrator credentials</h4>
 <p>The platform will create a overall admin account on the platform. Please provide the admin username, email and password first:</p>
-<p><img src="img/installation/account.png" alt="account" width="600"/></p>
+<p><img src="/img/installation/account.png" alt="account" width="600"/></p>
 <h4 id="domain-certificate-setup">Domain &amp; certificate setup</h4>
 <p>Some of the components such as the registry auth server require a TLS certificate to function.<br />
 The installation script will give you multiple choices here:</p>
@@ -725,20 +721,19 @@ The installation script will give you multiple choices here:</p>
 <li>You want to set up <code>cert-manager</code> to generate and manage your certificate (Let's Encrypt, CloudFlare, Vault, AWS, Google...)</li>
 <li>You have no certificate and would like to create a self-signed certificate (only suited for developement purposes)</li>
 </ol>
-<blockquote>
-<p><strong>Warning</strong>
-For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.<br />
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.<br />
 For production, you will have to use a fully valid certificate in order to use all of MDos features. </p>
-</blockquote>
-<h5 id="self-signed-certificate-example">&gt; Self-signed certificate example</h5>
-<p><img src="img/installation/selfsigned.png" alt="selfsigned" width="600"/></p>
-<p>This example is based on the 3rd option, a self signed certificate. If you want to use <code>cert-manager</code> instead (good option for production environement), you will be asked to enter the path to your cert-manager <code>Issuer</code> Yaml file to use in order to issue your certificate.</p>
-<h5 id="cert-manager-example">&gt; Cert-manager example</h5>
-<p><img src="img/installation/certmanager.png" alt="selfsigned"/></p>
+</div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Cert-manager example</label><label for="__tabbed_1_2">Self-signed certificate example</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><img src="/img/installation/certmanager.png" alt="selfsigned"/></p>
 <p>Here we are using <code>cert-manager</code> to generate and manage the certificate for you</p>
-<blockquote>
-<p><strong>Note</strong>
-Your <code>Issuer</code> must use the name <code>mdos-issuer</code>, the rest is up to you. Here is an example Issuer yaml file that uses <code>CloudFlare</code> as the DNS registrar &amp; <code>Let's Encrypt</code> to generate and sign your certificate:
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<p><code>Issuer</code> must use the name <code>mdos-issuer</code>, the rest is up to you. Here is an example Issuer yaml file that uses <code>CloudFlare</code> as the DNS registrar &amp; <code>Let's Encrypt</code> to generate and sign your certificate:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span><span class="w"></span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Secret</span><span class="w"></span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nt">metadata</span><span class="p">:</span><span class="w"></span>
@@ -764,22 +759,28 @@ Your <code>Issuer</code> must use the name <code>mdos-issuer</code>, the rest is
 <a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">          </span><span class="nt">apiKeySecretRef</span><span class="p">:</span><span class="w"></span>
 <a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cloudflare-api-key-secret</span><span class="w"></span>
 <a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">            </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">api-key</span><span class="w"></span>
-</code></pre></div></p>
-<p>Other examples for various providers can be found at: <a href="https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers">https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers</a>
-</p>
-</blockquote>
+</code></pre></div>
+<p>Other examples for various providers can be found at: <a href="https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers">https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers</a></p>
+</div>
+</div>
+<div class="tabbed-block">
+<p><img src="/img/installation/selfsigned.png" alt="selfsigned" width="600"/></p>
+<p>This example is based on the 3rd option, a self signed certificate. If you want to use <code>cert-manager</code> instead (good option for production environement), you will be asked to enter the path to your cert-manager <code>Issuer</code> Yaml file to use in order to issue your certificate.</p>
+</div>
+</div>
+</div>
 <h4 id="kubernetes-workload-storage-directory-path">Kubernetes workload storage directory path</h4>
 <p>When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.<br />
 MDos uses <code>Longhorn</code> from Rancher for this as a storage class. Longhorn will allocate your container volumes in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:</p>
-<p><img src="img/installation/storage.png" alt="storage" width="600"/></p>
+<p><img src="/img/installation/storage.png" alt="storage" width="600"/></p>
 <h4 id="private-registry-max-size">Private registry max size</h4>
 <p>MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.<br />
 The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).</p>
-<p><img src="img/installation/registry.png" alt="registry" width="600"/></p>
-<blockquote>
-<p><strong>Note</strong>
-Please note that this storage capacity will be located on your main Kubernetes storage path specified above</p>
-</blockquote>
+<p><img src="/img/installation/registry.png" alt="registry" width="600"/></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Please note that this storage capacity will be located on your main Kubernetes storage path specified above</p>
+</div>
 <h4 id="ftp-sync-server-for-kubernetes-pod-data-provisionning">FTP sync server for Kubernetes POD data provisionning</h4>
 <p>When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using <code>hostPath</code> mount points instead. This is an antipatern and does not go well with multi-node cluster environements where you can not easiely predict where your pod is going to start.<br />
 MDos provides you with a means to initialize your application pods with data pre-alocated to it's volumes. This can be very usefull for usecases such as (but not only):</p>
@@ -791,7 +792,7 @@ MDos provides you with a means to initialize your application pods with data pre
 <p>This is achieved by providing a centralized storage space on the mdos platform where a FTP server will allow you to (using the mdos CLI) mirror your application volume data from your local machine to the centralized FTP storage device where Kubernetes will then mirror those data volumes onto your POD volumes using <code>initContainers</code> and the FTP protocol.<br />
 Here you are being asked to provide a directory path to where this centralized data will be hosted.<br />
 Again, this is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:</p>
-<p><img src="img/installation/ftp.png" alt="ftp" width="700"/></p>
+<p><img src="/img/installation/ftp.png" alt="ftp" width="700"/></p>
 <h4 id="configure-keycloak-and-set-up-the-master-token">Configure Keycloak and set up the master token</h4>
 <p>After a few minutes (can take up to 10 minutes, depending on your internet speed), you will be asked to set up Keycloak and provide a secret token to the installation script. <br />
 This token is necessary so that mdos can administer everything it needs on Keycloak.<br />
@@ -815,10 +816,10 @@ The script provides you with detailed instructions on how to do so, simply follo
 </code></pre></div>
 <p>That's it, once the installation script is finished you are ready to use the platform.</p>
 <h3 id="worker-nodes">Worker nodes</h3>
-<blockquote>
-<p><strong>Note</strong>
-Under construction</p>
-</blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Under construction</p>
+</div>
 <hr />
 <h2 id="install-the-mdos-cli">Install the MDos CLI</h2>
 <h3 id="linux-mac-osx">Linux &amp; Mac OSX</h3>
@@ -827,10 +828,10 @@ Under construction</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh <span class="p">|</span> sh
 </code></pre></div>
 <h3 id="windows">Windows</h3>
-<blockquote>
-<p><strong>Note</strong>
-Under construction</p>
-</blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Under construction</p>
+</div>
 <h3 id="verify-your-installation">Verify Your Installation</h3>
 <p>To verify your CLI installation, use the mdos --version command:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>mdos --version
@@ -838,18 +839,18 @@ Under construction</p>
 </code></pre></div>
 <h3 id="special-notes-about-self-signed-certificates-without-a-resolvable-dns-name">Special notes about self-signed certificates without a resolvable DNS name</h3>
 <p>For developement purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your <code>hosts</code> file from wherever you wish to use the CLI from so that it can resolve the various hostnames used by the MDos API platform.</p>
-<blockquote>
-<p><strong>Note</strong>
-Please replace <code>XXX.XXX.XXX.XXX</code> with the MDos Platform server IP address, and <code>mydomain.com</code> with the actual domain used when you deployed the MDos platform. </p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Please replace <code>XXX.XXX.XXX.XXX</code> with the MDos Platform server IP address, and <code>mydomain.com</code> with the actual domain used when you deployed the MDos platform. </p>
+</div>
 <h4 id="linux-mac-osx_1">Linux &amp; Mac OSX</h4>
 <p>Open your <code>/etc/hosts</code> file (root user) and add the following entries to it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com registry-auth.mydomain.com mdos-api.mydomain.com mdos-ftp.mydomain.com mdos-ftp-api.mydomain.com longhorn.mydomain.com
 </code></pre></div>
-<blockquote>
-<p><strong>Note</strong>
-Please replace <code>XXX.XXX.XXX.XXX</code> with the MDos Platform server IP address, and <code>mydomain.com</code> with the actual domain used when you deployed the MDos platform. </p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Please replace <code>XXX.XXX.XXX.XXX</code> with the MDos Platform server IP address, and <code>mydomain.com</code> with the actual domain used when you deployed the MDos platform. </p>
+</div>
 <h4 id="windows_1">Windows</h4>
 <p>Open your <code>c:\Windows\System32\Drivers\etc\hosts</code> file (root user) and add the following entries to it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com
@@ -887,10 +888,12 @@ mount -a
   
 
 
-              
-            </article>
-            
-          </div>
+
+                
+              </article>
+            </div>
+          
+          
         </div>
         
       </main>
@@ -956,10 +959,10 @@ mount -a
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky"], "search": "../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky"], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.9c69f0bc.min.js"></script>
+      <script src="../assets/javascripts/bundle.078830c0.min.js"></script>
       
     
   </body>

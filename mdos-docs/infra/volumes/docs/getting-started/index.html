@@ -8,10 +8,10 @@
       
       
       
-        <link rel="canonical" href="https://doc-mdos.mdundek.network/getting-started/">
+        <link rel="canonical" href="https://mkdocs-mdos.mdundek.network/getting-started/">
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.1">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
     
     
       
@@ -19,13 +19,14 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.69437709.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.20d9efc8.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
         
       
       
+
     
     
     
@@ -44,6 +45,7 @@
     
       
 
+    
     
     
   </head>
@@ -133,6 +135,39 @@
       </form>
     
     
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
     
     
   </nav>
@@ -305,33 +340,26 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#anatomy-of-a-mdos-application" class="md-nav__link">
-    Anatomy of a mdos application
+  <a href="#mdos-hello-world-example" class="md-nav__link">
+    MDos "Hello World" example
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="MDos "Hello World" example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#configure-your-cli-to-point-to-a-mdos-platform-api-host" class="md-nav__link">
     Configure your CLI to point to a MDos platform API host
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#create-a-tenant-namespace" class="md-nav__link">
     Create a tenant namespace
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#scaffold-an-application-application-components" class="md-nav__link">
-    Scaffold an application &amp; application components
-  </a>
-  
-    <nav class="md-nav" aria-label="Scaffold an application &amp; application components">
-      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#create-a-new-application" class="md-nav__link">
@@ -347,14 +375,48 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#deploy-your-hello-world-application-on-the-cluster" class="md-nav__link">
+    Deploy your hello-world application on the cluster
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploy-your-hello-world-application-on-the-cluster" class="md-nav__link">
-    Deploy your hello-world application on the cluster
+  <a href="#oidc-providers-for-authentication" class="md-nav__link">
+    OIDC Providers for authentication
+  </a>
+  
+    <nav class="md-nav" aria-label="OIDC Providers for authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-a-keycloak-based-oidc-provider" class="md-nav__link">
+    Create a Keycloak based OIDC Provider
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-a-google-based-oidc-provider" class="md-nav__link">
+    Create a Google based OIDC Provider
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kubectl-oidc-setup-for-rbac" class="md-nav__link">
+    Kubectl OIDC setup for RBAC
   </a>
   
 </li>
@@ -411,33 +473,26 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#anatomy-of-a-mdos-application" class="md-nav__link">
-    Anatomy of a mdos application
+  <a href="#mdos-hello-world-example" class="md-nav__link">
+    MDos "Hello World" example
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="MDos "Hello World" example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#configure-your-cli-to-point-to-a-mdos-platform-api-host" class="md-nav__link">
     Configure your CLI to point to a MDos platform API host
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#create-a-tenant-namespace" class="md-nav__link">
     Create a tenant namespace
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#scaffold-an-application-application-components" class="md-nav__link">
-    Scaffold an application &amp; application components
-  </a>
-  
-    <nav class="md-nav" aria-label="Scaffold an application &amp; application components">
-      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#create-a-new-application" class="md-nav__link">
@@ -453,14 +508,48 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#deploy-your-hello-world-application-on-the-cluster" class="md-nav__link">
+    Deploy your hello-world application on the cluster
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploy-your-hello-world-application-on-the-cluster" class="md-nav__link">
-    Deploy your hello-world application on the cluster
+  <a href="#oidc-providers-for-authentication" class="md-nav__link">
+    OIDC Providers for authentication
+  </a>
+  
+    <nav class="md-nav" aria-label="OIDC Providers for authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-a-keycloak-based-oidc-provider" class="md-nav__link">
+    Create a Keycloak based OIDC Provider
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-a-google-based-oidc-provider" class="md-nav__link">
+    Create a Google based OIDC Provider
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kubectl-oidc-setup-for-rbac" class="md-nav__link">
+    Kubectl OIDC setup for RBAC
   </a>
   
 </li>
@@ -473,73 +562,49 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
-              
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
+                  
 
 
 <h1 id="getting-started">Getting started</h1>
-<h2 id="anatomy-of-a-mdos-application">Anatomy of a mdos application</h2>
-<p>Applications are to be seen as a higher level concept, an application in <code>mdos</code> is composed of one or more application components. Application components are your actual project asset placeholders (source code), where one component could be an API backend server for instance, and a second component would hold your front end application and so on.<br />
-Every application component can have one or more volumes attached to it for storage persistance &amp; data mirroring. </p>
-<p><img src="img/anatomy.png" alt="anatomy" width="400"/></p>
-<p>This architecture allows you to compose complex applications to suit your needs.</p>
-<p>A MDos application project layout is composed of one or more folders, each one representing an application component.<br />
-At the root of the application folder is a <code>mdos.yaml</code> file that holds all runtime configuration parameters for the application and it's components:</p>
-<div class="highlight"><span class="filename">Project structure</span><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>my-application/
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── backend
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│   └── Dockerfile
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   └── &lt;your application code files&gt;...
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>├── frontend
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   └── Dockerfile
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│   └── &lt;your application code files&gt;...
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>├── volumes
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│   └── static-website
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│       └── index.html
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│       └── ...
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└── mdos.yaml
-</code></pre></div>
-<p>In this example we have an application named <code>my-application</code>, that is composed of two distinct application components: <code>backend</code> &amp; <code>frontend</code>.<br />
-Each component has it's own Dockerfile.<br />
-At the <code>application</code> level, there is also a <code>volumes</code> folder where you can store application component volume files to be used within your application, and a <code>mdos.yaml</code> config file that holds all runtime configuration parameters. As an example, here the <code>volumes</code> folder has a subfolder called <code>static-website</code> that is used by the <code>frontend</code> application so serve it's website data.</p>
-<blockquote>
-<p><strong>Note</strong>
-Volumes are managed on the <code>application</code> level rather than on the <code>component</code> level in case you wish to share volumes amongst components.</p>
-</blockquote>
 <p>We will build a similar <code>hello world</code> example application now, but to keep thinks simple, we will not deploy a backend component along with the frontend component, and not work with volumes yet. Those will be subjects for later on.  </p>
 <p>First, we need to configure our MDos CLI so that it knows how to talk to our MDos API server.</p>
-<h2 id="configure-your-cli-to-point-to-a-mdos-platform-api-host">Configure your CLI to point to a MDos platform API host</h2>
+<h2 id="mdos-hello-world-example">MDos "Hello World" example</h2>
+<h3 id="configure-your-cli-to-point-to-a-mdos-platform-api-host">Configure your CLI to point to a MDos platform API host</h3>
 <p>Before we can start using the mdos CLI, we need to tell it what MDos API server to talk to.</p>
-<blockquote>
-<p><strong>Warning</strong>
-If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine <code>hosts</code> file before you prosceed.<br />
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine <code>hosts</code> file before you prosceed.<br />
 In Linux and Mac OSX, your can configure those in your <code>/etc/hosts</code> file. In Windows, this file is located under <code>c:\Windows\System32\Drivers\etc\hosts</code>.<br />
 For more information, please refer to the chapter <a href="">Special notes about self-signed certificates without a resolvable DNS name</a></p>
-</blockquote>
+</div>
 <p>To configure the target MDos platform API server endpoint with your CLI, use the following command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>mdos configure api-endpoint https://mdos-api.mydomain.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mdos configure api-endpoint https://mdos-api.mydomain.com
 </code></pre></div>
 <p>Replace <code>mydomain.com</code> with your actual domain name used during the platform installation procedure.  </p>
 <p>You are now ready to start using the platform.</p>
-<h2 id="create-a-tenant-namespace">Create a tenant namespace</h2>
+<h3 id="create-a-tenant-namespace">Create a tenant namespace</h3>
 <p>In Kubernetes, <code>namespaces</code> are used to group assets together so that they can be properly administered &amp; run in their own scoped context.<br />
 In MDos, we assign a dedicated <code>namespace</code> to each tenant on the platform. Applications belong to a tenant namespace, without the namespace we can not deploy our application.  </p>
 <p>To create a new tenant namespace called <code>a-team</code>, run the following command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mdos namespace create
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>WARN : Your current token has expired or is invalid. You need to re-authenticate
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>? Please enter your username: admin-username
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>? Please enter your password: [hidden]
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>? Enter a namespace name to create a-team
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>Creating namespace... done
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>mdos namespace create
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>WARN : Your current token has expired or is invalid. You need to re-authenticate
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>? Please enter your username: admin-username
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>? Please enter your password: [hidden]
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>? Enter a namespace name to create a-team
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>Creating namespace... done
 </code></pre></div>
-<blockquote>
-<p>If this is the first time you interact with the platform (or if your JWT token has expired like in the example above), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the <code>admin</code> user account that was used during the platform installation procedure (in this example, the admin username is called <code>admin-username</code>, super original, I know...).<br />
-If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  </p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If this is the first time you interact with the platform (or if your JWT token has expired like in the example above), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the <code>admin</code> user account that was used during the platform installation procedure (in this example, the admin username is called <code>admin-username</code>, super original, I know...).  </p>
+</div>
+<p>If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  </p>
 <p>So what happened on the platform side when you create a namespace using the MDos CLI? Here are some high level details:</p>
 <ol>
 <li>Create a new Client in Keycloak, required to manage users that will interact with this namespace</li>
@@ -548,155 +613,170 @@ If you do already have your own user account on the platform, and you have suffi
 <li>Create namespace roles so that we can apply RBAC permissions to users</li>
 <li>Configure service account / credentials in Keycloak for <code>ftpd</code> and <code>registry</code> access for this namespace</li>
 </ol>
-<blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>Details about these concepts are out of scope in this chapter</p>
-</blockquote>
-<h2 id="scaffold-an-application-application-components">Scaffold an application &amp; application components</h2>
+</div>
 <h3 id="create-a-new-application">Create a new application</h3>
 <p>Let's create a new application project using the <code>mdos</code> CLI command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mdos generate application
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>? Enter a application name: hello-world
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>? Enter a tenant name that this application belongs to: a-team
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mdos generate application
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>? Enter a application name: hello-world
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>? Enter a tenant name that this application belongs to: a-team
 </code></pre></div>
 <p>This will create a new folder with the <code>mdos.yaml</code> configuration file in it. We are now ready to create application components.</p>
 <h3 id="create-a-new-application-component">Create a new application component</h3>
 <p>Inside your application project folder, run the following command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span> hello-world
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>mdos generate component
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>? Enter a application component name: hello-world-server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span> hello-world
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>mdos generate component
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>? Enter a application component name: hello-world-server
 </code></pre></div>
 <p>The CLI will ask you a couple of things about some base configuration parameters.
 This will create a new component folder with an empty <code>Dockerfile</code> for you to use, as well as update the <code>mdos.yaml</code> file referencing the component as part of the overall application project along with it's configuration parameters.  </p>
 <p>You can now go ahead and implement your <code>hello-world-server</code> application component. Let's do just that. We will create a basic NodeJS HTTP server for this demonstration that will return "hello world" when invoked.  </p>
 <p>Create a new file: <code>hello-world/hello-world-server/index.js</code> </p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">http</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Loads the http module </span><span class="w"></span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nx">http</span><span class="p">.</span><span class="nx">createServer</span><span class="p">((</span><span class="nx">request</span><span class="p">,</span><span class="w"> </span><span class="nx">response</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="c1">// 1. Tell the browser everything is OK (Status code 200), and the data is in plain text</span><span class="w"></span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">writeHead</span><span class="p">(</span><span class="mf">200</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">        </span><span class="s1">&#39;Content-Type&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;text/plain&#39;</span><span class="w"></span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="p">});</span><span class="w"></span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span><span class="c1">// 2. Write the announced text to the body of the page</span><span class="w"></span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s1">&#39;Hello, World!\n&#39;</span><span class="p">);</span><span class="w"></span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">    </span><span class="c1">// 3. Tell the server that all of the response headers and body have been sent</span><span class="w"></span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span><span class="w"></span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="p">}).</span><span class="nx">listen</span><span class="p">(</span><span class="mf">8080</span><span class="p">);</span><span class="w"> </span><span class="c1">// 4. Tells the server what port to be on</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">http</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Loads the http module </span><span class="w"></span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nx">http</span><span class="p">.</span><span class="nx">createServer</span><span class="p">((</span><span class="nx">request</span><span class="p">,</span><span class="w"> </span><span class="nx">response</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="c1">// 1. Tell the browser everything is OK (Status code 200), and the data is in plain text</span><span class="w"></span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">writeHead</span><span class="p">(</span><span class="mf">200</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="s1">&#39;Content-Type&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;text/plain&#39;</span><span class="w"></span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="p">});</span><span class="w"></span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="c1">// 2. Write the announced text to the body of the page</span><span class="w"></span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s1">&#39;Hello, World!\n&#39;</span><span class="p">);</span><span class="w"></span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span><span class="c1">// 3. Tell the server that all of the response headers and body have been sent</span><span class="w"></span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">    </span><span class="nx">response</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span><span class="w"></span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="p">}).</span><span class="nx">listen</span><span class="p">(</span><span class="mf">8080</span><span class="p">);</span><span class="w"> </span><span class="c1">// 4. Tells the server what port to be on</span><span class="w"></span>
 </code></pre></div>
 <p>Last but not least, we need to populate our component <code>Dockerfile</code> so that we can build our container image during deployments. Open the <code>Dockerfile</code> that is inside the <code>hello-world-server</code> folder and set it's content to the following:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">FROM</span><span class="w"> </span><span class="s">node:16</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c"># Create app directory</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">WORKDIR</span><span class="w"> </span><span class="s">/usr/src/app</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c"># Bundle app source</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">COPY</span><span class="w"> </span>./server.js .
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">EXPOSE</span><span class="w"> </span><span class="s">8080</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;server.js&quot;</span><span class="w"> </span><span class="p">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">FROM</span><span class="w"> </span><span class="s">node:16</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c"># Create app directory</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">WORKDIR</span><span class="w"> </span><span class="s">/usr/src/app</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c"># Bundle app source</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="k">COPY</span><span class="w"> </span>./server.js .
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="k">EXPOSE</span><span class="w"> </span><span class="s">8080</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;server.js&quot;</span><span class="w"> </span><span class="p">]</span>
 </code></pre></div>
 <p>Ok, we have an application ready to use now. Next, we need to tell out <code>mdos</code> application that we want to expose port <code>8080</code>, and set up an ingress config to expose it outside of the cluster using the hostname <code>hello-world.mydomain.com</code>.</p>
-<blockquote>
-<p><strong>Note</strong>
-As of now, MDos uses the platform wildcard domain name that was configured during the installation of the platform in order to exposes any application you deploy on it. Adding extra domain names for your various applications is under developement and will be available soon. </p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As of now, MDos uses the platform wildcard domain name that was configured during the installation of the platform in order to exposes any application you deploy on it. Adding extra domain names for your various applications is under developement and will be available soon. </p>
+</div>
 <p>Let's start with exposing port <code>8080</code> for our application component, which can be done with a kubernetes <code>service</code>. Move into the <code>hello-world-server</code> component folder and execute the following command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mdos generate service
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>? Enter a name for the service to add a port to: http
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>? Specify a port number on which your application needs to be accessible on: 8080
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>mdos generate service
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>? Enter a name for the service to add a port to: http
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>? Specify a port number on which your application needs to be accessible on: 8080
 </code></pre></div>
 <p>And finally, the ingress so that we have a hostname configured to access this application:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>mdos generate ingress
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>? Enter a name for the ingress: http-ingress
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>? What hostname do you want to use to access your component port: hello-world.mydomain.com
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>? Do you want to match a subpath for this host? No
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>? What target port should this traffic be redirected to? 8080
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>? What type of traffic will this ingress handle? http
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mdos generate ingress
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>? Enter a name for the ingress: http-ingress
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>? What hostname do you want to use to access your component port: hello-world.mydomain.com
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>? Do you want to match a subpath for this host? No
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>? What target port should this traffic be redirected to? 8080
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>? What type of traffic will this ingress handle? http
 </code></pre></div>
-<blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>Again, replace <code>mydomain.com</code> with whatever domain you configured during the platform installation.</p>
-</blockquote>
+</div>
 <p>That's it, this is what your project file structure should look like now:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>hello-world
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>├── hello-world-server
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>│   ├── Dockerfile
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>│   └── server.js
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>├── mdos.yaml
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>└── volumes
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    └── README.md
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>hello-world
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>├── hello-world-server
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>│   ├── Dockerfile
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>│   └── server.js
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>├── mdos.yaml
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>└── volumes
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    └── README.md
 </code></pre></div>
 <p>Let's have a look at the generated code in the <code>mdos.yaml</code> file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">schemaVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span><span class="w"></span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nt">tenantName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">a-team</span><span class="w"></span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nt">appName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span><span class="w"></span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nt">uuid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mvx10-x2wip</span><span class="w"></span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world-server</span><span class="w"></span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span><span class="w"></span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="nt">uuid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qx8su-jwqvi</span><span class="w"></span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.1</span><span class="w"></span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="nt">services</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"></span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">    </span><span class="nt">ingress</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-ingress</span><span class="w"></span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">        </span><span class="nt">matchHost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world.mydomain.com</span><span class="w"></span>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">        </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"></span>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">        </span><span class="nt">trafficType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">schemaVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span><span class="w"></span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nt">tenantName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">a-team</span><span class="w"></span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nt">appName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span><span class="w"></span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nt">uuid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mvx10-x2wip</span><span class="w"></span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world-server</span><span class="w"></span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span><span class="w"></span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="nt">uuid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qx8su-jwqvi</span><span class="w"></span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.1</span><span class="w"></span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="nt">services</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"></span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">    </span><span class="nt">ingress</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-ingress</span><span class="w"></span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">        </span><span class="nt">matchHost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world.mydomain.com</span><span class="w"></span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">        </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"></span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="w">        </span><span class="nt">trafficType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
 </code></pre></div>
-<blockquote>
-<p><strong>Note</strong>
-All application configuration features will live inside this <code>yaml</code> file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.<br />
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All application configuration features will live inside this <code>yaml</code> file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.<br />
 To learn more about everything that you can configure for your deployments in this yaml file, please refer back to the specific documentation chapters</p>
-</blockquote>
-<h2 id="deploy-your-hello-world-application-on-the-cluster">Deploy your <code>hello-world</code> application on the cluster</h2>
-<blockquote>
-<p><strong>Note</strong>
-Since this is a basic example, we will skip user management, authentication or any other advanced topics for now. Since we authenticated with the MDos admin user account, we can deploy onto this namespace without creating / assigning users &amp; permissions for this namespace.</p>
-</blockquote>
+</div>
+<h3 id="deploy-your-hello-world-application-on-the-cluster">Deploy your <code>hello-world</code> application on the cluster</h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since this is a basic example, we will skip user management, authentication or any other advanced topics for now. Since we authenticated with the MDos admin user account, we can deploy onto this namespace without creating / assigning users &amp; permissions for this namespace.</p>
+</div>
 <p>Move into the <code>hello-world</code> application and execute the command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>mdos application deploy
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>WARN : Your current token has expired or is invalid. You need to re-authenticate
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>? Please enter your username: admin-username
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>? Please enter your password: [hidden]
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>Synching volumes... done
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>To push your images to the mdos registry, you need to provide your mdos username and password first
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>? Username: admin-username
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>? Password: ********
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>Building application image registry.mydomain.com/a-team/hello-world:0.0.1... done
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>Pushing application image registry.mydomain.com/a-team/hello-world:0.0.1... done
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>Deploying application... scheduled
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>Pod: hello-world-server
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>    Phase: Running
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>    Container: hello-world-hello-world-server
-<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>        State: running
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>        Details: n/a
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>
-<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>SUCCESS : Application deployed
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>mdos application deploy
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>WARN : Your current token has expired or is invalid. You need to re-authenticate
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>? Please enter your username: admin-username
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>? Please enter your password: [hidden]
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>Synching volumes... done
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>To push your images to the mdos registry, you need to provide your mdos username and password first
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>? Username: admin-username
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>? Password: ********
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>Building application image registry.mydomain.com/a-team/hello-world:0.0.1... done
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>Pushing application image registry.mydomain.com/a-team/hello-world:0.0.1... done
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>Deploying application... scheduled
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>Pod: hello-world-server
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>    Phase: Running
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>    Container: hello-world-hello-world-server
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>        State: running
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>        Details: n/a
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>SUCCESS : Application deployed
 </code></pre></div>
 <p>That's it, your application should now be accessible on the following domain: <code>https://hello-world.mydomain.com</code></p>
-<p><img alt="Hello world" src="img/getting-started/hello-world.png" /></p>
+<p><img alt="Hello world" src="/img/getting-started/hello-world.png" /></p>
+<h2 id="oidc-providers-for-authentication">OIDC Providers for authentication</h2>
+<h3 id="create-a-keycloak-based-oidc-provider">Create a Keycloak based OIDC Provider</h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The platform provided Keycloak instance is used for Keycloak based providers</p>
+</div>
+<h3 id="create-a-google-based-oidc-provider">Create a Google based OIDC Provider</h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In construction</p>
+</div>
+<h2 id="kubectl-oidc-setup-for-rbac">Kubectl OIDC setup for RBAC</h2>
 
 
 
   
 
 
-              
-            </article>
-            
-          </div>
+
+                
+              </article>
+            </div>
+          
+          
         </div>
         
       </main>
@@ -762,10 +842,10 @@ Since this is a basic example, we will skip user management, authentication or a
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky"], "search": "../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky"], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.9c69f0bc.min.js"></script>
+      <script src="../assets/javascripts/bundle.078830c0.min.js"></script>
       
     
   </body>
