@@ -1,5 +1,5 @@
 site_name: MDos
-site_url: https://doc-mdos.mdundek.network/
+site_url: https://mkdocs-mdos.mdundek.network/
 theme:
   name: material
   palette: 
@@ -24,11 +24,23 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
+  - admonition
+  - pymdownx.details
   - pymdownx.superfences
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - md_in_html
 nav:
     - Home: index.md
     - Install: installation.md
     - Getting started: getting-started.md
     - Reference documentation: reference-documentation.md
-plugins:
-  - external-markdown

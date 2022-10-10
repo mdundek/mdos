@@ -1,3 +1,7 @@
 :root > * {
 	--md-code-fg-color: #bb6735;
 }
+
+.section-icon {
+	color: #1DA1F2;
+  }

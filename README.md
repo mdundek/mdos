@@ -50,7 +50,7 @@ MDos is multi-tenant oriented, it is designed to be shared between teams, yet se
 * Protect your applications by delegating authentication to MDos using Oauth2 & OIDC
 * Simply focus on your application RBAC logic by inspecting the user JWT token
 
----
+<!-- ---
 
 ## Table of Contents
 
@@ -106,7 +106,7 @@ MDos is multi-tenant oriented, it is designed to be shared between teams, yet se
       - [Implement Role Based Access Control (RBAC ACL) in your application code](#overview)
 - [Debugging application & accessing logs](#overview)
     - [Deployment status & log access](#overview)
-    - [Access centralized logs with Loki](#overview)
+    - [Access centralized logs with Loki](#overview) -->
 
 ---
 
