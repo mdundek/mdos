@@ -15,4 +15,5 @@ mdos-docs/.$architecture.drawio.dtmp
 mdos-docs/draw.io/.$architecture.drawio.bkp
 mdos-docs/draw.io/.$architecture.drawio.dtmp
 mdos-docs/infra/mkdocs/site
+mdos-docs/infra/volumes/docs
 ftp_target
