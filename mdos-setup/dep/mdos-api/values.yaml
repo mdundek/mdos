@@ -55,12 +55,12 @@ components:
         type: file
         mountPath: /usr/src/dep/k3s
         entries:
-          - name: client-ca
+          - key: client-ca
             filename: client-ca.crt
             value: |-
               -----BEGIN CERTIFICATE-----
               -----END CERTIFICATE-----
-          - name: client-key
+          - key: client-key
             filename: client-ca.key
             value: |-
               -----BEGIN EC PRIVATE KEY-----

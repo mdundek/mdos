@@ -298,16 +298,16 @@ collect_user_input() {
         error "You are running low on disk space, you only have ${REMAINING_DISK}Gi left on your Kubernetes storage device, which is insufficient to run the platform in a stable manner"
         exit 1
     elif [ "$REMAINING_DISK" -lt "8" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-3))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-3))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
         RABBITMQ_STORAGE_SIZE="3"
     elif [ "$REMAINING_DISK" -lt "10" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-5))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-5))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
         RABBITMQ_STORAGE_SIZE="5"
     elif [ "$REMAINING_DISK" -lt "20" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-10))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-10))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
         RABBITMQ_STORAGE_SIZE="10"
     elif [ "$REMAINING_DISK" -lt "30" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-15))Gi left on your Kubernetes storage device. The stability of the platform iss at risk!"
+        warn "You are running low on disk space, you only have $((REMAINING_DISK-15))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
         RABBITMQ_STORAGE_SIZE="15"
     else
         RABBITMQ_STORAGE_SIZE="20"
@@ -348,6 +348,27 @@ setup_master_firewall() {
             fi
             if [ "$(ufw status | grep '3920' | grep 'ALLOW')" == "" ]; then
                 ufw allow 3920 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '179' | grep 'ALLOW')" == "" ]; then
+                ufw allow 179 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '4789' | grep 'ALLOW')" == "" ]; then
+                ufw allow 4789 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '2379' | grep 'ALLOW')" == "" ]; then
+                ufw allow 2379 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '2380' | grep 'ALLOW')" == "" ]; then
+                ufw allow 2380 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '10250' | grep 'ALLOW')" == "" ]; then
+                ufw allow 10250 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '10259' | grep 'ALLOW')" == "" ]; then
+                ufw allow 10259 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '10257' | grep 'ALLOW')" == "" ]; then
+                ufw allow 10257 &>> $LOG_FILE
             fi
         fi
     fi

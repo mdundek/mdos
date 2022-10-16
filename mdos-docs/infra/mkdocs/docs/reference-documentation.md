@@ -292,12 +292,12 @@ components:
             type: dir
             mountPath: /etc/x509/https
             entries:
-              - name: ca.crt
+              - key: ca.crt
                 value: |-
                   -----BEGIN CERTIFICATE-----
                   ...
                   -----END CERTIFICATE-----
-              - name: ca.key
+              - key: ca.key
                 value: |-
                   -----BEGIN EC PRIVATE KEY-----
                   ...
@@ -317,13 +317,13 @@ components:
             type: file
             mountPath: /etc/x509/https
             entries:
-              - name: client-ca
+              - key: client-ca
                 filename: ca.crt
                 value: |-
                   -----BEGIN CERTIFICATE-----
                   ...
                   -----END CERTIFICATE-----
-              - name: client-key
+              - key: client-key
                 filename: ca.key
                 value: |-
                   -----BEGIN EC PRIVATE KEY-----
@@ -351,11 +351,11 @@ components:
             mountPath: /etc/my-scripts
             defaultMode: 0744 # optional
             entries:
-              - name: foo.sh
+              - key: foo.sh
                 value: |-
                   #!/bin/sh
                   echo "Hello world from foo!"
-              - name: bar.sh
+              - key: bar.sh
                 value: |-
                   #!/bin/sh
                   echo "Hello world from bar!"
@@ -375,12 +375,12 @@ components:
             mountPath: /etc/my-scripts
             defaultMode: 0744 # optional
             entries:
-              - name: foo-script
+              - key: foo-script
                 filename: foo.sh
                 value: |-
                   #!/bin/sh
                   echo "Hello world from foo!"
-              - name: bar-script
+              - key: bar-script
                 filename: bar.sh
                 value: |-
                   #!/bin/sh

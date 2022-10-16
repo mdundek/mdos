@@ -164,7 +164,7 @@ export default class Config extends Command {
         } else if(!responses.useRef) {
             env.mountPath = responses.mountpath
             env.entries.push({
-                name: 'myconfig',
+                key: 'myconfig',
                 filename: 'myfile.conf',
                 value: 'some multinene config file\nmore lines here',
             })

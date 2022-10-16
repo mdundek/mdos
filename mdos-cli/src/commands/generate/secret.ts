@@ -149,7 +149,7 @@ export default class Secret extends Command {
         } else if(!responses.useRef) {
             secret.mountPath = responses.mountpath
             secret.entries.push({
-                name: 'mysecret',
+                key: 'mysecret',
                 filename: 'myfile.conf',
                 value: 'some multinene config file\nmore lines here',
             })

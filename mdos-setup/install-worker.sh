@@ -88,6 +88,9 @@ setup_worker_firewall() {
             if [ "$(ufw status | grep 'HTTPS\|30999' | grep 'ALLOW')" == "" ]; then
                 ufw allow 30999 &>> $LOG_FILE
             fi
+            if [ "$(ufw status | grep '10250' | grep 'ALLOW')" == "" ]; then
+                ufw allow 10250 &>> $LOG_FILE
+            fi
         fi
     fi
 }
