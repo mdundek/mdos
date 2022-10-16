@@ -106,3 +106,7 @@ components:
         - mdos-api.mdundek.network
       excludePaths:
         - /registry_domain
+        
+    nodeSelector:
+      label: mdos-stack
+      value: true

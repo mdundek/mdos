@@ -99,3 +99,7 @@ components:
         - mdos-api.mydomain.com
       excludePaths:
         - /registry_domain
+
+    nodeSelector:
+      label: mdos-stack
+      value: true

@@ -57,6 +57,10 @@ spec:
       securityContext:
       {{- toYaml .podSecurityContext | nindent 8 }}
     {{- end }}
+    {{- if .nodeSelector }}
+      nodeSelector:
+        {{ .nodeSelector.label }}: {{ .nodeSelector.value | quote }}
+    {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=- HOSTNAME ALIASES -=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}

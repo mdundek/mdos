@@ -73,6 +73,7 @@ collect_user_input() {
         fi
     fi
     
+    echo ""
     context_print "MDos will need to know how to reach services running on the host directly"
     context_print "from within the cluster. An IP address is therefore required."
     echo ""
@@ -758,6 +759,10 @@ EOF
     # Restart codedns to make sure external dns resolution works
     kubectl -n kube-system rollout restart deployment coredns &>> $LOG_FILE
     sleep 10
+
+    # Add label to master node to allow specific pods
+    # to be scheduled on this node always
+    kubectl label nodes $(hostname) mdos-stack=true &>> $LOG_FILE
 }
 
 # ############################################
@@ -1135,8 +1140,7 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_PASSWORD'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].volumes[1].hostPath = "'$KEYCLOAK_DB_SCRIPT_MOUNT'"')
-
+    
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].ingress[0].matchHost = "keycloak.'$DOMAIN'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')

@@ -64,6 +64,7 @@ init_firewall() {
             if [ "$(ufw status | grep '22/tcp' | grep 'ALLOW')" == "" ]; then
                 ufw allow ssh &>> $LOG_FILE
             fi
+            echo ""
         fi
     else
         warn "Configure your firewall to allow traffic on port 0.0.0.0:22, 0.0.0.0:30979 and 192.168.0.0/16:8080"
