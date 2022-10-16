@@ -35,12 +35,14 @@ os_check() {
     elif [ "$DISTRO" != "Ubuntu" ]; then
         error "Unsupported linux distribution: ${DISTRO}"
         exit 1
-    fi
+    fi 
+}
 
+resources_check() {
     # CHECK THAT SUFFICIENT MEMORY AND DISK IS AVAILABLE
     FREE_MB=$(awk '/MemFree/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
-    if [ "$FREE_MB" -lt "3200" ]; then
-        error "Insufficient memory, minimum 4GB of available (free) memory is required for this installation"
+    if [ "$FREE_MB" -lt "$1" ]; then
+        error "Insufficient memory, minimum $2 of available (free) memory is required for this installation"
         exit 1
     fi
 }

@@ -28,6 +28,9 @@ echo '
 # Os checks
 os_check
 
+# Resource check
+resources_check 3200 4GB
+
 LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_install.log"
 
 # PARSE USER INPUT
@@ -700,7 +703,7 @@ DNS.2 = *.$DOMAIN" > $SSL_ROOT/config.cfg
 # ############### INSTALL K3S ################
 # ############################################
 install_k3s() {
-    curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.169.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664" sh - &>> $LOG_FILE
+    curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.24.6+k3s1" K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr=192.169.0.0/16 --disable-network-policy --disable=traefik --write-kubeconfig-mode=664 --advertise-address=$LOCAL_IP" sh - &>> $LOG_FILE
     
     # Configure user K8S credentiald config file
     mkdir -p $HOME/.kube
