@@ -82,12 +82,11 @@ app.hooks(appHooks)
 
 setTimeout(async () => {
     try {
-        // const certificates = await app.get("kube").getCertManagerCertificates("mdos")
+        // const certificates = await app.get("kube").getCertManagerCertificates("*")
         // console.log(certificates)
 
-        const gateways = await app.get("kube").getIstioGateways("istio-system")
+        const gateways = await app.get("kube").getIstioGateways("*")
         console.log(gateways)
-        getIstioGateways
     } catch (error) {
         console.log(error)
     }
