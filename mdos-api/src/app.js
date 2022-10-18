@@ -85,7 +85,7 @@ setTimeout(async () => {
         // const certificates = await app.get("kube").getCertManagerCertificates("*")
         // console.log(certificates)
 
-        const gateways = await app.get("kube").getIstioGateways("mdos")
+        const gateways = await app.get("kube").getIstioGateways("")
         console.log(gateways)
     } catch (error) {
         console.log(error)
