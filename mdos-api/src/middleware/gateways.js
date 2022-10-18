@@ -44,25 +44,30 @@ class Gateways {
         } 
 
         for(const gtw of gateways) {
-            for(let gwHost of gtw.spec.servers.hosts) {
-                gwHost = gwHost.toLowerCase()
-                // Domain is wildcard
-                if(domainIsWildcard) {
-                    // *.domain.com, foo.domain.com, foo.bar.mydomain.com
-                    if(gwHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
-                        return gtw
-                    }
-                }
-                // Domain is not a wildcard
-                else {
-                    const gwDomainIsWildcard = gwHost.startsWith("*.") || gwHost.startsWith(".")
-                    if(gwDomainIsWildcard) {
-                        if(gwHost.endsWith(domain.toLowerCase())) {
+
+            for(let server of gtw.spec.servers) {
+
+
+                for(let gwHost of server.hosts) {
+                    gwHost = gwHost.toLowerCase()
+                    // Domain is wildcard
+                    if(domainIsWildcard) {
+                        // *.domain.com, foo.domain.com, foo.bar.mydomain.com
+                        if(gwHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
                             return gtw
                         }
-                    } else {
-                        if(gwHost == domain.toLowerCase()) {
-                            return gtw
+                    }
+                    // Domain is not a wildcard
+                    else {
+                        const gwDomainIsWildcard = gwHost.startsWith("*.") || gwHost.startsWith(".")
+                        if(gwDomainIsWildcard) {
+                            if(gwHost.endsWith(domain.toLowerCase())) {
+                                return gtw
+                            }
+                        } else {
+                            if(gwHost == domain.toLowerCase()) {
+                                return gtw
+                            }
                         }
                     }
                 }
