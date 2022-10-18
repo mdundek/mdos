@@ -271,7 +271,7 @@ class KubeBase extends KubeBaseConstants {
      * @returns 
      */
     async getIstioGateways(namespaceName) {
-        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1alpha3/namespaces/${namespaceName}/gateways`)
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
         return res.data
     }
