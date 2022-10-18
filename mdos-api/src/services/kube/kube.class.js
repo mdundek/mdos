@@ -44,14 +44,8 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP CERTIFICATES
          ******************************************/
         else if (params.query.target == 'certificates') {
-            try {
-                let certificates = await this.app.get('kube').getCertManagerCertificates("")
-                console.log(JSON.stringify(certificates, null, 4))
-                return this.app.get('certificates').findMatchingCertificateSecretName(certificates.items, params.query.host)
-            } catch (error) {
-                console.log(error)
-                throw error
-            }
+            let certificates = await this.app.get('kube').getCertManagerCertificates("")
+            return this.app.get('certificates').findMatchingCertificateSecretName(certificates.items, params.query.host)
        }
         /******************************************
          *  LOOKUP NAMESPACE APPLICATIONS

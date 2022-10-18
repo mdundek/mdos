@@ -47,7 +47,7 @@ export default class Create extends Command {
 
         let crtResponse
         try {
-            crtResponse = await this.api(`kube?target=certificates&host=mdundek.networks`, 'get')
+            crtResponse = await this.api(`kube?target=certificates&host=mdundek.network`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)
