@@ -37,10 +37,17 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
         else if (params.query.target == 'gateways') {
+            let gateways = await this.app.get('kube').getIstioGateways("")
+            return this.app.get('gateways').findMatchingGateway(gateways.items, params.query.host)
+        }
+        /******************************************
+         *  LOOKUP CERTIFICATES
+         ******************************************/
+        else if (params.query.target == 'certificates') {
             try {
-                let gateways = await this.app.get('kube').getIstioGateways("")
-                console.log(JSON.stringify(gateways, null, 4))
-                return this.app.get('gateways').findMatchingGateway(gateways.items, params.query.host)
+                let certificates = await this.app.get('kube').getCertManagerCertificates("")
+                console.log(JSON.stringify(certificates, null, 4))
+                return this.app.get('certificates').findMatchingCertificateSecretName(certificates.items, params.query.host)
             } catch (error) {
                 console.log(error)
                 throw error

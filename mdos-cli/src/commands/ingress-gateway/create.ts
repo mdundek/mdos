@@ -45,6 +45,6 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        console.log(gtwResponse)
+        console.log(gtwResponse.data)
     }
 }
