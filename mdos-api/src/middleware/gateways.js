@@ -44,7 +44,7 @@ class Gateways {
         } 
 
         for(const gtw of gateways) {
-            for(let gwHost of gtw.spec.server.hosts) {
+            for(let gwHost of gtw.spec.servers.hosts) {
                 gwHost = gwHost.toLowerCase()
                 // Domain is wildcard
                 if(domainIsWildcard) {
