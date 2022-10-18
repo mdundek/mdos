@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { error, warn } = require('../../lib/tools')
+const { error, warn, context } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -93,7 +93,7 @@ export default class Ingress extends Command {
                 type: 'confirm',
                 name: 'useSubPath',
                 default: false,
-                message: 'Do you want to match a subpath for this host?',
+                message: 'Do you want to match a subpath for this host (fan-out)?',
             },
             {
                 type: 'string',
@@ -101,7 +101,7 @@ export default class Ingress extends Command {
                 when: (values: any) => {
                     return values.useSubPath
                 },
-                message: 'Enter subpath:',
+                message: 'Enter subpath (ex. /frontend):',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
@@ -118,7 +118,11 @@ export default class Ingress extends Command {
             {
                 type: 'list',
                 name: 'type',
-                message: 'What type of traffic will this ingress handle?',
+                message: 'What type of traffic will this ingress redirect to?',
+                when: (values: any) => {
+                    context("Incomming traffic to the Ingress controller is always over HTTPS. The ingress controller then terminates this TLS connection and routes the traffic to your application internally over HTTP. If your application requires that a dedicated certificate is available inside your POD, then you can specify this now.")
+                    return true
+                },
                 choices: [
                     {
                         name: 'http',

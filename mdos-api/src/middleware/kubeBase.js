@@ -253,6 +253,17 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * getCertManagerCertificates
+     * @param {*} namespaceName 
+     * @returns 
+     */
+    async getCertManagerCertificates(namespaceName) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificate`)
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+        return res.data
+    }
+
+    /**
      *
      *
      * @param {*} namespaceName

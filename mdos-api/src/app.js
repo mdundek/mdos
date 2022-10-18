@@ -80,4 +80,13 @@ app.use(express.errorHandler({ logger }))
 
 app.hooks(appHooks)
 
+setTimeout(async () => {
+    try {
+        const certificates = await app.get("kube").getCertManagerCertificates("mdos")
+        console.log(certificates)
+    } catch (error) {
+        console.log(error)
+    }
+})
+
 module.exports = app

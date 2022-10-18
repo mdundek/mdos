@@ -7,6 +7,7 @@ const regAuthorization = require('./reg-authorization/reg-authorization.service.
 const schemaValidator = require('./schema-validator/schema-validator.service.js')
 const logout = require('./logout/logout.service.js')
 const tokenIntrospect = require('./token-introspect/token-introspect.service.js');
+const gateways = require('./gateways/gateways.service.js');
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
     app.configure(oidcProvider)
@@ -18,4 +19,5 @@ module.exports = function (app) {
     app.configure(schemaValidator)
     app.configure(logout)
     app.configure(tokenIntrospect);
+    app.configure(gateways);
 }
