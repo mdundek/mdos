@@ -45,6 +45,14 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        console.log(gtwResponse.data)
+        let crtResponse
+        try {
+            crtResponse = await this.api(`kube?target=certificates&host=mdundek.networks`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+
+        console.log(crtResponse.data)
     }
 }

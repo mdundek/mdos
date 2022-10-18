@@ -50,7 +50,7 @@ class Certificates {
                 if(domainIsWildcard) {
                     // *.domain.com, foo.domain.com, foo.bar.mydomain.com
                     if(certHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
-                        return certObj.spec.secretName
+                        return certObj
                     }
                 }
                 // Domain is not a wildcard
@@ -58,11 +58,11 @@ class Certificates {
                     const gwDomainIsWildcard = certHost.startsWith("*.") || certHost.startsWith(".")
                     if(gwDomainIsWildcard) {
                         if(certHost.endsWith(domain.toLowerCase())) {
-                            return certObj.spec.secretName
+                            return certObj
                         }
                     } else {
                         if(certHost == domain.toLowerCase()) {
-                            return certObj.spec.secretName
+                            return certObj
                         }
                     }
                 }
