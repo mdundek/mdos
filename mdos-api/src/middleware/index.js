@@ -5,6 +5,8 @@ const SchemaValidator = require('./schemaValidator/index')
 const FtpServer = require('./ftpServer.js')
 const MDosBrokerClient = require('./rb-broker/brokerClient')
 const SubscriptionManager = require('./subscriptionManager')
+const IstioGateways = require('./gateways')
+const Certificates = require('./certificates')
 
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
@@ -22,4 +24,6 @@ module.exports = function (app) {
     const subscriptionManager = new SubscriptionManager(app)
     subscriptionManager.start().then(() => {})
     app.set('subscriptionManager', subscriptionManager)
+    app.set('certificates', new Certificates(app))
+    app.set('gateways', new IstioGateways(app))
 }

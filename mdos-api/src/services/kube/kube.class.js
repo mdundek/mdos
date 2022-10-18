@@ -34,6 +34,19 @@ exports.Kube = class Kube extends KubeCore {
             return nsListEnriched
         }
         /******************************************
+         *  LOOKUP INGRESS GATEWAYS
+         ******************************************/
+        else if (params.query.target == 'gateways') {
+            try {
+                let gateways = await this.app.get('kube').getIstioGateways("")
+                console.log(JSON.stringify(gateways, null, 4))
+                return this.app.get('gateways').findMatchingGateway(gateways.items, params.query.host)
+            } catch (error) {
+                console.log(error)
+                throw error
+            }
+       }
+        /******************************************
          *  LOOKUP NAMESPACE APPLICATIONS
          ******************************************/
         else if (params.query.target == 'applications') {
