@@ -59,7 +59,8 @@ class Gateways {
                     else {
                         const gwDomainIsWildcard = gwHost.startsWith("*.") || gwHost.startsWith(".")
                         if(gwDomainIsWildcard) {
-                            if(gwHost.endsWith(domain.toLowerCase())) {
+                            const gwHostRootDomain = gwHost.substring(gwHost.indexOf(".") + 1)
+                            if(domain.toLowerCase().endsWith(`.${gwHostRootDomain.toLowerCase()}`)) {
                                 return true
                             }
                         } else {

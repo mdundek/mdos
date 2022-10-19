@@ -124,6 +124,8 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
+            console.log(host, JSON.stringify(gtwResponse.data, null, 4))
+
             // If maches found, check to see if there is already one with the gateway type we want configured for this hostname
             if(gtwResponse.data.length > 0) {
                 hostnameGwMatchesBuffer[host] = gtwResponse.data
@@ -169,8 +171,6 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        console.log(JSON.stringify(crtResponse.data, null, 4))
-
         // Make sure they is no inconsistency in regards of certificates vs domain names
         let atLeastOneCert = false
         for(const key in crtResponse.data) {
@@ -203,10 +203,12 @@ export default class Create extends Command {
 
         let passthroughGws = 0
         let simplehGws = 0
-        console.log("EXISTING CERT", existingCert)
+        
         if(existingCert) {
             let totalHttpServerMatches = 0
             for(const gHost in hostnameGwMatchesBuffer) {
+                
+
                 hostnameGwMatchesBuffer[gHost].forEach((gtw: any) => {
                     if(gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "SIMPLE") simplehGws++
                     else if(gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "PASSTHROUGH") passthroughGws++

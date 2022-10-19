@@ -58,10 +58,11 @@ class Certificates {
                     }
                     // Domain is not a wildcard
                     else {
-                        const gwDomainIsWildcard = certHost.startsWith("*.") || certHost.startsWith(".")
-                        if(gwDomainIsWildcard) {
-                            const gwHostRootDomain = domain.substring(domain.indexOf(".") + 1)
-                            if(certHost.endsWith(`.${gwHostRootDomain.toLowerCase()}`)) {
+                        const certDomainIsWildcard = certHost.startsWith("*.") || certHost.startsWith(".")
+                        // If cert domain is wildcard
+                        if(certDomainIsWildcard) {
+                            const certHostRootDomain = certHost.substring(certHost.indexOf(".") + 1)
+                            if(domain.endsWith(`.${certHostRootDomain.toLowerCase()}`)) {
                                 return true
                             }
                         } else {
@@ -74,8 +75,6 @@ class Certificates {
                 return false
             })
         }
-        console.log("-----")
-        console.log(certResults)
         return certResults
     }
 }
