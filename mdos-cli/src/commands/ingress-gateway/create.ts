@@ -124,7 +124,7 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
-            // console.log(JSON.stringify(gtwResponse.data, null, 4))
+            console.log(JSON.stringify(gtwResponse.data, null, 4))
 
             // If maches found, check to see if there is already one with the gateway type we want configured for this hostname
             if(gtwResponse.data.length > 0) {

@@ -58,10 +58,14 @@ class Gateways {
                             for(let gtwWildcardCross of gateways) {
                                 gtwWildcardCross.spec.servers.forEach(crossServer => {
                                     for(let crossGwHost of crossServer.hosts) {
-                                        crossGwHost = crossGwHost.toLowerCase()
-                                        if(crossGwHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
-                                            crossWildcardmatch = true
+                                        const crossGwDomainIsWildcard = crossGwHost.startsWith("*.") || crossGwHost.startsWith(".")
+                                        if(crossGwDomainIsWildcard) {
+                                            const crossGwHostRootDomain = crossGwHost.substring(crossGwHost.indexOf(".") + 1)
+                                            if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
+                                                crossWildcardmatch = true
+                                            }
                                         }
+
                                     }
                                 })
                             }
