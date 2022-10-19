@@ -124,8 +124,6 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
-            console.log(host, JSON.stringify(gtwResponse.data, null, 4))
-
             // If maches found, check to see if there is already one with the gateway type we want configured for this hostname
             if(gtwResponse.data.length > 0) {
                 hostnameGwMatchesBuffer[host] = gtwResponse.data
@@ -146,7 +144,12 @@ export default class Create extends Command {
                     }
                     return false                
                 })
-                if(typeMatch) {
+
+                // If not wildcard, exclude matching wildcards since this new config will overrule the wildcard
+                if(agregatedResponses.domainType == "list" && typeMatch && !typeMatch.spec.wildcardMatch) {
+                    error(`The host domain "${host}" already has an associated Gateway (${typeMatch.metadata.name})`)
+                    process.exit(1)
+                } else if(agregatedResponses.domainType == "wildcard" && typeMatch && typeMatch.spec.wildcardMatch) {
                     error(`The host domain "${host}" already has an associated Gateway (${typeMatch.metadata.name})`)
                     process.exit(1)
                 }

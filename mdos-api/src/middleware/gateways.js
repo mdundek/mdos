@@ -45,6 +45,7 @@ class Gateways {
 
         const gtwMatches = []
         for(let gtw of gateways) {
+            let wildcardMatch = false
             gtw.spec.serverMatch = gtw.spec.servers.find(server => {
                 for(let gwHost of server.hosts) {
                     gwHost = gwHost.toLowerCase()
@@ -61,6 +62,7 @@ class Gateways {
                         if(gwDomainIsWildcard) {
                             const gwHostRootDomain = gwHost.substring(gwHost.indexOf(".") + 1)
                             if(domain.toLowerCase().endsWith(`.${gwHostRootDomain.toLowerCase()}`)) {
+                                wildcardMatch = true
                                 return true
                             }
                         } else {
@@ -73,6 +75,7 @@ class Gateways {
                 return false
             })
             if(gtw.spec.serverMatch) {
+                gtw.spec.wildcardMatch = wildcardMatch
                 gtwMatches.push(gtw)
             }
         }
