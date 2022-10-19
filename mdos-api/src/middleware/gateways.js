@@ -53,7 +53,20 @@ class Gateways {
                     if(domainIsWildcard) {
                         // *.domain.com, foo.domain.com, foo.bar.mydomain.com
                         if(gwHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
-                            return true
+
+                            let crossWildcardmatch = false
+                            for(let gtwWildcardCross of gateways) {
+                                gtwWildcardCross.spec.servers.forEach(crossServer => {
+                                    for(let crossGwHost of crossServer.hosts) {
+                                        crossGwHost = crossGwHost.toLowerCase()
+                                        if(crossGwHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
+                                            crossWildcardmatch = true
+                                        }
+                                    }
+                                })
+                            }
+                            if(!crossWildcardmatch)
+                                return true
                         }
                     }
                     // Domain is not a wildcard

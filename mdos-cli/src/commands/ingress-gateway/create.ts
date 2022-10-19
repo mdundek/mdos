@@ -124,26 +124,29 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
+            // console.log(JSON.stringify(gtwResponse.data, null, 4))
+
             // If maches found, check to see if there is already one with the gateway type we want configured for this hostname
             if(gtwResponse.data.length > 0) {
                 hostnameGwMatchesBuffer[host] = gtwResponse.data
 
                 const typeMatch = gtwResponse.data.find((gtw: any) => {
-                    for(const server of gtw.spec.servers) {
 
-                        if(agregatedResponses.gatewayType != "HTTP") {
-                            if(server.tls && server.tls.mode == "SIMPLE" && agregatedResponses.gatewayType == "HTTPS_SIMPLE") {
-                                return true
-                            } else if(server.tls && server.tls.mode == "PASSTHROUGH" && agregatedResponses.gatewayType == "HTTPS_PASSTHROUGH") {
-                                return true
-                            }
-                        } else {
-                            if(server.http)
-                                return true
+                    if(agregatedResponses.gatewayType != "HTTP") {
+                        if(gtw.spec.serverMatch && gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "SIMPLE" && agregatedResponses.gatewayType == "HTTPS_SIMPLE") {
+                            return true
+                        } else if(gtw.spec.serverMatch && gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "PASSTHROUGH" && agregatedResponses.gatewayType == "HTTPS_PASSTHROUGH") {
+                            return true
                         }
+                    } else {
+                        if(gtw.spec.serverMatch && gtw.spec.serverMatch.http)
+                            return true
                     }
                     return false                
                 })
+
+                console.log(typeMatch)
+
 
                 // If not wildcard, exclude matching wildcards since this new config will overrule the wildcard
                 if(agregatedResponses.domainType == "list" && typeMatch && !typeMatch.spec.wildcardMatch) {
