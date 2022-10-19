@@ -68,6 +68,7 @@ class Gateways {
                                                 const crossGwHostRootDomain = crossGwHost.substring(crossGwHost.indexOf(".") + 1)
                                                 if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
                                                     crossWildcardmatch = true
+                                                    wildcardMatch = true
                                                 }
                                             }
 
