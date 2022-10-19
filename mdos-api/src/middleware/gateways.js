@@ -71,7 +71,7 @@ class Gateways {
                                                 if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
                                                     crossWildcardmatch = true
                                                     console.log("CROSSED IT!")
-                                                    wildcardMatchWasCrossed = true
+                                                    
                                                 }
                                             }
 
@@ -81,6 +81,8 @@ class Gateways {
                             }
                             if(!crossWildcardmatch)
                                 return true
+                            else
+                                wildcardMatchWasCrossed = true
                         }
                     }
                     // Domain is not a wildcard
@@ -102,6 +104,7 @@ class Gateways {
                 return false
             })
             if(gtw.spec.serverMatch) {
+                console.log("CROSSED: ", wildcardMatchWasCrossed)
                 gtw.spec.wildcardMatch = wildcardMatch ? true : wildcardMatchWasCrossed
                 gtwMatches.push(gtw)
             }
