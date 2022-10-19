@@ -44,9 +44,10 @@ class Gateways {
         } 
 
         const gtwMatches = []
+        let wildcardMatchWasCrossed = false
         for(let gtw of gateways) {
             let wildcardMatch = false
-            let wildcardMatchWasCrossed = false
+            
             
             gtw.spec.serverMatch = gtw.spec.servers.find(server => {
                 for(let gwHost of server.hosts) {
@@ -70,7 +71,6 @@ class Gateways {
                                                 const crossGwHostRootDomain = crossGwHost.substring(crossGwHost.indexOf(".") + 1)
                                                 if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
                                                     crossWildcardmatch = true
-                                                    console.log("CROSSED IT!")
                                                     
                                                 }
                                             }
