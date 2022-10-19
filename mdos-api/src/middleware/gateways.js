@@ -101,7 +101,7 @@ class Gateways {
                 return false
             })
             if(gtw.spec.serverMatch) {
-                gtw.spec.wildcardMatch = wildcardMatch || wildcardMatchWasCrossed
+                gtw.spec.wildcardMatch = wildcardMatch ? true : wildcardMatchWasCrossed
                 gtwMatches.push(gtw)
             }
         }
