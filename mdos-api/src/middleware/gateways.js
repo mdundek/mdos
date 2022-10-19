@@ -43,7 +43,7 @@ class Gateways {
             rootDomain = domain.substring(domain.indexOf(".") + 1)
         } 
 
-        return gateways.filter(gtp => {
+        return gateways.filter(gtw => {
             for(let server of gtw.spec.servers) {
                 for(let gwHost of server.hosts) {
                     gwHost = gwHost.toLowerCase()
