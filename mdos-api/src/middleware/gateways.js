@@ -71,7 +71,7 @@ class Gateways {
                                                 const crossGwHostRootDomain = crossGwHost.substring(crossGwHost.indexOf(".") + 1)
                                                 if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
                                                     crossWildcardmatch = true
-                                                    
+                                                    console.log("HERE 1")
                                                 }
                                             }
 
@@ -79,10 +79,13 @@ class Gateways {
                                     })
                                 }
                             }
-                            if(!crossWildcardmatch)
+                            if(!crossWildcardmatch) {
                                 return true
-                            else
+                            }
+                            else {
+                                console.log("HERE 2")
                                 wildcardMatchWasCrossed = true
+                            }
                         }
                     }
                     // Domain is not a wildcard
