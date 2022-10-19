@@ -53,21 +53,27 @@ class Gateways {
                     if(domainIsWildcard) {
                         // *.domain.com, foo.domain.com, foo.bar.mydomain.com
                         if(gwHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
+                            const gwDomainIsWildcard = gwHost.startsWith("*.") || gwHost.startsWith(".")
 
                             let crossWildcardmatch = false
-                            for(let gtwWildcardCross of gateways) {
-                                gtwWildcardCross.spec.servers.forEach(crossServer => {
-                                    for(let crossGwHost of crossServer.hosts) {
-                                        const crossGwDomainIsWildcard = crossGwHost.startsWith("*.") || crossGwHost.startsWith(".")
-                                        if(crossGwDomainIsWildcard) {
-                                            const crossGwHostRootDomain = crossGwHost.substring(crossGwHost.indexOf(".") + 1)
-                                            if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
-                                                crossWildcardmatch = true
-                                            }
-                                        }
 
-                                    }
-                                })
+                            if(!gwDomainIsWildcard)
+                                // Lets make sure there are no gateways that directly configured this wildcard domain as well
+                                
+                                for(let gtwWildcardCross of gateways) {
+                                    gtwWildcardCross.spec.servers.forEach(crossServer => {
+                                        for(let crossGwHost of crossServer.hosts) {
+                                            const crossGwDomainIsWildcard = crossGwHost.startsWith("*.") || crossGwHost.startsWith(".")
+                                            if(crossGwDomainIsWildcard) {
+                                                const crossGwHostRootDomain = crossGwHost.substring(crossGwHost.indexOf(".") + 1)
+                                                if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
+                                                    crossWildcardmatch = true
+                                                }
+                                            }
+
+                                        }
+                                    })
+                                }
                             }
                             if(!crossWildcardmatch)
                                 return true
