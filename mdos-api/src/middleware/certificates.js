@@ -73,6 +73,8 @@ class Certificates {
                 return false
             })
         }
+        console.log("-----")
+        console.log(certResults)
         return certResults
     }
 }
