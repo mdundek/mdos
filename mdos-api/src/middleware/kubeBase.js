@@ -256,24 +256,26 @@ class KubeBase extends KubeBaseConstants {
      * getCertManagerCertificates
      * 
      * @param {*} namespaceName 
+     * @param {*} certName 
      * @returns 
      */
-    async getCertManagerCertificates(namespaceName) {
+    async getCertManagerCertificates(namespaceName, certName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
-        return res.data
+        return certName ? res.data.items.find(crt => crt.metadata.name == certName) : res.data.items
     }
 
     /**
      * getIstioGateways
      * 
      * @param {*} namespaceName 
+     * @param {*} gatewayName 
      * @returns 
      */
-    async getIstioGateways(namespaceName) {
+    async getIstioGateways(namespaceName, gatewayName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
-        return res.data
+        return gatewayName ? res.data.items.find(gtw => gtw.metadata.name == gatewayName) : res.data.items
     }
 
     /**

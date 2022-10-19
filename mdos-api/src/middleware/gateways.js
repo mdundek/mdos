@@ -29,12 +29,12 @@ class Gateways {
     }
 
     /**
-     * findMatchingGateway
+     * findMatchingGateways
      * 
      * @param {*} gateways 
      * @param {*} domain 
      */
-    findMatchingGateway(gateways, domain) {
+    findMatchingGateways(gateways, domain) {
         const domainIsWildcard = domain.startsWith("*.") || domain.startsWith(".")
         let rootDomain = null
 
@@ -43,18 +43,15 @@ class Gateways {
             rootDomain = domain.substring(domain.indexOf(".") + 1)
         } 
 
-        for(const gtw of gateways) {
-
+        return gateways.filter(gtp => {
             for(let server of gtw.spec.servers) {
-
-
                 for(let gwHost of server.hosts) {
                     gwHost = gwHost.toLowerCase()
                     // Domain is wildcard
                     if(domainIsWildcard) {
                         // *.domain.com, foo.domain.com, foo.bar.mydomain.com
                         if(gwHost.endsWith(`.${rootDomain.toLowerCase()}`)) {
-                            return gtw
+                            return true
                         }
                     }
                     // Domain is not a wildcard
@@ -62,18 +59,18 @@ class Gateways {
                         const gwDomainIsWildcard = gwHost.startsWith("*.") || gwHost.startsWith(".")
                         if(gwDomainIsWildcard) {
                             if(gwHost.endsWith(domain.toLowerCase())) {
-                                return gtw
+                                return true
                             }
                         } else {
                             if(gwHost == domain.toLowerCase()) {
-                                return gtw
+                                return true
                             }
                         }
                     }
                 }
             }
-        }
-        return null
+            return false
+        })
     }
 }
 

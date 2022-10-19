@@ -37,15 +37,23 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
         else if (params.query.target == 'gateways') {
-            let gateways = await this.app.get('kube').getIstioGateways("")
-            return this.app.get('gateways').findMatchingGateway(gateways.items, params.query.host)
+            let gateways = await this.app.get('kube').getIstioGateways(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            if(params.query.host){
+                return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
+            }
+            else {
+                return gateways
+            }
         }
         /******************************************
          *  LOOKUP CERTIFICATES
          ******************************************/
         else if (params.query.target == 'certificates') {
-            let certificates = await this.app.get('kube').getCertManagerCertificates("")
-            return this.app.get('certificates').findMatchingCertificateSecretName(certificates.items, params.query.host)
+            let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            if(params.query.hosts)
+                return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
+            else
+                return certificates
        }
         /******************************************
          *  LOOKUP NAMESPACE APPLICATIONS
