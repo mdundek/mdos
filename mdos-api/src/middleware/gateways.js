@@ -57,7 +57,7 @@ class Gateways {
 
                             let crossWildcardmatch = false
 
-                            if(!gwDomainIsWildcard)
+                            if(!gwDomainIsWildcard) {
                                 // Lets make sure there are no gateways that directly configured this wildcard domain as well
                                 
                                 for(let gtwWildcardCross of gateways) {
