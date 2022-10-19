@@ -1,4 +1,5 @@
 import { Flags, CliUx } from '@oclif/core'
+import { isBuffer } from 'util'
 import Command from '../../base'
 const inquirer = require('inquirer')
 const { error, filterQuestions, mergeFlags, info } = require('../../lib/tools')
@@ -126,8 +127,10 @@ export default class Create extends Command {
             // If maches found, check to see if there is already one with the gateway type we want configured for this hostname
             if(gtwResponse.data.length > 0) {
                 hostnameGwMatchesBuffer[host] = gtwResponse.data
+
                 const typeMatch = gtwResponse.data.find((gtw: any) => {
                     for(const server of gtw.spec.servers) {
+
                         if(agregatedResponses.gatewayType != "HTTP") {
                             if(server.tls && server.tls.mode == "SIMPLE" && agregatedResponses.gatewayType == "HTTPS_SIMPLE") {
                                 return true
@@ -142,7 +145,7 @@ export default class Create extends Command {
                     return false                
                 })
                 if(typeMatch) {
-                    error(`The host domain "${host}" already has an associated Gateway (${gtwResponse.data.metadata.name})`)
+                    error(`The host domain "${host}" already has an associated Gateway (${typeMatch.metadata.name})`)
                     process.exit(1)
                 }
             }
@@ -166,15 +169,81 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        console.log(crtResponse.data)
+        console.log(JSON.stringify(crtResponse.data, null, 4))
+
+        // Make sure they is no inconsistency in regards of certificates vs domain names
+        let atLeastOneCert = false
+        for(const key in crtResponse.data) {
+            if(crtResponse.data[key].length > 0) atLeastOneCert = true
+        }
+        let inconsistant = false
+        let existingCert:any = null
+        if(atLeastOneCert) {
+            for(const key in crtResponse.data) {
+                if(crtResponse.data[key].length == 0) {
+                    inconsistant = true
+                } else {
+                    if(existingCert) {
+                        if(existingCert.metadata.name != crtResponse.data[key][0].metadata.name) inconsistant = true
+                    }
+                    existingCert = crtResponse.data[key][0]
+                }
+            }
+        }
+        if(inconsistant) {
+            error("At least one domain name already has a certificate object associated to it while other domain names you have specified don't or are associated to other certificate objects. Please make sure all your domain names dont have a certificate object associated yet, or make sure they are all part of the same certificate object")
+            process.exit(1)
+        }
+
+        // NOTE: From here on now, we know that all domains are part of one and the same, or no certificate object. 
+
+        // If we have a certificate for all our hosts, and we also have the other gateway type that 
+        // already exsists (there already is a PASSTHROUGH while I want to create a SIMPLE or vice versa) then 
+        // ensure that ALL hosts are configured on the same existing TLS gateway type, and none on the HTTP gateway type
+
+        let passthroughGws = 0
+        let simplehGws = 0
+        console.log("EXISTING CERT", existingCert)
+        if(existingCert) {
+            let totalHttpServerMatches = 0
+            for(const gHost in hostnameGwMatchesBuffer) {
+                hostnameGwMatchesBuffer[gHost].forEach((gtw: any) => {
+                    if(gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "SIMPLE") simplehGws++
+                    else if(gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "PASSTHROUGH") passthroughGws++
+                    else if(!gtw.spec.serverMatch.tls) totalHttpServerMatches++      
+                })
+            }
+            if(totalHttpServerMatches > 0 && agregatedResponses.gatewayType == "HTTPS_SIMPLE" && passthroughGws > 0) {
+                error("At least one of the domains is configured for HTTPS TLS Passthrough mode while others are configured for HTTP mode. Please configure only a collection of domain names for this gateway that are not yet configured on any other gateway, or to the same HTTP / HTTPS Passthrough gateway.")
+                process.exit(1)
+            } else if(totalHttpServerMatches > 0 && agregatedResponses.gatewayType == "HTTPS_PASSTHROUGH" && simplehGws > 0) {
+                error("At least one of the domains is configured for HTTPS TLS Termination mode while others are configured for HTTP mode. Please configure only a collection of domain names for this gateway that are not yet configured on any other gateway, or to the same HTTP / HTTPS Termination gateway.")
+                process.exit(1)
+            }
+        }
+
+
+        if(passthroughGws > 0) {
+            console.log("Passthrough already configured")
+        } else if(simplehGws > 0) {
+            console.log("Simple already configured")
+        } else {
+            console.log("None configured")
+        }
 
 
 
 
 
-        // // Globally, identify if PASSTHROUGH or SIMPLE already exists on cluster for those hostnames.
-        // // No need to test all hostnames, if one of them had a conflicting existing gateway on the 
-        // // server for the target type, we would not have gotten this far.
+
+
+
+
+
+       
+        // Globally, identify if PASSTHROUGH or SIMPLE already exists on cluster for those hostnames.
+        // No need to test all hostnames, if one of them had a conflicting existing gateway on the 
+        // server for the target type, we would not have gotten this far.
         // const passthroughTlsExistsAlready = hostnameGwMatchesBuffer[agregatedResponses.hosts[0]].find((gtw:any) => gtw.spec.servers.find((server:any) => server.tls && server.tls.mode == "PASSTHROUGH"))
         // const simpleTlsExistsAlready = hostnameGwMatchesBuffer[agregatedResponses.hosts[0]].find((gtw:any) => gtw.spec.servers.find((server:any) => server.tls && server.tls.mode == "SIMPLE"))
 

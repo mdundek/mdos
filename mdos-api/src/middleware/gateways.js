@@ -43,8 +43,9 @@ class Gateways {
             rootDomain = domain.substring(domain.indexOf(".") + 1)
         } 
 
-        return gateways.filter(gtw => {
-            for(let server of gtw.spec.servers) {
+        const gtwMatches = []
+        for(let gtw of gateways) {
+            gtw.spec.serverMatch = gtw.spec.servers.find(server => {
                 for(let gwHost of server.hosts) {
                     gwHost = gwHost.toLowerCase()
                     // Domain is wildcard
@@ -68,9 +69,13 @@ class Gateways {
                         }
                     }
                 }
+                return false
+            })
+            if(gtw.spec.serverMatch) {
+                gtwMatches.push(gtw)
             }
-            return false
-        })
+        }
+        return gtwMatches
     }
 }
 

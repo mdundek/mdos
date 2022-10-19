@@ -60,7 +60,8 @@ class Certificates {
                     else {
                         const gwDomainIsWildcard = certHost.startsWith("*.") || certHost.startsWith(".")
                         if(gwDomainIsWildcard) {
-                            if(certHost.endsWith(domain.toLowerCase())) {
+                            const gwHostRootDomain = domain.substring(domain.indexOf(".") + 1)
+                            if(certHost.endsWith(`.${gwHostRootDomain.toLowerCase()}`)) {
                                 return true
                             }
                         } else {
