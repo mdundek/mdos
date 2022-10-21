@@ -146,6 +146,35 @@ const oidcProviderFilterHook = async (context, jwtToken) => {
 }
 
 /**
+ * certManagerIssuersFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+const certManagerIssuersFilterHook = async (context, jwtToken) => {
+    console.log(JSON.stringify(context.result, null, 4))
+    
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+
+    
+
+    // jwtToken.resource_access[app.namespace] &&
+    //         (jwtToken.resource_access[app.namespace].roles.includes('admin') ||
+    //             jwtToken.resource_access[app.namespace].roles.includes('k8s-read') ||
+    //             jwtToken.resource_access[app.namespace].roles.includes('k8s-write'))
+
+    // context.result = context.result.filter((issuer) => {
+    //     let nsName = issuer.name.split('-')
+    //     nsName.shift()
+    //     nsName = nsName.join('-')
+    //     return jwtToken.resource_access[nsName]
+    // })
+    return context
+}
+
+/**
  * Export
  *
  * @return {*} 
@@ -189,6 +218,8 @@ module.exports = function () {
             return await userApplicationsFilterHook(context, jwtToken)
         } else if (context.path == 'oidc-provider' && !context.params.query.target) {
             return await oidcProviderFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'cm-issuers') {
+            return await certManagerIssuersFilterHook(context, jwtToken)
         } else {
             console.log('Unknown: ', context.params.query, context.path)
         }

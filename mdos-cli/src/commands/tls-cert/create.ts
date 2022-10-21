@@ -101,7 +101,16 @@ export default class Create extends Command {
         if(agregatedResponses.useCertManager) {
             await this.addNewHost(agregatedResponses.hostnames)
 
-            console.log(agregatedResponses)
+            // Collect issuers
+            let issuerResponse
+            try {
+                issuerResponse = await this.api(`kube?target=cm-issuers`, 'get')
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
+
+            console.log(JSON.stringify(issuerResponse.data, null, 4))
         } 
         // Manually provide certificate
         else {
