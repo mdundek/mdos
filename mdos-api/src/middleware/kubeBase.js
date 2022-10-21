@@ -286,9 +286,21 @@ class KubeBase extends KubeBaseConstants {
      * @returns 
      */
      async getCertManagerIssuers(namespaceName, issuerName) {
-        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers`)
-        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
-        return issuerName ? res.data.items.find(crt => crt.metadata.name == issuerName) : res.data.items
+        try {
+            let myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers`)
+            const resIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+
+            myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/clusterissuers`)
+            const resClusterIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+
+            const filteredIssuers = issuerName ? resIssuers.data.items.find(crt => crt.metadata.name == issuerName) : resIssuers.data.items
+            const filteredClusterIssuers = issuerName ? resClusterIssuers.data.items.find(crt => crt.metadata.name == issuerName) : resClusterIssuers.data.items
+
+            return [...filteredIssuers, ...filteredClusterIssuers]
+        } catch (error) {
+            console.log(error)
+            throw error       
+        }
     }
 
     /**

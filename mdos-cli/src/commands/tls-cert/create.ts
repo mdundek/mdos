@@ -40,57 +40,57 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        // Collect issuers
-        let tlsSecretResponse
+        // Collect namespaces
+        let nsResponse
         try {
-            tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=mdos`, 'get')
+            nsResponse = await this.api(`kube?target=namespaces`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)
         }
 
-        
+        // Collect tls secrets
+        let tlsSecretResponse: { data: any[] }
+        try {
+            tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=${agregatedResponses.namespace}`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
 
-        // // Collect namespaces
-        // let nsResponse
-        // try {
-        //     nsResponse = await this.api(`kube?target=namespaces`, 'get')
-        // } catch (err) {
-        //     this.showError(err)
-        //     process.exit(1)
-        // }
+        // Select target namespace
+        let response = await inquirer.prompt([
+            {
+                name: 'namespace',
+                message: 'Select a namespace for which to create a certificate for',
+                type: 'list',
+                choices: nsResponse.data.map((o: { name: any }) => {
+                    return { name: o.name }
+                }),
+            },
+        ])
+        agregatedResponses = {...agregatedResponses, ...response}
 
-        // // Select target namespace
-        // let response = await inquirer.prompt([
-        //     {
-        //         name: 'namespace',
-        //         message: 'Select a namespace for which to create a certificate for',
-        //         type: 'list',
-        //         choices: nsResponse.data.map((o: { name: any }) => {
-        //             return { name: o.name }
-        //         }),
-        //     },
-        // ])
-        // agregatedResponses = {...agregatedResponses, ...response}
-
-        // // Certificate name
-        // response = await inquirer.prompt([
-        //     {
-        //         type: 'text',
-        //         name: 'name',
-        //         message: 'Enter a name for this certificate',
-        //         validate: (value: any) => {
-        //             if (value.trim().length == 0) return `Mandatory field`
-        //             else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-        //                 return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-        //             return true
-        //         },
-        //     }
-        // ])
-        // agregatedResponses = {...agregatedResponses, ...response}
+        // Certificate name
+        response = await inquirer.prompt([
+            {
+                type: 'text',
+                name: 'name',
+                message: 'Enter a name for this certificate',
+                validate: (value: any) => {
+                    if (value.trim().length == 0) return `Mandatory field`
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    else if(tlsSecretResponse.data.find((secret: { metadata: { name: string } }) => secret.metadata.name.toLowerCase() == value.trim().toLowerCase()))
+                        return 'Certificate name already exists'
+                    return true
+                },
+            }
+        ])
+        agregatedResponses = {...agregatedResponses, ...response}
 
         // Use cert manager?
-        let response = await inquirer.prompt([
+        response = await inquirer.prompt([
             {
                 name: 'useCertManager',
                 message: 'Use cert-manager to generate and manage your certificate, or provide it manually:',
@@ -111,6 +111,15 @@ export default class Create extends Command {
         // Use cert-manager
         if(agregatedResponses.useCertManager) {
             await this.addNewHost(agregatedResponses.hostnames)
+
+            // Make sure we have a valid oauth2 cookie token
+            // otherwise, collect it
+            try {
+                await this.validateJwt()
+            } catch (error) {
+                this.showError(error)
+                process.exit(1)
+            }
 
             // Collect issuers
             let issuerResponse
