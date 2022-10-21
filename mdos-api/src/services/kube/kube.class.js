@@ -58,7 +58,15 @@ exports.Kube = class Kube extends KubeCore {
                 return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
             else
                 return certificates
-       }
+        }
+        /******************************************
+         *  LOOKUP CERT-MANAGER ISSUERS
+         ******************************************/
+         else if (params.query.target == 'cm-issuers') {
+            let issuers = await this.app.get('kube').getCertManagerIssuers(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            console.log(issuers)
+            return issuers
+        }
         /******************************************
          *  LOOKUP NAMESPACE APPLICATIONS
          ******************************************/

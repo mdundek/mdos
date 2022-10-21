@@ -266,6 +266,19 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * getCertManagerIssuers
+     * 
+     * @param {*} namespaceName 
+     * @param {*} issuerName 
+     * @returns 
+     */
+     async getCertManagerIssuers(namespaceName, issuerName) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers`)
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+        return issuerName ? res.data.items.find(crt => crt.metadata.name == issuerName) : res.data.items
+    }
+
+    /**
      * getIstioGateways
      * 
      * @param {*} namespaceName 

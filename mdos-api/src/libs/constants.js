@@ -5,7 +5,6 @@ module.exports = Object.freeze({
         'oauth2-proxy',
         'keycloak',
         'code-server',
-        'minio',
         'mdos-registry',
         'calico-apiserver',
         'calico-system',
@@ -15,6 +14,8 @@ module.exports = Object.freeze({
         'kube-system',
         'default',
         'istio-system',
-        'longhorn-system'
+        'longhorn-system',
+        'rabbitmq',
+        'cert-manager'
     ]
 });
