@@ -43,7 +43,7 @@ export default class Create extends Command {
         // Collect issuers
         let tlsSecretResponse
         try {
-            tlsSecretResponse = await this.api(`kube?target=tls-secrets`, 'get')
+            tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=mdos`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)

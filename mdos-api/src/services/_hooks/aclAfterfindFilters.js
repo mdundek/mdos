@@ -206,7 +206,7 @@ module.exports = function () {
         } else if (context.path == 'kube' && context.params.query.target == 'cm-issuers') {
             return await certManagerIssuersFilterHook(context, jwtToken)
         } else {
-            console.log('Unknown: ', context.params.query, context.path)
+            console.log('Unknown filter hook: ', context.params.query, context.path)
         }
         return context
     }
