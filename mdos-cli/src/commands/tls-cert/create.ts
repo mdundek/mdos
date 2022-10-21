@@ -40,46 +40,57 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        // Collect namespaces
-        let nsResponse
+        // Collect issuers
+        let tlsSecretResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            tlsSecretResponse = await this.api(`kube?target=tls-secrets`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)
         }
 
-        // Select target namespace
-        let response = await inquirer.prompt([
-            {
-                name: 'namespace',
-                message: 'Select a namespace for which to create a certificate for',
-                type: 'list',
-                choices: nsResponse.data.map((o: { name: any }) => {
-                    return { name: o.name }
-                }),
-            },
-        ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        
 
-        // Certificate name
-        response = await inquirer.prompt([
-            {
-                type: 'text',
-                name: 'name',
-                message: 'Enter a name for this certificate',
-                validate: (value: any) => {
-                    if (value.trim().length == 0) return `Mandatory field`
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                    return true
-                },
-            }
-        ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        // // Collect namespaces
+        // let nsResponse
+        // try {
+        //     nsResponse = await this.api(`kube?target=namespaces`, 'get')
+        // } catch (err) {
+        //     this.showError(err)
+        //     process.exit(1)
+        // }
+
+        // // Select target namespace
+        // let response = await inquirer.prompt([
+        //     {
+        //         name: 'namespace',
+        //         message: 'Select a namespace for which to create a certificate for',
+        //         type: 'list',
+        //         choices: nsResponse.data.map((o: { name: any }) => {
+        //             return { name: o.name }
+        //         }),
+        //     },
+        // ])
+        // agregatedResponses = {...agregatedResponses, ...response}
+
+        // // Certificate name
+        // response = await inquirer.prompt([
+        //     {
+        //         type: 'text',
+        //         name: 'name',
+        //         message: 'Enter a name for this certificate',
+        //         validate: (value: any) => {
+        //             if (value.trim().length == 0) return `Mandatory field`
+        //             else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+        //                 return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+        //             return true
+        //         },
+        //     }
+        // ])
+        // agregatedResponses = {...agregatedResponses, ...response}
 
         // Use cert manager?
-        response = await inquirer.prompt([
+        let response = await inquirer.prompt([
             {
                 name: 'useCertManager',
                 message: 'Use cert-manager to generate and manage your certificate, or provide it manually:',

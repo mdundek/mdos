@@ -152,25 +152,10 @@ const oidcProviderFilterHook = async (context, jwtToken) => {
  * @returns 
  */
 const certManagerIssuersFilterHook = async (context, jwtToken) => {
-    console.log(JSON.stringify(context.result, null, 4))
-    
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
-
-    
-
-    // jwtToken.resource_access[app.namespace] &&
-    //         (jwtToken.resource_access[app.namespace].roles.includes('admin') ||
-    //             jwtToken.resource_access[app.namespace].roles.includes('k8s-read') ||
-    //             jwtToken.resource_access[app.namespace].roles.includes('k8s-write'))
-
-    // context.result = context.result.filter((issuer) => {
-    //     let nsName = issuer.name.split('-')
-    //     nsName.shift()
-    //     nsName = nsName.join('-')
-    //     return jwtToken.resource_access[nsName]
-    // })
+    context.result = context.result.filter((issuer) => jwtToken.resource_access[issuer.metadata.namespace])
     return context
 }
 

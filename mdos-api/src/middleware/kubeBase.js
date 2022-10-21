@@ -106,6 +106,22 @@ class KubeBase extends KubeBaseConstants {
      * @return {*}
      * @memberof KubeBase
      */
+     async getTlsSecrets(namespaceName, secretName) {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
+       
+        console.log(JSON.stringify(res.data.data, null, 4))
+
+        return res.data.data
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @return {*}
+     * @memberof KubeBase
+     */
     async hasSecret(namespaceName, secretName) {
         try {
             await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`, this.k8sAxiosHeader)
