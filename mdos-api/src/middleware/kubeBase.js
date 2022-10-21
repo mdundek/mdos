@@ -109,7 +109,7 @@ class KubeBase extends KubeBaseConstants {
      async getTlsSecrets(namespaceName, secretName) {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
        
-        console.log(JSON.stringify(res.data.data, null, 4))
+        console.log(JSON.stringify(res.data, null, 4))
 
         return res.data.data
     }

@@ -62,14 +62,8 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP TLS SECRETS
          ******************************************/
          else if (params.query.target == 'tls-secrets') {
-            console.log("HERE")
-            try {
-                let secrets = await this.app.get('kube').getTlsSecrets(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
-                return secrets
-            } catch (error) {
-                console.log("ERROR ->", error)
-            }
-            
+            let secrets = await this.app.get('kube').getTlsSecrets(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            return secrets
         }
         /******************************************
          *  LOOKUP CERT-MANAGER ISSUERS
