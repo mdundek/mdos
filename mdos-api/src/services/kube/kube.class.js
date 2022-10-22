@@ -128,8 +128,9 @@ exports.Kube = class Kube extends KubeCore {
         if (data.type == 'cm-issuer') {
             // Get mesh property from ConfigMap
             const issuerYaml = YAML.parse(data.issuerYaml)
-           
+            console.log("------------------------")
             console.log(YAML.stringify(issuerYaml))
+            console.log("------------------------")
         } 
         /******************************************
          *  CREATE NEW TENANT NAMESPACE

@@ -117,7 +117,7 @@ module.exports = function () {
         } else if (context.path == 'oidc-provider') {
             return await oidcProviderCreateHook(context, jwtToken)
         } else {
-            console.log('Unknown: ', context.data, context.path)
+            // console.log('Unknown: ', context.data, context.path)
         }
         return context
     }
