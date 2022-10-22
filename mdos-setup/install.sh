@@ -1452,8 +1452,10 @@ install_mdos() {
     # Build mdos-api image
     cd ../mdos-api
     cp infra/dep/helm/helm .
+    cp infra/dep/kubectl/kubectl .
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
     rm -rf helm
+    rm -rf kubectl
     failsafe_docker_push registry.$DOMAIN/mdos-api:latest
 
     # Build lftp image

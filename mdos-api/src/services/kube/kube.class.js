@@ -126,25 +126,30 @@ exports.Kube = class Kube extends KubeCore {
          *  CREATE CERT MANAGER ISSUER
          ******************************************/
         if (data.type == 'cm-issuer') {
-            let issuerYaml
+            let yamlBlockArray = data.issuerYaml.split("---")
             try {
-                
-               
-                for(const yamlFragment of data.issuerYaml.split("---")) {
-                    issuerYaml = YAML.parse(yamlFragment)
-
-                    console.log(YAML.stringify(issuerYaml))
+                // Parse blocks and identify issuer
+                let issuerName = null
+                for(let i=0; i<yamlBlockArray.length; i++) {
+                    yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
+                    if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
+                        issuerName = yamlBlockArray[i].metadata.name
+                    }
                 }
-
-                
             } catch (error) {
                 console.log(error)
                 throw new BadRequest('ERROR: The YAML file could not be parsed. Make sur it is valid YAML.')
             }
-            
 
-            // Check to see if issuer name already exists
-            
+            // No Issuer kind found
+            if(!issuerName) {
+                throw new BadRequest('ERROR: The provided yaml file does not seem to be of kind "Issuer".')
+            }
+
+            // Deploy
+            for(const yamlFragment of yamlBlockArray) {
+                
+            }
         } 
         /******************************************
          *  CREATE NEW TENANT NAMESPACE

@@ -68,10 +68,12 @@ cd ..
 echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-stdin
 
 cp infra/dep/helm/helm .
+cp infra/dep/kubectl/kubectl .
 
 docker build -t registry.$DOMAIN/mdos-api:latest .
 
 rm -rf helm
+rm -rf kubectl
 
 docker push registry.$DOMAIN/mdos-api:latest
 
