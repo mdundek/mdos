@@ -128,12 +128,15 @@ exports.Kube = class Kube extends KubeCore {
         if (data.type == 'cm-issuer') {
             let issuerYaml
             try {
-                console.log(data.issuerYaml)
-                console.log("++++++++++++++++++++++++=")
-                const yamlDocs = data.issuerYaml.split("---")
-console.log(yamlDocs)
+                
+               
+                for(const yamlFragment of data.issuerYaml.split("---")) {
+                    issuerYaml = YAML.parse(yamlFragment)
 
-                issuerYaml = YAML.parse(data.issuerYaml)
+                    console.log(YAML.stringify(issuerYaml))
+                }
+
+                
             } catch (error) {
                 console.log(error)
                 throw new BadRequest('ERROR: The YAML file could not be parsed. Make sur it is valid YAML.')
@@ -142,9 +145,6 @@ console.log(yamlDocs)
 
             // Check to see if issuer name already exists
             
-            console.log("------------------------")
-            console.log(issuerYaml)
-            console.log("------------------------")
         } 
         /******************************************
          *  CREATE NEW TENANT NAMESPACE
