@@ -225,7 +225,7 @@ export default class Create extends Command {
      * @param agregatedResponses 
      */
     async createIssuer(agregatedResponses: any) {
-        const issuerYaml = fs.readFileSync(this.configPath, 'utf8')
+        const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
 
         CliUx.ux.action.start('Creating Cert-Manager Issuer')
         try {

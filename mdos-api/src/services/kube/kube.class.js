@@ -126,10 +126,18 @@ exports.Kube = class Kube extends KubeCore {
          *  CREATE CERT MANAGER ISSUER
          ******************************************/
         if (data.type == 'cm-issuer') {
-            // Get mesh property from ConfigMap
-            const issuerYaml = YAML.parse(data.issuerYaml)
+            let issuerYaml
+            try {
+                issuerYaml = YAML.parse(data.issuerYaml)
+            } catch (error) {
+                throw new BadRequest('ERROR: The YAML file could not be parsed. Make sur it is valid YAML.')
+            }
+            
+
+            // Check to see if issuer name already exists
+            
             console.log("------------------------")
-            console.log(YAML.stringify(issuerYaml))
+            console.log(issuerYaml)
             console.log("------------------------")
         } 
         /******************************************
