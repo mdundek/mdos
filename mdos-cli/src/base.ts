@@ -49,7 +49,7 @@ export default abstract class extends Command {
                 "ACCESS_TOKEN": ""
               }, null, 4))
         }
-        this.configData = JSON.parse(fs.readFileSync(this.configPath))
+        this.configData = JSON.parse(fs.readFileSync(this.configPath, 'utf8'))
         this.getConsoleLineHandel = getConsoleLineHandel
     }
 

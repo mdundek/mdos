@@ -3,6 +3,7 @@ const nanoid_1 = require('nanoid')
 const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10)
 const KubeCore = require('./kube.class.core')
 const { CHANNEL } = require('../../middleware/rb-broker/constant');
+const YAML = require('yaml')
 
 /* eslint-disable no-unused-vars */
 exports.Kube = class Kube extends KubeCore {
@@ -120,6 +121,15 @@ exports.Kube = class Kube extends KubeCore {
             } else {
                 await this.app.get('kube').createSecret(data.namespace, data.name, data.data)
             }
+        } 
+        /******************************************
+         *  CREATE CERT MANAGER ISSUER
+         ******************************************/
+        if (data.type == 'cm-issuer') {
+            // Get mesh property from ConfigMap
+            const issuerYaml = YAML.parse(data.issuerYaml)
+           
+            console.log(YAML.stringify(issuerYaml))
         } 
         /******************************************
          *  CREATE NEW TENANT NAMESPACE

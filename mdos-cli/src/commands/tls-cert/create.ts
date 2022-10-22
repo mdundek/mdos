@@ -1,5 +1,6 @@
 import { Flags, CliUx } from '@oclif/core'
-import { isBuffer } from 'util'
+const fs = require('fs')
+const path = require('path')
 import Command from '../../base'
 const inquirer = require('inquirer')
 const { error, filterQuestions, mergeFlags, info } = require('../../lib/tools')
@@ -122,7 +123,7 @@ export default class Create extends Command {
             }
 
             // Collect issuers
-            let issuerResponse
+            let issuerResponse:any = []
             try {
                 issuerResponse = await this.api(`kube?target=cm-issuers`, 'get')
             } catch (err) {
@@ -130,7 +131,60 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
-            console.log(JSON.stringify(issuerResponse.data, null, 4))
+            // There are existing issuers already
+            if(issuerResponse.data.length > 0) {
+                const issuerValues = issuerResponse.data.map((issuer:any) => {
+                    return {
+                        name: `${issuer.metadata.name} (${issuer.kind})`,
+                        value: issuer
+                    }
+                })
+                issuerValues.push(new inquirer.Separator())
+                issuerValues.push({
+                    name: "I want to create a new Certificate Issuer",
+                    value: "NEW"
+                })
+                const issResponse = await inquirer.prompt([
+                    {
+                        name: 'issuer',
+                        message: 'What Cert-Manager issuer would you like to use:',
+                        type: 'list',
+                        choices: issuerValues,
+                    },
+                ])
+
+                // Do not use existing, create new issuer
+                if(issResponse.issuer == "NEW") {
+
+                    // Issuer file path
+                    response = await inquirer.prompt([
+                        {
+                            type: 'text',
+                            name: 'issuerYamlPath',
+                            message: 'Enter the path to your Issuer YAML file',
+                            validate: (value: any) => {
+                                if (value.trim().length == 0) return `Mandatory field`
+                                else if (!fs.existsSync(value)) return 'File path does not exist'
+                                else if (!value.toLowerCase().endsWith(".yaml") && !value.toLowerCase().endsWith(".yml")) return 'File is not a YAML file'
+                                return true
+                            },
+                        }
+                    ])
+                    agregatedResponses = {...agregatedResponses, ...response}
+
+                    // Create issuer now
+                    await this.createIssuer(agregatedResponses)
+
+                    // Then create certificate
+                    await this.createCertificate(agregatedResponses)
+
+                }
+                // Use an existing issuer
+                else {
+                    agregatedResponses = {...agregatedResponses, ...issResponse}
+                    await this.createCertificate(agregatedResponses)
+                }
+            }
         } 
         // Manually provide certificate
         else {
@@ -165,4 +219,42 @@ export default class Create extends Command {
             await this.addNewHost(existingHosts)
         }
     } 
+
+    /**
+     * createIssuer
+     * @param agregatedResponses 
+     */
+    async createIssuer(agregatedResponses: any) {
+        const issuerYaml = fs.readFileSync(this.configPath, 'utf8')
+
+        CliUx.ux.action.start('Creating Cert-Manager Issuer')
+        try {
+            await this.api(`kube`, 'post', {
+                type: 'cm-issuer',
+                namespace: agregatedResponses.namespace,
+                issuerYaml: issuerYaml
+            })
+            CliUx.ux.action.stop()
+        } catch (error) {
+            CliUx.ux.action.stop('error')
+            this.showError(error)
+            process.exit(1)
+        }
+    }
+
+    /**
+     * createCertificate
+     * @param agregatedResponses 
+     */
+    async createCertificate(agregatedResponses: any) {
+
+    }
+
+    /**
+     * createTlsSecret
+     * @param agregatedResponses 
+     */
+    async createTlsSecret(agregatedResponses: any) {
+
+    }
 }
