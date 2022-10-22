@@ -128,6 +128,9 @@ exports.Kube = class Kube extends KubeCore {
         if (data.type == 'cm-issuer') {
             let issuerYaml
             try {
+                const yamlDocs = data.issuerYaml.split("---")
+console.log(yamlDocs)
+
                 issuerYaml = YAML.parse(data.issuerYaml)
             } catch (error) {
                 console.log(error)
