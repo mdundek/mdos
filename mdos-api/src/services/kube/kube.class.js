@@ -130,6 +130,7 @@ exports.Kube = class Kube extends KubeCore {
             try {
                 issuerYaml = YAML.parse(data.issuerYaml)
             } catch (error) {
+                console.log(error)
                 throw new BadRequest('ERROR: The YAML file could not be parsed. Make sur it is valid YAML.')
             }
             
