@@ -156,10 +156,12 @@ exports.Kube = class Kube extends KubeCore {
             }
 
             // Monitor status until success or fail
+            let attempts = 0
             while(true) {
                 const issuerDetails = await this.app.get('kube').getCertManagerIssuers(data.namespace, issuerName)
                 console.log(JSON.stringify(issuerDetails, null, 4))
-                break
+                if(attempts == 10) break
+                await new Promise(r => setTimeout(r, 1000));
             }
         } 
         /******************************************
