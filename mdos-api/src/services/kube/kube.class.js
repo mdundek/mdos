@@ -154,6 +154,13 @@ exports.Kube = class Kube extends KubeCore {
                 try { await this.app.get("kube").kubectlDelete(data.namespace, data.issuerYaml) } catch (_e) {}
                 throw error
             }
+
+            // Monitor status until success or fail
+            while(true) {
+                const issuerDetails = await this.app.get('kube').getCertManagerIssuers(data.namespace, issuerName)
+                console.log(JSON.stringify(issuerDetails, null, 4))
+                break
+            }
         } 
         /******************************************
          *  CREATE CERT MANAGER ISSUER
