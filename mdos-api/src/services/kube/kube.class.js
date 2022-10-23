@@ -173,23 +173,36 @@ exports.Kube = class Kube extends KubeCore {
             if(!ready) {
                 throw new BadRequest('ERROR: Issuer does not seem to become ready')
             }
-            
+
             return data
         } 
         /******************************************
-         *  CREATE CERT MANAGER ISSUER
+         *  CREATE CERT MANAGER CERTIFICATE
          ******************************************/
         else if (data.type == 'cm-certificate') {
             // Create certificate
             await this.app.get('kube').createCertManagerCertificate(data.namespace, data.name, data.hosts, data.issuerName)
 
             // Monitor status until success or fail
+            let attempts = 0
+            let ready = false
             while(true) {
                 const certificateDetails = await this.app.get('kube').getCertManagerCertificates(data.namespace, data.name)
-                console.log(JSON.stringify(certificateDetails, null, 4))
-                break
+                console.log(JSON.stringify(certificateDetails.data, null, 4))
+                // if(certificateDetails.length == 1 && certificateDetails[0].status) {
+                //     if(certificateDetails[0].status.conditions.find(condition => condition.status == "True" && condition.type == "Ready")) {
+                //         ready = true
+                //         break
+                //     }
+                // }
+                if(attempts == 10) break
+                attempts++
+                await new Promise(r => setTimeout(r, 1000));
             }
-            
+            if(!ready) {
+                throw new BadRequest('ERROR: Issuer does not seem to become ready')
+            }
+
             return data
         }
         /******************************************
