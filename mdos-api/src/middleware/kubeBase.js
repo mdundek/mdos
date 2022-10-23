@@ -279,6 +279,34 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * 
+     * @param {*} namespaceName 
+     * @param {*} certName 
+     * @param {*} hostsArray 
+     * @param {*} issuerName 
+     */
+    async createCertManagerCertificate(namespaceName, certName, hostsArray, issuerName) {
+        await axios.post(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates`, {
+            apiVersion: "cert-manager.io/v1",
+            kind: "Certificate",
+            metadata: {
+                name: certName,
+                namespace: namespaceName
+            },
+            spec: {
+                secretName: certName,
+                duration: "2160h",
+                renewBefore: "360h",
+                dnsNames: hostsArray,
+                issuerRef: {
+                    name: issuerName,
+                    kind: "Issuer"
+                }
+            }
+        }, this.k8sAxiosHeader)
+    }
+
+    /**
      * getCertManagerIssuers
      * 
      * @param {*} namespaceName 
@@ -486,6 +514,40 @@ class KubeBase extends KubeBaseConstants {
         try {
             fs.writeFileSync('./values.yaml', YAML.stringify(values))
             await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} ${version ? `--version ${version}` : ''} --values ./values.yaml  ${chartName} ${chart} --atomic`)
+        } finally {
+            if (fs.existsSync('./values.yaml')) {
+                fs.rmSync('./values.yaml', { force: true })
+            }
+        }
+    }
+
+    /**
+     * 
+     * 
+     * @param {*} namespace 
+     * @param {*} yamlData 
+     */
+    async kubectlApply(namespace, yamlData) {
+        try {
+            fs.writeFileSync('./values.yaml', YAML.stringify(yamlData))
+            await terminalCommand(`kubectl apply -n ${namespace} -f ./values.yaml`)
+        } finally {
+            if (fs.existsSync('./values.yaml')) {
+                fs.rmSync('./values.yaml', { force: true })
+            }
+        }
+    }
+
+    /**
+     * 
+     * 
+     * @param {*} namespace 
+     * @param {*} yamlData 
+     */
+     async kubectlDelete(namespace, yamlData) {
+        try {
+            fs.writeFileSync('./values.yaml', YAML.stringify(yamlData))
+            await terminalCommand(`kubectl delete -n ${namespace} -f ./values.yaml`)
         } finally {
             if (fs.existsSync('./values.yaml')) {
                 fs.rmSync('./values.yaml', { force: true })

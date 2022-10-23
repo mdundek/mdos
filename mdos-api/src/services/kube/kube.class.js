@@ -125,7 +125,7 @@ exports.Kube = class Kube extends KubeCore {
         /******************************************
          *  CREATE CERT MANAGER ISSUER
          ******************************************/
-        if (data.type == 'cm-issuer') {
+        else if (data.type == 'cm-issuer') {
             let yamlBlockArray = data.issuerYaml.split("---")
             try {
                 // Parse blocks and identify issuer
@@ -147,10 +147,30 @@ exports.Kube = class Kube extends KubeCore {
             }
 
             // Deploy
-            for(const yamlFragment of yamlBlockArray) {
-                
+            try {
+                await this.app.get("kube").kubectlApply(data.namespace, data.issuerYaml)
+            } catch (error) {
+                // Rollback, just in case there aresome residual components that got deployed
+                try { await this.app.get("kube").kubectlDelete(data.namespace, data.issuerYaml) } catch (_e) {}
+                throw error
             }
         } 
+        /******************************************
+         *  CREATE CERT MANAGER ISSUER
+         ******************************************/
+        else if (data.type == 'cm-certificate') {
+            // Create certificate
+            await this.app.get('kube').createCertManagerCertificate(data.namespace, data.name, data.hosts, data.issuerName)
+
+            // Monitor status until success or fail
+            while(true) {
+                const certificateDetails = await this.app.get('kube').getCertManagerCertificates(data.namespace, data.name)
+                console.log(JSON.stringify(certificateDetails, null, 4))
+                break
+            }
+            
+            return data
+        }
         /******************************************
          *  CREATE NEW TENANT NAMESPACE
          ******************************************/

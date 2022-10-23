@@ -1,6 +1,7 @@
 import { Flags, CliUx } from '@oclif/core'
 const fs = require('fs')
 const path = require('path')
+const YAML = require('yaml')
 import Command from '../../base'
 const inquirer = require('inquirer')
 const { error, filterQuestions, mergeFlags, info } = require('../../lib/tools')
@@ -172,8 +173,30 @@ export default class Create extends Command {
                     ])
                     agregatedResponses = {...agregatedResponses, ...response}
 
+                    // Extract Issuer name
+                    const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
+                    let yamlBlockArray = issuerYaml.split("---")
+                    try {
+                        // Parse blocks and identify issuer
+                        let issuerName = null
+                        for(let i=0; i<yamlBlockArray.length; i++) {
+                            yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
+                            if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
+                                issuerName = yamlBlockArray[i].metadata.name
+                            }
+                        }
+                        if(!issuerName) {
+                            error('The provided yaml file does not seem to be of kind "Issuer".')
+                            process.exit(1)
+                        }
+                        agregatedResponses.issuerName = issuerName
+                    } catch (error) {
+                        this.showError(error)
+                        process.exit(1)
+                    }
+                    
                     // Create issuer now
-                    await this.createIssuer(agregatedResponses)
+                    await this.createIssuer(agregatedResponses, issuerYaml)
 
                     // Then create certificate
                     await this.createCertificate(agregatedResponses)
@@ -181,6 +204,7 @@ export default class Create extends Command {
                 }
                 // Use an existing issuer
                 else {
+                    agregatedResponses.issuerName = issResponse.issuer.metadata.name
                     agregatedResponses = {...agregatedResponses, ...issResponse}
                     await this.createCertificate(agregatedResponses)
                 }
@@ -222,11 +246,10 @@ export default class Create extends Command {
 
     /**
      * createIssuer
+     * 
      * @param agregatedResponses 
      */
-    async createIssuer(agregatedResponses: any) {
-        const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
-
+    async createIssuer(agregatedResponses: { namespace: any }, issuerYaml: undefined) {
         CliUx.ux.action.start('Creating Cert-Manager Issuer')
         try {
             await this.api(`kube`, 'post', {
@@ -247,7 +270,21 @@ export default class Create extends Command {
      * @param agregatedResponses 
      */
     async createCertificate(agregatedResponses: any) {
-
+        CliUx.ux.action.start('Creating Cert-Manager Issuer')
+        try {
+            await this.api(`kube`, 'post', {
+                type: 'cm-certificate',
+                name: agregatedResponses.name,
+                namespace: agregatedResponses.namespace,
+                hosts: agregatedResponses.hostnames,
+                issuerName: agregatedResponses.issuerName
+            })
+            CliUx.ux.action.stop()
+        } catch (error) {
+            CliUx.ux.action.stop('error')
+            this.showError(error)
+            process.exit(1)
+        }
     }
 
     /**
