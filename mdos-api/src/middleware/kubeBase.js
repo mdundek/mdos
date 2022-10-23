@@ -529,10 +529,10 @@ class KubeBase extends KubeBaseConstants {
      */
     async kubectlApply(namespace, yamlData) {
         try {
-            fs.writeFileSync('./values.yaml', YAML.stringify(yamlData))
+            fs.writeFileSync('./values.yaml', yamlData)
 
             console.log("------------")
-            console.log(YAML.stringify(yamlData))
+            console.log(yamlData)
             console.log("------------")
 
             await terminalCommand(`kubectl apply -n ${namespace} -f ./values.yaml`)
