@@ -157,12 +157,24 @@ exports.Kube = class Kube extends KubeCore {
 
             // Monitor status until success or fail
             let attempts = 0
+            let ready = false
             while(true) {
                 const issuerDetails = await this.app.get('kube').getCertManagerIssuers(data.namespace, issuerName)
-                console.log(JSON.stringify(issuerDetails, null, 4))
+                if(issuerDetails.length == 1 && issuerDetails[0].status) {
+                    if(issuerDetails[0].status.conditions.find(condition => condition.status == "True" && condition.type == "Ready")) {
+                        ready = true
+                        break
+                    }
+                }
                 if(attempts == 10) break
+                attempts++
                 await new Promise(r => setTimeout(r, 1000));
             }
+            if(!ready) {
+                throw new BadRequest('ERROR: Issuer does not seem to become ready')
+            }
+            
+            return data
         } 
         /******************************************
          *  CREATE CERT MANAGER ISSUER
