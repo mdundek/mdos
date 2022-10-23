@@ -176,24 +176,24 @@ export default class Create extends Command {
                     // Extract Issuer name
                     const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
                     let yamlBlockArray = issuerYaml.split("---")
+                    let issuerName = null
                     try {
                         // Parse blocks and identify issuer
-                        let issuerName = null
                         for(let i=0; i<yamlBlockArray.length; i++) {
                             yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
                             if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
                                 issuerName = yamlBlockArray[i].metadata.name
                             }
                         }
-                        if(!issuerName) {
-                            error('The provided yaml file does not seem to be of kind "Issuer".')
-                            process.exit(1)
-                        }
-                        agregatedResponses.issuerName = issuerName
                     } catch (error) {
                         this.showError(error)
                         process.exit(1)
                     }
+                    if(!issuerName) {
+                        error('The provided yaml file does not seem to be of kind "Issuer".')
+                        process.exit(1)
+                    }
+                    agregatedResponses.issuerName = issuerName
                     
                     // Create issuer now
                     await this.createIssuer(agregatedResponses, issuerYaml)

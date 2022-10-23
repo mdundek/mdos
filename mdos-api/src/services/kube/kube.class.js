@@ -127,9 +127,9 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         else if (data.type == 'cm-issuer') {
             let yamlBlockArray = data.issuerYaml.split("---")
+            let issuerName = null
             try {
                 // Parse blocks and identify issuer
-                let issuerName = null
                 for(let i=0; i<yamlBlockArray.length; i++) {
                     yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
                     if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
