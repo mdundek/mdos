@@ -5,6 +5,7 @@ const YAML = require('yaml')
 const fs = require('fs')
 let _ = require('lodash')
 const { terminalCommand, terminalCommandAsync } = require('../libs/terminal')
+const { isBuffer } = require('lodash')
 
 let caCrt
 if (process.env.RUN_TARGET == 'pod') {
@@ -315,16 +316,33 @@ class KubeBase extends KubeBaseConstants {
      */
      async getCertManagerIssuers(namespaceName, issuerName) {
         try {
+
+
+            if(issuerName) {
+                const resOneIssuers = await axios.get(new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers/${issuerName}`).href, this.k8sAxiosHeader)
+                console.log(JSON.stringify(resOneIssuers, null, 4))
+            }
+            
+
+
+
+
             let myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers`)
             const resIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
 
             myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/clusterissuers`)
             const resClusterIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
 
-            const filteredIssuers = issuerName ? [resIssuers.data.items.find(crt => crt.metadata.name == issuerName)] : resIssuers.data.items
-            const filteredClusterIssuers = issuerName ? [resClusterIssuers.data.items.find(crt => crt.metadata.name == issuerName)] : resClusterIssuers.data.items
-
-            return [...filteredIssuers, ...filteredClusterIssuers]
+            if(issuerName) {
+                const allIssuers = []
+                const namedIssuer = resIssuers.data.items.find(crt => crt.metadata.name == issuerName)
+                const namedClusterIssuer = resClusterIssuers.data.items.find(crt => crt.metadata.name == issuerName)
+                if(namedIssuer) allIssuers.push(namedIssuer)
+                if(namedClusterIssuer) allIssuers.push(namedClusterIssuer)
+                return allIssuers
+            } else {
+                return [...resIssuers.data.items, ...resClusterIssuers.data.items]
+            }
         } catch (error) {
             console.log(error)
             throw error       
