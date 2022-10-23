@@ -320,7 +320,7 @@ class KubeBase extends KubeBaseConstants {
 
             if(issuerName) {
                 const resOneIssuers = await axios.get(new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers/${issuerName}`).href, this.k8sAxiosHeader)
-                console.log(JSON.stringify(resOneIssuers, null, 4))
+                console.log(JSON.stringify(resOneIssuers.data, null, 4))
             }
             
 
