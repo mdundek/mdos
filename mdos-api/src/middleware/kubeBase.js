@@ -276,7 +276,30 @@ class KubeBase extends KubeBaseConstants {
     async getCertManagerCertificates(namespaceName, certName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
-        return certName ? res.data.items.find(crt => crt.metadata.name == certName) : res.data.items
+
+        let certList
+        if(certName) {
+            const targetObj = res.data.items.find(crt => crt.metadata.name == certName)
+            if(targetObj) certList = [targetObj]
+            else certList = []
+        } else {
+            certList = res.data.items
+        }
+
+        for(let i=0; i<dataList.length; i++) {
+            if(dataList[i].status && dataList[i].status.conditions.find((condition) => condition.status == "False" && condition.type == "Ready")) {
+                // Certificate is not ready, let's collect extra data
+                const ordersRes = await axios.get(new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/orders`).href, this.k8sAxiosHeader)
+                const targetOrder = res.data.items.find(order => order.metadata.annotations["cert-manager.io/certificate-name"] == dataList[i].metadata.name)
+                
+                console.log("targetOrder =>", targetOrder)
+
+
+                // const challengeRes = await axios.get(new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/challengeg`).href, this.k8sAxiosHeader)
+            }
+        }
+
+        return dataList
     }
 
     /**
