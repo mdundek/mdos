@@ -286,7 +286,7 @@ class KubeBase extends KubeBaseConstants {
      * @param {*} hostsArray 
      * @param {*} issuerName 
      */
-    async createCertManagerCertificate(namespaceName, certName, hostsArray, issuerName) {
+    async createCertManagerCertificate(namespaceName, certName, hostsArray, issuerName, isClusterIssuer) {
         await axios.post(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates`, {
             apiVersion: "cert-manager.io/v1",
             kind: "Certificate",
@@ -301,7 +301,7 @@ class KubeBase extends KubeBaseConstants {
                 dnsNames: hostsArray,
                 issuerRef: {
                     name: issuerName,
-                    kind: "Issuer"
+                    kind: isClusterIssuer ? "ClusterIssuer" : "Issuer"
                 }
             }
         }, this.k8sAxiosHeader)

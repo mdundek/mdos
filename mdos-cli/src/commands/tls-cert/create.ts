@@ -176,24 +176,25 @@ export default class Create extends Command {
                     // Extract Issuer name
                     const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
                     let yamlBlockArray = issuerYaml.split("---")
-                    let issuerName = null
+                    let issuer = null
                     try {
                         // Parse blocks and identify issuer
                         for(let i=0; i<yamlBlockArray.length; i++) {
                             yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
                             if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
-                                issuerName = yamlBlockArray[i].metadata.name
+                                issuer = yamlBlockArray[i]
                             }
                         }
                     } catch (error) {
                         this.showError(error)
                         process.exit(1)
                     }
-                    if(!issuerName) {
+                    if(!issuer) {
                         error('The provided yaml file does not seem to be of kind "Issuer".')
                         process.exit(1)
                     }
-                    agregatedResponses.issuerName = issuerName
+                    agregatedResponses.issuerName = issuer.metadata.name
+                    agregatedResponses.isClusterIssuer = issuer.kind == "ClusterIssuer" ? true : false
                     
                     // Create issuer now
                     await this.createIssuer(agregatedResponses, issuerYaml)
@@ -205,6 +206,7 @@ export default class Create extends Command {
                 // Use an existing issuer
                 else {
                     agregatedResponses.issuerName = issResponse.issuer.metadata.name
+                    agregatedResponses.isClusterIssuer = issResponse.issuer.kind == "ClusterIssuer" ? true : false
                     agregatedResponses = {...agregatedResponses, ...issResponse}
                     await this.createCertificate(agregatedResponses)
                 }

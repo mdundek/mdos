@@ -217,7 +217,7 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         else if (data.type == 'cm-certificate') {
             // Create certificate
-            await this.app.get('kube').createCertManagerCertificate(data.namespace, data.name, data.hosts, data.issuerName)
+            await this.app.get('kube').createCertManagerCertificate(data.namespace, data.name, data.hosts, data.issuerName, data.isClusterIssuer)
 
             // Monitor status until success or fail
             let attempts = 0
