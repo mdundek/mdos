@@ -38,32 +38,21 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
         else if (params.query.target == 'gateways') {
-            console.log("----")
             let gateways = await this.app.get('kube').getIstioGateways(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
-            console.log("----")
-            if(params.query.host){
-                console.log("----")
+            if(params.query.host)
                 return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
-            }
-            else {
+            else
                 return gateways
-            }
         }
         /******************************************
          *  LOOKUP CERTIFICATES
          ******************************************/
         else if (params.query.target == 'certificates') {
-            try {
-                let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
-                if(params.query.hosts)
-                    return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
-                else
-                    return certificates
-            } catch (error) {
-                console.log(error)
-                throw error
-            }
-            
+            let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            if(params.query.hosts)
+                return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
+            else
+                return certificates
         }
         /******************************************
          *  LOOKUP TLS SECRETS
@@ -77,6 +66,10 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
          else if (params.query.target == 'cm-issuers') {
             let issuers = await this.app.get('kube').getCertManagerIssuers(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            return issuers
+        }
+        else if (params.query.target == 'cm-cluster-issuers') {
+            let issuers = await this.app.get('kube').getCertManagerClusterIssuers(params.query.name ? params.query.name : false)
             return issuers
         }
         /******************************************
@@ -168,7 +161,7 @@ exports.Kube = class Kube extends KubeCore {
                             } catch (_e) {}
                         } else {
                             try {
-                                await this.app.get("kube").kubectlDelete(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace, YAML.stringify(yamlBlockArray[i]))
+                                await this.app.get("kube").kubectlDelete(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace ? data.namespace : null, YAML.stringify(yamlBlockArray[i]))
                             } catch (_e) {}
                         }
                     }
@@ -184,7 +177,7 @@ exports.Kube = class Kube extends KubeCore {
                         } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
                             await this.app.get("kube").kubectlApply(null, YAML.stringify(yamlBlockArray[i]))
                         } else {
-                            await this.app.get("kube").kubectlApply(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace, YAML.stringify(yamlBlockArray[i]))
+                            await this.app.get("kube").kubectlApply(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace ? data.namespace : null, YAML.stringify(yamlBlockArray[i]))
                         }
                     }
                 }
