@@ -164,23 +164,28 @@ exports.Kube = class Kube extends KubeCore {
                 }
             } catch (error) {
                 // Rollback, just in case there aresome residual components that got deployed
-                try { 
-                    for(let i=0; i<yamlBlockArray.length; i++) {
-                        if(yamlBlockArray[i].kind) {
-                            if(yamlBlockArray[i].kind == "Issuer") {
-                                console.log("11")
+                for(let i=0; i<yamlBlockArray.length; i++) {
+                    if(yamlBlockArray[i].kind) {
+                        if(yamlBlockArray[i].kind == "Issuer") {
+                            try {
                                 await this.app.get("kube").kubectlDelete(data.namespace, YAML.stringify(yamlBlockArray[i]))
-                            } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
-                                console.log("22")
+                            } catch (_e) {
+                                console.log("DELETE 1 ERROR =>", _e)
+                            }
+                        } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
+                            try {
                                 await this.app.get("kube").kubectlDelete(null, YAML.stringify(yamlBlockArray[i]))
-                            } else {
-                                console.log("33")
+                            } catch (_e) {
+                                console.log("DELETE 2 ERROR =>", _e)
+                            }
+                        } else {
+                            try {
                                 await this.app.get("kube").kubectlDelete(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace, YAML.stringify(yamlBlockArray[i]))
+                            } catch (_e) {
+                                console.log("DELETE 3 ERROR =>", _e)
                             }
                         }
                     }
-                } catch (_e) {
-                    console.log("DELETE ERROR =>", _e)
                 }
                 console.log("MAIN ERROR =>", error)
                 throw error
