@@ -53,11 +53,17 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP CERTIFICATES
          ******************************************/
         else if (params.query.target == 'certificates') {
-            let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
-            if(params.query.hosts)
-                return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
-            else
-                return certificates
+            try {
+                let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+                if(params.query.hosts)
+                    return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
+                else
+                    return certificates
+            } catch (error) {
+                console.log(error)
+                throw error
+            }
+            
         }
         /******************************************
          *  LOOKUP TLS SECRETS

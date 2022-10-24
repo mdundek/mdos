@@ -290,7 +290,7 @@ class KubeBase extends KubeBaseConstants {
             if(certList[i].status && certList[i].status.conditions.find((condition) => condition.status == "False" && condition.type == "Ready")) {
                 // Certificate is not ready, let's collect extra data
                 const ordersRes = await axios.get(new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/orders`).href, this.k8sAxiosHeader)
-                const targetOrder = res.data.items.find(order => order.metadata.annotations["cert-manager.io/certificate-name"] == certList[i].metadata.name)
+                const targetOrder = ordersRes.data.items.find(order => order.metadata.annotations["cert-manager.io/certificate-name"] == certList[i].metadata.name)
                 
                 console.log("targetOrder =>", targetOrder)
 
