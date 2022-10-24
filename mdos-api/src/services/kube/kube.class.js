@@ -420,10 +420,10 @@ exports.Kube = class Kube extends KubeCore {
          *  UNINSTALL / DELETE ISSUER
          ******************************************/
         else if (params.query.target == 'cm-issuer') {
-
+            await this.app.get("kube").deleteCertManagerIssuer(params.query.namespace, id)
         }
         else if (params.query.target == 'cm-cluster-issuer') {
-
+            await this.app.get("kube").deleteCertManagerClusterIssuer(id)
         }
         /******************************************
          *  UNINSTALL / DELETE CERTIFICATE

@@ -338,6 +338,15 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * deleteCertManagerIssuer
+     * @param {*} namespaceName 
+     * @param {*} issuerName 
+     */
+    async deleteCertManagerIssuer(namespaceName, issuerName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers/${issuerName}`, this.k8sAxiosHeader)
+    }
+
+    /**
      * getCertManagerClusterIssuers
      * 
      * @param {*} issuerName 
@@ -355,6 +364,14 @@ class KubeBase extends KubeBaseConstants {
         } else {
             return resClusterIssuers.data.items
         }
+    }
+
+    /**
+     * deleteCertManagerClusterIssuer
+     * @param {*} issuerName 
+     */
+     async deleteCertManagerClusterIssuer(issuerName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/clusterissuers/${issuerName}`, this.k8sAxiosHeader)
     }
 
     /**
