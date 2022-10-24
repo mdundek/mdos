@@ -327,7 +327,7 @@ class KubeBase extends KubeBaseConstants {
      async getCertManagerIssuers(namespaceName, issuerName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers`)
         const resIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
-
+        resIssuers.data.items = resIssuers.data.items.filter(issuer => issuer.metadata.namespace != "cert-manager")
         if(issuerName) {
             const namedIssuer = resIssuers.data.items.find(crt => crt.metadata.name == issuerName)
             if(namedIssuer) return [namedIssuer]
