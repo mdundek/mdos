@@ -73,10 +73,10 @@ export default class List extends Command {
             process.exit(1)
         }
 
-        // Collect issuers
-        let issuerResponse:any = []
+        // Collect Certificates
+        let certificatesResponse:any = []
         try {
-            issuerResponse = await this.api(`kube?target=cm-issuers&namespace=${agregatedResponses.namespace}`, 'get')
+            certificatesResponse = await this.api(`kube?target=certificates&namespace=${agregatedResponses.namespace}`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)
@@ -84,7 +84,7 @@ export default class List extends Command {
 
         console.log()
         CliUx.ux.table(
-            issuerResponse.data,
+            certificatesResponse.data,
             {
                 name: {
                     header: 'CERTIFICATE NAME',
@@ -93,8 +93,29 @@ export default class List extends Command {
                 },
                 status: {
                     header: 'STATUS',
-                    minWidth: 10,
+                    minWidth: 15,
                     get: (row:any) => row.status ? (row.status.conditions.find((condition:any) => condition.status == "True" && condition.type == "Ready") ? "Ready" : "Not ready") : "Not ready",
+                },
+                message: {
+                    header: 'MESSAGE',
+                    minWidth: 10,
+                    get: (row:any) => row.status ? row.status.conditions.find((condition:any) => condition.type == "Ready").message : "",
+                }
+            },
+            {
+                printLine: this.log.bind(this),
+            }
+        )
+        console.log()
+        console.log()
+
+        CliUx.ux.table(
+            tlsSecretResponse.data,
+            {
+                name: {
+                    header: 'AVAILABLE SECRET NAME',
+                    minWidth: 35,
+                    get: (row:any) => row.metadata.name,
                 }
             },
             {
@@ -104,6 +125,6 @@ export default class List extends Command {
         console.log()
 
 
-        console.log(JSON.stringify(issuerResponse.data, null, 4))
+        // console.log(JSON.stringify(certificatesResponse.data, null, 4))
     }
 }

@@ -285,20 +285,7 @@ class KubeBase extends KubeBaseConstants {
         } else {
             certList = res.data.items
         }
-
-        for(let i=0; i<certList.length; i++) {
-            if(certList[i].status && certList[i].status.conditions.find((condition) => condition.status == "False" && condition.type == "Ready")) {
-                // Certificate is not ready, let's collect extra data
-                const ordersRes = await axios.get(new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/order`).href, this.k8sAxiosHeader)
-                const targetOrder = ordersRes.data.items.find(order => order.metadata.annotations["cert-manager.io/certificate-name"] == certList[i].metadata.name)
-                
-                console.log("targetOrder =>", targetOrder)
-
-
-                // const challengeRes = await axios.get(new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/challengeg`).href, this.k8sAxiosHeader)
-            }
-        }
-
+        
         return certList
     }
 

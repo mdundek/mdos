@@ -1,10 +1,11 @@
 import { Flags, CliUx } from '@oclif/core'
+import { notEqual } from 'assert'
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { error, filterQuestions, mergeFlags, info } = require('../../lib/tools')
+const { error, context, warn, filterQuestions, mergeFlags, info } = require('../../lib/tools')
 
 /**
  * Command
@@ -157,6 +158,8 @@ export default class Create extends Command {
                 // Do not use existing, create new issuer
                 if(issResponse.issuer == "NEW") {
 
+                    warn(`If your Issuer is not a "cert-manager" natively supported DNS01 provider (for more information, see: https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers), and you intend on using an external "Webhook" provider to manage DNS01 challanges, then make sure you deployed this "Webhook" provider first before you continue.`)
+                   
                     // Issuer file path
                     response = await inquirer.prompt([
                         {
