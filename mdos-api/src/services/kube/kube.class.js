@@ -124,7 +124,7 @@ exports.Kube = class Kube extends KubeCore {
         /******************************************
          *  CREATE CERT MANAGER ISSUER
          ******************************************/
-        else if (data.type == 'cm-issuer') {
+        else if (data.type == 'cm-issuer' || data.type == 'cm-cluster-issuer') {
             let yamlBlockArray = data.issuerYaml.split("---")
             let issuerBlock = null
             try {
@@ -143,6 +143,11 @@ exports.Kube = class Kube extends KubeCore {
             // No Issuer kind found
             if(!issuerBlock) {
                 throw new BadRequest('ERROR: The provided yaml file does not seem to be of kind "Issuer".')
+            }
+
+            // Make sure Issuer is what request is about
+            if(issuerBlock.kind.toLowerCase() == "issuer" && data.type == 'cm-cluster-issuer') {
+                throw new BadRequest('ERROR: Wrong Issuer Kind.')
             }
 
             /**
@@ -410,7 +415,24 @@ exports.Kube = class Kube extends KubeCore {
             }
 
             await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type)
-        } else {
+        } 
+        /******************************************
+         *  UNINSTALL / DELETE ISSUER
+         ******************************************/
+        else if (params.query.target == 'cm-issuer') {
+
+        }
+        else if (params.query.target == 'cm-cluster-issuer') {
+
+        }
+        /******************************************
+         *  UNINSTALL / DELETE CERTIFICATE
+         ******************************************/
+         else if (params.query.target == 'certificate') {
+
+        }
+        // ***************************************
+        else {
             throw new BadRequest('ERROR: Malformed API request')
         }
         return { id }

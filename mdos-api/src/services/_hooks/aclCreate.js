@@ -82,6 +82,21 @@ const oidcProviderCreateHook = (context, jwtToken) => {
 }
 
 /**
+ * clusterIssuerCreateHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const clusterIssuerCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('cm-cluster-issuer-write'))) {
+        return context
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to create ClusterIssuers')
+}
+
+/**
  * Export
  *
  * @return {*} 
@@ -114,6 +129,8 @@ module.exports = function () {
             return await clientRoleCreateHook(context, jwtToken)
         } else if (context.path == 'kube' && context.data.type == 'tenantNamespace') {
             return await namespaceCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'cm-cluster-issuer') {
+            return await clusterIssuerCreateHook(context, jwtToken)
         } else if (context.path == 'oidc-provider') {
             return await oidcProviderCreateHook(context, jwtToken)
         } else {
