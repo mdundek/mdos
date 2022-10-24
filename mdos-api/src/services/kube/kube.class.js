@@ -146,24 +146,10 @@ exports.Kube = class Kube extends KubeCore {
                 throw new BadRequest('ERROR: The provided yaml file does not seem to be of kind "Issuer".')
             }
 
-            // Deploy
-            try {
-                for(let i=0; i<yamlBlockArray.length; i++) {
-                    if(yamlBlockArray[i].kind) {
-                        if(yamlBlockArray[i].kind == "Issuer") {
-                            console.log("1")
-                            await this.app.get("kube").kubectlApply(data.namespace, YAML.stringify(yamlBlockArray[i]))
-                        } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
-                            console.log("2")
-                            await this.app.get("kube").kubectlApply(null, YAML.stringify(yamlBlockArray[i]))
-                        } else {
-                            console.log("3")
-                            await this.app.get("kube").kubectlApply(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace, YAML.stringify(yamlBlockArray[i]))
-                        }
-                    }
-                }
-            } catch (error) {
-                // Rollback, just in case there aresome residual components that got deployed
+            /**
+             * Rollback function 
+             */
+            const rollbackDeployment = async () => {
                 for(let i=0; i<yamlBlockArray.length; i++) {
                     if(yamlBlockArray[i].kind) {
                         if(yamlBlockArray[i].kind == "Issuer") {
@@ -187,6 +173,27 @@ exports.Kube = class Kube extends KubeCore {
                         }
                     }
                 }
+            }
+
+            // Deploy
+            try {
+                for(let i=0; i<yamlBlockArray.length; i++) {
+                    if(yamlBlockArray[i].kind) {
+                        if(yamlBlockArray[i].kind == "Issuer") {
+                            console.log("1")
+                            await this.app.get("kube").kubectlApply(data.namespace, YAML.stringify(yamlBlockArray[i]))
+                        } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
+                            console.log("2")
+                            await this.app.get("kube").kubectlApply(null, YAML.stringify(yamlBlockArray[i]))
+                        } else {
+                            console.log("3")
+                            await this.app.get("kube").kubectlApply(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace, YAML.stringify(yamlBlockArray[i]))
+                        }
+                    }
+                }
+            } catch (error) {
+                // Rollback, just in case there aresome residual components that got deployed
+                await rollbackDeployment()
                 console.log("MAIN ERROR =>", error)
                 throw error
             }
@@ -194,23 +201,38 @@ exports.Kube = class Kube extends KubeCore {
             // Monitor status until success or fail
             let attempts = 0
             let ready = false
-            while(true) {
-                const issuerDetails = await this.app.get('kube').getCertManagerIssuers(data.namespace, issuerName)
-                if(issuerDetails.length == 1 && issuerDetails[0].status) {
-                    if(issuerDetails[0].status.conditions.find(condition => condition.status == "True" && condition.type == "Ready")) {
-                        ready = true
-                        break
+            try {
+                while(true) {
+                    let issuerDetails
+                    if(issuerBlock.kind == "ClusterIssuer") {
+                        issuerDetails = await this.app.get('kube').getCertManagerClusterIssuers(issuerBlock.metadata.name)
+                    } else {
+                        issuerDetails = await this.app.get('kube').getCertManagerIssuers(data.namespace, issuerBlock.metadata.name)
                     }
+                
+                    if(issuerDetails.length == 1 && issuerDetails[0].status) {
+                        if(issuerDetails[0].status.conditions.find(condition => condition.status == "True" && condition.type == "Ready")) {
+                            ready = true
+                            break
+                        }
+                    }
+                    if(attempts == 10) break
+                    attempts++
+                    await new Promise(r => setTimeout(r, 1000));
                 }
-                if(attempts == 10) break
-                attempts++
-                await new Promise(r => setTimeout(r, 1000));
-            }
-            if(!ready) {
-                throw new BadRequest('ERROR: Issuer does not seem to become ready')
-            }
+                if(!ready) {
+                    // Rollback
+                    // await rollbackDeployment()
 
-            return data
+                    throw new BadRequest('ERROR: Issuer does not seem to become ready')
+                }
+
+                return data
+            } catch (error) {
+                console.log(error)
+                // await rollbackDeployment()
+                throw error
+            }
         } 
         /******************************************
          *  CREATE CERT MANAGER CERTIFICATE

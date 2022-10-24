@@ -339,6 +339,31 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * getCertManagerClusterIssuers
+     * 
+     * @param {*} issuerName 
+     * @returns 
+     */
+    async getCertManagerClusterIssuers(issuerName) {
+        try {
+            const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/clusterissuers`)
+            const resClusterIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+
+            if(issuerName) {
+                const allIssuers = []
+                const namedClusterIssuer = resClusterIssuers.data.items.find(crt => crt.metadata.name == issuerName)
+                if(namedClusterIssuer) allIssuers.push(namedClusterIssuer)
+                return allIssuers
+            } else {
+                return resClusterIssuers.data.items
+            }
+        } catch (error) {
+            console.log(error)
+            throw error       
+        }
+    }
+
+    /**
      * getIstioGateways
      * 
      * @param {*} namespaceName 

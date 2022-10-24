@@ -252,7 +252,7 @@ export default class Create extends Command {
      * @param agregatedResponses 
      */
     async createIssuer(agregatedResponses: { namespace: any }, issuerYaml: undefined) {
-        CliUx.ux.action.start('Creating Cert-Manager Issuer')
+        CliUx.ux.action.start('Creating issuer')
         try {
             await this.api(`kube`, 'post', {
                 type: 'cm-issuer',
@@ -272,14 +272,15 @@ export default class Create extends Command {
      * @param agregatedResponses 
      */
     async createCertificate(agregatedResponses: any) {
-        CliUx.ux.action.start('Creating Cert-Manager Issuer')
+        CliUx.ux.action.start('Creating certificate')
         try {
             await this.api(`kube`, 'post', {
                 type: 'cm-certificate',
                 name: agregatedResponses.name,
                 namespace: agregatedResponses.namespace,
                 hosts: agregatedResponses.hostnames,
-                issuerName: agregatedResponses.issuerName
+                issuerName: agregatedResponses.issuerName,
+                isClusterIssuer: agregatedResponses.isClusterIssuer
             })
             CliUx.ux.action.stop()
         } catch (error) {
