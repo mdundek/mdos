@@ -140,7 +140,31 @@ const oidcProviderDeleteHook = (context, jwtToken) => {
     }
 
     // Otherwise unauthorized
-    throw new errors.Forbidden('ERROR: You are not authorized to delete ClusterIssuers')
+    throw new errors.Forbidden('ERROR: You are not authorized to delete Issuers')
+}
+
+/**
+ * certificateDeleteHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const certificateDeleteHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
+        return context
+    }
+
+    // If namespace admin or write role
+    if (
+        jwtToken.resource_access[context.params.query.namespace] &&
+        (jwtToken.resource_access[context.params.query.namespace].roles.includes('admin') || jwtToken.resource_access[context.params.query.namespace].roles.includes('k8s-write'))
+    ) {
+        return context
+    }
+
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to delete Certificates')
 }
 
 /**
@@ -184,6 +208,8 @@ module.exports = function () {
             return await clusterIssuerDeleteHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'cm-issuer') {
             return await issuerDeleteHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'certificate') {
+            return await certificateDeleteHook(context, jwtToken)
         } else if (context.path == 'oidc-provider' && !context.params.query.target) {
             return await oidcProviderDeleteHook(context, jwtToken)
         } else {

@@ -295,6 +295,7 @@ class KubeBase extends KubeBaseConstants {
      * @param {*} certName 
      * @param {*} hostsArray 
      * @param {*} issuerName 
+     * @param {*} isClusterIssuer 
      */
     async createCertManagerCertificate(namespaceName, certName, hostsArray, issuerName, isClusterIssuer) {
         await axios.post(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates`, {
@@ -316,6 +317,15 @@ class KubeBase extends KubeBaseConstants {
             }
         }, this.k8sAxiosHeader)
     }
+
+    /**
+     * 
+     * @param {*} namespaceName 
+     * @param {*} certName 
+     */
+     async deleteCertManagerCertificate(namespaceName, certName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates/${certName}`, this.k8sAxiosHeader)
+     }
 
     /**
      * getCertManagerIssuers
