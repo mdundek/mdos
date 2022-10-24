@@ -537,7 +537,10 @@ class KubeBase extends KubeBaseConstants {
     async kubectlApply(namespace, yamlData) {
         try {
             fs.writeFileSync('./values.yaml', yamlData)
-            await terminalCommand(`kubectl apply -n ${namespace} -f ./values.yaml`)
+            if(namespace)
+                await terminalCommand(`kubectl apply -n ${namespace} -f ./values.yaml`)
+            else
+                await terminalCommand(`kubectl apply -f ./values.yaml`)
         } finally {
             if (fs.existsSync('./values.yaml')) {
                 fs.rmSync('./values.yaml', { force: true })
@@ -554,7 +557,10 @@ class KubeBase extends KubeBaseConstants {
      async kubectlDelete(namespace, yamlData) {
         try {
             fs.writeFileSync('./values.yaml', YAML.stringify(yamlData))
-            await terminalCommand(`kubectl delete -n ${namespace} -f ./values.yaml`)
+            if(namespace)
+                await terminalCommand(`kubectl delete -n ${namespace} -f ./values.yaml`)
+            else
+                await terminalCommand(`kubectl delete -f ./values.yaml`)
         } finally {
             if (fs.existsSync('./values.yaml')) {
                 fs.rmSync('./values.yaml', { force: true })
