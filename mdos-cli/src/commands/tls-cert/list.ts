@@ -1,0 +1,109 @@
+import { Flags, CliUx } from '@oclif/core'
+const fs = require('fs')
+const path = require('path')
+const YAML = require('yaml')
+import Command from '../../base'
+const inquirer = require('inquirer')
+const { error, filterQuestions, mergeFlags, info } = require('../../lib/tools')
+
+/**
+ * Command
+ *
+ * @export
+ * @class Create
+ * @extends {Command}
+ */
+export default class List extends Command {
+    static aliases = []
+    static description = 'List your certificates'
+
+    // ******* FLAGS *******
+    static flags = {}
+    // *********************
+
+    // ***** QUESTIONS *****
+    static questions = []
+    // *********************
+
+    // *********************
+    // ******* MAIN ********
+    // *********************
+    public async run(): Promise<void> {
+        const { flags } = await this.parse(List)
+
+        let agregatedResponses:any = {}
+
+        // Make sure we have a valid oauth2 cookie token
+        // otherwise, collect it
+        try {
+            await this.validateJwt()
+        } catch (error) {
+            this.showError(error)
+            process.exit(1)
+        }
+
+        // Collect namespaces
+        let nsResponse
+        try {
+            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+
+        // Select target namespace
+        let response = await inquirer.prompt([
+            {
+                name: 'namespace',
+                message: 'Select a namespace for which to create a certificate for',
+                type: 'list',
+                choices: nsResponse.data.map((o: { name: any }) => {
+                    return { name: o.name }
+                }),
+            },
+        ])
+        agregatedResponses = {...agregatedResponses, ...response}
+
+        // Collect tls secrets
+        let tlsSecretResponse: { data: any[] }
+        try {
+            tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=${agregatedResponses.namespace}`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+
+        // Collect issuers
+        let issuerResponse:any = []
+        try {
+            issuerResponse = await this.api(`kube?target=cm-issuers&namespace=${agregatedResponses.namespace}`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+
+        console.log()
+        CliUx.ux.table(
+            issuerResponse.data,
+            {
+                name: {
+                    header: 'CERTIFICATE NAME',
+                    minWidth: 35,
+                    get: (row:any) => row.metadata.name,
+                },
+                status: {
+                    header: 'STATUS',
+                    minWidth: 10,
+                    get: (row:any) => row.status ? (row.status.conditions.find((condition:any) => condition.status == "True" && condition.type == "Ready") ? "Ready" : "Not ready") : "Not ready",
+                }
+            },
+            {
+                printLine: this.log.bind(this),
+            }
+        )
+        console.log()
+
+
+        console.log(JSON.stringify(issuerResponse.data, null, 4))
+    }
+}

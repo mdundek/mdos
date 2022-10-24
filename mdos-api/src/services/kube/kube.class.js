@@ -155,21 +155,15 @@ exports.Kube = class Kube extends KubeCore {
                         if(yamlBlockArray[i].kind == "Issuer") {
                             try {
                                 await this.app.get("kube").kubectlDelete(data.namespace, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {
-                                console.log("DELETE 1 ERROR =>", _e)
-                            }
+                            } catch (_e) {}
                         } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
                             try {
                                 await this.app.get("kube").kubectlDelete(null, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {
-                                console.log("DELETE 2 ERROR =>", _e)
-                            }
+                            } catch (_e) {}
                         } else {
                             try {
                                 await this.app.get("kube").kubectlDelete(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {
-                                console.log("DELETE 3 ERROR =>", _e)
-                            }
+                            } catch (_e) {}
                         }
                     }
                 }
@@ -180,13 +174,10 @@ exports.Kube = class Kube extends KubeCore {
                 for(let i=0; i<yamlBlockArray.length; i++) {
                     if(yamlBlockArray[i].kind) {
                         if(yamlBlockArray[i].kind == "Issuer") {
-                            console.log("1")
                             await this.app.get("kube").kubectlApply(data.namespace, YAML.stringify(yamlBlockArray[i]))
                         } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
-                            console.log("2")
                             await this.app.get("kube").kubectlApply(null, YAML.stringify(yamlBlockArray[i]))
                         } else {
-                            console.log("3")
                             await this.app.get("kube").kubectlApply(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace, YAML.stringify(yamlBlockArray[i]))
                         }
                     }
@@ -194,7 +185,6 @@ exports.Kube = class Kube extends KubeCore {
             } catch (error) {
                 // Rollback, just in case there aresome residual components that got deployed
                 await rollbackDeployment()
-                console.log("MAIN ERROR =>", error)
                 throw error
             }
 
@@ -209,7 +199,7 @@ exports.Kube = class Kube extends KubeCore {
                     } else {
                         issuerDetails = await this.app.get('kube').getCertManagerIssuers(data.namespace, issuerBlock.metadata.name)
                     }
-                
+
                     if(issuerDetails.length == 1 && issuerDetails[0].status) {
                         if(issuerDetails[0].status.conditions.find(condition => condition.status == "True" && condition.type == "Ready")) {
                             ready = true
@@ -222,15 +212,12 @@ exports.Kube = class Kube extends KubeCore {
                 }
                 if(!ready) {
                     // Rollback
-                    // await rollbackDeployment()
-
+                    await rollbackDeployment()
                     throw new BadRequest('ERROR: Issuer does not seem to become ready')
                 }
-
                 return data
             } catch (error) {
-                console.log(error)
-                // await rollbackDeployment()
+                await rollbackDeployment()
                 throw error
             }
         } 
@@ -240,27 +227,6 @@ exports.Kube = class Kube extends KubeCore {
         else if (data.type == 'cm-certificate') {
             // Create certificate
             await this.app.get('kube').createCertManagerCertificate(data.namespace, data.name, data.hosts, data.issuerName, data.isClusterIssuer)
-
-            // Monitor status until success or fail
-            let attempts = 0
-            let ready = false
-            while(true) {
-                const certificateDetails = await this.app.get('kube').getCertManagerCertificates(data.namespace, data.name)
-                console.log(JSON.stringify(certificateDetails.data, null, 4))
-                // if(certificateDetails.length == 1 && certificateDetails[0].status) {
-                //     if(certificateDetails[0].status.conditions.find(condition => condition.status == "True" && condition.type == "Ready")) {
-                //         ready = true
-                //         break
-                //     }
-                // }
-                if(attempts == 10) break
-                attempts++
-                await new Promise(r => setTimeout(r, 1000));
-            }
-            if(!ready) {
-                throw new BadRequest('ERROR: Issuer does not seem to become ready')
-            }
-
             return data
         }
         /******************************************

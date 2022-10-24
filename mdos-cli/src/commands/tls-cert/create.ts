@@ -15,7 +15,7 @@ const { error, filterQuestions, mergeFlags, info } = require('../../lib/tools')
  */
 export default class Create extends Command {
     static aliases = []
-    static description = 'Create a new ingress gateway'
+    static description = 'Create a new Certificate / TLS secret'
 
     // ******* FLAGS *******
     static flags = {}
@@ -51,15 +51,6 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        // Collect tls secrets
-        let tlsSecretResponse: { data: any[] }
-        try {
-            tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=${agregatedResponses.namespace}`, 'get')
-        } catch (err) {
-            this.showError(err)
-            process.exit(1)
-        }
-
         // Select target namespace
         let response = await inquirer.prompt([
             {
@@ -72,6 +63,15 @@ export default class Create extends Command {
             },
         ])
         agregatedResponses = {...agregatedResponses, ...response}
+
+        // Collect tls secrets
+        let tlsSecretResponse: { data: any[] }
+        try {
+            tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=${agregatedResponses.namespace}`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
 
         // Certificate name
         response = await inquirer.prompt([
@@ -126,7 +126,7 @@ export default class Create extends Command {
             // Collect issuers
             let issuerResponse:any = []
             try {
-                issuerResponse = await this.api(`kube?target=cm-issuers`, 'get')
+                issuerResponse = await this.api(`kube?target=cm-issuers&namespace=${agregatedResponses.namespace}`, 'get')
             } catch (err) {
                 this.showError(err)
                 process.exit(1)
