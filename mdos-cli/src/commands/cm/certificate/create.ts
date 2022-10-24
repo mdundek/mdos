@@ -3,9 +3,9 @@ import { notEqual } from 'assert'
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
-import Command from '../../base'
+import Command from '../../../base'
 const inquirer = require('inquirer')
-const { error, context, warn, filterQuestions, mergeFlags, info } = require('../../lib/tools')
+const { error, context, warn, filterQuestions, mergeFlags, info } = require('../../../lib/tools')
 
 /**
  * Command
@@ -74,6 +74,15 @@ export default class Create extends Command {
             process.exit(1)
         }
 
+        // Collect Certificates
+        let certificatesResponse:any = []
+        try {
+            certificatesResponse = await this.api(`kube?target=certificates&namespace=${agregatedResponses.namespace}`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+
         // Certificate name
         response = await inquirer.prompt([
             {
@@ -84,7 +93,10 @@ export default class Create extends Command {
                     if (value.trim().length == 0) return `Mandatory field`
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                    else if(tlsSecretResponse.data.find((secret: { metadata: { name: string } }) => secret.metadata.name.toLowerCase() == value.trim().toLowerCase()))
+                    else if(
+                        tlsSecretResponse.data.find((secret: { metadata: { name: string } }) => secret.metadata.name.toLowerCase() == value.trim().toLowerCase()) || 
+                        certificatesResponse.data.find((certificate: { metadata: { name: string } }) => certificate.metadata.name.toLowerCase() == value.trim().toLowerCase())
+                    )
                         return 'Certificate name already exists'
                     return true
                 },
@@ -96,7 +108,7 @@ export default class Create extends Command {
         response = await inquirer.prompt([
             {
                 name: 'useCertManager',
-                message: 'Use cert-manager to generate and manage your certificate, or provide it manually:',
+                message: 'Use cert-manager to generate and manage your certificate, or provide the certificate files manually:',
                 type: 'list',
                 choices: [{
                     name: "Use Cert-Manager",
@@ -113,8 +125,6 @@ export default class Create extends Command {
 
         // Use cert-manager
         if(agregatedResponses.useCertManager) {
-            await this.addNewHost(agregatedResponses.hostnames)
-
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
@@ -124,7 +134,7 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
-            // Collect issuers
+            // Collect issuers & cluster issuers
             let issuerResponse:any = []
             try {
                 issuerResponse = await this.api(`kube?target=cm-issuers&namespace=${agregatedResponses.namespace}`, 'get')
@@ -132,88 +142,57 @@ export default class Create extends Command {
                 this.showError(err)
                 process.exit(1)
             }
+            let clusterIssuerResponse:any = []
+            try {
+                clusterIssuerResponse = await this.api(`kube?target=cm-cluster-issuers`, 'get')
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
+            issuerResponse.data = issuerResponse.data.filter((issuer:any) => {
+                if(issuer.status)
+                    return issuer.status.conditions.find((condition:any) => condition.status == "True" && condition.type == "Ready") ? true : false
+                else
+                    return false
+            }).concat(clusterIssuerResponse.data.filter((issuer:any) => {
+                if(issuer.status)
+                    return issuer.status.conditions.find((condition:any) => condition.status == "True" && condition.type == "Ready") ? true : false
+                else
+                    return false
+            }))
 
             // There are existing issuers already
-            if(issuerResponse.data.length > 0) {
-                const issuerValues = issuerResponse.data.map((issuer:any) => {
-                    return {
-                        name: `${issuer.metadata.name} (${issuer.kind})`,
-                        value: issuer
-                    }
-                })
-                issuerValues.push(new inquirer.Separator())
-                issuerValues.push({
-                    name: "I want to create a new Certificate Issuer",
-                    value: "NEW"
-                })
-                const issResponse = await inquirer.prompt([
-                    {
-                        name: 'issuer',
-                        message: 'What Cert-Manager issuer would you like to use:',
-                        type: 'list',
-                        choices: issuerValues,
-                    },
-                ])
-
-                // Do not use existing, create new issuer
-                if(issResponse.issuer == "NEW") {
-
-                    warn(`If your Issuer is not a "cert-manager" natively supported DNS01 provider (for more information, see: https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers), and you intend on using an external "Webhook" provider to manage DNS01 challanges, then make sure you deployed this "Webhook" provider first before you continue.`)
-                   
-                    // Issuer file path
-                    response = await inquirer.prompt([
-                        {
-                            type: 'text',
-                            name: 'issuerYamlPath',
-                            message: 'Enter the path to your Issuer YAML file',
-                            validate: (value: any) => {
-                                if (value.trim().length == 0) return `Mandatory field`
-                                else if (!fs.existsSync(value)) return 'File path does not exist'
-                                else if (!value.toLowerCase().endsWith(".yaml") && !value.toLowerCase().endsWith(".yml")) return 'File is not a YAML file'
-                                return true
-                            },
-                        }
-                    ])
-                    agregatedResponses = {...agregatedResponses, ...response}
-
-                    // Extract Issuer name
-                    const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
-                    let yamlBlockArray = issuerYaml.split("---")
-                    let issuer = null
-                    try {
-                        // Parse blocks and identify issuer
-                        for(let i=0; i<yamlBlockArray.length; i++) {
-                            yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
-                            if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
-                                issuer = yamlBlockArray[i]
-                            }
-                        }
-                    } catch (error) {
-                        this.showError(error)
-                        process.exit(1)
-                    }
-                    if(!issuer) {
-                        error('The provided yaml file does not seem to be of kind "Issuer".')
-                        process.exit(1)
-                    }
-                    agregatedResponses.issuerName = issuer.metadata.name
-                    agregatedResponses.isClusterIssuer = issuer.kind == "ClusterIssuer" ? true : false
-                    
-                    // Create issuer now
-                    await this.createIssuer(agregatedResponses, issuerYaml)
-
-                    // Then create certificate
-                    await this.createCertificate(agregatedResponses)
-
-                }
-                // Use an existing issuer
-                else {
-                    agregatedResponses.issuerName = issResponse.issuer.metadata.name
-                    agregatedResponses.isClusterIssuer = issResponse.issuer.kind == "ClusterIssuer" ? true : false
-                    agregatedResponses = {...agregatedResponses, ...issResponse}
-                    await this.createCertificate(agregatedResponses)
-                }
+            if(issuerResponse.data.length == 0) {
+                error("There are no Issuers / ClusterIssuers available. Create a new Issuer first and try again.")
+                process.exit(1)
             }
+
+            // Selevct target issuer / cluster issuer
+            const issuerValues = issuerResponse.data.map((issuer:any) => {
+                return {
+                    name: `${issuer.metadata.name} (${issuer.kind})`,
+                    value: issuer
+                }
+            })
+            
+            const issResponse = await inquirer.prompt([
+                {
+                    name: 'issuer',
+                    message: 'What Cert-Manager issuer would you like to use:',
+                    type: 'list',
+                    choices: issuerValues,
+                },
+            ])
+
+            agregatedResponses.issuerName = issResponse.issuer.metadata.name
+            agregatedResponses.isClusterIssuer = issResponse.issuer.kind == "ClusterIssuer" ? true : false
+            agregatedResponses = {...agregatedResponses, ...issResponse}
+
+            // Collect Hostnames / domain names for this certificate
+            await this.addNewHost(agregatedResponses.hostnames)
+
+            // Now generate certificate
+            await this.createCertificate(agregatedResponses)
         } 
         // Manually provide certificate
         else {
@@ -248,27 +227,6 @@ export default class Create extends Command {
             await this.addNewHost(existingHosts)
         }
     } 
-
-    /**
-     * createIssuer
-     * 
-     * @param agregatedResponses 
-     */
-    async createIssuer(agregatedResponses: { namespace: any }, issuerYaml: undefined) {
-        CliUx.ux.action.start('Creating issuer')
-        try {
-            await this.api(`kube`, 'post', {
-                type: 'cm-issuer',
-                namespace: agregatedResponses.namespace,
-                issuerYaml: issuerYaml
-            })
-            CliUx.ux.action.stop()
-        } catch (error) {
-            CliUx.ux.action.stop('error')
-            this.showError(error)
-            process.exit(1)
-        }
-    }
 
     /**
      * createCertificate

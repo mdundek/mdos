@@ -2,9 +2,9 @@ import { Flags, CliUx } from '@oclif/core'
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
-import Command from '../../base'
+import Command from '../../../base'
 const inquirer = require('inquirer')
-const { error, filterQuestions, mergeFlags, info } = require('../../lib/tools')
+const { error, filterQuestions, mergeFlags, info } = require('../../../lib/tools')
 
 /**
  * Command
@@ -88,8 +88,13 @@ export default class List extends Command {
             {
                 name: {
                     header: 'CERTIFICATE NAME',
-                    minWidth: 35,
+                    minWidth: 25,
                     get: (row:any) => row.metadata.name,
+                },
+                issuer: {
+                    header: 'ISSUER NAME',
+                    minWidth: 25,
+                    get: (row:any) => row.spec.issuerRef.name,
                 },
                 status: {
                     header: 'STATUS',
@@ -113,7 +118,7 @@ export default class List extends Command {
             tlsSecretResponse.data,
             {
                 name: {
-                    header: 'AVAILABLE SECRET NAME',
+                    header: 'TLS SECRET NAME',
                     minWidth: 35,
                     get: (row:any) => row.metadata.name,
                 }
@@ -123,8 +128,5 @@ export default class List extends Command {
             }
         )
         console.log()
-
-
-        // console.log(JSON.stringify(certificatesResponse.data, null, 4))
     }
 }

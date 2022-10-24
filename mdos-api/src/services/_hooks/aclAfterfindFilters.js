@@ -160,12 +160,40 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
 }
 
 /**
+ * certManagerClusterIssuersFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const certManagerClusterIssuersFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+    context.result = context.result.filter((issuer) => issuer.kind == "ClusterIssuer" ? true : false)
+    return context
+}
+
+/**
  * tlsSecretFilterHook
  * @param {*} context 
  * @param {*} jwtToken 
  * @returns 
  */
  const tlsSecretFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+    context.result = context.result.filter((secret) => jwtToken.resource_access[secret.metadata.namespace])
+    return context
+}
+
+/**
+ * certificatesFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const certificatesFilterHook = async (context, jwtToken) => {
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
@@ -219,8 +247,12 @@ module.exports = function () {
             return await oidcProviderFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'cm-issuers') {
             return await certManagerIssuersFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'cm-cluster-issuers') {
+            return await certManagerClusterIssuersFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'tls-secrets') {
             return await tlsSecretFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'certificates') {
+            return await certificatesFilterHook(context, jwtToken)
         } else {
             console.log('Unknown filter hook: ', context.params.query, context.path)
         }
