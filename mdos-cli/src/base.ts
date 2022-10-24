@@ -153,7 +153,7 @@ export default abstract class extends Command {
 
         const _validateCookie = async () => {
             const testResponse = await this.api('token-introspect', 'post', { access_token: this.getConfig('ACCESS_TOKEN') }, true)
-
+            
             if(!testResponse.data.active) {
                 // token expired
                 this.setConfig('ACCESS_TOKEN', null)
@@ -216,6 +216,15 @@ export default abstract class extends Command {
             const _userCreds = await _validateCookie()
             return _userCreds
         }
+    }
+
+    /**
+     * introspectJwt
+     * @returns 
+     */
+    async introspectJwt() {
+        const testResponse = await this.api('token-introspect', 'post', { access_token: this.getConfig('ACCESS_TOKEN'), include_roles: true }, true)
+        return testResponse.data
     }
 
     /**

@@ -61,6 +61,8 @@ export default class Create extends Command {
             process.exit(1)
         }
 
+        let issuerObject: { kind: string; metadata: { name: string } }
+
         // Issuer
         if(agregatedResponses.issuerType == "Issuer") {
             // Collect namespaces
@@ -95,7 +97,7 @@ export default class Create extends Command {
             }
 
             // Collect Issuer YAML
-            const issuerObject = await this.collectIssuerYaml(agregatedResponses)
+            issuerObject = await this.collectIssuerYaml(agregatedResponses)
             if(issuerObject.kind.toLowerCase() == 'clusterissuer') {
                 error('Your YAML file is for a "ClusterIssuer", but you selected a "Issuer" as your target.')
                 process.exit(1)
@@ -121,7 +123,7 @@ export default class Create extends Command {
             }
 
             // Collect Issuer YAML
-            const issuerObject = await this.collectIssuerYaml(agregatedResponses)
+            issuerObject = await this.collectIssuerYaml(agregatedResponses)
             if(issuerObject.kind.toLowerCase() == 'issuer') {
                 error('Your YAML file is for a "Issuer", but you selected a "ClusterIssuer" as your target.')
                 process.exit(1)
@@ -149,7 +151,7 @@ export default class Create extends Command {
         CliUx.ux.action.start('Creating issuer')
         try {
             await this.api(`kube`, 'post', {
-                type: 'cm-issuer',
+                type: issuerObject.kind.toLowerCase() == "issuer" ? 'cm-issuer' : 'cm-cluster-issuer',
                 namespace: agregatedResponses.namespace ? agregatedResponses.namespace : null,
                 issuerYaml: fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
             })
