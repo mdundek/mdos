@@ -410,6 +410,86 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * createIstioGateway
+     * 
+     * @param {*} namespaceName 
+     * @param {*} gatewayName 
+     * @param {*} gatewayServers 
+     */
+     async createIstioGateway(namespaceName, gatewayName, gatewayServers) {
+        console.log("UPDATE:", JSON.stringify({
+            apiVersion: 'networking.istio.io/v1beta1',
+            kind: 'Gateway',
+            metadata: {
+                name: gatewayName,
+            },
+            spec: {
+                selector: {
+                    istio: "ingressgateway"
+                },
+                servers: gatewayServers
+            }
+        }, null, 4))
+        // await axios.post(
+        //     `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`,
+        //     {
+        //         apiVersion: 'networking.istio.io/v1beta1',
+        //         kind: 'Gateway',
+        //         metadata: {
+        //             name: gatewayName,
+        //         },
+        //         spec: {
+        //             selector: {
+        //                 istio: "ingressgateway"
+        //             },
+        //             servers: gatewayServers
+        //         }
+        //     },
+        //     this.k8sAxiosHeader
+        // )
+    }
+
+    /**
+     * updateIstioGateway
+     * 
+     * @param {*} namespaceName 
+     * @param {*} gatewayName 
+     * @param {*} gatewayServers 
+     */
+    async updateIstioGateway(namespaceName, gatewayName, gatewayServers) {
+        console.log("UPDATE:", JSON.stringify({
+            apiVersion: 'networking.istio.io/v1beta1',
+            kind: 'Gateway',
+            metadata: {
+                name: gatewayName,
+            },
+            spec: {
+                selector: {
+                    istio: "ingressgateway"
+                },
+                servers: gatewayServers
+            }
+        }, null, 4))
+        // await axios.put(
+        //     `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways/${gatewayName}`,
+        //     {
+        //         apiVersion: 'networking.istio.io/v1beta1',
+        //         kind: 'Gateway',
+        //         metadata: {
+        //             name: gatewayName,
+        //         },
+        //         spec: {
+        //             selector: {
+        //                 istio: "ingressgateway"
+        //             },
+        //             servers: gatewayServers
+        //         }
+        //     },
+        //     this.k8sAxiosHeader
+        // )
+    }
+
+    /**
      *
      *
      * @param {*} namespaceName

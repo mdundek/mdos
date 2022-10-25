@@ -237,14 +237,86 @@ exports.Kube = class Kube extends KubeCore {
          *  CREATE INGRESS GATEWAY
          ******************************************/
          else if (data.type == 'ingress-gateway') {
-            console.log(data)
-            // {
-            //     type: 'ingress-gateway',
-            //     namespace: 'mdos-doc',
-            //     trafficType: 'HTTPS_SIMPLE',
-            //     hosts: [ 'mdos.ga' ],
-            //     tlsSecretName: 'mdos-ga-crt'
-            // }
+            // Check if namespace gateway exists (name: mdos-ns-gateway).
+            const nsGateway = await this.app.get('kube').getIstioGateways(data.namespace, "mdos-ns-gateway")
+
+            // New gateway
+            if(nsGateway.length == 0) {
+                if(data.trafficType == "HTTPS_SIMPLE") {
+                    await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
+                        hosts: data.hosts,
+                        port: {
+                            name: "https",
+                            number: 443,
+                            protocol: "HTTPS"
+                        },
+                        tls: {
+                            credentialName: data.tlsSecretName,
+                            mode: "SIMPLE"
+                        }
+                    }])
+                } else if(data.trafficType == "HTTPS_PASSTHROUGH") {
+                    await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
+                        hosts: data.hosts,
+                        port: {
+                            name: "https-443",
+                            number: 443,
+                            protocol: "HTTPS"
+                        },
+                        tls: {
+                            mode: "PASSTHROUGH"
+                        }
+                    }])
+                } else {
+                    await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
+                        hosts: data.hosts,
+                        port: {
+                            name: "http",
+                            number: 80,
+                            protocol: "HTTP"
+                        }
+                    }])
+                }
+            } 
+            // Existing gateway
+            else {
+                if(data.trafficType == "HTTPS_SIMPLE") {
+                    nsGateway[0].spec.servers.push({
+                        hosts: data.hosts,
+                        port: {
+                            name: "https",
+                            number: 443,
+                            protocol: "HTTPS"
+                        },
+                        tls: {
+                            credentialName: data.tlsSecretName,
+                            mode: "SIMPLE"
+                        }
+                    })
+                } else if(data.trafficType == "HTTPS_PASSTHROUGH") {
+                    nsGateway[0].spec.servers.push({
+                        hosts: data.hosts,
+                        port: {
+                            name: "https-443",
+                            number: 443,
+                            protocol: "HTTPS"
+                        },
+                        tls: {
+                            mode: "PASSTHROUGH"
+                        }
+                    })
+                } else {
+                    nsGateway[0].spec.servers.push({
+                        hosts: data.hosts,
+                        port: {
+                            name: "http",
+                            number: 80,
+                            protocol: "HTTP"
+                        }
+                    })
+                }
+                await this.app.get('kube').updateIstioGateway(data.namespace, "mdos-ns-gateway", nsGateway[0].spec.servers)
+            }
         }
         /******************************************
          *  CREATE NEW TENANT NAMESPACE
