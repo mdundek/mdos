@@ -10,6 +10,8 @@ mdos-setup/cloudflare.ini
 mdos-setup/deprecated/*
 mdos-setup/dep/mdos-api
 mdos-setup/dep/certs
+mdos-setup/dep/cert-manager/cloudflare-issuer-test.yaml
+mdos-setup/dep/cert-manager/freenom-cluster-issuer-test.yaml
 mdos-docs/.$architecture.drawio.bkp
 mdos-docs/.$architecture.drawio.dtmp
 mdos-docs/draw.io/.$architecture.drawio.bkp
