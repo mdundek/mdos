@@ -234,6 +234,12 @@ exports.Kube = class Kube extends KubeCore {
             return data
         }
         /******************************************
+         *  CREATE INGRESS GATEWAY
+         ******************************************/
+         else if (data.type == 'ingress-gateway') {
+            console.log(data)
+        }
+        /******************************************
          *  CREATE NEW TENANT NAMESPACE
          ******************************************/
         else if (data.type == 'tenantNamespace') {
