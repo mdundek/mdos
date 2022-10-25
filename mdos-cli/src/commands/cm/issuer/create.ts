@@ -103,6 +103,15 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
+            // Display Name
+            if(issuerObject.metadata.name) {
+                info(`${issuerObject.kind} name: ${issuerObject.metadata.name}`)
+            }
+            else {
+                error('Your Issuer does not have a name.')
+                process.exit(1)
+            }
+
             // Make sure the issuer name does not already exist
             if(issuerResponse.data.find((issuer:any) => issuer.metadata.name.toLowerCase() == issuerObject.metadata.name.toLowerCase())) {
                 error(`The Issuer name "${issuerObject.metadata.name}" already exists`)
@@ -126,6 +135,15 @@ export default class Create extends Command {
             issuerObject = await this.collectIssuerYaml(agregatedResponses)
             if(issuerObject.kind.toLowerCase() == 'issuer') {
                 error('Your YAML file is for a "Issuer", but you selected a "ClusterIssuer" as your target.')
+                process.exit(1)
+            }
+
+            // Display Name
+            if(issuerObject.metadata.name) {
+                info(`${issuerObject.kind} name: ${issuerObject.metadata.name}`)
+            }
+            else {
+                error('Your Issuer does not have a name.')
                 process.exit(1)
             }
 
