@@ -238,6 +238,13 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
          else if (data.type == 'ingress-gateway') {
             console.log(data)
+            // {
+            //     type: 'ingress-gateway',
+            //     namespace: 'mdos-doc',
+            //     trafficType: 'HTTPS_SIMPLE',
+            //     hosts: [ 'mdos.ga' ],
+            //     tlsSecretName: 'mdos-ga-crt'
+            // }
         }
         /******************************************
          *  CREATE NEW TENANT NAMESPACE

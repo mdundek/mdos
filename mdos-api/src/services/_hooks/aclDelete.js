@@ -168,6 +168,30 @@ const oidcProviderDeleteHook = (context, jwtToken) => {
 }
 
 /**
+ * ingressGatewayDeleteHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const ingressGatewayDeleteHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
+        return context
+    }
+
+    // If namespace admin or write role
+    if (
+        jwtToken.resource_access[context.params.query.namespace] &&
+        (jwtToken.resource_access[context.params.query.namespace].roles.includes('admin') || jwtToken.resource_access[context.params.query.namespace].roles.includes('k8s-write'))
+    ) {
+        return context
+    }
+
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to delete Ingress Gateway configs')
+}
+
+/**
  * Export
  *
  * @return {*} 
@@ -208,12 +232,14 @@ module.exports = function () {
             return await clusterIssuerDeleteHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'cm-issuer') {
             return await issuerDeleteHook(context, jwtToken)
-        } else if (context.path == 'kube' && context.params.query.target == 'certificate') {
+        } else if (context.path == 'kube' && context.params.query.target == 'cm-certificate') {
             return await certificateDeleteHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'ingress-gateway') {
+            return await ingressGatewayDeleteHook(context, jwtToken)
         } else if (context.path == 'oidc-provider' && !context.params.query.target) {
             return await oidcProviderDeleteHook(context, jwtToken)
         } else {
-            console.log('Unknown: ', context.params.query, context.path)
+            console.log('Unknown delete hook: ', context.params.query, context.path)
         }
 
         return context
