@@ -328,7 +328,16 @@ exports.Kube = class Kube extends KubeCore {
                     throw new Error("ERROR: An unknown error occured")
                 }
             }
-        } else {
+        }
+        /******************************************
+         *  VALIDATE GATEWAY AVAILABLE HOSTS
+         ******************************************/
+        else if (data.type == 'validate-ingress-gtw-hosts') {
+            const matrix = await app.get("kube").generateIngressGatewayDomainMatrix(data.hosts)
+            return app.get("kube").ingressGatewayTargetAvailable(matrix, data.trafficType)
+        }
+        // ****************************************
+        else {
             throw new BadRequest('ERROR: Malformed API request')
         }
         return data

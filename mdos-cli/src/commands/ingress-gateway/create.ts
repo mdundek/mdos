@@ -31,78 +31,6 @@ export default class Create extends Command {
 
         let agregatedResponses:any = {}
 
-        // Collect gateway name
-        let response = await inquirer.prompt({
-            type: 'text',
-            name: 'name',
-            message: 'Enter a name for this new Ingress-Gateway:',
-            validate: (value: any) => {
-                if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                return true
-            },
-        })
-        agregatedResponses = {...agregatedResponses, ...response}
-
-        // Collect hostname target type (wildcard or list)
-        response = await inquirer.prompt({
-            type: 'list',
-            name: 'domainType',
-            message: 'What type of domain name listener would you like to apply for this ingress gateway?',
-            choices: [{
-                name: "Wildcard domain - route traffic for all subdomains for a given root-domain (ex. *.mydomain.com)",
-                value: "wildcard"
-            }, {
-                name: "List of one or more fully qualified domain names",
-                value: "list"
-            }],
-        })
-        agregatedResponses = {...agregatedResponses, ...response}
-
-        // If wildcard
-        await inquirer.prompt({
-            when: () => {
-                return agregatedResponses.domainType == "wildcard"
-            },
-            type: 'text',
-            name: 'domain',
-            message: 'Enter the root domain to configure for this Ingress Gateway (ex. *.mydomain.com):',
-            validate: (value: any) => {
-                if (value.trim().length == 0) return `Mandatory field`
-
-                // Domain valid, save it now
-                agregatedResponses.hosts = [value]
-
-                return true
-            },
-        })
-
-        // If domain list
-        if(agregatedResponses.domainType == "list") {
-            const hostList: string | any[] = []
-            await this.addNewHost(hostList)
-            agregatedResponses.hosts = hostList
-        }
-
-        // Gateway type
-        response = await inquirer.prompt({
-            type: 'list',
-            name: 'gatewayType',
-            message: 'What type of traffic type would you like to enforce with this gateway?',
-            choices: [{
-                name: "HTTP (Listen on port 80, forwards to port 80)",
-                value: "HTTP"
-            }, {
-                name: "HTTPS, do not terminate TLS (Listen on port 443, forwards to port 443)",
-                value: "HTTPS_PASSTHROUGH"
-            }, {
-                name: "HTTPS, terminate TLS on gateway (Listen on port 443, forwards to port 80)",
-                value: "HTTPS_SIMPLE"
-            }],
-        })
-        agregatedResponses = {...agregatedResponses, ...response}
-
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
@@ -111,53 +39,210 @@ export default class Create extends Command {
             this.showError(error)
             process.exit(1)
         }
-        
-        // Make sure hostnames are not already configured on the cluster
-        const hostnameGwMatchesBuffer:any = {}
-        for(const host of agregatedResponses.hosts) {
-            // Get all gateways that have a matching hostname config
-            let gtwResponse
+
+        // Collect namespaces
+        let nsResponse
+        try {
+            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+
+        // Select target namespace
+        let response = await inquirer.prompt([
+            {
+                name: 'namespace',
+                message: 'Select namespace for which you wish to edit the Ingress Gateway',
+                type: 'list',
+                choices: nsResponse.data.map((o: { name: any }) => {
+                    return { name: o.name }
+                }),
+            },
+        ])
+        agregatedResponses = {...agregatedResponses, ...response}
+
+        // Gateway type
+        response = await inquirer.prompt({
+            type: 'list',
+            name: 'trafficType',
+            message: 'What type of traffic are you intending to enforce for this config?',
+            choices: [{
+                name: "HTTP (Listen on port 80, forwards to port 80)",
+                value: "HTTP"
+            }, {
+                name: "HTTPS, pass-through (Listen on port 443, forwards to port 443)",
+                value: "HTTPS_PASSTHROUGH"
+            }, {
+                name: "HTTPS, terminate TLS (Listen on port 443, forwards to port 80)",
+                value: "HTTPS_SIMPLE"
+            }],
+        })
+        agregatedResponses = {...agregatedResponses, ...response}
+
+        let tlsSecretResponse: { data: any[] }
+        if(agregatedResponses.trafficType == "HTTPS_SIMPLE") {
+            // Collect tls secrets
             try {
-                gtwResponse = await this.api(`kube?target=gateways&host=${host}`, 'get')
+                tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=${agregatedResponses.namespace}`, 'get')
             } catch (err) {
                 this.showError(err)
                 process.exit(1)
             }
-
-            console.log(JSON.stringify(gtwResponse.data, null, 4))
-
-            // If maches found, check to see if there is already one with the gateway type we want configured for this hostname
-            if(gtwResponse.data.length > 0) {
-                hostnameGwMatchesBuffer[host] = gtwResponse.data
-
-                const typeMatch = gtwResponse.data.find((gtw: any) => {
-
-                    if(agregatedResponses.gatewayType != "HTTP") {
-                        if(gtw.spec.serverMatch && gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "SIMPLE" && agregatedResponses.gatewayType == "HTTPS_SIMPLE") {
-                            return true
-                        } else if(gtw.spec.serverMatch && gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "PASSTHROUGH" && agregatedResponses.gatewayType == "HTTPS_PASSTHROUGH") {
-                            return true
-                        }
-                    } else {
-                        if(gtw.spec.serverMatch && gtw.spec.serverMatch.http)
-                            return true
-                    }
-                    return false                
-                })
-
-                console.log(typeMatch)
-
-
-                // If not wildcard, exclude matching wildcards since this new config will overrule the wildcard
-                if(agregatedResponses.domainType == "list" && typeMatch && !typeMatch.spec.wildcardMatch) {
-                    error(`The host domain "${host}" already has an associated Gateway (${typeMatch.metadata.name})`)
-                    process.exit(1)
-                } else if(agregatedResponses.domainType == "wildcard" && typeMatch && typeMatch.spec.wildcardMatch) {
-                    error(`The host domain "${host}" already has an associated Gateway (${typeMatch.metadata.name})`)
-                    process.exit(1)
-                }
+            if(tlsSecretResponse.data.length == 0) {
+                error("There are no TLS Secrets available in this namespace")
+                process.exit(1)
             }
         }
+
+        // Collect hostnames to configure for this server config
+        const hostList: string | any[] = []
+        await this.addNewHost(hostList)
+        agregatedResponses.hosts = hostList
+        
+        // Check if hosts are available for configuration
+        let hostAvailableMatrix
+        try {
+            hostAvailableMatrix = await this.api(`kube`, 'post', {
+                type: 'validate-ingress-gtw-hosts',
+                hosts: agregatedResponses.hosts,
+                trafficType: agregatedResponses.trafficType
+            });
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
+
+        console.log(hostAvailableMatrix)
+
+
+        // // Collect gateway name
+        // let response = await inquirer.prompt({
+        //     type: 'text',
+        //     name: 'name',
+        //     message: 'Enter a name for this new Ingress-Gateway:',
+        //     validate: (value: any) => {
+        //         if (value.trim().length == 0) return `Mandatory field`
+        //         else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+        //             return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+        //         return true
+        //     },
+        // })
+        // agregatedResponses = {...agregatedResponses, ...response}
+
+        // // Collect hostname target type (wildcard or list)
+        // response = await inquirer.prompt({
+        //     type: 'list',
+        //     name: 'domainType',
+        //     message: 'What type of domain name listener would you like to apply for this ingress gateway?',
+        //     choices: [{
+        //         name: "Wildcard domain - route traffic for all subdomains for a given root-domain (ex. *.mydomain.com)",
+        //         value: "wildcard"
+        //     }, {
+        //         name: "List of one or more fully qualified domain names",
+        //         value: "list"
+        //     }],
+        // })
+        // agregatedResponses = {...agregatedResponses, ...response}
+
+        // // If wildcard
+        // await inquirer.prompt({
+        //     when: () => {
+        //         return agregatedResponses.domainType == "wildcard"
+        //     },
+        //     type: 'text',
+        //     name: 'domain',
+        //     message: 'Enter the root domain to configure for this Ingress Gateway (ex. *.mydomain.com):',
+        //     validate: (value: any) => {
+        //         if (value.trim().length == 0) return `Mandatory field`
+
+        //         // Domain valid, save it now
+        //         agregatedResponses.hosts = [value]
+
+        //         return true
+        //     },
+        // })
+
+        // // If domain list
+        // if(agregatedResponses.domainType == "list") {
+        //     const hostList: string | any[] = []
+        //     await this.addNewHost(hostList)
+        //     agregatedResponses.hosts = hostList
+        // }
+
+        // // Gateway type
+        // response = await inquirer.prompt({
+        //     type: 'list',
+        //     name: 'gatewayType',
+        //     message: 'What type of traffic type would you like to enforce with this gateway?',
+        //     choices: [{
+        //         name: "HTTP (Listen on port 80, forwards to port 80)",
+        //         value: "HTTP"
+        //     }, {
+        //         name: "HTTPS, do not terminate TLS (Listen on port 443, forwards to port 443)",
+        //         value: "HTTPS_PASSTHROUGH"
+        //     }, {
+        //         name: "HTTPS, terminate TLS on gateway (Listen on port 443, forwards to port 80)",
+        //         value: "HTTPS_SIMPLE"
+        //     }],
+        // })
+        // agregatedResponses = {...agregatedResponses, ...response}
+
+        // // Make sure we have a valid oauth2 cookie token
+        // // otherwise, collect it
+        // try {
+        //     await this.validateJwt()
+        // } catch (error) {
+        //     this.showError(error)
+        //     process.exit(1)
+        // }
+        
+        // // Make sure hostnames are not already configured on the cluster
+        // const hostnameGwMatchesBuffer:any = {}
+        // for(const host of agregatedResponses.hosts) {
+        //     // Get all gateways that have a matching hostname config
+        //     let gtwResponse
+        //     try {
+        //         gtwResponse = await this.api(`kube?target=gateways&host=${host}`, 'get')
+        //     } catch (err) {
+        //         this.showError(err)
+        //         process.exit(1)
+        //     }
+
+        //     console.log(JSON.stringify(gtwResponse.data, null, 4))
+
+        //     // If maches found, check to see if there is already one with the gateway type we want configured for this hostname
+        //     if(gtwResponse.data.length > 0) {
+        //         hostnameGwMatchesBuffer[host] = gtwResponse.data
+
+        //         const typeMatch = gtwResponse.data.find((gtw: any) => {
+
+        //             if(agregatedResponses.gatewayType != "HTTP") {
+        //                 if(gtw.spec.serverMatch && gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "SIMPLE" && agregatedResponses.gatewayType == "HTTPS_SIMPLE") {
+        //                     return true
+        //                 } else if(gtw.spec.serverMatch && gtw.spec.serverMatch.tls && gtw.spec.serverMatch.tls.mode == "PASSTHROUGH" && agregatedResponses.gatewayType == "HTTPS_PASSTHROUGH") {
+        //                     return true
+        //                 }
+        //             } else {
+        //                 if(gtw.spec.serverMatch && gtw.spec.serverMatch.http)
+        //                     return true
+        //             }
+        //             return false                
+        //         })
+
+        //         console.log(typeMatch)
+
+
+        //         // If not wildcard, exclude matching wildcards since this new config will overrule the wildcard
+        //         if(agregatedResponses.domainType == "list" && typeMatch && !typeMatch.spec.wildcardMatch) {
+        //             error(`The host domain "${host}" already has an associated Gateway (${typeMatch.metadata.name})`)
+        //             process.exit(1)
+        //         } else if(agregatedResponses.domainType == "wildcard" && typeMatch && typeMatch.spec.wildcardMatch) {
+        //             error(`The host domain "${host}" already has an associated Gateway (${typeMatch.metadata.name})`)
+        //             process.exit(1)
+        //         }
+        //     }
+        // }
 
         // // If HTTP, go ahead and generate gateway
         // if(agregatedResponses.gatewayType == "HTTP") {
@@ -312,27 +397,27 @@ export default class Create extends Command {
         }
     }
 
-    /**
-     * generateHttpGateway
-     * @param responses 
-     */
-    async generateHttpGateway(responses: any) {
+    // /**
+    //  * generateHttpGateway
+    //  * @param responses 
+    //  */
+    // async generateHttpGateway(responses: any) {
 
-    }
+    // }
 
-    /**
-     * generateHttpsPassthroughGateway
-     * @param responses 
-     */
-     async generateHttpsPassthroughGateway(responses: any) {
+    // /**
+    //  * generateHttpsPassthroughGateway
+    //  * @param responses 
+    //  */
+    //  async generateHttpsPassthroughGateway(responses: any) {
 
-    }
+    // }
 
-    /**
-     * generateHttpsSimple
-     * @param responses 
-     */
-     async generateHttpsSimple(responses: any) {
+    // /**
+    //  * generateHttpsSimple
+    //  * @param responses 
+    //  */
+    //  async generateHttpsSimple(responses: any) {
 
-    }
+    // }
 }

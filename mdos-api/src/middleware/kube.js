@@ -352,7 +352,104 @@ config:
         }
     }
 
-    
+    /**
+     * generateIngressGatewayDomainMatrix
+     * 
+     * @param {*} domains 
+     */
+    async generateIngressGatewayDomainMatrix(domains) {
+        const domainMatrix = {}
+        domains.forEach(domain => {
+            if(domain.startsWith(".")) domain = `*${domain}` // normalize
+            domainMatrix[domain] = {
+                "HTTPS_PASSTHROUGH": { match: "NONE" },
+                "HTTPS_SIMPLE": { match: "NONE" },
+                "HTTP": { match: "NONE" }
+            }
+        })
+
+        // Collect all gateway configs
+        const allGatewayConfigs = await this.getIstioGateways("")
+
+        // Build matrix value for each domain name, one at a time
+        domains.forEach(domain => {
+            if(domain.startsWith(".")) domain = `*${domain}` // normalize
+            // Look for exact matches in the available gateways first 
+            allGatewayConfigs.forEach(gateway => {
+                gateway.spec.servers.forEach(server => {
+                    server.hosts.forEach(gtwDomain => {
+                        if(gtwDomain.startsWith(".")) gtwDomain = `*${gtwDomain}` // normalize
+                        // If exact match
+                        if(domain.toLowerCase() == gtwDomain.toLowerCase()) {
+                            if(server.tls && server.tls.mode == "PASSTHROUGH") {
+                                domainMatrix[domain]["HTTPS_PASSTHROUGH"] = { match: "EXACT", gtw: gateway, gtwDomainMatch: gtwDomain }
+                            } else if(server.tls && server.tls.mode == "SIMPLE") {
+                                domainMatrix[domain]["HTTPS_SIMPLE"] = { match: "EXACT", gtw: gateway, gtwDomainMatch: gtwDomain }
+                            } else if(!server.tls) {
+                                domainMatrix[domain]["HTTP"] = { match: "EXACT", gtw: gateway, gtwDomainMatch: gtwDomain }
+                            }
+                        }
+                    })
+                })
+            })
+
+            // Look for wildcard matches in the available gateways for domains that do not have a match yet
+            allGatewayConfigs.forEach(gateway => {
+                gateway.spec.servers.forEach(server => {
+                    server.hosts.forEach(gtwDomain => {
+                        if(gtwDomain.startsWith(".")) gtwDomain = `*${gtwDomain}` // normalize
+                        // Gateway domain config is wildcard, wildcard matches can be evaluated,
+                        // otherwise there is no point in going further
+                        if(gtwDomain.startsWith("*.")) {
+                            // Is there already a exact match?
+                            let fairGame = false
+                            if(server.tls && server.tls.mode == "PASSTHROUGH" && domainMatrix[domain]["HTTPS_PASSTHROUGH"].match == "NONE") {
+                                fairGame = true
+                            } else if(server.tls && server.tls.mode == "SIMPLE" && domainMatrix[domain]["HTTPS_SIMPLE"].match == "NONE") {
+                                fairGame = true
+                            } else if(!server.tls && domainMatrix[domain]["HTTP"].match == "NONE"){
+                                fairGame = true
+                            }
+
+                            // No exact match, evaluate further
+                            if(fairGame) {
+                                // If wildcard match
+                                if(domain.toLowerCase().endsWith(gtwDomain.substring(1).toLowerCase())) {
+                                    if(server.tls && server.tls.mode == "PASSTHROUGH") {
+                                        domainMatrix[domain]["HTTPS_PASSTHROUGH"] = { match: "WILDCARD", gtw: gateway, gtwDomainMatch: gtwDomain }
+                                    } else if(server.tls && server.tls.mode == "SIMPLE") {
+                                        domainMatrix[domain]["HTTPS_SIMPLE"] = { match: "WILDCARD", gtw: gateway, gtwDomainMatch: gtwDomain }
+                                    } else if(!server.tls){
+                                        domainMatrix[domain]["HTTP"] = { match: "WILDCARD", gtw: gateway, gtwDomainMatch: gtwDomain }
+                                    }
+                                }
+                            }
+                        }
+                    })
+                })
+            })
+        })
+
+        return domainMatrix
+    }
+
+    /**
+     * ingressGatewayTargetAvailable
+     * 
+     * @param {*} ingressGatewayDomainMatrix 
+     * @param {*} gatewayServerType 
+     */
+    ingressGatewayTargetAvailable(ingressGatewayDomainMatrix, gatewayServerType) {
+        const domainTargetsAvailable = {}
+        Object.keys(ingressGatewayDomainMatrix).forEach(domain => {
+            if(gatewayServerType == "HTTP") {
+                domainTargetsAvailable[domain] = ingressGatewayDomainMatrix[domain]["HTTP"].match == "EXACT" ? false : true
+            } else if(gatewayServerType == "HTTPS_PASSTHROUGH" || gatewayServerType == "HTTPS_SIMPLE") {
+                domainTargetsAvailable[domain] = (ingressGatewayDomainMatrix[domain]["HTTPS_PASSTHROUGH"].match == "EXACT" || ingressGatewayDomainMatrix[domain]["HTTPS_SIMPLE"].match == "EXACT") ? false : true
+            } 
+        })
+        return domainTargetsAvailable
+    }
 }
 
 module.exports = Kube
