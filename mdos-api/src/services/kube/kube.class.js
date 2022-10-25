@@ -413,7 +413,6 @@ exports.Kube = class Kube extends KubeCore {
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
-
             await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type)
         } 
         /******************************************
@@ -430,6 +429,10 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
          else if (params.query.target == 'certificate') {
             await this.app.get("kube").deleteCertManagerCertificate(params.query.namespace, id)
+            const hasSecret = await this.app.get('kube').hasSecret(params.query.namespace, id)
+            if(hasSecret) {
+                await this.app.get('kube').deleteSecret(params.query.namespace, id)
+            }
         }
         // ***************************************
         else {

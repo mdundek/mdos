@@ -64,7 +64,7 @@ export default class Delete extends Command {
         // Collect Certificates
         let certResponse:any = []
         try {
-            certResponse = await this.api(`kube?target=certificate&namespace=${response.namespace}`, 'get')
+            certResponse = await this.api(`kube?target=certificates&namespace=${response.namespace}`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)

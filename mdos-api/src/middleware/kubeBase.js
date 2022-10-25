@@ -109,7 +109,12 @@ class KubeBase extends KubeBaseConstants {
      */
      async getTlsSecrets(namespaceName, secretName) {
         const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
-        return res.data.items.filter(secret => secret.type == "kubernetes.io/tls")
+        if(secretName) {
+            const target = res.data.items.filter(secret => secret.type == "kubernetes.io/tls").find(secret => secret.metadata.name == secretName)
+            return target ? [target] : []
+        } else {
+            return res.data.items.filter(secret => secret.type == "kubernetes.io/tls")
+        }
     }
 
     /**
