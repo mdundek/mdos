@@ -417,36 +417,23 @@ class KubeBase extends KubeBaseConstants {
      * @param {*} gatewayServers 
      */
      async createIstioGateway(namespaceName, gatewayName, gatewayServers) {
-        console.log("UPDATE:", JSON.stringify({
-            apiVersion: 'networking.istio.io/v1beta1',
-            kind: 'Gateway',
-            metadata: {
-                name: gatewayName,
-            },
-            spec: {
-                selector: {
-                    istio: "ingressgateway"
+        await axios.post(
+            `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`,
+            {
+                apiVersion: 'networking.istio.io/v1beta1',
+                kind: 'Gateway',
+                metadata: {
+                    name: gatewayName,
                 },
-                servers: gatewayServers
-            }
-        }, null, 4))
-        // await axios.post(
-        //     `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`,
-        //     {
-        //         apiVersion: 'networking.istio.io/v1beta1',
-        //         kind: 'Gateway',
-        //         metadata: {
-        //             name: gatewayName,
-        //         },
-        //         spec: {
-        //             selector: {
-        //                 istio: "ingressgateway"
-        //             },
-        //             servers: gatewayServers
-        //         }
-        //     },
-        //     this.k8sAxiosHeader
-        // )
+                spec: {
+                    selector: {
+                        istio: "ingressgateway"
+                    },
+                    servers: gatewayServers
+                }
+            },
+            this.k8sAxiosHeader
+        )
     }
 
     /**
@@ -457,36 +444,23 @@ class KubeBase extends KubeBaseConstants {
      * @param {*} gatewayServers 
      */
     async updateIstioGateway(namespaceName, gatewayName, gatewayServers) {
-        console.log("UPDATE:", JSON.stringify({
-            apiVersion: 'networking.istio.io/v1beta1',
-            kind: 'Gateway',
-            metadata: {
-                name: gatewayName,
-            },
-            spec: {
-                selector: {
-                    istio: "ingressgateway"
+        await axios.put(
+            `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways/${gatewayName}`,
+            {
+                apiVersion: 'networking.istio.io/v1beta1',
+                kind: 'Gateway',
+                metadata: {
+                    name: gatewayName,
                 },
-                servers: gatewayServers
-            }
-        }, null, 4))
-        // await axios.put(
-        //     `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways/${gatewayName}`,
-        //     {
-        //         apiVersion: 'networking.istio.io/v1beta1',
-        //         kind: 'Gateway',
-        //         metadata: {
-        //             name: gatewayName,
-        //         },
-        //         spec: {
-        //             selector: {
-        //                 istio: "ingressgateway"
-        //             },
-        //             servers: gatewayServers
-        //         }
-        //     },
-        //     this.k8sAxiosHeader
-        // )
+                spec: {
+                    selector: {
+                        istio: "ingressgateway"
+                    },
+                    servers: gatewayServers
+                }
+            },
+            this.k8sAxiosHeader
+        )
     }
 
     /**
