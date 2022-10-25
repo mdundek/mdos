@@ -443,7 +443,7 @@ class KubeBase extends KubeBaseConstants {
      * @param {*} gatewayName 
      * @param {*} gatewayServers 
      */
-    async updateIstioGateway(namespaceName, gatewayName, gatewayServers) {
+    async updateIstioGateway(namespaceName, gatewayName, resourceVersion, gatewayServers) {
         await axios.put(
             `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways/${gatewayName}`,
             {
@@ -451,6 +451,7 @@ class KubeBase extends KubeBaseConstants {
                 kind: 'Gateway',
                 metadata: {
                     name: gatewayName,
+                    resourceVersion: resourceVersion
                 },
                 spec: {
                     selector: {

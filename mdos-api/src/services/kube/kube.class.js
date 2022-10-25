@@ -316,7 +316,7 @@ exports.Kube = class Kube extends KubeCore {
                     })
                 }
                 try {
-                    await this.app.get('kube').updateIstioGateway(data.namespace, "mdos-ns-gateway", nsGateway[0].spec.servers)
+                    await this.app.get('kube').updateIstioGateway(data.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
                 } catch (error) {
                     console.log(error)
                     throw error
