@@ -246,7 +246,7 @@ exports.Kube = class Kube extends KubeCore {
                     await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
                         hosts: data.hosts,
                         port: {
-                            name: "https",
+                            name: `https-${nanoid(10)}`,
                             number: 443,
                             protocol: "HTTPS"
                         },
@@ -259,7 +259,7 @@ exports.Kube = class Kube extends KubeCore {
                     await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
                         hosts: data.hosts,
                         port: {
-                            name: "https-443",
+                            name: `https-${nanoid(10)}`,
                             number: 443,
                             protocol: "HTTPS"
                         },
@@ -271,7 +271,7 @@ exports.Kube = class Kube extends KubeCore {
                     await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
                         hosts: data.hosts,
                         port: {
-                            name: "http",
+                            name: `http-${nanoid(10)}`,
                             number: 80,
                             protocol: "HTTP"
                         }
@@ -284,7 +284,7 @@ exports.Kube = class Kube extends KubeCore {
                     nsGateway[0].spec.servers.push({
                         hosts: data.hosts,
                         port: {
-                            name: "https",
+                            name: `https-${nanoid(10)}`,
                             number: 443,
                             protocol: "HTTPS"
                         },
@@ -297,7 +297,7 @@ exports.Kube = class Kube extends KubeCore {
                     nsGateway[0].spec.servers.push({
                         hosts: data.hosts,
                         port: {
-                            name: "https-443",
+                            name: `https-${nanoid(10)}`,
                             number: 443,
                             protocol: "HTTPS"
                         },
@@ -309,7 +309,7 @@ exports.Kube = class Kube extends KubeCore {
                     nsGateway[0].spec.servers.push({
                         hosts: data.hosts,
                         port: {
-                            name: "http",
+                            name: `http-${nanoid(10)}`,
                             number: 80,
                             protocol: "HTTP"
                         }
