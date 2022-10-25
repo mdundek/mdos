@@ -334,7 +334,10 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         else if (data.type == 'validate-ingress-gtw-hosts') {
             const matrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(data.hosts)
-            return this.app.get("kube").ingressGatewayTargetAvailable(matrix, data.trafficType)
+            return {
+                matrix: matrix,
+                available: this.app.get("kube").ingressGatewayTargetAvailable(matrix, data.trafficType)
+            }
         }
         // ****************************************
         else {
