@@ -190,6 +190,7 @@ class MdosCore extends CommonCore {
                     } else {
                         throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
                     }
+                    return ingress
                 })
             }
 
