@@ -792,12 +792,7 @@ install_longhorn() {
 
     # Wait for all pods to be on
     wait_all_ns_pods_healthy "longhorn-system"
-}
 
-# ############################################
-# ############# PROTEECT LONGHORN ############
-# ############################################
-protect_longhorn() {
     # Create Virtual Service
     set +Ee
     while [ -z $VS_SUCCESS ]; do
@@ -829,7 +824,12 @@ EOF
         fi
     done
     set -Ee
+}
 
+# ############################################
+# ############# PROTEECT LONGHORN ############
+# ############################################
+protect_longhorn() {
     cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
