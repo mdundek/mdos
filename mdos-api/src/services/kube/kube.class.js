@@ -187,6 +187,7 @@ exports.Kube = class Kube extends KubeCore {
                     }
                 }
             } catch (error) {
+                console.log(error)
                 // Rollback, just in case there aresome residual components that got deployed
                 await rollbackDeployment()
                 throw error
@@ -221,6 +222,7 @@ exports.Kube = class Kube extends KubeCore {
                 }
                 return data
             } catch (error) {
+                console.log(error)
                 await rollbackDeployment()
                 throw error
             }
