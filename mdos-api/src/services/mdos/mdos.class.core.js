@@ -164,8 +164,22 @@ class MdosCore extends CommonCore {
                 component.ingress = component.ingress.map((ingress) => {
                     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
                     if(typeMatch[ingress.matchHost]) {
-                        console.log("Domain name gateway match found")
-                        console.log(JSON.stringify(hostMatrix[ingress.matchHost], null, 4))
+                        let targetGtw = null
+                        if(ingress.trafficType == "http") {
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTP"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].match == "EXACT"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].match == "EXACT"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].match == "WILDCARD"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].match == "WILDCARD"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].gtw
+                        }
+
+                        ingress.gateway = `${targetGtw.metadata.namespace}/${targetGtw.metadata.name}`
+                    } else {
+                        throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
                     }
                 })
             }
