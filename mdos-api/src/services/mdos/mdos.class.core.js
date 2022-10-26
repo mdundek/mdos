@@ -187,8 +187,6 @@ class MdosCore extends CommonCore {
                         }
                         
                         ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
-
-                        console.log(JSON.stringify(ingress, null, 4))
                     } else {
                         throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
                     }

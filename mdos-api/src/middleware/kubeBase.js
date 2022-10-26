@@ -643,12 +643,11 @@ class KubeBase extends KubeBaseConstants {
     async helmInstall(namespace, chartName, values, chart, version) {
         try {
             fs.writeFileSync('./values.yaml', YAML.stringify(values))
-            console.log(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} ${version ? `--version ${version}` : ''} --values ./values.yaml  ${chartName} ${chart} --atomic`)
             await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} ${version ? `--version ${version}` : ''} --values ./values.yaml  ${chartName} ${chart} --atomic`)
         } finally {
-            // if (fs.existsSync('./values.yaml')) {
-            //     fs.rmSync('./values.yaml', { force: true })
-            // }
+            if (fs.existsSync('./values.yaml')) {
+                fs.rmSync('./values.yaml', { force: true })
+            }
         }
     }
 
@@ -735,6 +734,10 @@ class KubeBase extends KubeBaseConstants {
         fs.writeFileSync('./values.yaml', YAML.stringify(values))
 
         try {
+
+            console.log(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --timeout 10m0s --atomic`)
+            console.log(YAML.stringify(values))
+
             await this._asyncChildHelmDeploy(
                 `${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --timeout 10m0s --atomic`,
                 processId,
