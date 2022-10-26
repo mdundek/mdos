@@ -40,7 +40,7 @@ os_check() {
 
 resources_check() {
     # CHECK THAT SUFFICIENT MEMORY AND DISK IS AVAILABLE
-    FREE_MB=$(awk '/MemFree/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
+    FREE_MB=$(awk '/MemAvailable/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
     if [ "$FREE_MB" -lt "$1" ]; then
         error "Insufficient memory, minimum $2 of available (free) memory is required for this installation"
         exit 1
