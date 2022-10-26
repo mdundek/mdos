@@ -544,8 +544,9 @@ exports.Kube = class Kube extends KubeCore {
 
             // Filter out config
             console.log(index + 1)
+            console.log(nsGateway[0].spec.servers)
             nsGateway[0].spec.servers.splice(index + 1, 1)
-
+            console.log(nsGateway[0].spec.servers)
             // Update gateway
             await this.app.get('kube').updateIstioGateway(params.query.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
         }
