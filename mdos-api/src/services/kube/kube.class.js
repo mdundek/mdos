@@ -532,7 +532,7 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         else if (params.query.target == 'ingress-gateway') {
             // Check if namespace gateway exists (name: mdos-ns-gateway).
-            const nsGateway = await this.app.get('kube').getIstioGateways(data.namespace, "mdos-ns-gateway")
+            const nsGateway = await this.app.get('kube').getIstioGateways(params.query.namespace, "mdos-ns-gateway")
 
             // Validation
             if(nsGateway.length == 0) {
