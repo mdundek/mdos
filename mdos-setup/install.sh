@@ -1894,6 +1894,8 @@ EOF
         configure_etc_hosts
     fi
 
+    deploy_reg_chart
+
     # INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
         info "Installing K3S..."
