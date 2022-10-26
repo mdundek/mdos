@@ -77,7 +77,8 @@ components:
             nodePort: 30999
     ingress:
       - name: ingress
-        gateway: mdos/https-gateway-mdos
+        gateways: 
+          - mdos/https-gateway-mdos
         matchHost: keycloak.<DOMAIN>
         targetPort: 443
         trafficType: https

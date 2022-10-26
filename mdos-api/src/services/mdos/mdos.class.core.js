@@ -166,22 +166,29 @@ class MdosCore extends CommonCore {
                 component.ingress = component.ingress.map((ingress) => {
                     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
                     if(typeMatch[ingress.matchHost]) {
-                        let targetGtw = null
-                        if(ingress.trafficType == "http") {
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTP"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw
+                        let targetGtws = []
+
+                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT") {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "WILDCARD") {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
                         }
 
-                        console.log(JSON.stringify(hostMatrix[ingress.matchHost], null, 4))
+                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT") {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD") {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                        } 
 
-                        ingress.gateway = `${targetGtw.metadata.namespace}/${targetGtw.metadata.name}`
+                        if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT") {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                        } else if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD") {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                        }
+                        
+                        ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
+
+                        console.log(JSON.stringify(ingress, null, 4))
                     } else {
                         throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
                     }
