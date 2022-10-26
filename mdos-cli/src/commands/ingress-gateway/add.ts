@@ -1,5 +1,4 @@
 import { Flags, CliUx } from '@oclif/core'
-import { isBuffer } from 'util'
 import Command from '../../base'
 const inquirer = require('inquirer')
 const { error, context, filterQuestions, mergeFlags, info } = require('../../lib/tools')
@@ -8,12 +7,12 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * Command
  *
  * @export
- * @class Create
+ * @class Add
  * @extends {Command}
  */
-export default class Create extends Command {
+export default class Add extends Command {
     static aliases = []
-    static description = 'Create a new ingress gateway'
+    static description = 'Add a new ingress gateway config'
 
     // ******* FLAGS *******
     static flags = {}
@@ -27,7 +26,7 @@ export default class Create extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(Create)
+        const { flags } = await this.parse(Add)
 
         let agregatedResponses:any = {}
 
@@ -53,7 +52,7 @@ export default class Create extends Command {
         let response = await inquirer.prompt([
             {
                 name: 'namespace',
-                message: 'Select namespace for which you wish to edit the Ingress Gateway',
+                message: 'Select namespace for which you wish to edit the Ingress Gateway for',
                 type: 'list',
                 choices: nsResponse.data.map((o: { name: any }) => {
                     return { name: o.name }
@@ -182,7 +181,8 @@ export default class Create extends Command {
      * @param responses 
      */
     async generateGateway(responses: any) {
-        CliUx.ux.action.start('Creating gateway server config')
+        console.log()
+        CliUx.ux.action.start('Creating ingress-gateway server config')
         try {
             await this.api(`kube`, 'post', {
                 type: 'ingress-gateway',

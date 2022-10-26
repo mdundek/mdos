@@ -315,13 +315,8 @@ exports.Kube = class Kube extends KubeCore {
                         }
                     })
                 }
-                try {
-                    await this.app.get('kube').updateIstioGateway(data.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
-                } catch (error) {
-                    console.log(error)
-                    throw error
-                }
                 
+                await this.app.get('kube').updateIstioGateway(data.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
             }
         }
         /******************************************
@@ -455,14 +450,9 @@ exports.Kube = class Kube extends KubeCore {
             // Make sure realm exists
             await this.realmCheck(params.query.realm)
 
-            // Lookup keycloak client if exists
-            let response = await this.app.get('keycloak').getClients(params.query.realm)
-            const clientFound = response.find((o) => o.clientId.toLowerCase() == id.toLowerCase())
-
             // Make sure namespace exists
-            let nsExists = true
             if (!(await this.app.get('kube').hasNamespace(id.toLowerCase()))) {
-                nsExists = false
+                throw new Error("ERROR: Namespace not found")
             }
 
             // Kick off event driven workflow
@@ -536,6 +526,27 @@ exports.Kube = class Kube extends KubeCore {
             if(hasSecret) {
                 await this.app.get('kube').deleteSecret(params.query.namespace, id)
             }
+        }
+        /******************************************
+         *  UNINSTALL / DELETE CERTIFICATE
+         ******************************************/
+        else if (params.query.target == 'ingress-gateway') {
+            // Check if namespace gateway exists (name: mdos-ns-gateway).
+            const nsGateway = await this.app.get('kube').getIstioGateways(data.namespace, "mdos-ns-gateway")
+
+            // Validation
+            if(nsGateway.length == 0) {
+                throw new NotFound('ERROR: Namespace ingress gateway does not exist')
+            }
+            const index = Number(id);
+            if (Number.isInteger(index) && index <=0) throw new BadRequest("Number (integer) expected")
+            else if (index <=0 || index > nsGateway[0].spec.servers.length) throw new BadRequest("Index out of range")
+
+            // Filter out config
+            const remainingServers = nsGateway[0].spec.servers.splice(index, 1)
+
+            // Update gateway
+            await this.app.get('kube').updateIstioGateway(params.query.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, remainingServers)
         }
         // ***************************************
         else {
