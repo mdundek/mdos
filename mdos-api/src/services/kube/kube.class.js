@@ -543,6 +543,7 @@ exports.Kube = class Kube extends KubeCore {
             else if (index <=0 || index > nsGateway[0].spec.servers.length) throw new BadRequest("Index out of range")
 
             // Filter out config
+            console.log(index + 1)
             nsGateway[0].spec.servers.splice(index + 1, 1)
 
             // Update gateway

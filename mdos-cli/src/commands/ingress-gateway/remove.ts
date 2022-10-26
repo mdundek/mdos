@@ -10,9 +10,9 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * @class Delete
  * @extends {Command}
  */
-export default class Delete extends Command {
+export default class Remove extends Command {
     static aliases = []
-    static description = 'Delete an existting ingress gateway config'
+    static description = 'Remove an existting ingress gateway config'
 
     // ******* FLAGS *******
     static flags = {}
@@ -26,7 +26,7 @@ export default class Delete extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(Delete)
+        const { flags } = await this.parse(Remove)
 
         let agregatedResponses:any = {}
 
