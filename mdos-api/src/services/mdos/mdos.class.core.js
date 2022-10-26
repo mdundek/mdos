@@ -179,6 +179,8 @@ class MdosCore extends CommonCore {
                             targetGtw = hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw
                         }
 
+                        console.log(JSON.stringify(hostMatrix[ingress.matchHost], null, 4))
+
                         ingress.gateway = `${targetGtw.metadata.namespace}/${targetGtw.metadata.name}`
                     } else {
                         throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
