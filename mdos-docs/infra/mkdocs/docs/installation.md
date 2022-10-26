@@ -238,8 +238,8 @@ XXX.XXX.XXX.XXX longhorn.mydomain.com
 
 ```sh title="Example of disk mounts in linux"
 # Create mount folders
-mkdir /media/hdd/sdb1/longhorn
-mkdir /media/hdd/sdb2/longhorn
+mkdir -p /media/hdd/sdb1/longhorn
+mkdir -p /media/hdd/sdb2/longhorn
 
 # Get partition UUIDs
 lsblk -o NAME,FSTYPE,UUID
