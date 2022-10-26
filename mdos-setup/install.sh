@@ -29,7 +29,7 @@ echo '
 os_check
 
 # Resource check
-resources_check 3200 4GB
+resources_check 2500 3GB
 
 LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_install.log"
 
