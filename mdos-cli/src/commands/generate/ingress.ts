@@ -44,7 +44,7 @@ export default class Ingress extends Command {
         }
 
         // Load mdos yaml file
-        let appYaml: { components: any[] }
+        let appYaml: any
         try {
             appYaml = YAML.parse(fs.readFileSync(appYamlPath, 'utf8'))
         } catch (error) {
@@ -66,7 +66,6 @@ export default class Ingress extends Command {
         }
 
         const allPortsArray = targetCompYaml.services.map((s: { ports: any }) => s.ports).flat()
-        let oidcProviders: any
 
         let responses = await inquirer.prompt([
             {
@@ -83,7 +82,12 @@ export default class Ingress extends Command {
             {
                 type: 'string',
                 name: 'host',
-                message: 'What hostname do you want to use to access your component port:',
+                message: 'What domain name do you want to use to access your component:',
+                when: (values: any) => {
+                    context('NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).', false, true)
+                    context('You can also use the mdos root wildcard domain and cluster wide wildcard ingress gateway if you like, and use a sub-domain for this ingress.', true, true)
+                    return true
+                },
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
@@ -203,7 +207,7 @@ export default class Ingress extends Command {
 
         targetCompYaml.ingress.push(ing)
 
-        appYaml.components = appYaml.components.map((comp) => (comp.name == compName ? targetCompYaml : comp))
+        appYaml.components = appYaml.components.map((comp:any) => (comp.name == compName ? targetCompYaml : comp))
 
         // Create mdos.yaml file
         try {
