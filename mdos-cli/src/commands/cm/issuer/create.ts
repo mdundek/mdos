@@ -205,7 +205,7 @@ export default class Create extends Command {
                 },
             }
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses.issuerYamlPath = response.issuerYamlPath
 
         // Extract Issuer name
         const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')

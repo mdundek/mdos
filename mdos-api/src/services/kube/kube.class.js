@@ -159,15 +159,15 @@ exports.Kube = class Kube extends KubeCore {
                         if(yamlBlockArray[i].kind == "Issuer") {
                             try {
                                 await this.app.get("kube").kubectlDelete(data.namespace, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {}
+                            } catch (_e) {console.log(_e)}
                         } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
                             try {
                                 await this.app.get("kube").kubectlDelete(null, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {}
+                            } catch (_e) {console.log(_e)}
                         } else {
                             try {
                                 await this.app.get("kube").kubectlDelete(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace ? data.namespace : null, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {}
+                            } catch (_e) {console.log(_e)}
                         }
                     }
                 }
