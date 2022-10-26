@@ -47,6 +47,10 @@ export default class Remove extends Command {
             this.showError(err)
             process.exit(1)
         }
+        if(nsResponse.data.length == 0) {
+            error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+            process.exit(1)
+        }
 
         // Select target namespace
         let response = await inquirer.prompt([

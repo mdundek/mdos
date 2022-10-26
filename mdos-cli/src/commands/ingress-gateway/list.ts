@@ -47,12 +47,16 @@ export default class List extends Command {
             this.showError(err)
             process.exit(1)
         }
+        if(nsResponse.data.length == 0) {
+            error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+            process.exit(1)
+        }
 
         // Select target namespace
         let response = await inquirer.prompt([
             {
                 name: 'namespace',
-                message: 'Select namespace for which you wish to edit the Ingress Gateway for',
+                message: 'Select namespace for which you wish to list Ingress Gateways for',
                 type: 'list',
                 choices: nsResponse.data.map((o: { name: any }) => {
                     return { name: o.name }
