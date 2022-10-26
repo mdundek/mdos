@@ -89,7 +89,7 @@ export default class Add extends Command {
                 process.exit(1)
             }
             if(tlsSecretResponse.data.length == 0) {
-                error("There are no TLS Secrets available in this namespace")
+                error("There are no TLS Secrets available in this namespace. Did you create a certificate in this namespace first?")
                 process.exit(1)
             }
         } else {

@@ -21,7 +21,7 @@ components:
           - port: 80
     ingress:
       - name: main
-        matchHost: mkdocs-mdos.mdundek.network
+        matchHost: mdos.ga
         targetPort: 80
         trafficType: http
     oidc:
