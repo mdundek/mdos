@@ -20,11 +20,16 @@ exports.RegAuthentication = class RegAuthentication {
      * @return {*} 
      */
     async find(params) {
-        const plainCreds = JSON.parse(Buffer.from(params.query.creds, 'base64').toString('utf8'))
-        // Login
-        await this.app.get('keycloak').getUserAccessToken('mdos', plainCreds.username, plainCreds.password)
+        try {
+            const plainCreds = JSON.parse(Buffer.from(params.query.creds, 'base64').toString('utf8'))
+            // Login
+            await this.app.get('keycloak').getUserAccessToken('mdos', plainCreds.username, plainCreds.password)
 
-        // Login successfull, otherwise we would not be here
-        return 'ok'
+            // Login successfull, otherwise we would not be here
+            return 'ok'
+        } catch (error) {
+            console.log(error)
+            throw error
+        }
     }
 }

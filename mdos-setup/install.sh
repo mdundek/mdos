@@ -1894,8 +1894,6 @@ EOF
         configure_etc_hosts
     fi
 
-    deploy_reg_chart
-
     # INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
         info "Installing K3S..."
@@ -1974,6 +1972,8 @@ EOF
         setup_longhorn_vs
         set_env_step_data "INST_STEP_LONGHORN_VS" "1"
     fi
+
+    read -n 1 -r -s -p $'Press enter to continue...\n'
 
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
@@ -2057,11 +2057,11 @@ EOF
     fi
 
     # ENABLE REGISTRY AUTH
-    if [ -z $INST_STEP_REG_AUTH ]; then
-        info "Enabeling MDos registry auth..."
-        deploy_reg_chart 1
-        set_env_step_data "INST_STEP_REG_AUTH" "1"
-    fi
+    # if [ -z $INST_STEP_REG_AUTH ]; then
+    #     info "Enabeling MDos registry auth..."
+    #     deploy_reg_chart 1
+    #     set_env_step_data "INST_STEP_REG_AUTH" "1"
+    # fi
 
     MDOS_SUCCESS=1
 )
