@@ -792,7 +792,9 @@ install_longhorn() {
 
     # Wait for all pods to be on
     wait_all_ns_pods_healthy "longhorn-system"
+}
 
+setup_longhorn_vs() {
     # Create Virtual Service
     set +Ee
     while [ -z $VS_SUCCESS ]; do
@@ -1963,7 +1965,14 @@ EOF
         deploy_istio_gateways
         set_env_step_data "SETUP_ISTIO_GATEWAYS" "1"
     fi
-    
+
+    # SETUP LONGHORN VS
+    if [ -z $INST_STEP_LONGHORN_VS ]; then
+        info "Setup Longhorn virtual service..."
+        setup_longhorn_vs
+        set_env_step_data "INST_STEP_LONGHORN_VS" "1"
+    fi
+
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
         info "Install Registry..."
