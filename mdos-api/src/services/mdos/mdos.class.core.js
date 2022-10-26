@@ -155,26 +155,28 @@ class MdosCore extends CommonCore {
             // Set default ingress type if not set
             if (component.ingress) {
                 component.ingress = component.ingress.map((i) => {
+                    if(i.matchHost.startsWith(".")) i.matchHost = `*${i.matchHost}` // normalize
                     if (!i.trafficType) i.trafficType = 'http'
                     return i
                 })
 
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
+
                 component.ingress = component.ingress.map((ingress) => {
                     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
                     if(typeMatch[ingress.matchHost]) {
                         let targetGtw = null
                         if(ingress.trafficType == "http") {
                             targetGtw = hostMatrix[ingress.matchHost]["HTTP"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].match == "EXACT"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].match == "EXACT"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].match == "WILDCARD"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_SIMPLE"].gtw
-                        } else if(hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].match == "WILDCARD"){
-                            targetGtw = hostMatrix[ingress.matchHost]["HTTP_PASSTHROUGH"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw
+                        } else if(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD"){
+                            targetGtw = hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw
                         }
 
                         ingress.gateway = `${targetGtw.metadata.namespace}/${targetGtw.metadata.name}`
