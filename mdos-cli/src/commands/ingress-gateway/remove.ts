@@ -70,7 +70,7 @@ export default class Remove extends Command {
             process.exit(1)
         }
 
-        if(gtwResponse.data.length == 0) {
+        if(gtwResponse.data.length == 0 || gtwResponse.data[0].spec.servers.length == 0) {
             error("No Ingress Gateway configured yet for this namespace")
             process.exit(1)
         }

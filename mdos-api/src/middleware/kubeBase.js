@@ -465,6 +465,16 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * deleteIstioGateway
+     * 
+     * @param {*} namespaceName 
+     * @param {*} gatewayName 
+     */
+    async deleteIstioGateway(namespaceName, gatewayName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways/${gatewayName}`, this.k8sAxiosHeader)
+    }
+
+    /**
      *
      *
      * @param {*} namespaceName

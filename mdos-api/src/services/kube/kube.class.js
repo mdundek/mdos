@@ -544,9 +544,14 @@ exports.Kube = class Kube extends KubeCore {
 
             // Filter out config
             nsGateway[0].spec.servers.splice(index - 1, 1)
-            
-            // Update gateway
-            await this.app.get('kube').updateIstioGateway(params.query.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
+
+            if(nsGateway[0].spec.servers.length == 0) {
+                // Delete gateway
+                await this.app.get('kube').deleteIstioGateway(params.query.namespace, "mdos-ns-gateway")
+            } else {
+                // Update gateway
+                await this.app.get('kube').updateIstioGateway(params.query.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
+            }
         }
         // ***************************************
         else {
