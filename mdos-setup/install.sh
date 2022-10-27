@@ -773,19 +773,17 @@ install_longhorn() {
 
     LONGHORN_VALUES="$(cat $_DIR/dep/longhorn/chart/values.yaml)"
 
-    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.defaultReplicaCount = "2"')
-    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.guaranteedEngineManagerCPU = "125m"')
-    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.guaranteedReplicaManagerCPU = "125m"')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.defaultReplicaCount = 2')
     if [ "$CUSTOM_LH_PATH" == "yes" ]; then
         LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.defaultDataPath = "'$LONGHORN_DEFAULT_DIR'"')
     fi
 
     printf "$LONGHORN_VALUES\n" > $_DIR/dep/longhorn/chart/values.yaml
 
-    helm install longhorn $_DIR/dep/longhorn/chart \
-            --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
+    helm install longhorn $_DIR/dep/longhorn/chart --values $_DIR/dep/longhorn/chart/values.yaml \
+        --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
 
-    rm -rf cp $_DIR/dep/longhorn/chart/values.yaml
+    rm -rf $_DIR/dep/longhorn/chart/values.yaml
     mv $_DIR/dep/longhorn/chart/values_backup.yaml $_DIR/dep/longhorn/chart/values.yaml
     
     sleep 10
