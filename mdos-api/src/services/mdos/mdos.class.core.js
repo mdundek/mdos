@@ -1,4 +1,4 @@
-const { NotFound, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
+const { NotFound, Conflict, Forbidden } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
 const CommonCore = require('../common.class.core')
@@ -148,7 +148,7 @@ class MdosCore extends CommonCore {
                     component.oidc.issuer = oidcLinks.data.issuer
                     component.oidc.jwksUri = oidcLinks.data.jwks_uri
                 } else {
-                    throw new Unavailable('ERROR: Provider not supported')
+                    throw new Error('ERROR: Provider not supported')
                 }
             }
 
@@ -214,7 +214,7 @@ class MdosCore extends CommonCore {
                 }
                 
                 if(errorMsgs.length > 0)
-                    throw new Error(`ERROR: ${errorMsgs.join("\n")}`)
+                    throw new Conflict(`ERROR: ${errorMsgs.join("\n")}`)
             }
 
             // Set component details for networkPolicy limitet
