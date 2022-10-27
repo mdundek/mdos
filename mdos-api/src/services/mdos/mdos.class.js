@@ -38,7 +38,6 @@ exports.Mdos = class Mdos extends MdosCore {
      * @return {*}
      */
     async create(data, params) {
-        console.log(new Date().getTime(), data)
         if (data.type == 'deploy') {
             // Parse values file
             let valuesYaml = YAML.parse(Buffer.from(data.values, 'base64').toString('ascii'))
@@ -63,18 +62,18 @@ exports.Mdos = class Mdos extends MdosCore {
             // Enrich values data
             valuesYaml = await this.enrichValuesForDeployment(valuesYaml)
 
-        //     // If we need to make sure that the pod gets restarted if already deployed because of a volume sync change
-        //     if (data.restart) {
-        //         valuesYaml.forceUpdate = true
-        //     }
+            // If we need to make sure that the pod gets restarted if already deployed because of a volume sync change
+            if (data.restart) {
+                valuesYaml.forceUpdate = true
+            }
 
-        //     // Deploy
-        //     try {
-        //         await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId)
-        //     } catch (helmError) {
-        //         if (Array.isArray(helmError)) throw new GeneralError('ERROR: ' + helmError.join('\n'))
-        //         else throw helmError
-        //     }
+            // Deploy
+            try {
+                await this.app.get('kube').mdosGenericHelmInstall(valuesYaml.tenantName, valuesYaml, data.processId)
+            } catch (helmError) {
+                if (Array.isArray(helmError)) throw new GeneralError('ERROR: ' + helmError.join('\n'))
+                else throw helmError
+            }
         } else {
             throw new BadRequest('ERROR: Malformed API request')
         }
