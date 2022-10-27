@@ -77,7 +77,7 @@ exports.Mdos = class Mdos extends MdosCore {
         //     }
         // } else {
         //     throw new BadRequest('ERROR: Malformed API request')
-        // }
+        }
         return data
     }
 }
