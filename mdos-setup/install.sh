@@ -769,24 +769,24 @@ EOF
 # ############# INSTALL LONGHORN #############
 # ############################################
 install_longhorn() {
-    # Install storageclass
-    helm repo add longhorn https://charts.longhorn.io &>> $LOG_FILE
-    helm repo update &>> $LOG_FILE
+    cp $_DIR/dep/longhorn/chart/values.yaml $_DIR/dep/longhorn/chart/values_backup.yaml
 
+    LONGHORN_VALUES="$(cat $_DIR/dep/longhorn/chart/values.yaml)"
+
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.defaultReplicaCount = "2"')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.guaranteedEngineManagerCPU = "125m"')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.guaranteedReplicaManagerCPU = "125m"')
     if [ "$CUSTOM_LH_PATH" == "yes" ]; then
-        helm install longhorn longhorn/longhorn \
-            --set persistence.defaultClassReplicaCount=2 \
-            --set defaultSettings.guaranteedEngineManagerCPU=125m \
-            --set defaultSettings.guaranteedReplicaManagerCPU=125m \
-            --set defaultSettings.defaultDataPath=$LONGHORN_DEFAULT_DIR \
-            --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
-    else
-        helm install longhorn longhorn/longhorn \
-            --set persistence.defaultClassReplicaCount=2 \
-            --set defaultSettings.guaranteedEngineManagerCPU=125m \
-            --set defaultSettings.guaranteedReplicaManagerCPU=125m \
-            --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
+        LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.defaultDataPath = "'$LONGHORN_DEFAULT_DIR'"')
     fi
+
+    printf "$LONGHORN_VALUES\n" > $_DIR/dep/longhorn/chart/values.yaml
+
+    helm install longhorn $_DIR/dep/longhorn/chart \
+            --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
+
+    rm -rf cp $_DIR/dep/longhorn/chart/values.yaml
+    mv $_DIR/dep/longhorn/chart/values_backup.yaml $_DIR/dep/longhorn/chart/values.yaml
     
     sleep 10
 
@@ -1764,6 +1764,11 @@ EOF
 
         set +Ee
         IN_CLEANUP=1
+
+        if [ -f $_DIR/dep/longhorn/chart/values_backup.yaml ]; then
+            rm -rf cp $_DIR/dep/longhorn/chart/values.yaml
+            mv $_DIR/dep/longhorn/chart/values_backup.yaml $_DIR/dep/longhorn/chart/values.yaml
+        fi
         
         ALL_IMAGES="$(docker images)"
 
@@ -1972,10 +1977,6 @@ EOF
         setup_longhorn_vs
         set_env_step_data "INST_STEP_LONGHORN_VS" "1"
     fi
-
-    # TODO: FIX LONGHORN BASE PATH PARAMS NOT WORKING, THEN REMOVE THIS LINE
-    warn "Open longhorn web UI and fix config before continuing"
-    read -n 1 -r -s -p $'Press enter to continue...\n'
 
     # INSTALL REGISTRY
     if [ -z $INST_STEP_REGISTRY ]; then
