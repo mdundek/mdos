@@ -166,9 +166,6 @@ class MdosCore extends CommonCore {
                 let ingressInUseErrors = []
                 let ingressMissingErrors = []
                 component.ingress = component.ingress.map((ingress) => {
-
-                    // const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTPS_SIMPLE")
-
                     let gtwConfigured = false
                     if(ingress.trafficType == "http") {
                         const httpAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTP")
@@ -179,8 +176,6 @@ class MdosCore extends CommonCore {
                         gtwConfigured = !httpsPassthrough[ingress.matchHost]
                     }
 
-
-                   
                     // If not available for new gateway config, then it means that we have a match
                     if(gtwConfigured) {
                         let targetGtws = []
@@ -208,7 +203,7 @@ class MdosCore extends CommonCore {
                                 host: ingress.matchHost
                             })
                         } else {
-                            ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
+                            ingress.gateways = [...new Set(targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`))]  // filter out duplicates
                         }
                     } else {
                         ingressMissingErrors.push({
