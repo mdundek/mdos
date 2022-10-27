@@ -206,7 +206,7 @@ class MdosCore extends CommonCore {
                     return ingress
                 })
 
-                const errorMsgs = []
+                let errorMsgs = []
                 if(ingressInUseErrors.length > 0) {
                     errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))
                 }
