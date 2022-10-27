@@ -1973,6 +1973,8 @@ EOF
         set_env_step_data "INST_STEP_LONGHORN_VS" "1"
     fi
 
+    # TODO: FIX LONGHORN BASE PATH PARAMS NOT WORKING, THEN REMOVE THIS LINE
+    warn "Open longhorn web UI and fix config before continuing"
     read -n 1 -r -s -p $'Press enter to continue...\n'
 
     # INSTALL REGISTRY
@@ -2057,11 +2059,11 @@ EOF
     fi
 
     # ENABLE REGISTRY AUTH
-    # if [ -z $INST_STEP_REG_AUTH ]; then
-    #     info "Enabeling MDos registry auth..."
-    #     deploy_reg_chart 1
-    #     set_env_step_data "INST_STEP_REG_AUTH" "1"
-    # fi
+    if [ -z $INST_STEP_REG_AUTH ]; then
+        info "Enabeling MDos registry auth..."
+        deploy_reg_chart 1
+        set_env_step_data "INST_STEP_REG_AUTH" "1"
+    fi
 
     MDOS_SUCCESS=1
 )
