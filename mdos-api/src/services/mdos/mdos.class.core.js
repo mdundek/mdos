@@ -204,13 +204,13 @@ class MdosCore extends CommonCore {
                     }
                     return ingress
                 })
-                console.log(ingressInUseErrors, ingressMissingErrors)
+               
                 let errorMsgs = []
                 if(ingressInUseErrors.length > 0) {
                     errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))
                 }
                 if(ingressMissingErrors.length > 0) {
-                    errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `No ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}"`))
+                    errorMsgs = errorMsgs.concat(ingressMissingErrors.map(error => `No ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}"`))
                 }
                 
                 if(errorMsgs.length > 0)
