@@ -110,6 +110,7 @@ class Keycloak {
             -d "client_id=admin-cli" \
             -d "username=${username}"  \
             -d "password=${password}"`)
+        console.log("**********", kcAuthResponse)
         return JSON.parse(kcAuthResponse[0])
     }
 
