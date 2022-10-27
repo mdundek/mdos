@@ -162,39 +162,39 @@ class MdosCore extends CommonCore {
 
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
-                component.ingress = component.ingress.map((ingress) => {
-                    const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
+                // component.ingress = component.ingress.map((ingress) => {
+                //     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
                     
-                    // If not available for new gateway config, then it means that we have a match
-                    if(!typeMatch[ingress.matchHost]) {
-                        let targetGtws = []
+                //     // If not available for new gateway config, then it means that we have a match
+                //     if(!typeMatch[ingress.matchHost]) {
+                //         let targetGtws = []
 
-                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
-                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
-                        }
+                //         if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
+                //             targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                //         } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
+                //             targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                //         }
 
-                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
-                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
-                        } 
+                //         if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
+                //             targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                //         } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
+                //             targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                //         } 
 
-                        if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
-                        } else if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
-                        }
-                        if(targetGtws.length == 0) {
-                            throw new Unavailable(`ERROR: Ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}", but the gateway belongs to another namespace`)
-                        }
-                        ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
-                    } else {
-                        throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
-                    }
-                    return ingress
-                })
+                //         if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
+                //             targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                //         } else if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
+                //             targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                //         }
+                //         if(targetGtws.length == 0) {
+                //             throw new Unavailable(`ERROR: Ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}", but the gateway belongs to another namespace`)
+                //         }
+                //         ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
+                //     } else {
+                //         throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
+                //     }
+                //     return ingress
+                // })
             }
 
         //     // Set component details for networkPolicy limitet
