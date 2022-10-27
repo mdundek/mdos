@@ -9,6 +9,11 @@ const terminalCommand = async (command, jsonResponse) => {
     return new Promise((resolve, reject) => {
         try {
             shell.exec(command, { silent: true }, function (code, stdout, stderr) {
+                console.log("-------**")
+                console.log(code)
+                console.log(stdout)
+                console.log(stderr)
+                console.log("-------**")
                 if (code == 0) {
                     if (jsonResponse) {
                         resolve(JSON.parse(stdout.split('\n').filter((o) => o.length > 0)))
