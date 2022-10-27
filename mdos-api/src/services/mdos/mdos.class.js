@@ -38,7 +38,7 @@ exports.Mdos = class Mdos extends MdosCore {
      * @return {*}
      */
     async create(data, params) {
-        console.log(data)
+        console.log(new Date().getTime(), data)
         if (data.type == 'deploy') {
             // Parse values file
             let valuesYaml = YAML.parse(Buffer.from(data.values, 'base64').toString('ascii'))
