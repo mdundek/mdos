@@ -162,10 +162,10 @@ class MdosCore extends CommonCore {
 
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
-
+                console.log(JSON.stringify(hostMatrix, null, 4))
                 component.ingress = component.ingress.map((ingress) => {
                     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
-                    console.log(JSON.stringify(typeMatch[ingress.matchHost], null, 4))
+                    console.log(ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
                     if(typeMatch[ingress.matchHost]) {
                         let targetGtws = []
 
