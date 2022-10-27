@@ -132,25 +132,25 @@ class MdosCore extends CommonCore {
                 })
             }
 
-        //     // Resolve OIDC details
-        //     if (component.oidc && component.oidc.provider) {
-        //         const oidcProvider = await this.app.get('kube').getOidcProviders()
-        //         const targetProvider = oidcProvider.find((p) => p.name == component.oidc.provider)
-        //         if (!targetProvider) {
-        //             throw new NotFound(`ERROR: OIDC Provider "${component.oidc.provider}" not found. It needs to be created first using the command 'mdos oidc add'.`)
-        //         }
-        //         if (component.oidc.provider.indexOf('kc-') == 0) {
-        //             const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}:${process.env.KC_PORT}/realms/mdos/.well-known/openid-configuration`)
-        //             component.oidc.issuer = oidcLinks.data.issuer
-        //             component.oidc.jwksUri = oidcLinks.data.jwks_uri
-        //         } else if (component.oidc.provider.indexOf('google-') == 0) {
-        //             const oidcLinks = await axios.get(`https://accounts.google.com/.well-known/openid-configuration`)
-        //             component.oidc.issuer = oidcLinks.data.issuer
-        //             component.oidc.jwksUri = oidcLinks.data.jwks_uri
-        //         } else {
-        //             throw new Unavailable('ERROR: Provider not supported')
-        //         }
-        //     }
+            // Resolve OIDC details
+            if (component.oidc && component.oidc.provider) {
+                const oidcProvider = await this.app.get('kube').getOidcProviders()
+                const targetProvider = oidcProvider.find((p) => p.name == component.oidc.provider)
+                if (!targetProvider) {
+                    throw new NotFound(`ERROR: OIDC Provider "${component.oidc.provider}" not found. It needs to be created first using the command 'mdos oidc add'.`)
+                }
+                if (component.oidc.provider.indexOf('kc-') == 0) {
+                    const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}:${process.env.KC_PORT}/realms/mdos/.well-known/openid-configuration`)
+                    component.oidc.issuer = oidcLinks.data.issuer
+                    component.oidc.jwksUri = oidcLinks.data.jwks_uri
+                } else if (component.oidc.provider.indexOf('google-') == 0) {
+                    const oidcLinks = await axios.get(`https://accounts.google.com/.well-known/openid-configuration`)
+                    component.oidc.issuer = oidcLinks.data.issuer
+                    component.oidc.jwksUri = oidcLinks.data.jwks_uri
+                } else {
+                    throw new Unavailable('ERROR: Provider not supported')
+                }
+            }
 
         //     // Set default ingress type if not set
         //     if (component.ingress) {
