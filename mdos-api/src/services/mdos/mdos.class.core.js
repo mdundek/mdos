@@ -162,8 +162,8 @@ class MdosCore extends CommonCore {
 
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
-                // component.ingress = component.ingress.map((ingress) => {
-                //     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
+                component.ingress = component.ingress.map((ingress) => {
+                    const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
                     
                 //     // If not available for new gateway config, then it means that we have a match
                 //     if(!typeMatch[ingress.matchHost]) {
@@ -193,8 +193,8 @@ class MdosCore extends CommonCore {
                 //     } else {
                 //         throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
                 //     }
-                //     return ingress
-                // })
+                    return ingress
+                })
             }
 
         //     // Set component details for networkPolicy limitet
