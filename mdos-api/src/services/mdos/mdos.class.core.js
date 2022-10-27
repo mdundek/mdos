@@ -214,7 +214,7 @@ class MdosCore extends CommonCore {
                 }
                 
                 if(errorMsgs.length > 0)
-                    throw new Unavailable(`ERROR: ${errorMsgs.join("\n")}`)
+                    throw new Error(`ERROR: ${errorMsgs.join("\n")}`)
             }
 
             // Set component details for networkPolicy limitet
