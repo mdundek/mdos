@@ -46,19 +46,19 @@ exports.Mdos = class Mdos extends MdosCore {
             // Ensure namespace is ready
             await this.validateNamespaceForDeployment(valuesYaml)
 
-            // // Make sure we have at least one component
-            // if (!valuesYaml.components || valuesYaml.components.length == 0) {
-            //     throw new BadRequest('ERROR: Application has no components')
-            // }
+            // Make sure we have at least one component
+            if (!valuesYaml.components || valuesYaml.components.length == 0) {
+                throw new BadRequest('ERROR: Application has no components')
+            }
 
-            // // Validate app schema
-            // if (!valuesYaml.schemaVersion || typeof valuesYaml.schemaVersion != 'string') {
-            //     throw new BadRequest('ERROR: Missing schema version in your manifest (expected property: schemaVersion)')
-            // }
-            // const validationErrors = this.app.get('schemaValidator')[valuesYaml.schemaVersion].instance.validate(valuesYaml)
-            // if (validationErrors.length > 0) {
-            //     throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
-            // }
+            // Validate app schema
+            if (!valuesYaml.schemaVersion || typeof valuesYaml.schemaVersion != 'string') {
+                throw new BadRequest('ERROR: Missing schema version in your manifest (expected property: schemaVersion)')
+            }
+            const validationErrors = this.app.get('schemaValidator')[valuesYaml.schemaVersion].instance.validate(valuesYaml)
+            if (validationErrors.length > 0) {
+                throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
+            }
 
         //     // Enrich values data
         //     valuesYaml = await this.enrichValuesForDeployment(valuesYaml)
