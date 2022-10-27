@@ -106,31 +106,31 @@ class MdosCore extends CommonCore {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
 
-        // // Iterate over components and process one by one
-        // for (const component of valuesYaml.components) {
-        //     // Add registry credentials if necessary
-        //     if (!component.imagePullSecrets && !component.publicRegistry) {
-        //         // MDos registry target, append namespace name to image path
-        //         if (component.image.indexOf('/') == 0) component.image = `${valuesYaml.tenantName}${component.image}`
-        //         else component.image = `${valuesYaml.tenantName}/${component.image}`
-        //         // Skip images from public registries or with specific secrets
-        //         component.imagePullSecrets = [
-        //             {
-        //                 name: 'mdos-regcred',
-        //             },
-        //         ]
-        //     }
+        // Iterate over components and process one by one
+        for (const component of valuesYaml.components) {
+            // Add registry credentials if necessary
+            if (!component.imagePullSecrets && !component.publicRegistry) {
+                // MDos registry target, append namespace name to image path
+                if (component.image.indexOf('/') == 0) component.image = `${valuesYaml.tenantName}${component.image}`
+                else component.image = `${valuesYaml.tenantName}/${component.image}`
+                // Skip images from public registries or with specific secrets
+                component.imagePullSecrets = [
+                    {
+                        name: 'mdos-regcred',
+                    },
+                ]
+            }
 
-        //     // Set port names
-        //     if (component.services) {
-        //         component.services = component.services.map((s) => {
-        //             s.ports = s.ports.map((p) => {
-        //                 p.name = `http-${p.port}`
-        //                 return p
-        //             })
-        //             return s
-        //         })
-        //     }
+            // Set port names
+            if (component.services) {
+                component.services = component.services.map((s) => {
+                    s.ports = s.ports.map((p) => {
+                        p.name = `http-${p.port}`
+                        return p
+                    })
+                    return s
+                })
+            }
 
         //     // Resolve OIDC details
         //     if (component.oidc && component.oidc.provider) {
@@ -207,7 +207,7 @@ class MdosCore extends CommonCore {
         //             }
         //         })
         //     }
-        // }
+        }
 
         return valuesYaml
     }
