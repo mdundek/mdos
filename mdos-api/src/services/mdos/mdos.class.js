@@ -60,8 +60,8 @@ exports.Mdos = class Mdos extends MdosCore {
                 throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
             }
 
-        //     // Enrich values data
-        //     valuesYaml = await this.enrichValuesForDeployment(valuesYaml)
+            // Enrich values data
+            valuesYaml = await this.enrichValuesForDeployment(valuesYaml)
 
         //     // If we need to make sure that the pod gets restarted if already deployed because of a volume sync change
         //     if (data.restart) {
