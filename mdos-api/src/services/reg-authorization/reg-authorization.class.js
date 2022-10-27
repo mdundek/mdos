@@ -23,13 +23,9 @@ exports.RegAuthorization = class RegAuthorization {
      */
     async find(params) {
         try {
-            console.log("----------")
-            console.log(params.query)
             const credsData = Buffer.from(params.query.data, 'base64').toString('utf8')
-            console.log(credsData)
             const credDataJson = JSON.parse(credsData)
-            console.log(credDataJson)
-        
+           
             let userRoles
             // Make sure user is authenticated
             if (credDataJson.Account.trim().length == 0) {

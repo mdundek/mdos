@@ -1076,7 +1076,7 @@ else
         exit 0
     else
         BCREDS=\$(echo '{ \"username\": \"'\$u'\", \"password\": \"'\$p'\" }' | base64 -w 0)
-        RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://\$MDOS_URL/reg-authentication?creds=\$BCREDS)
+        RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" \$MDOS_URL/reg-authentication?creds=\$BCREDS)
         if [ \$? -ne 0 ]; then
             exit 1
         else
@@ -1106,7 +1106,7 @@ if [ \"\$MDOS_HEAD\" == \"\" ]; then
     exit 0
 else
     BCREDS=\$(echo \"\$a\" | base64 -w 0)
-    RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" http://\$MDOS_URL/reg-authorization?data=\$BCREDS)
+    RESULT=\$(wget -O- --header=\"Accept-Encoding: gzip, deflate\" \$MDOS_URL/reg-authorization?data=\$BCREDS)
     if [ \$? -ne 0 ]; then
         exit 1
     else
