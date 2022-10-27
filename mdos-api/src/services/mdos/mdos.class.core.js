@@ -105,9 +105,10 @@ class MdosCore extends CommonCore {
         if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
-
+console.log("HERE 1")
         // Iterate over components and process one by one
         for (const component of valuesYaml.components) {
+            console.log("HERE 2")
             // Add registry credentials if necessary
             if (!component.imagePullSecrets && !component.publicRegistry) {
                 // MDos registry target, append namespace name to image path
@@ -159,14 +160,14 @@ class MdosCore extends CommonCore {
                     if (!i.trafficType) i.trafficType = 'http'
                     return i
                 })
-
+                console.log("HERE 3")
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
-                console.log(JSON.stringify(hostMatrix, null, 4))
                 component.ingress = component.ingress.map((ingress) => {
                     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
-                    console.log(ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
-                    if(typeMatch[ingress.matchHost]) {
+                    
+                    // If not available for new gateway config, then it means that we have a match
+                    if(!typeMatch[ingress.matchHost]) {
                         let targetGtws = []
 
                         if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
