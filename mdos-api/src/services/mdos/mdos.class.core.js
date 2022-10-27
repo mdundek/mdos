@@ -193,15 +193,14 @@ class MdosCore extends CommonCore {
                                 type: ingress.trafficType,
                                 host: ingress.matchHost
                             })
-                            // throw new Unavailable(`ERROR: Ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}", but the gateway belongs to another namespace`)
+                        } else {
+                            ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
                         }
-                        ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
                     } else {
                         ingressMissingErrors.push({
                             type: ingress.trafficType,
                             host: ingress.matchHost
                         })
-                        // throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
                     }
                     return ingress
                 })
@@ -213,6 +212,7 @@ class MdosCore extends CommonCore {
                 if(ingressMissingErrors.length > 0) {
                     errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `No ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}"`))
                 }
+                console.log(errorMsgs)
                 if(errorMsgs.length > 0)
                     throw new Unavailable(`ERROR: ${errorMsgs.join("\n")}`)
             }
