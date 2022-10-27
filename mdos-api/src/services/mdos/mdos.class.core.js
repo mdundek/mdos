@@ -162,6 +162,8 @@ class MdosCore extends CommonCore {
 
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
+                let ingressInUseErrors = []
+                let ingressMissingErrors = []
                 component.ingress = component.ingress.map((ingress) => {
                     const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
                     
@@ -187,26 +189,44 @@ class MdosCore extends CommonCore {
                             targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
                         }
                         if(targetGtws.length == 0) {
+                            ingressInUseErrors.push({
+                                type: ingress.trafficType,
+                                host: ingress.matchHost
+                            })
                             // throw new Unavailable(`ERROR: Ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}", but the gateway belongs to another namespace`)
                         }
                         ingress.gateways = targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`)
                     } else {
-                        throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
+                        ingressMissingErrors.push({
+                            type: ingress.trafficType,
+                            host: ingress.matchHost
+                        })
+                        // throw new Unavailable(`ERROR: No ingress gateway found that can handle ${ingress.trafficType} traffic for domain name "${ingress.matchHost}"`)
                     }
                     return ingress
                 })
+
+                const errorMsgs = []
+                if(ingressInUseErrors.length > 0) {
+                    errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))
+                }
+                if(ingressMissingErrors.length > 0) {
+                    errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `No ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}"`))
+                }
+                if(errorMsgs.length > 0)
+                    throw new Unavailable(`ERROR: ${errorMsgs.join("\n")}`)
             }
 
-        //     // Set component details for networkPolicy limitet
-        //     if (component.networkPolicy && component.networkPolicy.scope == "limited") {
-        //         component.networkPolicy.allow = valuesYaml.components.filter(_c => _c.uuid != component.uuid).map(_c => {
-        //             return {
-        //                 namespace: valuesYaml.tenantName,
-        //                 appUuid: valuesYaml.uuid,
-        //                 compUuid: _c.uuid
-        //             }
-        //         })
-        //     }
+            // Set component details for networkPolicy limitet
+            if (component.networkPolicy && component.networkPolicy.scope == "limited") {
+                component.networkPolicy.allow = valuesYaml.components.filter(_c => _c.uuid != component.uuid).map(_c => {
+                    return {
+                        namespace: valuesYaml.tenantName,
+                        appUuid: valuesYaml.uuid,
+                        compUuid: _c.uuid
+                    }
+                })
+            }
         }
 
         return valuesYaml
