@@ -38,6 +38,7 @@ exports.Mdos = class Mdos extends MdosCore {
      * @return {*}
      */
     async create(data, params) {
+        console.log(data)
         if (data.type == 'deploy') {
             // Parse values file
             let valuesYaml = YAML.parse(Buffer.from(data.values, 'base64').toString('ascii'))
@@ -58,7 +59,7 @@ exports.Mdos = class Mdos extends MdosCore {
             if (validationErrors.length > 0) {
                 throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
             }
-console.log("HERE 9")
+
             // Enrich values data
             valuesYaml = await this.enrichValuesForDeployment(valuesYaml)
 
