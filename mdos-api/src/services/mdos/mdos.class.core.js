@@ -166,10 +166,23 @@ class MdosCore extends CommonCore {
                 let ingressInUseErrors = []
                 let ingressMissingErrors = []
                 component.ingress = component.ingress.map((ingress) => {
-                    const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTP_SIMPLE")
-                    console.log(JSON.stringify(typeMatch, null, 4))
+
+                    // const typeMatch = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, ingress.trafficType == "http" ? "HTTP" : "HTTPS_SIMPLE")
+
+                    let gtwConfigured = false
+                    if(ingress.trafficType == "http") {
+                        const httpAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTP")
+                        const httpsTerminateAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_SIMPLE")
+                        gtwConfigured = !httpAvailable[ingress.matchHost] || !httpsTerminateAvailable[ingress.matchHost]
+                    } else {
+                        const httpsPassthrough = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_PASSTHROUGH")
+                        gtwConfigured = !httpsPassthrough[ingress.matchHost]
+                    }
+
+
+                   
                     // If not available for new gateway config, then it means that we have a match
-                    if(!typeMatch[ingress.matchHost]) {
+                    if(gtwConfigured) {
                         let targetGtws = []
 
                         if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
