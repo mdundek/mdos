@@ -105,10 +105,9 @@ class MdosCore extends CommonCore {
         if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
-console.log("HERE 1")
+
         // Iterate over components and process one by one
         for (const component of valuesYaml.components) {
-            console.log("HERE 2")
             // Add registry credentials if necessary
             if (!component.imagePullSecrets && !component.publicRegistry) {
                 // MDos registry target, append namespace name to image path
@@ -160,7 +159,7 @@ console.log("HERE 1")
                     if (!i.trafficType) i.trafficType = 'http'
                     return i
                 })
-                console.log("HERE 3")
+
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
                 component.ingress = component.ingress.map((ingress) => {

@@ -58,7 +58,7 @@ exports.Mdos = class Mdos extends MdosCore {
             if (validationErrors.length > 0) {
                 throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
             }
-
+console.log("HERE 9")
             // Enrich values data
             valuesYaml = await this.enrichValuesForDeployment(valuesYaml)
 
