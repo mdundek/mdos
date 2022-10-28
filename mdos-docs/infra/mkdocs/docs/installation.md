@@ -23,7 +23,7 @@ git clone https://github.com/mdundek/mdos.git
 
 The installation will require that you configure a valid domain name and a certificate for the mdos base platform (for developement purposes you can choose to work with a self-signed certificate).
 
-If you plan on using `cert-manager` to manage your certificate, then you will have to prepare a `Issuer` yaml file upfront before you go ahead and start the installation script (see section [Cert-manager example](#-cert-manager-example) for more details).
+If you plan on using `cert-manager` to manage your certificate, then you will have to prepare a `Issuer` yaml file upfront before you go ahead and start the installation script (see bellow for an example using a CloudFlare issuer).
 
 ### Master node & MDos control plane
 
@@ -106,9 +106,13 @@ The installation script will give you multiple choices here:
 #### :material-arrow-right-thin: Kubernetes workload storage directory path
 
 When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.  
-MDos uses `Longhorn` from Rancher for this as a storage class. Longhorn will allocate your container volumes in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
+MDos uses `Longhorn` from Rancher as a storage class. Longhorn will store your container volume data in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system. Please note that you need to ensure that you have enougth storage capacity on this directory path, it is recommended to mount a separate dedicated disk for this purpose:
 
 <img src="/img/installation/storage.png" alt="storage" width="600"/>
+
+!!! note
+
+    Longhorn is a `block storage` provider, it replicates your data over multiple disks / partitions. Longhorn does work with only one disk, which is it's default setup configuration, but it is highly recommended that you configure at least 2, idealy 3 disks for optimal data redundancy. To configure those disk, on the same machine or on different machines, use the longhorn UI accessible under the URL `https://longhorn.<ROOT-DOMAIN>`   
 
 #### :material-arrow-right-thin: Private registry max size
 
@@ -165,6 +169,12 @@ That's it, once the installation script is finished you are ready to use the pla
 
 
 ### Worker nodes
+
+To add a new worker node to your mdos cluster deployment, clone the `mdso` repo on the new node machine and execute the following script as root:
+
+```sh
+sudo ./mdos-setup/install-worker.sh
+```
 
 !!! warning
 
