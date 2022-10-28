@@ -6,7 +6,6 @@
     echo "This will install the MDOS CLI onto this machine."
 
     if [ "$EUID" -ne 0 ]; then
-      SUDO='sudo'
       echo "This script requires superuser access."
       echo "Please run it as root or using sudo."
       exit 1
