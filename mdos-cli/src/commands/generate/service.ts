@@ -14,15 +14,7 @@ const YAML = require('yaml')
  * @extends {Command}
  */
 export default class Service extends Command {
-    static aliases = [
-        'add:service',
-        'service:add',
-        'add:port',
-        'port:add',
-        'service:generate',
-        'generate:port',
-        'port:generate'
-    ]
+    static aliases = ['add:service', 'service:add', 'add:port', 'port:add', 'service:generate', 'generate:port', 'port:generate']
     static description = 'Expose ports for your application components so that other applications can communicate with your components'
 
     // ******* FLAGS *******
@@ -65,7 +57,7 @@ export default class Service extends Command {
 
         let responses = await inquirer.prompt([
             {
-                type: 'string',
+                type: 'input',
                 name: 'name',
                 message: 'Enter a name for the service to add a port to:',
                 validate: (value: string) => {
@@ -76,7 +68,7 @@ export default class Service extends Command {
                 },
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'port',
                 message: 'Specify a port number on which your application needs to be accessible on:',
                 validate: (value: string) => {

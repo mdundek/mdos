@@ -32,7 +32,7 @@ export default class Create extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Create)
 
-        let agregatedResponses:any = {}
+        let agregatedResponses: any = {}
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
@@ -51,8 +51,8 @@ export default class Create extends Command {
             this.showError(err)
             process.exit(1)
         }
-        if(nsResponse.data.length == 0) {
-            error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+        if (nsResponse.data.length == 0) {
+            error('No namespaces available. Did you create a new namespace yet (mdos ns create)?')
             process.exit(1)
         }
 
@@ -60,14 +60,14 @@ export default class Create extends Command {
         let response = await inquirer.prompt([
             {
                 name: 'namespace',
-                message: 'Select a namespace for which to create a certificate for',
+                message: 'Select a namespace for which to create a certificate for:',
                 type: 'list',
                 choices: nsResponse.data.map((o: { name: any }) => {
                     return { name: o.name }
                 }),
             },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         // Collect tls secrets
         let tlsSecretResponse: { data: any[] }
@@ -79,7 +79,7 @@ export default class Create extends Command {
         }
 
         // Collect Certificates
-        let certificatesResponse:any = []
+        let certificatesResponse: any = []
         try {
             certificatesResponse = await this.api(`kube?target=certificates&namespace=${agregatedResponses.namespace}`, 'get')
         } catch (err) {
@@ -90,23 +90,27 @@ export default class Create extends Command {
         // Certificate name
         response = await inquirer.prompt([
             {
-                type: 'text',
+                type: 'input',
                 name: 'name',
-                message: 'Enter a name for this certificate',
+                message: 'Enter a name for this certificate:',
                 validate: (value: any) => {
                     if (value.trim().length == 0) return `Mandatory field`
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                    else if(
-                        tlsSecretResponse.data.find((secret: { metadata: { name: string } }) => secret.metadata.name.toLowerCase() == value.trim().toLowerCase()) || 
-                        certificatesResponse.data.find((certificate: { metadata: { name: string } }) => certificate.metadata.name.toLowerCase() == value.trim().toLowerCase())
+                    else if (
+                        tlsSecretResponse.data.find(
+                            (secret: { metadata: { name: string } }) => secret.metadata.name.toLowerCase() == value.trim().toLowerCase()
+                        ) ||
+                        certificatesResponse.data.find(
+                            (certificate: { metadata: { name: string } }) => certificate.metadata.name.toLowerCase() == value.trim().toLowerCase()
+                        )
                     )
                         return 'Certificate name already exists'
                     return true
                 },
-            }
+            },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         // Use cert manager?
         response = await inquirer.prompt([
@@ -114,21 +118,24 @@ export default class Create extends Command {
                 name: 'useCertManager',
                 message: 'Use cert-manager to generate and manage your certificate, or provide the certificate files manually:',
                 type: 'list',
-                choices: [{
-                    name: "Use Cert-Manager",
-                    value: true
-                }, {
-                    name: "I already have a certificate",
-                    value: false
-                }],
+                choices: [
+                    {
+                        name: 'Use Cert-Manager',
+                        value: true,
+                    },
+                    {
+                        name: 'I already have a certificate',
+                        value: false,
+                    },
+                ],
             },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         agregatedResponses.hostnames = []
 
         // Use cert-manager
-        if(agregatedResponses.useCertManager) {
+        if (agregatedResponses.useCertManager) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
@@ -139,46 +146,52 @@ export default class Create extends Command {
             }
 
             // Collect issuers & cluster issuers
-            let issuerResponse:any = []
+            let issuerResponse: any = []
             try {
                 issuerResponse = await this.api(`kube?target=cm-issuers&namespace=${agregatedResponses.namespace}`, 'get')
             } catch (err) {
                 this.showError(err)
                 process.exit(1)
             }
-            let clusterIssuerResponse:any = []
+            let clusterIssuerResponse: any = []
             try {
                 clusterIssuerResponse = await this.api(`kube?target=cm-cluster-issuers`, 'get')
             } catch (err) {
                 this.showError(err)
                 process.exit(1)
             }
-            issuerResponse.data = issuerResponse.data.filter((issuer:any) => {
-                if(issuer.status)
-                    return issuer.status.conditions.find((condition:any) => condition.status == "True" && condition.type == "Ready") ? true : false
-                else
-                    return false
-            }).concat(clusterIssuerResponse.data.filter((issuer:any) => {
-                if(issuer.status)
-                    return issuer.status.conditions.find((condition:any) => condition.status == "True" && condition.type == "Ready") ? true : false
-                else
-                    return false
-            }))
+            issuerResponse.data = issuerResponse.data
+                .filter((issuer: any) => {
+                    if (issuer.status)
+                        return issuer.status.conditions.find((condition: any) => condition.status == 'True' && condition.type == 'Ready')
+                            ? true
+                            : false
+                    else return false
+                })
+                .concat(
+                    clusterIssuerResponse.data.filter((issuer: any) => {
+                        if (issuer.status)
+                            return issuer.status.conditions.find((condition: any) => condition.status == 'True' && condition.type == 'Ready')
+                                ? true
+                                : false
+                        else return false
+                    })
+                )
 
             // There are existing issuers already
-            if(issuerResponse.data.length == 0) {
-                error("There are no Issuers / ClusterIssuers available. Create a new Issuer first and try again.")
+            if (issuerResponse.data.length == 0) {
+                error('There are no Issuers / ClusterIssuers available. Create a new Issuer first and try again.')
                 process.exit(1)
             }
 
             // Selevct target issuer / cluster issuer
-            const issuerValues = issuerResponse.data.map((issuer:any) => {
+            const issuerValues = issuerResponse.data.map((issuer: any) => {
                 return {
                     name: `${issuer.metadata.name} (${issuer.kind})`,
-                    value: issuer
+                    value: issuer,
                 }
             })
-            
+
             const issResponse = await inquirer.prompt([
                 {
                     name: 'issuer',
@@ -189,15 +202,15 @@ export default class Create extends Command {
             ])
 
             agregatedResponses.issuerName = issResponse.issuer.metadata.name
-            agregatedResponses.isClusterIssuer = issResponse.issuer.kind == "ClusterIssuer" ? true : false
-            agregatedResponses = {...agregatedResponses, ...issResponse}
+            agregatedResponses.isClusterIssuer = issResponse.issuer.kind == 'ClusterIssuer' ? true : false
+            agregatedResponses = { ...agregatedResponses, ...issResponse }
 
             // Collect Hostnames / domain names for this certificate
             await this.addNewHost(agregatedResponses.hostnames)
 
             // Now generate certificate
             await this.createCertificate(agregatedResponses)
-        } 
+        }
         // Manually provide certificate
         else {
             // TODO
@@ -206,35 +219,37 @@ export default class Create extends Command {
 
     /**
      * addNewHost
-     * 
-     * @param existingHosts 
+     *
+     * @param existingHosts
      */
-     async addNewHost(existingHosts: any[]) {
-        const responses = await inquirer.prompt([{
-            type: 'text',
-            name: 'domain',
-            message: 'Enter a target domain name (ex. frontend.mydomain.com or *.mydomain.com):',
-            validate: (value: any) => {
-                if (value.trim().length == 0) return `Mandatory field`
-                else if(existingHosts.includes(value.trim().toLowerCase())) return `Domain name already added`
-                return true
+    async addNewHost(existingHosts: any[]) {
+        const responses = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'domain',
+                message: 'Enter a target domain name (ex. frontend.mydomain.com or *.mydomain.com):',
+                validate: (value: any) => {
+                    if (value.trim().length == 0) return `Mandatory field`
+                    else if (existingHosts.includes(value.trim().toLowerCase())) return `Domain name already added`
+                    return true
+                },
             },
-        },
-        {
-            type: 'confirm',
-            name: 'more',
-            default: false,
-            message: 'Would you like to add another domain name for this certificate request?',
-        }])
+            {
+                type: 'confirm',
+                name: 'more',
+                default: false,
+                message: 'Would you like to add another domain name for this certificate request?',
+            },
+        ])
         existingHosts.push(responses.domain)
-        if(responses.more) {
+        if (responses.more) {
             await this.addNewHost(existingHosts)
         }
-    } 
+    }
 
     /**
      * createCertificate
-     * @param agregatedResponses 
+     * @param agregatedResponses
      */
     async createCertificate(agregatedResponses: any) {
         CliUx.ux.action.start('Creating certificate')
@@ -245,7 +260,7 @@ export default class Create extends Command {
                 namespace: agregatedResponses.namespace,
                 hosts: agregatedResponses.hostnames,
                 issuerName: agregatedResponses.issuerName,
-                isClusterIssuer: agregatedResponses.isClusterIssuer
+                isClusterIssuer: agregatedResponses.isClusterIssuer,
             })
             CliUx.ux.action.stop()
         } catch (error) {
@@ -257,9 +272,7 @@ export default class Create extends Command {
 
     /**
      * createTlsSecret
-     * @param agregatedResponses 
+     * @param agregatedResponses
      */
-    async createTlsSecret(agregatedResponses: any) {
-
-    }
+    async createTlsSecret(agregatedResponses: any) {}
 }

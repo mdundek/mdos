@@ -57,7 +57,7 @@ export default class Delete extends Command {
         let response = await inquirer.prompt([
             {
                 name: 'namespace',
-                message: 'Select a namespace from which to delete a certificate from',
+                message: 'Select a namespace from which to delete a certificate from:',
                 type: 'list',
                 choices: nsResponse.data.map((o: { name: any }) => {
                     return { name: o.name }

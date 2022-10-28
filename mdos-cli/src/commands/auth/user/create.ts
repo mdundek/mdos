@@ -26,7 +26,7 @@ export default class Create extends Command {
     static questions = [
         {
             group: 'user',
-            type: 'text',
+            type: 'input',
             name: 'username',
             message: 'Enter username for new user:',
             validate: (value: any) => {
@@ -38,20 +38,19 @@ export default class Create extends Command {
         },
         {
             group: 'user',
-            type: 'text',
+            type: 'input',
             name: 'password',
             message: 'Enter password for new user:',
             validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
         },
         {
             group: 'user',
-            type: 'text',
+            type: 'input',
             name: 'email',
             message: 'Enter user email address for new user:',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value))
-                    return 'Invalid email address'
+                else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) return 'Invalid email address'
                 return true
             },
         },
@@ -108,7 +107,7 @@ export default class Create extends Command {
                 type: 'confirm',
                 name: 'addRoles',
                 default: true,
-                message: 'Do you want to add some client roles to this user',
+                message: 'Do you want to add some client roles to this user?',
             },
         ])
 
@@ -136,7 +135,7 @@ export default class Create extends Command {
                 {
                     type: 'checkbox',
                     name: 'targetRoles',
-                    message: 'Selectt roles to add',
+                    message: 'Select which roles to add:',
                     choices: respClientRoles.data.map((r: { name: any }) => r.name),
                 },
             ])

@@ -56,7 +56,7 @@ export default class List extends Command {
         let response = await inquirer.prompt([
             {
                 name: 'namespace',
-                message: 'Select namespace for which you wish to list Ingress Gateways for',
+                message: 'Select namespace for which you wish to list Ingress Gateways for:',
                 type: 'list',
                 choices: nsResponse.data.map((o: { name: any }) => {
                     return { name: o.name }

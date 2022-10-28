@@ -62,7 +62,7 @@ export default class Remove extends Command {
             const providerResponse = await inquirer.prompt([
                 {
                     name: 'provider',
-                    message: 'Select a provider to remove',
+                    message: 'Select a provider to remove:',
                     type: 'list',
                     choices: allProviders.data.map((o: { name: any }) => {
                         return { name: o.name, value: o }

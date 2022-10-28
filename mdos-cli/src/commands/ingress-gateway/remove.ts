@@ -28,7 +28,7 @@ export default class Remove extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Remove)
 
-        let agregatedResponses:any = {}
+        let agregatedResponses: any = {}
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
@@ -47,8 +47,8 @@ export default class Remove extends Command {
             this.showError(err)
             process.exit(1)
         }
-        if(nsResponse.data.length == 0) {
-            error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+        if (nsResponse.data.length == 0) {
+            error('No namespaces available. Did you create a new namespace yet (mdos ns create)?')
             process.exit(1)
         }
 
@@ -56,17 +56,17 @@ export default class Remove extends Command {
         let response = await inquirer.prompt([
             {
                 name: 'namespace',
-                message: 'Select namespace for which you wish to delete a Ingress Gateway config from',
+                message: 'Select namespace for which you wish to delete a Ingress Gateway config from:',
                 type: 'list',
                 choices: nsResponse.data.map((o: { name: any }) => {
                     return { name: o.name }
                 }),
             },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         // Get namespace gateway
-        let gtwResponse:any
+        let gtwResponse: any
         try {
             gtwResponse = await this.api(`kube?target=gateways&namespace=${response.namespace}&name=mdos-ns-gateway`, 'get')
         } catch (err) {
@@ -74,8 +74,8 @@ export default class Remove extends Command {
             process.exit(1)
         }
 
-        if(gtwResponse.data.length == 0 || gtwResponse.data[0].spec.servers.length == 0) {
-            error("No Ingress Gateway configured yet for this namespace")
+        if (gtwResponse.data.length == 0 || gtwResponse.data[0].spec.servers.length == 0) {
+            error('No Ingress Gateway configured yet for this namespace')
             process.exit(1)
         }
 
@@ -87,21 +87,21 @@ export default class Remove extends Command {
                 index: {
                     header: 'NR',
                     minWidth: 5,
-                    get: (row:any) => index++,
+                    get: (row: any) => index++,
                 },
                 name: {
                     header: 'TRAFFIC TYPE',
                     minWidth: 25,
-                    get: (row:any) => row.tls ? (row.tls.mode == "SIMPLE" ? "HTTPS, terminate TLS" : "HTTPS, pass-through") : "HTTP",
+                    get: (row: any) => (row.tls ? (row.tls.mode == 'SIMPLE' ? 'HTTPS, terminate TLS' : 'HTTPS, pass-through') : 'HTTP'),
                 },
                 hosts: {
                     header: 'HOSTS',
-                    get: (row:any) => row.hosts.join("\n"),
+                    get: (row: any) => row.hosts.join('\n'),
                 },
                 certificate: {
                     header: 'SECRET',
-                    get: (row:any) => row.tls ? (row.tls.mode == "SIMPLE" ? row.tls.credentialName : "") : "",
-                }
+                    get: (row: any) => (row.tls ? (row.tls.mode == 'SIMPLE' ? row.tls.credentialName : '') : ''),
+                },
             },
             {
                 printLine: this.log.bind(this),
@@ -114,24 +114,21 @@ export default class Remove extends Command {
             {
                 name: 'gatewayServerIndex',
                 message: 'What ingress gateway server config number do you wish to delete?',
-                type: 'text',
+                type: 'input',
                 validate: (value: any) => {
-                    const num = Number(value);
-                    if (Number.isInteger(num) && num <=0) return "Number (integer) expected"
-                    else if (num <=0 || num > gtwResponse.data[0].spec.servers.length) return "Index out of range"   
-                    return true;
-                }
+                    const num = Number(value)
+                    if (Number.isInteger(num) && num <= 0) return 'Number (integer) expected'
+                    else if (num <= 0 || num > gtwResponse.data[0].spec.servers.length) return 'Index out of range'
+                    return true
+                },
             },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         // Delete gateway server block
         CliUx.ux.action.start('Deleting ingress gateway config')
         try {
-            await this.api(
-                `kube/${agregatedResponses.gatewayServerIndex}?target=ingress-gateway&namespace=${agregatedResponses.namespace}`,
-                'delete'
-            )
+            await this.api(`kube/${agregatedResponses.gatewayServerIndex}?target=ingress-gateway&namespace=${agregatedResponses.namespace}`, 'delete')
             CliUx.ux.action.stop()
         } catch (error) {
             CliUx.ux.action.stop('error')

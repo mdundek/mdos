@@ -8,11 +8,11 @@ const https = require('https')
 const axios = require('axios').default
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage, getConsoleLineHandel } = require('./lib/tools')
 const SocketManager = require('./lib/socket.js')
-const pjson = require('../package.json');
+const pjson = require('../package.json')
 
 type AxiosConfig = {
     timeout: number
-    headers?: any,
+    headers?: any
     httpsAgent?: any
 }
 
@@ -43,11 +43,18 @@ export default abstract class extends Command {
         super(argv, config)
 
         this.configPath = path.join(os.homedir(), '.mdos', 'cli.json')
-        if(!fs.existsSync(this.configPath)){
-            fs.writeFileSync(this.configPath, JSON.stringify({
-                "MDOS_API_URI": "",
-                "ACCESS_TOKEN": ""
-              }, null, 4))
+        if (!fs.existsSync(this.configPath)) {
+            fs.writeFileSync(
+                this.configPath,
+                JSON.stringify(
+                    {
+                        MDOS_API_URI: '',
+                        ACCESS_TOKEN: '',
+                    },
+                    null,
+                    4
+                )
+            )
         }
         this.configData = JSON.parse(fs.readFileSync(this.configPath, 'utf8'))
         this.getConsoleLineHandel = getConsoleLineHandel
@@ -107,12 +114,12 @@ export default abstract class extends Command {
         // Set oauth2 cookie if necessary
         const axiosConfig: AxiosConfig = {
             timeout: 0,
-            httpsAgent: new https.Agent({ rejectUnauthorized: false })
+            httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         }
 
-        axiosConfig.headers = { 
+        axiosConfig.headers = {
             Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}`,
-            mdos_version: pjson.version
+            mdos_version: pjson.version,
         }
         axiosConfig.timeout = 1000 * 60 * 10
 
@@ -136,7 +143,7 @@ export default abstract class extends Command {
         let API_URI = this.getConfig('MDOS_API_URI')
         if (!API_URI) {
             error("Please set your mdos domain name using the command 'mdos set domain <your domain here>'")
-            process.exit(1);
+            process.exit(1)
         }
         return API_URI
     }
@@ -146,15 +153,15 @@ export default abstract class extends Command {
      */
     async validateJwt(skipAuthMsg?: boolean, flags?: any) {
         // Reset potential OAUTH Cookie if username provided
-        if(flags && (flags.username || flags.password)) {
+        if (flags && (flags.username || flags.password)) {
             this.setConfig('ACCESS_TOKEN', null)
             skipAuthMsg = true
         }
 
         const _validateCookie = async () => {
             const testResponse = await this.api('token-introspect', 'post', { access_token: this.getConfig('ACCESS_TOKEN') }, true)
-            
-            if(!testResponse.data.active) {
+
+            if (!testResponse.data.active) {
                 // token expired
                 this.setConfig('ACCESS_TOKEN', null)
                 warn('Your current token has expired or is invalid. You need to re-authenticate')
@@ -164,53 +171,58 @@ export default abstract class extends Command {
         }
 
         const token = this.getConfig('ACCESS_TOKEN')
-        
+
         if (!token || token.length == 0) {
+            if (!skipAuthMsg) warn('Authentication required')
 
-            if(!skipAuthMsg)
-                warn("Authentication required")
-
-            const responses = await inquirer.prompt([
-                {
-                    type: 'text',
-                    name: 'username',
-                    message: 'Please enter your username:',
-                    validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
-                        if (value.trim().length == 0) {
-                            return 'Mandatory field'
-                        }
-                        return true
+            const responses = await inquirer.prompt(
+                [
+                    {
+                        type: 'input',
+                        name: 'username',
+                        message: 'Please enter your username:',
+                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
+                            if (value.trim().length == 0) {
+                                return 'Mandatory field'
+                            }
+                            return true
+                        },
                     },
-                },
-                {
-                    type: 'password',
-                    name: 'password',
-                    message: 'Please enter your password:',
-                    validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
-                        if (value.trim().length == 0) {
-                            return 'Mandatory field'
-                        }
-                        return true
+                    {
+                        type: 'password',
+                        name: 'password',
+                        message: 'Please enter your password:',
+                        validate: async (value: { trim: () => { (): any; new (): any; length: number } }) => {
+                            if (value.trim().length == 0) {
+                                return 'Mandatory field'
+                            }
+                            return true
+                        },
                     },
-                },
-            ]
-            .filter(q => (q.name == "username" && flags && flags.username) ? false : true)
-            .filter(q => (q.name == "password" && flags && flags.password) ? false : true))
+                ]
+                    .filter((q) => (q.name == 'username' && flags && flags.username ? false : true))
+                    .filter((q) => (q.name == 'password' && flags && flags.password ? false : true))
+            )
 
-            const loginResponse = await this.api('authentication', 'post', { 
-                "strategy": "keycloak", 
-                "username": responses.username ? responses.username : flags.username, 
-                "password": responses.password ? responses.password : flags.password
-            }, true)
+            const loginResponse = await this.api(
+                'authentication',
+                'post',
+                {
+                    strategy: 'keycloak',
+                    username: responses.username ? responses.username : flags.username,
+                    password: responses.password ? responses.password : flags.password,
+                },
+                true
+            )
             if (loginResponse.data.error) {
                 error(loginResponse.data.error_description)
                 process.exit(1)
             }
             this.setConfig('ACCESS_TOKEN', loginResponse.data.access_token)
             console.log()
-            return { 
-                "username": responses.username ? responses.username : flags.username, 
-                "password": responses.password ? responses.password : flags.password
+            return {
+                username: responses.username ? responses.username : flags.username,
+                password: responses.password ? responses.password : flags.password,
             }
         } else {
             const _userCreds = await _validateCookie()
@@ -220,7 +232,7 @@ export default abstract class extends Command {
 
     /**
      * introspectJwt
-     * @returns 
+     * @returns
      */
     async introspectJwt() {
         const testResponse = await this.api('token-introspect', 'post', { access_token: this.getConfig('ACCESS_TOKEN'), include_roles: true }, true)

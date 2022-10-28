@@ -29,7 +29,7 @@ export default class Config extends Command {
         'configuration:generate',
         'config:generate',
         'conf:generate',
-        'env:generate'
+        'env:generate',
     ]
     static description = 'Configure environement variables and config files for your components'
 
@@ -70,7 +70,7 @@ export default class Config extends Command {
         // Collect data
         let responses = await inquirer.prompt([
             {
-                type: 'string',
+                type: 'input',
                 name: 'name',
                 message: 'Enter a name for this configuration asset:',
                 validate: (value: string) => {
@@ -100,7 +100,7 @@ export default class Config extends Command {
                 ],
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'mountpath',
                 when: (values: any) => {
                     return values.type == 'file' || values.type == 'dir'
@@ -121,7 +121,7 @@ export default class Config extends Command {
                 },
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'ref',
                 when: (values: any) => {
                     return values.useRef
@@ -140,7 +140,7 @@ export default class Config extends Command {
         type Config = {
             name: string
             type: string
-            mountPath?: string,
+            mountPath?: string
             ref?: string
             entries?: any
         }
@@ -150,7 +150,7 @@ export default class Config extends Command {
             type: responses.type,
         }
 
-        if(!responses.useRef) {
+        if (!responses.useRef) {
             env.entries = []
         } else {
             env.ref = responses.ref
@@ -161,7 +161,7 @@ export default class Config extends Command {
                 key: 'ENV_KEY',
                 value: 'my value',
             })
-        } else if(!responses.useRef) {
+        } else if (!responses.useRef) {
             env.mountPath = responses.mountpath
             env.entries.push({
                 key: 'myconfig',

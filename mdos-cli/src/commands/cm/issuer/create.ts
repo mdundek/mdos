@@ -32,7 +32,7 @@ export default class Create extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Create)
 
-        let agregatedResponses:any = {}
+        let agregatedResponses: any = {}
 
         // Select target namespace
         let response = await inquirer.prompt({
@@ -42,17 +42,17 @@ export default class Create extends Command {
             choices: [
                 {
                     name: 'Issuer (Namespace scoped)',
-                    value: 'Issuer'
+                    value: 'Issuer',
                 },
                 {
                     name: 'ClusterIssuer (Cluster wide)',
-                    value: 'ClusterIssuer'
+                    value: 'ClusterIssuer',
                 },
             ],
         })
-        agregatedResponses = {...agregatedResponses, ...response}
-        
-         // Make sure we have a valid oauth2 cookie token
+        agregatedResponses = { ...agregatedResponses, ...response }
+
+        // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
@@ -64,7 +64,7 @@ export default class Create extends Command {
         let issuerObject: { kind: string; metadata: { name: string } }
 
         // Issuer
-        if(agregatedResponses.issuerType == "Issuer") {
+        if (agregatedResponses.issuerType == 'Issuer') {
             // Collect namespaces
             let nsResponse
             try {
@@ -73,8 +73,8 @@ export default class Create extends Command {
                 this.showError(err)
                 process.exit(1)
             }
-            if(nsResponse.data.length == 0) {
-                error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+            if (nsResponse.data.length == 0) {
+                error('No namespaces available. Did you create a new namespace yet (mdos ns create)?')
                 process.exit(1)
             }
 
@@ -82,17 +82,17 @@ export default class Create extends Command {
             response = await inquirer.prompt([
                 {
                     name: 'namespace',
-                    message: 'Select a namespace for which to create a issuer for',
+                    message: 'Select a namespace for which to create a issuer for:',
                     type: 'list',
                     choices: nsResponse.data.map((o: { name: any }) => {
                         return { name: o.name }
                     }),
                 },
             ])
-            agregatedResponses = {...agregatedResponses, ...response}
+            agregatedResponses = { ...agregatedResponses, ...response }
 
             // Collect issuers
-            let issuerResponse:any = []
+            let issuerResponse: any = []
             try {
                 issuerResponse = await this.api(`kube?target=cm-issuers&namespace=${agregatedResponses.namespace}`, 'get')
             } catch (err) {
@@ -102,32 +102,31 @@ export default class Create extends Command {
 
             // Collect Issuer YAML
             issuerObject = await this.collectIssuerYaml(agregatedResponses)
-            if(issuerObject.kind.toLowerCase() == 'clusterissuer') {
+            if (issuerObject.kind.toLowerCase() == 'clusterissuer') {
                 error('Your YAML file is for a "ClusterIssuer", but you selected a "Issuer" as your target.')
                 process.exit(1)
             }
 
             // Display Name
-            if(issuerObject.metadata.name) {
+            if (issuerObject.metadata.name) {
                 info(`${issuerObject.kind} name: ${issuerObject.metadata.name}`)
-            }
-            else {
+            } else {
                 error('Your Issuer does not have a name.')
                 process.exit(1)
             }
 
             // Make sure the issuer name does not already exist
-            if(issuerResponse.data.find((issuer:any) => issuer.metadata.name.toLowerCase() == issuerObject.metadata.name.toLowerCase())) {
+            if (issuerResponse.data.find((issuer: any) => issuer.metadata.name.toLowerCase() == issuerObject.metadata.name.toLowerCase())) {
                 error(`The Issuer name "${issuerObject.metadata.name}" already exists`)
                 process.exit(1)
             }
 
             agregatedResponses.issuerName = issuerObject.metadata.name
-        } 
+        }
         // ClusterIssuer
         else {
             // Collect issuers
-            let issuerResponse:any = []
+            let issuerResponse: any = []
             try {
                 issuerResponse = await this.api(`kube?target=cm-cluster-issuers`, 'get')
             } catch (err) {
@@ -137,22 +136,21 @@ export default class Create extends Command {
 
             // Collect Issuer YAML
             issuerObject = await this.collectIssuerYaml(agregatedResponses)
-            if(issuerObject.kind.toLowerCase() == 'issuer') {
+            if (issuerObject.kind.toLowerCase() == 'issuer') {
                 error('Your YAML file is for a "Issuer", but you selected a "ClusterIssuer" as your target.')
                 process.exit(1)
             }
 
             // Display Name
-            if(issuerObject.metadata.name) {
+            if (issuerObject.metadata.name) {
                 info(`${issuerObject.kind} name: ${issuerObject.metadata.name}`)
-            }
-            else {
+            } else {
                 error('Your Issuer does not have a name.')
                 process.exit(1)
             }
 
             // Make sure the issuer name does not already exist
-            if(issuerResponse.data.find((issuer:any) => issuer.metadata.name.toLowerCase() == issuerObject.metadata.name.toLowerCase())) {
+            if (issuerResponse.data.find((issuer: any) => issuer.metadata.name.toLowerCase() == issuerObject.metadata.name.toLowerCase())) {
                 error(`The Issuer name "${issuerObject.metadata.name}" already exists`)
                 process.exit(1)
             }
@@ -173,9 +171,9 @@ export default class Create extends Command {
         CliUx.ux.action.start('Creating issuer')
         try {
             await this.api(`kube`, 'post', {
-                type: issuerObject.kind.toLowerCase() == "issuer" ? 'cm-issuer' : 'cm-cluster-issuer',
+                type: issuerObject.kind.toLowerCase() == 'issuer' ? 'cm-issuer' : 'cm-cluster-issuer',
                 namespace: agregatedResponses.namespace ? agregatedResponses.namespace : null,
-                issuerYaml: fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
+                issuerYaml: fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8'),
             })
             CliUx.ux.action.stop()
         } catch (error) {
@@ -186,36 +184,43 @@ export default class Create extends Command {
     }
 
     /**
-     * 
+     *
      */
     async collectIssuerYaml(agregatedResponses: any) {
-        warn(`If your Issuer is not a "cert-manager" natively supported DNS01 provider (for more information, see: https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers), and you intend on using an external "Webhook" provider to manage DNS01 challanges, then make sure you deployed this "Webhook" provider first before you continue.`)
-                   
+        warn(
+            `If your Issuer is not a "cert-manager" natively supported DNS01 provider (for more information, see: https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers), and you intend on using an external "Webhook" provider to manage DNS01 challanges, then make sure you deployed this "Webhook" provider first before you continue.`
+        )
+
         // Issuer file path
         let response = await inquirer.prompt([
             {
-                type: 'text',
+                type: 'input',
                 name: 'issuerYamlPath',
-                message: 'Enter the path to your Issuer YAML file',
+                message: 'Enter the path to your Issuer YAML file:',
                 validate: (value: any) => {
                     if (value.trim().length == 0) return `Mandatory field`
                     else if (!fs.existsSync(value)) return 'File path does not exist'
-                    else if (!value.toLowerCase().endsWith(".yaml") && !value.toLowerCase().endsWith(".yml")) return 'File is not a YAML file'
+                    else if (!value.toLowerCase().endsWith('.yaml') && !value.toLowerCase().endsWith('.yml')) return 'File is not a YAML file'
                     return true
                 },
-            }
+            },
         ])
         agregatedResponses.issuerYamlPath = response.issuerYamlPath
 
         // Extract Issuer name
         const issuerYaml = fs.readFileSync(agregatedResponses.issuerYamlPath, 'utf8')
-        let yamlBlockArray = issuerYaml.split("---")
+        let yamlBlockArray = issuerYaml.split('---')
         let issuer = null
         try {
             // Parse blocks and identify issuer
-            for(let i=0; i<yamlBlockArray.length; i++) {
+            for (let i = 0; i < yamlBlockArray.length; i++) {
                 yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
-                if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
+                if (
+                    yamlBlockArray[i].kind &&
+                    (yamlBlockArray[i].kind == 'Issuer' || yamlBlockArray[i].kind == 'ClusterIssuer') &&
+                    yamlBlockArray[i].metadata &&
+                    yamlBlockArray[i].metadata.name
+                ) {
                     issuer = yamlBlockArray[i]
                 }
             }
@@ -223,7 +228,7 @@ export default class Create extends Command {
             this.showError(error)
             process.exit(1)
         }
-        if(!issuer) {
+        if (!issuer) {
             error('The provided yaml file does not seem to be of kind "Issuer".')
             process.exit(1)
         }

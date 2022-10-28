@@ -43,9 +43,9 @@ export default class AddRole extends Command {
         },
         {
             group: 'user',
-            type: 'text',
+            type: 'input',
             name: 'username',
-            message: 'What username do you wish to add this client role to?',
+            message: 'What username do you wish to add this client role to:',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
                 else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
@@ -134,7 +134,7 @@ export default class AddRole extends Command {
             roleResponses = await inquirer.prompt([
                 {
                     name: 'roleUuid',
-                    message: 'select a role to add from this client',
+                    message: 'Select a role to add from this client:',
                     type: 'list',
                     choices: respClientRoles.data.map((o: { name: any; id: any }) => {
                         return { name: o.name, value: o.id }

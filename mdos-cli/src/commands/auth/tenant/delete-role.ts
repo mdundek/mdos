@@ -70,7 +70,7 @@ export default class DeleteRole extends Command {
             clientResponse = await inquirer.prompt([
                 {
                     name: 'clientId',
-                    message: 'select a client from which to remove a role from',
+                    message: 'Select a client from which to remove a role from:',
                     type: 'list',
                     choices: respClients.data.map((o) => {
                         return { name: o.clientId, value: o.clientId }
@@ -108,7 +108,7 @@ export default class DeleteRole extends Command {
             const roleResponse = await inquirer.prompt([
                 {
                     name: 'role',
-                    message: 'select a role to delete from this client',
+                    message: 'Select a role to delete from this client:',
                     type: 'list',
                     choices: respClientRoles.data.map((o: { name: any }) => {
                         return { name: o.name, value: o }

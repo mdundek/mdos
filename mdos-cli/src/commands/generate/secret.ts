@@ -14,11 +14,7 @@ const YAML = require('yaml')
  * @extends {Command}
  */
 export default class Secret extends Command {
-    static aliases = [
-        'add:secret',
-        'secret:add',
-        'secret:generate',
-    ]
+    static aliases = ['add:secret', 'secret:add', 'secret:generate']
     static description = 'Add a secrets to you components for sensitive environement variables and secret config files'
 
     // ******* FLAGS *******
@@ -58,7 +54,7 @@ export default class Secret extends Command {
         // Collect data
         let responses = await inquirer.prompt([
             {
-                type: 'string',
+                type: 'input',
                 name: 'name',
                 message: 'Enter a name for this secret asset:',
                 validate: (value: string) => {
@@ -84,7 +80,7 @@ export default class Secret extends Command {
                 ],
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'mountpath',
                 when: (values: any) => {
                     return values.type == 'file'
@@ -106,7 +102,7 @@ export default class Secret extends Command {
                 },
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'ref',
                 when: (values: any) => {
                     return values.useRef
@@ -132,10 +128,10 @@ export default class Secret extends Command {
 
         const secret: Secret = {
             name: responses.name,
-            type: responses.type
+            type: responses.type,
         }
 
-        if(!responses.useRef) {
+        if (!responses.useRef) {
             secret.entries = []
         } else {
             secret.ref = responses.ref
@@ -146,7 +142,7 @@ export default class Secret extends Command {
                 key: 'ENV_KEY',
                 value: 'my value',
             })
-        } else if(!responses.useRef) {
+        } else if (!responses.useRef) {
             secret.mountPath = responses.mountpath
             secret.entries.push({
                 key: 'mysecret',

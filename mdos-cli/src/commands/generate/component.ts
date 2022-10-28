@@ -61,7 +61,7 @@ export default class Component extends Command {
             responses = await inquirer.prompt([
                 {
                     group: 'component',
-                    type: 'text',
+                    type: 'input',
                     name: 'name',
                     message: 'Enter a application component name:',
                     validate: (value: string) => {
@@ -86,7 +86,7 @@ export default class Component extends Command {
         }
         const appName = flags.name ? flags.name : responses.name
 
-        let npResponse;
+        let npResponse
         if (!flags.networkPolicy) {
             npResponse = await inquirer.prompt([
                 {
@@ -95,26 +95,26 @@ export default class Component extends Command {
                     message: 'What network policy do you want to apply to this component:',
                     choices: [
                         {
-                            name: "none (All components can talk to this component, no protection)", 
-                            value: "none"
+                            name: 'none (All components can talk to this component, no protection)',
+                            value: 'none',
                         },
                         {
-                            name: "private (No one can talk to this component)", 
-                            value: "private"
+                            name: 'private (No one can talk to this component)',
+                            value: 'private',
                         },
                         {
-                            name: "limited (Only components belonging to this application can talk to this component)", 
-                            value: "limited"
+                            name: 'limited (Only components belonging to this application can talk to this component)',
+                            value: 'limited',
                         },
                         {
-                            name: "open (All application components in this tenant namespace can talk to this component)", 
-                            value: "open"
+                            name: 'open (All application components in this tenant namespace can talk to this component)',
+                            value: 'open',
                         },
                         {
-                            name: "custom (You can specify which components in what namespaces can talk to this component)", 
-                            value: "custom"
-                        }
-                    ]
+                            name: 'custom (You can specify which components in what namespaces can talk to this component)',
+                            value: 'custom',
+                        },
+                    ],
                 },
             ])
         } else {
@@ -138,18 +138,18 @@ export default class Component extends Command {
         // Generate basic app yaml data
         if (!appYaml.components) appYaml.components = []
 
-        const compJson:any = {
+        const compJson: any = {
             name: appName,
             image: `${appName}`,
             uuid: `${nanoid()}-${nanoid()}`,
             tag: '0.0.1',
         }
 
-        if(npResponse.networkPolicy != 'none') {
+        if (npResponse.networkPolicy != 'none') {
             compJson.networkPolicy = {
-                scope: npResponse.networkPolicy
+                scope: npResponse.networkPolicy,
             }
-            if(npResponse.networkPolicy == 'custom') {
+            if (npResponse.networkPolicy == 'custom') {
                 compJson.networkPolicy.allow = []
             }
         }

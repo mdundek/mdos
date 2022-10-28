@@ -31,7 +31,7 @@ export default class Application extends Command {
     static questions = [
         {
             group: 'application',
-            type: 'text',
+            type: 'input',
             name: 'applicationName',
             message: 'Enter a application name:',
             validate: (value: string) => {
@@ -46,7 +46,7 @@ export default class Application extends Command {
         },
         {
             group: 'application',
-            type: 'text',
+            type: 'input',
             name: 'tenantName',
             message: 'Enter a tenant name that this application belongs to:',
             validate: (value: string) => {

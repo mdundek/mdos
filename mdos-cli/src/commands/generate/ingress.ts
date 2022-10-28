@@ -14,11 +14,7 @@ const YAML = require('yaml')
  * @extends {Command}
  */
 export default class Ingress extends Command {
-    static aliases = [
-        'add:ingress',
-        'ingress:add',
-        'ingress:generate',
-    ]
+    static aliases = ['add:ingress', 'ingress:add', 'ingress:generate']
     static description = 'Configure ingress rules to allow external acces to your component ports using hostnames'
 
     // ******* FLAGS *******
@@ -69,7 +65,7 @@ export default class Ingress extends Command {
 
         let responses = await inquirer.prompt([
             {
-                type: 'string',
+                type: 'input',
                 name: 'name',
                 message: 'Enter a name for the ingress:',
                 validate: (value: string) => {
@@ -80,12 +76,20 @@ export default class Ingress extends Command {
                 },
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'host',
                 message: 'What domain name do you want to use to access your component:',
                 when: (values: any) => {
-                    context('NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).', false, true)
-                    context('You can also use the mdos root wildcard domain and cluster wide wildcard ingress gateway if you like, and use a sub-domain for this ingress.', true, true)
+                    context(
+                        'NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
+                        false,
+                        true
+                    )
+                    context(
+                        'You can also use the mdos root wildcard domain and cluster wide wildcard ingress gateway if you like, and use a sub-domain for this ingress.',
+                        true,
+                        true
+                    )
                     return true
                 },
                 validate: (value: string) => {
@@ -100,7 +104,7 @@ export default class Ingress extends Command {
                 message: 'Do you want to match a subpath for this host (fan-out)?',
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'subPath',
                 when: (values: any) => {
                     return values.useSubPath
@@ -124,7 +128,9 @@ export default class Ingress extends Command {
                 name: 'type',
                 message: 'What type of traffic will this ingress redirect to?',
                 when: (values: any) => {
-                    context("Incomming traffic to the Ingress controller is always over HTTPS. The ingress controller then terminates this TLS connection and routes the traffic to your application internally over HTTP. If your application requires that a dedicated certificate is available inside your POD, then you can specify this now.")
+                    context(
+                        'Incomming traffic to the Ingress controller is always over HTTPS. The ingress controller then terminates this TLS connection and routes the traffic to your application internally over HTTP. If your application requires that a dedicated certificate is available inside your POD, then you can specify this now.'
+                    )
                     return true
                 },
                 choices: [
@@ -137,7 +143,7 @@ export default class Ingress extends Command {
                 ],
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'tlsKey',
                 when: (values: any) => {
                     return values.type == 'https'
@@ -150,7 +156,7 @@ export default class Ingress extends Command {
                 },
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'tlsCrt',
                 when: (values: any) => {
                     return values.type == 'https'
@@ -163,7 +169,7 @@ export default class Ingress extends Command {
                 },
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'tldMountDir',
                 when: (values: any) => {
                     return values.type == 'https'
@@ -207,7 +213,7 @@ export default class Ingress extends Command {
 
         targetCompYaml.ingress.push(ing)
 
-        appYaml.components = appYaml.components.map((comp:any) => (comp.name == compName ? targetCompYaml : comp))
+        appYaml.components = appYaml.components.map((comp: any) => (comp.name == compName ? targetCompYaml : comp))
 
         // Create mdos.yaml file
         try {
