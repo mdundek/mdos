@@ -19,7 +19,7 @@ Before we can start using the mdos CLI, we need to tell it what MDos API server 
 
     If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine `hosts` file before you prosceed.  
     In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
-    For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name]()
+    For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name](/installation/#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name)
 
 To configure the target MDos platform API server endpoint with your CLI, use the following command:
 
@@ -46,14 +46,14 @@ WARN : Your current token has expired or is invalid. You need to re-authenticate
 ? Please enter your username: admin-username
 ? Please enter your password: [hidden]
 
-? Enter a namespace name to create a-team
+? Enter a namespace name to create: a-team
 Creating namespace... done
 ```
 
 !!! note
 
-    If this is the first time you interact with the platform (or if your JWT token has expired like in the example above), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the `admin` user account that was used during the platform installation procedure (in this example, the admin username is called `admin-username`, super original, I know...).  
-  If you do already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  
+    If this is the first time you interact with the platform (or if your JWT token has expired like in the example above), you will be asked to authenticate yourself first. In our case, we did not add any platform users yet, so we will simply use the `admin` user account that was used during the platform installation procedure (in this example, the admin username is called `admin-username`).  
+    If you already have your own user account on the platform, and you have sufficient permissions to create new tenant namespaces and deploy applications, then please go ahead and use this one instead.  
 
 So what happened on the platform side when you create a namespace using the MDos CLI? Here are some high level details:
 
@@ -132,11 +132,12 @@ EXPOSE 8080
 CMD [ "node", "server.js" ]
 ```
 
-Ok, we have an application ready to use now. Next, we need to tell out `mdos` application that we want to expose port `8080`, and set up an ingress config to expose it outside of the cluster using the hostname `hello-world.mydomain.com`.
+Ok, we have an application ready to use now. Next, we need to tell our `mdos` application that we want to expose port `8080`, and set up an ingress config to expose it outside of the cluster using the hostname `hello-world.mydomain.com`.
 
 !!! note
 
-    As of now, MDos uses the platform wildcard domain name that was configured during the installation of the platform in order to exposes any application you deploy on it. Adding extra domain names for your various applications is under developement and will be available soon. 
+    As of now, MDos uses the platform wildcard domain name that was configured during the installation of the platform in order to expose any application you deploy on it.  
+    You can of course add other domain names for your various applications if you like, to do so you will have to create a new `ingress-gateway` configuration in your namespace, but this is out of scope in this example. 
 
 Let's start with exposing port `8080` for our application component, which can be done with a kubernetes `service`. Move into the `hello-world-server` component folder and execute the following command:
 
@@ -199,7 +200,7 @@ components:
 !!! note
 
     All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.  
-    To learn more about everything that you can configure for your deployments in this yaml file, please refer back to the specific documentation chapters
+    To learn more about everything that you can configure for your deployments in this yaml file, please check out the [MDos application reference documentation](/reference-documentation)
 
 ### Deploy your `hello-world` application on the cluster
 
@@ -212,17 +213,13 @@ Move into the `hello-world` application and execute the command:
 ``` hl_lines="1"
 mdos application deploy
 
-WARN : Your current token has expired or is invalid. You need to re-authenticate
-
-? Please enter your username: admin-username
-? Please enter your password: [hidden]
-
 Synching volumes... done
 
 To push your images to the mdos registry, you need to provide your mdos username and password first
 
 ? Username: admin-username
 ? Password: ********
+
 Building application image registry.mydomain.com/a-team/hello-world:0.0.1... done
 Pushing application image registry.mydomain.com/a-team/hello-world:0.0.1... done
 Deploying application... scheduled
