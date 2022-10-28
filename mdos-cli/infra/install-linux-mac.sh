@@ -11,12 +11,15 @@
       sudo -k
     fi
 
+    if [ ! -z $1 ]; then
+        sudo CLI_VERSION=$1
+    else
+        sudo CLI_VERSION=v1.2.0
+    fi
 
     # run inside sudo
     $SUDO bash <<SCRIPT
 set -e
-
-CLI_VERSION=v1.2.0
 
 if [[ ! ":\$PATH:" == *":/usr/local/bin:"* ]]; then
     echo "Your path is missing /usr/local/bin, you need to add this to use this installer."
