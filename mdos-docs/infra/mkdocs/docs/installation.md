@@ -191,12 +191,16 @@ The standalone install is a simple tarball with a binary. It contains its own no
 To set up the CLI in `/usr/local/lib/mdos` and `/usr/local/bin/mdos`, run the following script. The script requires sudo and **isn’t Windows compatible**.
 
 ```sh
+# Install latest version
 curl https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh | sudo bash
 ```
 
 To install a specific version of the CLI, do:
 
 ```sh
+# NOTE: the version in this example might be outdated. This example is simply to 
+# showcase how you can install a specific version of the CLI in case your mdos server
+# installation is on an older version
 curl https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh | sudo bash -s -- v1.2.0
 ```
 
