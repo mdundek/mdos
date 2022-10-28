@@ -1340,7 +1340,7 @@ install_keycloak() {
         createMdosRole "assign-roles"
         createMdosRole "oidc-create"
         createMdosRole "oidc-remove"
-        createMdosRole "cm-cluster-issuer-write"
+        createMdosRole "cm-cluster-issuer"
 
         # Create secret with credentials
         cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -

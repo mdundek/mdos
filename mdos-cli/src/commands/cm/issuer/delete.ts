@@ -51,7 +51,7 @@ export default class Delete extends Command {
             process.exit(1)
         }
         let clusterIssuerResponse:any = []
-        if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('cm-cluster-issuer-write'))) {
+        if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('cm-cluster-issuer'))) {
             try {
                 clusterIssuerResponse = await this.api(`kube?target=cm-cluster-issuers`, 'get')
             } catch (err) {

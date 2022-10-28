@@ -89,7 +89,7 @@ const oidcProviderCreateHook = (context, jwtToken) => {
  */
  const clusterIssuerCreateHook = (context, jwtToken) => {
     // If mdos admin or list-user
-    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('cm-cluster-issuer-write'))) {
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('cm-cluster-issuer'))) {
         return context
     }
     // Otherwise unauthorized
