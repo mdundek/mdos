@@ -48,67 +48,7 @@ MDos is multi-tenant oriented, it is designed to be shared between teams, yet se
 * Greatly simplifies complex Kubernetes application deployment patterns
 * Provides tools to deal with hard to solve storage related challanges
 * Protect your applications by delegating authentication to MDos using Oauth2 & OIDC
-* Simply focus on your application RBAC logic by inspecting the user JWT token
-
-<!-- ---
-
-## Table of Contents
-
-- [Why would you want to use it?](#why-would-you-want-to-use-it)
-- [Features](#features)
-    - [Application specific resource configurations](#1-application-specific-resource-configurations)
-    - [Deploy and debug your applications](#2-deploy-and-debug-your-applications)
-    - [Advanced volume and storage workflows](#3-advanced-volume-and-storage-workflows)
-    - [Multi-tenant based segregation](#4-multi-tenant-based-segregation)
-    - [OIDC / OAuth2 authentication & Application RBAC](#5-oidc-oauth2-authentication-application-rbac)
-- [Installation & setup](./mdos-docs/installation.md)
-    - [MDos platform](./mdos-docs/installation.md#install-the-mdos-server-platform)
-        - [Master node & MDos control plane](./mdos-docs/installation.md#master-node--mdos-control-plane)
-        - [Worker nodes](./mdos-docs/installation.md#worker-nodes)
-    - [Install the MDos CLI](./mdos-docs/installation.md#install-the-mdos-cli)
-        - [Linux & MacOSX](./mdos-docs/installation.md#linux--mac-osx)
-        - [Windows](./mdos-docs/installation.md#windows)
-        - [Special notes about self-signed certificates without a resolvable DNS name](./mdos-docs/installation.md)
-- [Getting started](./mdos-docs/getting-started.md)
-    - [Anathomy of a MDos application](./mdos-docs/getting-started.md)
-    - [Configure your CLI to point to a MDos platform API host](./mdos-docs/getting-started.md)
-    - [Create a new tenant namespace](./mdos-docs/getting-started.md#overview)
-    - [Scaffold an application and application components](./mdos-docs/getting-started.md#overview)
-    - [Deploy your application](./mdos-docs/getting-started.md#overview)
-- [MDos CLI commands](#overview)
-    - [Tenants namespaces](#overview)
-    - [Tenant roles](#overview)
-    - [Users and user-roles](#overview)
-    - [Manage applications](#overview)
-        - [Scaffold a new application workspace](#overview)
-        - [Manage applcation components](#overview)
-            - [Scaffold a new application component](#overview)
-            - [Work with application configurations](#overview)
-            - [Work with application secrets](#overview)
-            - [Configure service ports](#overview)
-            - [Configure ingress rules](#overview)
-            - [Configure volumes](#overview)
-            - [Define network isolation levels for your components (firewall)](#overview)
-        - [Build & Deploy applications](#overview)
-        - [Delete deployed applications](#overview)
-        - [List deployed applications](#overview)
-- [POD Storage solutions](#overview)
-    - [Mirror static data with your POD volumes](#overview)
-    - [Share volumes between PODs (WriteMany)](#overview)
-- [OIDC OAuth2 Providers](#overview)
-    - [Deploy a new OIDC OAuth2 proxy provider](#overview)
-        - [Keycloak OIDC](#overview)
-        - [Google OIDC](#overview)
-    - [List all deployed OIDC OAuth2 proxy providers](#overview)
-    - [Delete a deployed OIDC OAuth2 proxy provider](#overview)
-- [Protect your applications](#overview)
-      - [Add OIDC OAuth2 user authentication for your application components](#overview)
-      - [Implement Role Based Access Control (RBAC ACL) in your application code](#overview)
-- [Debugging application & accessing logs](#overview)
-    - [Deployment status & log access](#overview)
-    - [Access centralized logs with Loki](#overview) -->
-
----
+* Hassle free TLS certificate management
 
 ### Why would you want to use it?
 
@@ -133,7 +73,7 @@ Financially, this does not make much sense. If every company had to only hire ex
 
 ---
 
-### Features
+## Features
 
 Those can be split into 5 families:
 
@@ -142,12 +82,12 @@ Those can be split into 5 families:
 3. Advanced volume and storage workflows
 4. Multi-tenant based segregation
 5. OIDC / OAuth2 authentication & Application RBAC
+6. Cert-Manager for TLS certificate issuer and secret management
 
-#### 1. Application specific resource configurations
+### 1. Application specific resource configurations
 
 Using the MDos CLI and a unified `mdos.yaml` application descriptor file, you can build complex Kubernetes deployment senarios without any knowledge of Kubernetes resource definition types such as `Deployments`, `StatefulSets`, `Pods`, `Services`, `PV & PVCs`, `VirtualServices`, `Secrets`, `ConfigMaps`, `NetworkPolicies` ... (just to name a few)  
 Therefore, build your applications using higher level artefacts that will translate to lower level Kubernetes resource definitions based on Kubernetes best practices.  
-Amongst other things, the MDos CLI allows you to:
 
 * Scaffold a new `application` workspace
 * Scaffold a application `component` inside your mdos `application`
@@ -156,28 +96,34 @@ Amongst other things, the MDos CLI allows you to:
 * Expose your application components to other resources within the cluster 
 * Configure hostname based ingress rules to allow access to your application components from outside of the cluster
 * Mount various volume types to your application components
+* ...
 
-#### 2. Deploy and debug your applications
+### 2. Deploy and debug your applications
 
 * One mdos CLI command to deploy your applications and sync static volumes with your pods
 * Get real-time detailed feedback on your deployments, providing valuable feedback on what might go wrong in order to fix it
 * Get all application component logs, including init container logs in case of a failed deployment for instant debugging
 * Aggregate all application & platform logs in Loki, accessible through a dedicated API (TODO)
 
-#### 3. Advanced volume and storage workflows
+### 3. Advanced volume and storage workflows
 
 * Synchronize / provision static local data with your application component volumes before they start in Kubernetes
 * Provision shared filesystem volumes for your application components (TODO)
 
-#### 4. Multi-tenant based segregation
+### 4. Multi-tenant based segregation
 
 * A tenant will get a Kubernetes namespace as well as a dedicated Keycloak client (for user management)
 * You can create users on the platform and link them to one or more tenants
 * Manage user permissions (RBAC) specifcally for each tenant namespace / keycloak client 
 * Kubernetes namespaces let you take advantage of network and resource segregation mechanisms for each tenant
 
-#### 5. OIDC / OAuth2 authentication & Application RBAC
+### 5. OIDC / OAuth2 authentication & Application RBAC
 
-* Provision OIDC / OAuth2 based Authentication providers to your cluster ready to use (Keycloak internal or Google only for now)
+* Provision OIDC / OAuth2 based Authentication providers to your cluster ready to use
 * Link OIDC / OAuth2 provisioned providers to your application components to protect those resources (no app changes needed)
 * Assign roles to your users specifically on each tenant / keycloak client, allowing you to implement your ACL logic without having to deal with authentication at all
+
+### 6. Cert-Manager for TLS certificate issuer and secret management
+
+* Register Cert-Manager Issuers onto your cluster or namespace
+* Generate and manage certificates / secrets from your Issuers
