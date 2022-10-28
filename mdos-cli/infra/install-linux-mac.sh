@@ -45,10 +45,10 @@
     rm -rf ~/.mdos/cli.json
     if [ $(command -v xz) ]; then
         TAR_ARGS="xJ"
-        URL=https://github.com/mdundek/mdos/releases/download/$\CLI_VERSION/mdos-$\CLI_VERSION-$OS-$ARCH.tar.xz
+        URL=https://github.com/mdundek/mdos/releases/download/$CLI_VERSION/mdos-$CLI_VERSION-$OS-$ARCH.tar.xz
     else
         TAR_ARGS="xz"
-        URL=https://github.com/mdundek/mdos/releases/download/$\CLI_VERSION/mdos-$\CLI_VERSION-$OS-$ARCH.tar.gz
+        URL=https://github.com/mdundek/mdos/releases/download/$CLI_VERSION/mdos-$CLI_VERSION-$OS-$ARCH.tar.gz
     fi
 
     echo "Installing CLI from $URL"
