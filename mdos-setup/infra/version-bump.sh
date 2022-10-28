@@ -188,9 +188,9 @@ fi
   if [ "$REPO_NAME" == "mdos-cli" ]; then
     # Update auto install scripts for CLI
     if [ "$DISTRO" == "darwin" ]; then
-        gsed -i '/CLI_VERSION=v/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
+        gsed -i '/CLI_VERSION=v/c\        CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
     else
-        sed -i '/CLI_VERSION=v/c\CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
+        sed -i '/CLI_VERSION=v/c\        CLI_VERSION=v'$NEW_APP_VERSION'' $REPO_DIR/$REPO_NAME/infra/install-linux-mac.sh
     fi
   fi
   
