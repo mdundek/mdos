@@ -938,7 +938,7 @@
 
 <h1 id="mdos-application-reference-documentation">MDos application reference documentation</h1>
 <h2 id="anatomy-of-an-application">Anatomy of an application</h2>
-<p><img align="right" alt="Anatomy" src="/img/anatomy.png" />
+<p><img align="right" alt="Anatomy" src="/mdos/img/anatomy.png" />
 Applications are to be seen as a higher level concept, an application in <code>mdos</code> is composed of one or more application components. Application components are your actual project asset placeholders (source code), where one component could be an API backend server for instance, and a second component would hold your front end application and so on.<br />
 Every application component can have one or more volumes attached to it for storage persistance &amp; data mirroring. </p>
 <p>This architecture allows you to compose complex applications to suit your needs.</p>
@@ -1646,7 +1646,7 @@ The <code>uuid</code> field is a unique identifier for this application, all dep
 </code></pre></div></td></tr></table></div>
 <p>The <code>custom</code> scope let's you specify specifically what application components from what namespaces are allowed to communicate with this component.  </p>
 <p>Here is a more complex example that uses a <code>custom</code> scoped NetworkPolicy (please note the addition of the <code>allow</code> array value in this case):  </p>
-<p><img src="/img/networkPolicies/custom.png" alt="custom" width="800"/></p>
+<p><img src="/mdos/img/networkPolicies/custom.png" alt="custom" width="800"/></p>
 <hr />
 <h3 id="oauth2-oidc"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> OAuth2 OIDC</h3>
 <h4 id="configure-a-oidc-provider"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Configure a OIDC provider</h4>

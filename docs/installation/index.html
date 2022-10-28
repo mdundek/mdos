@@ -736,10 +736,10 @@ The MDos CLI is available for Max, linux and Windows</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo ./mdos-setup/install.sh
 </code></pre></div>
 <p>During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.</p>
-<p><img src="/img/installation/ip.png" alt="ip" width="600"/></p>
+<p><img src="/mdos/img/installation/ip.png" alt="ip" width="600"/></p>
 <h4 id="administrator-credentials"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Administrator credentials</h4>
 <p>The platform will create a overall admin account on the platform. Please provide the admin username, email and password first:</p>
-<p><img src="/img/installation/account.png" alt="account" width="600"/></p>
+<p><img src="/mdos/img/installation/account.png" alt="account" width="600"/></p>
 <h4 id="domain-certificate-setup"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Domain &amp; certificate setup</h4>
 <p>Some of the components such as the registry auth server require a TLS certificate to function.<br />
 The installation script will give you multiple choices here:</p>
@@ -756,7 +756,7 @@ For production, you will have to use a fully valid certificate in order to use a
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Cert-manager example</label><label for="__tabbed_1_2">Self-signed certificate example</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<p><img src="/img/installation/certmanager.png" alt="selfsigned"/></p>
+<p><img src="/mdos/img/installation/certmanager.png" alt="selfsigned"/></p>
 <p>Here we are using <code>cert-manager</code> to generate and manage the certificate for you</p>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
@@ -791,7 +791,7 @@ For production, you will have to use a fully valid certificate in order to use a
 </div>
 </div>
 <div class="tabbed-block">
-<p><img src="/img/installation/selfsigned.png" alt="selfsigned" width="600"/></p>
+<p><img src="/mdos/img/installation/selfsigned.png" alt="selfsigned" width="600"/></p>
 <p>This example is based on the 3rd option, a self signed certificate. If you want to use <code>cert-manager</code> instead (good option for production environement), you will be asked to enter the path to your cert-manager <code>Issuer</code> Yaml file to use in order to issue your certificate.</p>
 </div>
 </div>
@@ -799,7 +799,7 @@ For production, you will have to use a fully valid certificate in order to use a
 <h4 id="kubernetes-workload-storage-directory-path"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Kubernetes workload storage directory path</h4>
 <p>When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.<br />
 MDos uses <code>Longhorn</code> from Rancher as a storage class. Longhorn will store your container volume data in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system. Please note that you need to ensure that you have enougth storage capacity on this directory path, it is recommended to mount a separate dedicated disk for this purpose:</p>
-<p><img src="/img/installation/storage.png" alt="storage" width="600"/></p>
+<p><img src="/mdos/img/installation/storage.png" alt="storage" width="600"/></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Longhorn is a <code>block storage</code> provider, it replicates your data over multiple disks / partitions. Longhorn does work with only one disk, which is it's default setup configuration, but it is highly recommended that you configure at least 2, idealy 3 disks for optimal data redundancy. To configure those disk, on the same machine or on different machines, use the longhorn UI accessible under the URL <code>https://longhorn.&lt;ROOT-DOMAIN&gt;</code>   </p>
@@ -807,7 +807,7 @@ MDos uses <code>Longhorn</code> from Rancher as a storage class. Longhorn will s
 <h4 id="private-registry-max-size"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Private registry max size</h4>
 <p>MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.<br />
 The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).</p>
-<p><img src="/img/installation/registry.png" alt="registry" width="600"/></p>
+<p><img src="/mdos/img/installation/registry.png" alt="registry" width="600"/></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Please note that this storage capacity will be located on your main Kubernetes storage path specified above</p>
@@ -823,7 +823,7 @@ MDos provides you with a means to initialize your application pods with data pre
 <p>This is achieved by providing a centralized storage space on the mdos platform where a FTP server will allow you to (using the mdos CLI) mirror your application volume data from your local machine to the centralized FTP storage device where Kubernetes will then mirror those data volumes onto your POD volumes using <code>initContainers</code> and the FTP protocol.<br />
 Here you are being asked to provide a directory path to where this centralized data will be hosted.<br />
 Again, this is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:</p>
-<p><img src="/img/installation/ftp.png" alt="ftp" width="700"/></p>
+<p><img src="/mdos/img/installation/ftp.png" alt="ftp" width="700"/></p>
 <h4 id="configure-keycloak-and-set-up-the-master-token"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Configure Keycloak and set up the master token</h4>
 <p>After a few minutes (can take up to 10 minutes, depending on your internet speed), you will be asked to set up Keycloak and provide a secret token to the installation script. <br />
 This token is necessary so that mdos can administer everything it needs on Keycloak.<br />

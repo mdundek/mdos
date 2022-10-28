@@ -7,7 +7,7 @@ hide:
 
 ## Anatomy of an application
 
-![Anatomy](/img/anatomy.png){ align=right }
+![Anatomy](/mdos/img/anatomy.png){ align=right }
 Applications are to be seen as a higher level concept, an application in `mdos` is composed of one or more application components. Application components are your actual project asset placeholders (source code), where one component could be an API backend server for instance, and a second component would hold your front end application and so on.  
 Every application component can have one or more volumes attached to it for storage persistance & data mirroring. 
 
@@ -548,7 +548,7 @@ The `custom` scope let's you specify specifically what application components fr
 
 Here is a more complex example that uses a `custom` scoped NetworkPolicy (please note the addition of the `allow` array value in this case):  
 
-<img src="/img/networkPolicies/custom.png" alt="custom" width="800"/>
+<img src="/mdos/img/networkPolicies/custom.png" alt="custom" width="800"/>
 
 ---
 

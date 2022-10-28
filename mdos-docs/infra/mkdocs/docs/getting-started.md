@@ -235,7 +235,7 @@ SUCCESS : Application deployed
 
 That's it, your application should now be accessible on the following domain: `https://hello-world.mydomain.com`
 
-![Hello world](/img/getting-started/hello-world.png)
+![Hello world](/mdos/img/getting-started/hello-world.png)
 
 ## OIDC Providers for authentication
 

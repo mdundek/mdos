@@ -35,13 +35,13 @@ sudo ./mdos-setup/install.sh
 
 During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.
 
-<img src="/img/installation/ip.png" alt="ip" width="600"/>
+<img src="/mdos/img/installation/ip.png" alt="ip" width="600"/>
 
 #### :material-arrow-right-thin: Administrator credentials 
 
 The platform will create a overall admin account on the platform. Please provide the admin username, email and password first:
 
-<img src="/img/installation/account.png" alt="account" width="600"/>
+<img src="/mdos/img/installation/account.png" alt="account" width="600"/>
 
 #### :material-arrow-right-thin: Domain & certificate setup
 
@@ -59,7 +59,7 @@ The installation script will give you multiple choices here:
 
 === "Cert-manager example"
 
-    <img src="/img/installation/certmanager.png" alt="selfsigned"/>
+    <img src="/mdos/img/installation/certmanager.png" alt="selfsigned"/>
 
     Here we are using `cert-manager` to generate and manage the certificate for you
 
@@ -99,7 +99,7 @@ The installation script will give you multiple choices here:
 
 === "Self-signed certificate example"
 
-    <img src="/img/installation/selfsigned.png" alt="selfsigned" width="600"/>
+    <img src="/mdos/img/installation/selfsigned.png" alt="selfsigned" width="600"/>
 
     This example is based on the 3rd option, a self signed certificate. If you want to use `cert-manager` instead (good option for production environement), you will be asked to enter the path to your cert-manager `Issuer` Yaml file to use in order to issue your certificate.
 
@@ -108,7 +108,7 @@ The installation script will give you multiple choices here:
 When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.  
 MDos uses `Longhorn` from Rancher as a storage class. Longhorn will store your container volume data in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system. Please note that you need to ensure that you have enougth storage capacity on this directory path, it is recommended to mount a separate dedicated disk for this purpose:
 
-<img src="/img/installation/storage.png" alt="storage" width="600"/>
+<img src="/mdos/img/installation/storage.png" alt="storage" width="600"/>
 
 !!! note
 
@@ -119,7 +119,7 @@ MDos uses `Longhorn` from Rancher as a storage class. Longhorn will store your c
 MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.  
 The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).
 
-<img src="/img/installation/registry.png" alt="registry" width="600"/>
+<img src="/mdos/img/installation/registry.png" alt="registry" width="600"/>
 
 !!! note
 
@@ -138,7 +138,7 @@ This is achieved by providing a centralized storage space on the mdos platform w
 Here you are being asked to provide a directory path to where this centralized data will be hosted.  
 Again, this is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system:
 
-<img src="/img/installation/ftp.png" alt="ftp" width="700"/>
+<img src="/mdos/img/installation/ftp.png" alt="ftp" width="700"/>
 
 #### :material-arrow-right-thin: Configure Keycloak and set up the master token
 

@@ -9,7 +9,7 @@ hide:
 MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency
 
 <figure markdown>
-  ![Overview](/img/overview.png)
+  ![Overview](/mdos/img/overview.png)
 </figure>
 
 !!! warning
