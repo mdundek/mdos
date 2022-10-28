@@ -49,14 +49,6 @@ export default class List extends Command {
             process.exit(1)
         }
 
-        let nsResponse
-        try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
-        } catch (err) {
-            this.showError(err)
-            process.exit(1)
-        }
-
         // We need a valid admin authentication token, get this first
         try {
             const response = await this.api('kube?target=namespaces&realm=mdos&includeKcClients=true', 'get')

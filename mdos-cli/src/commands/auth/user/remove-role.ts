@@ -27,9 +27,9 @@ export default class RemoveRole extends Command {
     static questions = [
         {
             group: 'user',
-            type: 'text',
+            type: 'input',
             name: 'username',
-            message: 'Enter Keycloak username',
+            message: 'Enter Keycloak username:',
             validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
         },
     ]
@@ -99,7 +99,7 @@ export default class RemoveRole extends Command {
             clientResponses = await inquirer.prompt([
                 {
                     name: 'clientId',
-                    message: 'select a client from which to remove a user role from',
+                    message: 'Select a client from which to remove a user role from:',
                     type: 'list',
                     choices: targetUser.clients.split(',').map((o: any) => {
                         return { name: o.trim(), value: o.trim() }
@@ -132,7 +132,7 @@ export default class RemoveRole extends Command {
             const roleResponse = await inquirer.prompt([
                 {
                     name: 'role',
-                    message: 'select a role to remove from this user',
+                    message: 'Select a role to remove from this user:',
                     type: 'list',
                     choices: respUserClientRoles.data
                         .filter((rm: { client: any }) => rm.client == clientResponses.clientId)

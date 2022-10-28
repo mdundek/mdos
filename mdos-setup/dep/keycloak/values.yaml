@@ -22,6 +22,22 @@ components:
         entries:
           - key: POSTGRES_DB
             value: "keycloak"
+      - name: db-init
+        type: dir
+        mountPath: /docker-entrypoint-initdb.d
+        defaultMode: 0744
+        entries:
+          - key: create-multiple-postgresql-databases.sh
+            value: |-
+              #!/bin/bash
+              set -e
+              set -u
+              psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+                CREATE USER $KEYCLOAK_USER password '$KEYCLOAK_PASS';
+                CREATE DATABASE keycloak;
+                GRANT ALL PRIVILEGES ON DATABASE keycloak TO $KEYCLOAK_USER;
+              EOSQL
+
     secrets:
       - name: creds
         type: env
@@ -34,14 +50,12 @@ components:
             value: "admin"
           - key: KEYCLOAK_PASS
             value: "admin"
+
     volumes:
       - name: host-data-volume
         mountPath: /var/lib/postgresql/data
         subPath: data
         size: 5Gi
-      - name: db-init
-        mountPath: /docker-entrypoint-initdb.d
-        hostPath: /home/mdundek/workspaces/mdos/data/pg-init-scripts
 
   - name: keycloak
     uuid: KG75-7D58-keycloak
@@ -63,7 +77,8 @@ components:
             nodePort: 30999
     ingress:
       - name: ingress
-        gateway: mdos/https-gateway-mdos
+        gateways: 
+          - mdos/https-gateway-mdos
         matchHost: keycloak.<DOMAIN>
         targetPort: 443
         trafficType: https

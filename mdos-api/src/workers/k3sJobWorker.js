@@ -124,7 +124,13 @@ const KubeCore = require('../services/kube/kube.class.core')
      * installOauthProvider
      */
      async installOauthProvider() {
-        await this.app.get('kube').deployOauth2Proxy(this.msg.context.oidcTarget, this.msg.context.realm, this.msg.context.providerName, this.msg.context.kcClientId)
+        if(this.msg.context.oidcTarget == "keycloak") {
+            await this.app.get('kube').deployKeycloakOauth2Proxy(this.msg.context.realm, this.msg.context.providerName, this.msg.context.kcClientId)
+        } else if(this.msg.context.oidcTarget == "google") {
+            await this.app.get('kube').deployGoogleOauth2Proxy(this.msg.context.providerName, this.msg.context.googleClientId, this.msg.context.googleClientSecret, this.msg.context.redirectUris)
+        } else {
+            throw new Error("Unsupported provider: ", this.msg.context.oidcTarget)
+        }
     }
 
     /**

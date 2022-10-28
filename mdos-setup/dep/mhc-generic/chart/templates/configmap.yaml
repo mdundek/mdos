@@ -1,10 +1,11 @@
-{{- $appName := lower $.Values.appName }}
+{{- $appName := $.Values.appName }}
 
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
   {{- $uuid := .uuid -}}
   {{- if .configs }}
     {{- range .configs }}
+      {{- if not .ref }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -16,15 +17,16 @@ metadata:
     compUuid: {{ $uuid }}
     tenantName: {{ $.Values.tenantName }}
 data:
-      {{- if eq .type "env" }}
-        {{- range .entries }}
+        {{- if eq .type "env" }}
+          {{- range .entries }}
   {{ .key }}: {{ .value | quote }}
+          {{- end }}
         {{- end }}
-      {{- end }}
-      {{- if or (eq .type "file") (eq .type "dir") }}
-        {{- range .entries }}
-  {{ .name }}: |-
+        {{- if or (eq .type "file") (eq .type "dir") }}
+          {{- range .entries }}
+  {{ .key }}: |-
 {{ .value | indent 4 }}
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
@@ -32,10 +34,11 @@ data:
 
   {{- if $.Values.global.configs }}
     {{- range $.Values.global.configs }}
-      {{- if .appComp }}
-        {{- $config := . }}
-        {{- range .appComp }}
-          {{- if eq .name $appComponentName }}
+      {{- if not .ref }}
+        {{- if .appComp }}
+          {{- $config := . }}
+          {{- range .appComp }}
+            {{- if eq .name $appComponentName }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -47,20 +50,20 @@ metadata:
     compUuid: {{ $config.uuid }}
     tenantName: {{ $.Values.tenantName }}
 data:
-            {{- if eq $config.type "env" }}
-              {{- range $config.entries }}
+              {{- if eq $config.type "env" }}
+                {{- range $config.entries }}
   {{ .key }}: {{ .value | quote }}
+                {{- end }}
               {{- end }}
-            {{- end }}
-            {{- if or (eq $config.type "file") (eq $config.type "dir") }}
-              {{- range $config.entries }}
-  {{ .name }}: |-
+              {{- if or (eq $config.type "file") (eq $config.type "dir") }}
+                {{- range $config.entries }}
+  {{ .key }}: |-
 {{ .value | indent 4 }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
-        {{- end }}
-      {{- else }}
+        {{- else }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -72,15 +75,16 @@ metadata:
     compUuid: {{ .uuid }}
     tenantName: {{ $.Values.tenantName }}
 data:
-        {{- if eq .type "env" }}
-          {{- range .entries }}
+          {{- if eq .type "env" }}
+            {{- range .entries }}
   {{ .key }}: {{ .value | quote }}
+            {{- end }}
           {{- end }}
-        {{- end }}
-        {{- if or (eq .type "file") (eq .type "dir") }}
-          {{- range .entries }}
-  {{ .name }}: |-
+          {{- if or (eq .type "file") (eq .type "dir") }}
+            {{- range .entries }}
+  {{ .key }}: |-
 {{ .value | indent 4 }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}

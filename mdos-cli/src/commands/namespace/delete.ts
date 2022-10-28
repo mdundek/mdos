@@ -83,7 +83,7 @@ export default class Delete extends Command {
             clientResponse = await inquirer.prompt([
                 {
                     name: 'clientId',
-                    message: 'Select a namespace to delete',
+                    message: 'Select a namespace to delete:',
                     type: 'list',
                     choices: respClients.data.map((o) => {
                         return { name: o.clientId, value: o.clientId }

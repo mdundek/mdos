@@ -1,3 +1,11 @@
-:root > * {
-	--md-code-fg-color: #bb6735;
+[data-md-color-scheme="default"] {
+	--md-code-hl-color: #fffeea;
+}
+
+[data-md-color-scheme="slate"] {
+	--md-code-fg-color: #adbac8;
+}
+
+.section-icon {
+	color: #1DA1F2;
 }

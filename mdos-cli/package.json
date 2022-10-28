@@ -1,6 +1,6 @@
 {
     "name": "mdos-cli",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "mdos cli tool",
     "author": "Michael Dundek",
     "bin": {
@@ -89,6 +89,18 @@
             },
             "oidc:provider": {
                 "description": "Manage OIDC authentication providers and protect your applications"
+            },
+            "cm": {
+                "description": "Manage your Cert-Manager assets"
+            },
+            "cm:cert": {
+                "description": "Manage your Cert-Manager TLS certificates"
+            },
+            "cm:issuer": {
+                "description": "Manage your Cert-Manager Issuers"
+            },
+            "ingress-gateway": {
+                "description": "Configure your namespace specific ingress gateway configurations"
             }
         }
     },

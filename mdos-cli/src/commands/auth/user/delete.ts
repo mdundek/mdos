@@ -25,9 +25,9 @@ export default class Delete extends Command {
     static questions = [
         {
             group: 'user',
-            type: 'text',
+            type: 'input',
             name: 'username',
-            message: 'Enter Keycloak username to delete',
+            message: 'Enter Keycloak username to delete:',
             validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
         },
     ]

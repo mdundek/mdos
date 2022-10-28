@@ -8,26 +8,23 @@ hide:
 
 MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency
 
+<figure markdown>
+  ![Overview](/img/overview.png)
+</figure>
+
+!!! warning
+    MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
 ---
 
-## Overview
+## In a Nutshell
 
-<div style="display: flex; align-items: center; justify-content: center">
-  <div style="flex-basis: 50%; order: 2;background-color: #ffffff; text-align: center;">
-    <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/img/overview.png?raw=true" style="max-width: 100%">
-  </div>
-  <div style="padding-right: 20px;">
-    <ul>
-      <li>Build & deploy your applications on Kubernetes</li>
-      <li>No Kubernetes skills needed to perform complex workflows</li>
-      <li>Hassle free secure multi-tenant cluster usage and isolation</li>
-      <li>Greatly simplifies complex Kubernetes application deployment patterns</li>
-      <li>Provides tools to deal with hard to solve storage related challanges</li>
-      <li>Protect your applications by delegating authentication to MDos using Oauth2 & OIDC</li>
-      <li>Simply focus on your application RBAC logic by inspecting the user JWT token</li>
-    </ul>
-  </div>
-</div>
+* Build & deploy your applications on Kubernetes
+* No Kubernetes skills needed to perform complex workflows
+* Hassle free secure multi-tenant cluster usage and isolation
+* Greatly simplifies complex Kubernetes application deployment patterns
+* Provides tools to deal with hard to solve storage related challanges
+* Protect your applications by delegating authentication to MDos using Oauth2 & OIDC
+* Simply focus on your application RBAC logic by inspecting the user JWT token
 
 ### Why would you want to use it?
 
@@ -52,7 +49,7 @@ Financially, this does not make much sense. If every company had to only hire ex
 
 ---
 
-### Features
+## Features
 
 Those can be split into 5 families:
 
@@ -62,7 +59,7 @@ Those can be split into 5 families:
 4. Multi-tenant based segregation
 5. OIDC / OAuth2 authentication & Application RBAC
 
-#### 1. Application specific resource configurations
+### 1. Application specific resource configurations
 
 Using the MDos CLI and a unified `mdos.yaml` application descriptor file, you can build complex Kubernetes deployment senarios without any knowledge of Kubernetes resource definition types such as `Deployments`, `StatefulSets`, `Pods`, `Services`, `PV & PVCs`, `VirtualServices`, `Secrets`, `ConfigMaps`, `NetworkPolicies` ... (just to name a few)  
 Therefore, build your applications using higher level artefacts that will translate to lower level Kubernetes resource definitions based on Kubernetes best practices.  
@@ -76,26 +73,26 @@ Amongst other things, the MDos CLI allows you to:
 * Configure hostname based ingress rules to allow access to your application components from outside of the cluster
 * Mount various volume types to your application components
 
-#### 2. Deploy and debug your applications
+### 2. Deploy and debug your applications
 
 * One mdos CLI command to deploy your applications and sync static volumes with your pods
 * Get real-time detailed feedback on your deployments, providing valuable feedback on what might go wrong in order to fix it
 * Get all application component logs, including init container logs in case of a failed deployment for instant debugging
 * Aggregate all application & platform logs in Loki, accessible through a dedicated API (TODO)
 
-#### 3. Advanced volume and storage workflows
+### 3. Advanced volume and storage workflows
 
 * Synchronize / provision static local data with your application component volumes before they start in Kubernetes
 * Provision shared filesystem volumes for your application components (TODO)
 
-#### 4. Multi-tenant based segregation
+### 4. Multi-tenant based segregation
 
 * A tenant will get a Kubernetes namespace as well as a dedicated Keycloak client (for user management)
 * You can create users on the platform and link them to one or more tenants
 * Manage user permissions (RBAC) specifcally for each tenant namespace / keycloak client 
 * Kubernetes namespaces let you take advantage of network and resource segregation mechanisms for each tenant
 
-#### 5. OIDC / OAuth2 authentication & Application RBAC
+### 5. OIDC / OAuth2 authentication & Application RBAC
 
 * Provision OIDC / OAuth2 based Authentication providers to your cluster ready to use (Keycloak internal or Google only for now)
 * Link OIDC / OAuth2 provisioned providers to your application components to protect those resources (no app changes needed)

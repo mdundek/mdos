@@ -78,9 +78,9 @@ export default class CreateRole extends Command {
         } else {
             roleResponses = await inquirer.prompt([
                 {
-                    type: 'text',
+                    type: 'input',
                     name: 'name',
-                    message: 'Enter the client role name to create',
+                    message: 'Enter the client role name to create:',
                     validate: (value: any) => {
                         if (value.trim().length == 0) return 'Mandatory field'
                         else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))

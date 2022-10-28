@@ -152,19 +152,17 @@ class Kube extends KubeBase {
     /**
      *
      *
-     * @param {*} type
      * @param {*} realm
      * @param {*} name
      * @param {*} clientId
      * @memberof Kube
      */
-    async deployOauth2Proxy(type, realm, name, clientId) {
-        if (type == 'keycloak') {
-            const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/.well-known/openid-configuration`)
-            const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
-            const clientSecret = await this.app.get('keycloak').getClientSecret(realm, clientId)
+    async deployKeycloakOauth2Proxy(realm, name, clientId) {
+        const realmUrls = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/realms/${realm}/.well-known/openid-configuration`)
+        const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
+        const clientSecret = await this.app.get('keycloak').getClientSecret(realm, clientId)
 
-            const oauthData = YAML.parse(`service:
+        const oauthData = YAML.parse(`service:
     portNumber: 4180
 config:
     clientID: "${clientId}"
@@ -199,10 +197,62 @@ config:
         upstreams = [ "static://200" ]
         whitelist_domains = [".${this.rootDomain}"]`)
 
-            // Deploy oauth2-proxy instance for new provider
-            if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
-            await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.0.1')
-        }
+        // Deploy oauth2-proxy instance for new provider
+        if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
+        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.2.7')
+    }
+
+    /**
+     *
+     *
+     * @param {*} name
+     * @param {*} clientId
+     * @param {*} clientSecret
+     * @param {*} redirectUris
+     * @memberof Kube
+     */
+     async deployGoogleOauth2Proxy(name, clientId, clientSecret, redirectUris) { 
+        const realmUrls = await axios.get(`https://accounts.google.com/.well-known/openid-configuration`)
+        const cookieSecret = await terminalCommand("dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo")
+
+        const oauthData = YAML.parse(`service:
+    portNumber: 4180
+config:
+    clientID: "${clientId}"
+    clientSecret: "${clientSecret}"
+    cookieSecret: "${cookieSecret}"
+    cookieName: "_oauth2_proxy"
+    configFile: |-
+        provider = "oidc"
+        oidc_issuer_url="${realmUrls.data.issuer}"
+        profile_url="${realmUrls.data.userinfo_endpoint}"
+        validate_url="${realmUrls.data.userinfo_endpoint}"
+        scope="openid email profile"
+        pass_host_header = true
+        reverse_proxy = true
+        auth_logging = true
+        cookie_httponly = true
+        cookie_refresh = "4m"
+        cookie_secure = true
+        email_domains = "*"
+        pass_access_token = true
+        pass_authorization_header = true
+        request_logging = true
+        session_store_type = "cookie"
+        set_authorization_header = true
+        set_xauthrequest = true
+        silence_ping_logging = true
+        skip_provider_button = true
+        skip_auth_strip_headers = false
+        skip_jwt_bearer_tokens = true
+        ssl_insecure_skip_verify = true
+        standard_logging = true
+        upstreams = [ "static://200" ]
+        whitelist_domains = ${JSON.stringify(redirectUris)}`)
+       
+        // Deploy oauth2-proxy instance for new provider
+        if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ 'name': 'oauth2-proxy' })
+        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.2.7')
     }
 
     /**
@@ -300,6 +350,105 @@ config:
                 }
             } catch(err) {}
         }
+    }
+
+    /**
+     * generateIngressGatewayDomainMatrix
+     * 
+     * @param {*} domains 
+     */
+    async generateIngressGatewayDomainMatrix(domains) {
+        const domainMatrix = {}
+        domains.forEach(domain => {
+            if(domain.startsWith(".")) domain = `*${domain}` // normalize
+            domainMatrix[domain] = {
+                "HTTPS_PASSTHROUGH": { match: "NONE" },
+                "HTTPS_SIMPLE": { match: "NONE" },
+                "HTTP": { match: "NONE" }
+            }
+        })
+
+        // Collect all gateway configs
+        const allGatewayConfigs = await this.getIstioGateways("")
+
+        // Build matrix value for each domain name, one at a time
+        domains.forEach(domain => {
+            if(domain.startsWith(".")) domain = `*${domain}` // normalize
+            // Look for exact matches in the available gateways first 
+            allGatewayConfigs.forEach(gateway => {
+                gateway.spec.servers.forEach(server => {
+                    server.hosts.forEach(gtwDomain => {
+                        if(gtwDomain.startsWith(".")) gtwDomain = `*${gtwDomain}` // normalize
+                        // If exact match
+                        if(domain.toLowerCase() == gtwDomain.toLowerCase()) {
+                            if(server.tls && server.tls.mode == "PASSTHROUGH") {
+                                domainMatrix[domain]["HTTPS_PASSTHROUGH"] = { match: "EXACT", gtw: gateway, gtwDomainMatch: gtwDomain }
+                            } else if(server.tls && server.tls.mode == "SIMPLE") {
+                                domainMatrix[domain]["HTTPS_SIMPLE"] = { match: "EXACT", gtw: gateway, gtwDomainMatch: gtwDomain }
+                            } else if(!server.tls) {
+                                domainMatrix[domain]["HTTP"] = { match: "EXACT", gtw: gateway, gtwDomainMatch: gtwDomain }
+                            }
+                        }
+                    })
+                })
+            })
+
+            // Look for wildcard matches in the available gateways for domains that do not have a match yet
+            allGatewayConfigs.forEach(gateway => {
+                gateway.spec.servers.forEach(server => {
+                    server.hosts.forEach(gtwDomain => {
+                        if(gtwDomain.startsWith(".")) gtwDomain = `*${gtwDomain}` // normalize
+                        // Gateway domain config is wildcard, wildcard matches can be evaluated,
+                        // otherwise there is no point in going further
+                        if(gtwDomain.startsWith("*.")) {
+                            // Is there already a exact match?
+                            let fairGame = false
+                            if(server.tls && server.tls.mode == "PASSTHROUGH" && domainMatrix[domain]["HTTPS_PASSTHROUGH"].match == "NONE") {
+                                fairGame = true
+                            } else if(server.tls && server.tls.mode == "SIMPLE" && domainMatrix[domain]["HTTPS_SIMPLE"].match == "NONE") {
+                                fairGame = true
+                            } else if(!server.tls && domainMatrix[domain]["HTTP"].match == "NONE"){
+                                fairGame = true
+                            }
+
+                            // No exact match, evaluate further
+                            if(fairGame) {
+                                // If wildcard match
+                                if(domain.toLowerCase().endsWith(gtwDomain.substring(1).toLowerCase())) {
+                                    if(server.tls && server.tls.mode == "PASSTHROUGH") {
+                                        domainMatrix[domain]["HTTPS_PASSTHROUGH"] = { match: "WILDCARD", gtw: gateway, gtwDomainMatch: gtwDomain }
+                                    } else if(server.tls && server.tls.mode == "SIMPLE") {
+                                        domainMatrix[domain]["HTTPS_SIMPLE"] = { match: "WILDCARD", gtw: gateway, gtwDomainMatch: gtwDomain }
+                                    } else if(!server.tls){
+                                        domainMatrix[domain]["HTTP"] = { match: "WILDCARD", gtw: gateway, gtwDomainMatch: gtwDomain }
+                                    }
+                                }
+                            }
+                        }
+                    })
+                })
+            })
+        })
+
+        return domainMatrix
+    }
+
+    /**
+     * ingressGatewayTargetAvailable
+     * 
+     * @param {*} ingressGatewayDomainMatrix 
+     * @param {*} gatewayServerType 
+     */
+    ingressGatewayTargetAvailable(ingressGatewayDomainMatrix, gatewayServerType) {
+        const domainTargetsAvailable = {}
+        Object.keys(ingressGatewayDomainMatrix).forEach(domain => {
+            if(gatewayServerType == "HTTP") {
+                domainTargetsAvailable[domain] = ingressGatewayDomainMatrix[domain]["HTTP"].match == "EXACT" ? false : true
+            } else if(gatewayServerType == "HTTPS_PASSTHROUGH" || gatewayServerType == "HTTPS_SIMPLE") {
+                domainTargetsAvailable[domain] = (ingressGatewayDomainMatrix[domain]["HTTPS_PASSTHROUGH"].match == "EXACT" || ingressGatewayDomainMatrix[domain]["HTTPS_SIMPLE"].match == "EXACT") ? false : true
+            } 
+        })
+        return domainTargetsAvailable
     }
 }
 

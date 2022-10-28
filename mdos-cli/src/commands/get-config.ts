@@ -10,7 +10,7 @@ const { context } = require('../lib/tools')
  * @extends {Command}
  */
 export default class GetConfig extends Command {
-    static aliases = ['get:config', 'show:config', 'show-config']
+    static aliases = ['get:config']
     static description = 'Get configutation parameter(s) for your local CLI environement'
 
     // ******* FLAGS *******

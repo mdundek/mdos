@@ -5,6 +5,7 @@ const YAML = require('yaml')
 const fs = require('fs')
 let _ = require('lodash')
 const { terminalCommand, terminalCommandAsync } = require('../libs/terminal')
+const { isBuffer } = require('lodash')
 
 let caCrt
 if (process.env.RUN_TARGET == 'pod') {
@@ -96,6 +97,24 @@ class KubeBase extends KubeBaseConstants {
             res.data.data[param] = Buffer.from(res.data.data[param], 'base64').toString('utf-8')
         }
         return res.data.data
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @return {*}
+     * @memberof KubeBase
+     */
+     async getTlsSecrets(namespaceName, secretName) {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
+        if(secretName) {
+            const target = res.data.items.filter(secret => secret.type == "kubernetes.io/tls").find(secret => secret.metadata.name == secretName)
+            return target ? [target] : []
+        } else {
+            return res.data.items.filter(secret => secret.type == "kubernetes.io/tls")
+        }
     }
 
     /**
@@ -250,6 +269,209 @@ class KubeBase extends KubeBaseConstants {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
         return res.data
+    }
+
+    /**
+     * getCertManagerCertificates
+     * 
+     * @param {*} namespaceName 
+     * @param {*} certName 
+     * @returns 
+     */
+    async getCertManagerCertificates(namespaceName, certName) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates`)
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+
+        let certList
+        if(certName) {
+            const targetObj = res.data.items.find(crt => crt.metadata.name == certName)
+            if(targetObj) certList = [targetObj]
+            else certList = []
+        } else {
+            certList = res.data.items
+        }
+        
+        return certList
+    }
+
+    /**
+     * 
+     * @param {*} namespaceName 
+     * @param {*} certName 
+     * @param {*} hostsArray 
+     * @param {*} issuerName 
+     * @param {*} isClusterIssuer 
+     */
+    async createCertManagerCertificate(namespaceName, certName, hostsArray, issuerName, isClusterIssuer) {
+        await axios.post(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates`, {
+            apiVersion: "cert-manager.io/v1",
+            kind: "Certificate",
+            metadata: {
+                name: certName,
+                namespace: namespaceName
+            },
+            spec: {
+                secretName: certName,
+                duration: "2160h",
+                renewBefore: "360h",
+                dnsNames: hostsArray,
+                issuerRef: {
+                    name: issuerName,
+                    kind: isClusterIssuer ? "ClusterIssuer" : "Issuer"
+                }
+            }
+        }, this.k8sAxiosHeader)
+    }
+
+    /**
+     * 
+     * @param {*} namespaceName 
+     * @param {*} certName 
+     */
+     async deleteCertManagerCertificate(namespaceName, certName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/certificates/${certName}`, this.k8sAxiosHeader)
+     }
+
+    /**
+     * getCertManagerIssuers
+     * 
+     * @param {*} namespaceName 
+     * @param {*} issuerName 
+     * @returns 
+     */
+     async getCertManagerIssuers(namespaceName, issuerName) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers`)
+        const resIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+        resIssuers.data.items = resIssuers.data.items.filter(issuer => issuer.metadata.namespace != "cert-manager")
+        if(issuerName) {
+            const namedIssuer = resIssuers.data.items.find(crt => crt.metadata.name == issuerName)
+            if(namedIssuer) return [namedIssuer]
+            else return []
+        } else {
+            return resIssuers.data.items
+        }
+    }
+
+    /**
+     * deleteCertManagerIssuer
+     * @param {*} namespaceName 
+     * @param {*} issuerName 
+     */
+    async deleteCertManagerIssuer(namespaceName, issuerName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/namespaces/${namespaceName}/issuers/${issuerName}`, this.k8sAxiosHeader)
+    }
+
+    /**
+     * getCertManagerClusterIssuers
+     * 
+     * @param {*} issuerName 
+     * @returns 
+     */
+    async getCertManagerClusterIssuers(issuerName) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/clusterissuers`)
+        const resClusterIssuers = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+
+        if(issuerName) {
+            const allIssuers = []
+            const namedClusterIssuer = resClusterIssuers.data.items.find(crt => crt.metadata.name == issuerName)
+            if(namedClusterIssuer) allIssuers.push(namedClusterIssuer)
+            return allIssuers
+        } else {
+            return resClusterIssuers.data.items
+        }
+    }
+
+    /**
+     * deleteCertManagerClusterIssuer
+     * @param {*} issuerName 
+     */
+     async deleteCertManagerClusterIssuer(issuerName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/cert-manager.io/v1/clusterissuers/${issuerName}`, this.k8sAxiosHeader)
+    }
+
+    /**
+     * getIstioGateways
+     * 
+     * @param {*} namespaceName 
+     * @param {*} gatewayName 
+     * @returns 
+     */
+    async getIstioGateways(namespaceName, gatewayName) {
+        const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`)
+        const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+        if(gatewayName) {
+            const allGateways = []
+            const namedGateway = res.data.items.find(gtw => gtw.metadata.name == gatewayName)
+            if(namedGateway) allGateways.push(namedGateway)
+            return allGateways
+        } else {
+            return res.data.items
+        }
+    }
+
+    /**
+     * createIstioGateway
+     * 
+     * @param {*} namespaceName 
+     * @param {*} gatewayName 
+     * @param {*} gatewayServers 
+     */
+     async createIstioGateway(namespaceName, gatewayName, gatewayServers) {
+        await axios.post(
+            `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`,
+            {
+                apiVersion: 'networking.istio.io/v1beta1',
+                kind: 'Gateway',
+                metadata: {
+                    name: gatewayName,
+                },
+                spec: {
+                    selector: {
+                        istio: "ingressgateway"
+                    },
+                    servers: gatewayServers
+                }
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     * updateIstioGateway
+     * 
+     * @param {*} namespaceName 
+     * @param {*} gatewayName 
+     * @param {*} gatewayServers 
+     */
+    async updateIstioGateway(namespaceName, gatewayName, resourceVersion, gatewayServers) {
+        await axios.put(
+            `https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways/${gatewayName}`,
+            {
+                apiVersion: 'networking.istio.io/v1beta1',
+                kind: 'Gateway',
+                metadata: {
+                    name: gatewayName,
+                    resourceVersion: resourceVersion
+                },
+                spec: {
+                    selector: {
+                        istio: "ingressgateway"
+                    },
+                    servers: gatewayServers
+                }
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     * deleteIstioGateway
+     * 
+     * @param {*} namespaceName 
+     * @param {*} gatewayName 
+     */
+    async deleteIstioGateway(namespaceName, gatewayName) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways/${gatewayName}`, this.k8sAxiosHeader)
     }
 
     /**
@@ -422,6 +644,46 @@ class KubeBase extends KubeBaseConstants {
         try {
             fs.writeFileSync('./values.yaml', YAML.stringify(values))
             await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} ${version ? `--version ${version}` : ''} --values ./values.yaml  ${chartName} ${chart} --atomic`)
+        } finally {
+            if (fs.existsSync('./values.yaml')) {
+                fs.rmSync('./values.yaml', { force: true })
+            }
+        }
+    }
+
+    /**
+     * 
+     * 
+     * @param {*} namespace 
+     * @param {*} yamlData 
+     */
+    async kubectlApply(namespace, yamlData) {
+        try {
+            fs.writeFileSync('./values.yaml', yamlData)
+            if(namespace)
+                await terminalCommand(`kubectl apply -n ${namespace} -f ./values.yaml`)
+            else
+                await terminalCommand(`kubectl apply -f ./values.yaml`)
+        } finally {
+            if (fs.existsSync('./values.yaml')) {
+                fs.rmSync('./values.yaml', { force: true })
+            }
+        }
+    }
+
+    /**
+     * 
+     * 
+     * @param {*} namespace 
+     * @param {*} yamlData 
+     */
+     async kubectlDelete(namespace, yamlData) {
+        try {
+            fs.writeFileSync('./values.yaml', YAML.stringify(yamlData))
+            if(namespace)
+                await terminalCommand(`kubectl delete -n ${namespace} -f ./values.yaml`)
+            else
+                await terminalCommand(`kubectl delete -f ./values.yaml`)
         } finally {
             if (fs.existsSync('./values.yaml')) {
                 fs.rmSync('./values.yaml', { force: true })

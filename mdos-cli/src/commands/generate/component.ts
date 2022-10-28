@@ -23,6 +23,7 @@ export default class Component extends Command {
     // ******* FLAGS *******
     static flags = {
         name: Flags.string({ char: 'n', description: 'An application component name' }),
+        networkPolicy: Flags.string({ char: 'p', description: 'Network Policy to apply to this component' }),
     }
     // *********************
 
@@ -60,7 +61,7 @@ export default class Component extends Command {
             responses = await inquirer.prompt([
                 {
                     group: 'component',
-                    type: 'text',
+                    type: 'input',
                     name: 'name',
                     message: 'Enter a application component name:',
                     validate: (value: string) => {
@@ -83,8 +84,47 @@ export default class Component extends Command {
                 process.exit(1)
             }
         }
-
         const appName = flags.name ? flags.name : responses.name
+
+        let npResponse
+        if (!flags.networkPolicy) {
+            npResponse = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'networkPolicy',
+                    message: 'What network policy do you want to apply to this component:',
+                    choices: [
+                        {
+                            name: 'none (All components can talk to this component, no protection)',
+                            value: 'none',
+                        },
+                        {
+                            name: 'private (No one can talk to this component)',
+                            value: 'private',
+                        },
+                        {
+                            name: 'limited (Only components belonging to this application can talk to this component)',
+                            value: 'limited',
+                        },
+                        {
+                            name: 'open (All application components in this tenant namespace can talk to this component)',
+                            value: 'open',
+                        },
+                        {
+                            name: 'custom (You can specify which components in what namespaces can talk to this component)',
+                            value: 'custom',
+                        },
+                    ],
+                },
+            ])
+        } else {
+            if (!['none', 'private', 'limited', 'open', 'custom'].includes(flags.networkPolicy)) {
+                error('Invalid NetworkPolicy, allowed values are private, limited, open or custom')
+                process.exit(1)
+            } else {
+                npResponse = { networkPolicy: flags.networkPolicy }
+            }
+        }
 
         // Create default Dockerfile
         try {
@@ -98,12 +138,23 @@ export default class Component extends Command {
         // Generate basic app yaml data
         if (!appYaml.components) appYaml.components = []
 
-        appYaml.components.push({
+        const compJson: any = {
             name: appName,
             image: `${appName}`,
             uuid: `${nanoid()}-${nanoid()}`,
             tag: '0.0.1',
-        })
+        }
+
+        if (npResponse.networkPolicy != 'none') {
+            compJson.networkPolicy = {
+                scope: npResponse.networkPolicy,
+            }
+            if (npResponse.networkPolicy == 'custom') {
+                compJson.networkPolicy.allow = []
+            }
+        }
+
+        appYaml.components.push(compJson)
 
         // Create mdos.yaml file
         try {

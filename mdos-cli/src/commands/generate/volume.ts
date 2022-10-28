@@ -14,15 +14,7 @@ const YAML = require('yaml')
  * @extends {Command}
  */
 export default class Volume extends Command {
-    static aliases = [
-        'add:volume',
-        'volume:add',
-        'add:storage',
-        'storage:add',
-        'volume:generate',
-        'generate:storage',
-        'storage:generate'
-    ]
+    static aliases = ['add:volume', 'volume:add', 'add:storage', 'storage:add', 'volume:generate', 'generate:storage', 'storage:generate']
     static description = 'Persist your data using volumes / storage for your components'
 
     // ******* FLAGS *******
@@ -72,7 +64,7 @@ export default class Volume extends Command {
         // Collect data
         let responses = await inquirer.prompt([
             {
-                type: 'string',
+                type: 'input',
                 name: 'name',
                 message: 'Enter a name for this volume folder:',
                 validate: (value: string) => {
@@ -83,7 +75,7 @@ export default class Volume extends Command {
                 },
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'mountpath',
                 message: 'Enter the mount path inside your container:',
                 validate: (value: string) => {
@@ -102,7 +94,7 @@ export default class Volume extends Command {
                 message: 'Do you want to mount this folder directly to a local host path on the cluster node?',
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'hostpath',
                 when: (values: any) => {
                     return values.useHostpath
@@ -118,10 +110,26 @@ export default class Volume extends Command {
                 name: 'inject',
                 default: false,
                 when: (values: any) => {
-                    context('Content will be copied over to the cluster host on deployment', false, true)
-                    return true
+                    if (!values.useHostpath) {
+                        context('Content will be copied over to the cluster host on deployment', false, true)
+                        return true
+                    } else {
+                        return false
+                    }
                 },
                 message: 'Do you want to populate your volume with some static content before the container starts?',
+            },
+            {
+                type: 'number',
+                name: 'size',
+                when: (values: any) => {
+                    return !values.useHostpath
+                },
+                message: 'Size in Gb (ex. 0.2, 1, 100...) to allocate to this volume:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    return true
+                },
             },
         ])
 
@@ -133,6 +141,7 @@ export default class Volume extends Command {
             name?: string
             mountPath: string
             hostPath?: string
+            size?: string
         }
 
         const vol: Volume = {
@@ -157,6 +166,8 @@ export default class Volume extends Command {
                 process.exit(1)
             }
         }
+
+        if (responses.size) vol.size = `${responses.size}Gi`
 
         if (responses.useHostpath) vol.hostPath = responses.hostpath
 

@@ -1,4 +1,4 @@
-{{- $appName := lower .Values.appName -}}
+{{- $appName := .Values.appName -}}
 
 {{- $ftpCredentials := "" }}
 {{- if .Values.ftpCredentials }}
@@ -56,6 +56,10 @@ spec:
     {{- with $.Values.podSecurityContext }}
       securityContext:
       {{- toYaml .podSecurityContext | nindent 8 }}
+    {{- end }}
+    {{- if .nodeSelector }}
+      nodeSelector:
+        {{ .nodeSelector.label }}: {{ .nodeSelector.value | quote }}
     {{- end }}
 
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
@@ -293,24 +297,36 @@ spec:
           {{- /* -=-=-=- ENV VARS -=-=-= */}}
 
           {{- if eq .type "env" }}
-            {{- if .appComp }}
-              {{- $rangeKey := .key }}
-              {{- range .appComp }}
-                {{- if eq .name $appComponentName }}
+            {{- if not .ref }}
+              {{- if .appComp }}
+                {{- $rangeKey := .key }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ $rangeKey }}
+                  {{- end }}
                 {{- end }}
-              {{- end }}
-            {{- else }}
+              {{- else }}
             - name: {{ .key }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ .key }}
-                  {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- if .ref }}
+              {{- $secref := .ref }}
+              {{- range .entries }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secref }}
+                  key: {{ .key }}
+              {{- end }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -322,12 +338,24 @@ spec:
       {{- range .configs }}
         {{- $name := .name }}
         {{- if eq .type "env" }}
-          {{- range .entries }}
+          {{- if not .ref }}
+            {{- range .entries }}
             - name: {{ .key }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ .key }}
+            {{- end }}
+          {{- end }}
+          {{- if .ref }}
+            {{- $cfmref := .ref }}
+            {{- range .entries }}
+            - name: {{ .name }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $cfmref }}
+                  key: {{ .key }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
@@ -341,23 +369,35 @@ spec:
           {{- /* -=-=-=- ENV VARS -=-=-= */}}
 
           {{- if eq .type "env" }}
-            {{- if .appComp }}
-              {{- $rangeKey := .key }}
-              {{- range .appComp }}
-                {{- if eq .name $appComponentName }}
+            {{- if not .ref }}
+              {{- if .appComp }}
+                {{- $rangeKey := .key }}
+                {{- range .appComp }}
+                  {{- if eq .name $appComponentName }}
             - name: {{ $rangeKey }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ $rangeKey }}
+                  {{- end }}
                 {{- end }}
-              {{- end }}
-            {{- else }}
+              {{- else }}
             - name: {{ .key }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
                   key: {{ .key }}
+              {{- end }}
+            {{- end }}
+            {{- if .ref }}
+              {{- $cfmref := .ref }}
+              {{- range .entries }}
+            - name: {{ .name }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $cfmref }}
+                  key: {{ .key }}
+              {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -381,81 +421,8 @@ spec:
       {{- end }}
     {{- end }}
 
-    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= LIVELINESS PROBE =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
-
-    {{- if .livenessProbe }}
-          livenessProbe:
-      {{- if eq .livenessProbe.type "http" }}
-            httpGet:
-              path: {{ .livenessProbe.path }}
-              port: {{ .livenessProbe.port }}
-        {{- if .livenessProbe.headers }}
-              httpHeaders:
-          {{- range .livenessProbe.headers }}
-                - name: {{ .name }}
-                  value: {{ .value }}
-          {{- end }}
-        {{- end }}
-      {{- else if eq .livenessProbe.type "tcp" }}
-            tcpSocket:
-              port: {{ .livenessProbe.port }}
-      {{- end }}
-      {{- if .livenessProbe.initialDelaySeconds }}
-            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds }}
-      {{- end }}
-      {{- if .livenessProbe.periodSeconds }}
-            periodSeconds: {{ .livenessProbe.periodSeconds }}
-      {{- end }}
-      {{- if .livenessProbe.timeoutSeconds }}
-            timeoutSeconds: {{ .livenessProbe.timeoutSeconds }}
-      {{- end }}
-      {{- if .livenessProbe.successThreshold }}
-            successThreshold: {{ .livenessProbe.successThreshold }}
-      {{- end }}
-      {{- if .livenessProbe.failureThreshold }}
-            failureThreshold: {{ .livenessProbe.failureThreshold }}
-      {{- end }}
-    {{- end }}
-          
-    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= READINESS PROBE =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
-
-    {{- if .readinessProbe }}
-          readinessProbe:
-      {{- if eq .readinessProbe.type "http" }}
-            httpGet:
-              path: {{ .readinessProbe.path }}
-              port: {{ .readinessProbe.port }}
-        {{- if .readinessProbe.headers }}
-              httpHeaders:
-          {{- range .readinessProbe.headers }}
-                - name: {{ .name }}
-                  value: {{ .value }}
-          {{- end }}
-        {{- end }}
-      {{- else if eq .readinessProbe.type "tcp" }}
-            tcpSocket:
-              port: {{ .readinessProbe.port }}
-      {{- end }}
-
-      {{- if .readinessProbe.initialDelaySeconds }}
-            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds }}
-      {{- end }}
-      {{- if .readinessProbe.periodSeconds }}
-            periodSeconds: {{ .readinessProbe.periodSeconds }}
-      {{- end }}
-      {{- if .readinessProbe.timeoutSeconds }}
-            timeoutSeconds: {{ .readinessProbe.timeoutSeconds }}
-      {{- end }}
-      {{- if .readinessProbe.successThreshold }}
-            successThreshold: {{ .readinessProbe.successThreshold }}
-      {{- end }}
-      {{- if .readinessProbe.failureThreshold }}
-            failureThreshold: {{ .readinessProbe.failureThreshold }}
-      {{- end }}
-    {{- end }}
-
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
-    {{- /* -=-=-=-=-=-=-=-=-=-=-==-=-=-=-= RESSOURCES =-=-=-=-=-=-=-==-=-=-=-=-=-=-=-= */}}
+    {{- /* -=-=-=-=-=-=-=-=-=-=-==-=-=-=-= RESOURCES =-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=- */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
 
     {{- if .resources }}
@@ -491,7 +458,7 @@ spec:
           {{- range .entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
           {{- end }}
         {{- end }}
         {{- if eq .type "dir" }}
@@ -515,7 +482,7 @@ spec:
                 {{- range $config.entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
                 {{- end }}
               {{- end }}
             {{- end }}
@@ -524,7 +491,7 @@ spec:
             {{- range .entries }}
               - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
-                subPath: {{ .name | quote }}
+                subPath: {{ .key | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -559,7 +526,7 @@ spec:
             {{- range .entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
             {{- end }}
           {{- end }}  
         {{- end }}
@@ -585,7 +552,7 @@ spec:
                 {{- range $entries }}
             - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
               mountPath: "{{ $mountPath }}/{{ .filename }}"
-              subPath: {{ .name | quote }}
+              subPath: {{ .key | quote }}
                 {{- end }}
               {{- end }}
             {{- end }}
@@ -594,7 +561,7 @@ spec:
             {{- range .entries }}
               - name: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
                 mountPath: "{{ $mountPath }}/{{ .filename }}"
-                subPath: {{ .name | quote }}
+                subPath: {{ .key | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -656,7 +623,11 @@ spec:
         {{- if or (eq .type "file") (eq .type "dir") }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
+          {{- if .ref }}
+            name: {{ .ref }}
+          {{- else }}
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- end }}
           {{- if .defaultMode }}
             defaultMode: {{ .defaultMode }}
           {{- end }}
@@ -675,7 +646,11 @@ spec:
               {{- if eq .name $appComponentName }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
           configMap:
+                {{- if $config.ref }}
+            name: {{ $config.ref }}
+                {{- else }}
             name: {{ $appName }}-{{ $appComponentName }}-{{ $config.name }}
+                {{- end }}
                 {{- if $config.defaultMode }}
             defaultMode: {{ $config.defaultMode }}
                 {{- end }}
@@ -684,7 +659,11 @@ spec:
           {{- else }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           configMap:
+            {{- if .ref }}
+            name: {{ .ref }}
+            {{- else }}
             name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            {{- end }}
             {{- if .defaultMode }}
             defaultMode: {{ .defaultMode }}
             {{- end }}
@@ -723,7 +702,11 @@ spec:
               {{- if eq .name $appComponentName }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
+                {{- if $secret.ref }}
+            secretName: {{ $secret.ref }}
+                {{- else }}
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ $secret.name }}
+                {{- end }}
                 {{- if $secret.defaultMode }}
             defaultMode: {{ $secret.defaultMode }}
                 {{- end }}
@@ -732,7 +715,11 @@ spec:
           {{- else }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           secret:
+            {{- if .ref }}
+            secretName: {{ .ref }}
+            {{- else }}
             secretName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+            {{- end }}
             {{- if .defaultMode }}
             defaultMode: {{ .defaultMode }}
             {{- end }}

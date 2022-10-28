@@ -1,4 +1,4 @@
-const { NotFound, Conflict, Unavailable, Forbidden } = require('@feathersjs/errors')
+const { NotFound, Conflict, Forbidden } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
 const CommonCore = require('../common.class.core')
@@ -106,7 +106,7 @@ class MdosCore extends CommonCore {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
 
-        // Iterate over components and proces one by one
+        // Iterate over components and process one by one
         for (const component of valuesYaml.components) {
             // Add registry credentials if necessary
             if (!component.imagePullSecrets && !component.publicRegistry) {
@@ -143,16 +143,97 @@ class MdosCore extends CommonCore {
                     const oidcLinks = await axios.get(`https://keycloak.${process.env.ROOT_DOMAIN}:${process.env.KC_PORT}/realms/mdos/.well-known/openid-configuration`)
                     component.oidc.issuer = oidcLinks.data.issuer
                     component.oidc.jwksUri = oidcLinks.data.jwks_uri
+                } else if (component.oidc.provider.indexOf('google-') == 0) {
+                    const oidcLinks = await axios.get(`https://accounts.google.com/.well-known/openid-configuration`)
+                    component.oidc.issuer = oidcLinks.data.issuer
+                    component.oidc.jwksUri = oidcLinks.data.jwks_uri
                 } else {
-                    throw new Unavailable('ERROR: Provider not supported')
+                    throw new Error('ERROR: Provider not supported')
                 }
             }
 
             // Set default ingress type if not set
             if (component.ingress) {
                 component.ingress = component.ingress.map((i) => {
+                    if(i.matchHost.startsWith(".")) i.matchHost = `*${i.matchHost}` // normalize
                     if (!i.trafficType) i.trafficType = 'http'
                     return i
+                })
+
+                // Set associated gateways
+                const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
+                console.log(JSON.stringify(hostMatrix, null, 4))
+                let ingressInUseErrors = []
+                let ingressMissingErrors = []
+                component.ingress = component.ingress.map((ingress) => {
+                    let gtwConfigured = false
+                    if(ingress.trafficType == "http") {
+                        const httpAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTP")
+                        const httpsTerminateAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_SIMPLE")
+                        gtwConfigured = !httpAvailable[ingress.matchHost] || !httpsTerminateAvailable[ingress.matchHost]
+                    } else {
+                        const httpsPassthrough = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_PASSTHROUGH")
+                        gtwConfigured = !httpsPassthrough[ingress.matchHost]
+                    }
+
+                    // If not available for new gateway config, then it means that we have a match
+                    if(gtwConfigured) {
+                        let targetGtws = []
+
+                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                        }
+
+                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                        } 
+
+                        if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                        } else if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
+                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                        }
+                        if(targetGtws.length == 0) {
+                            ingressInUseErrors.push({
+                                type: ingress.trafficType,
+                                host: ingress.matchHost
+                            })
+                        } else {
+                            ingress.gateways = [...new Set(targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`))]  // filter out duplicates
+                        }
+                    } else {
+                        ingressMissingErrors.push({
+                            type: ingress.trafficType,
+                            host: ingress.matchHost
+                        })
+                    }
+                    return ingress
+                })
+               
+                let errorMsgs = []
+                if(ingressInUseErrors.length > 0) {
+                    errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))
+                }
+                if(ingressMissingErrors.length > 0) {
+                    errorMsgs = errorMsgs.concat(ingressMissingErrors.map(error => `No ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}"`))
+                }
+                
+                if(errorMsgs.length > 0)
+                    throw new Conflict(`ERROR: ${errorMsgs.join("\n")}`)
+            }
+
+            // Set component details for networkPolicy limitet
+            if (component.networkPolicy && component.networkPolicy.scope == "limited") {
+                component.networkPolicy.allow = valuesYaml.components.filter(_c => _c.uuid != component.uuid).map(_c => {
+                    return {
+                        namespace: valuesYaml.tenantName,
+                        appUuid: valuesYaml.uuid,
+                        compUuid: _c.uuid
+                    }
                 })
             }
         }

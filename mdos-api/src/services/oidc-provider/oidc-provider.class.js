@@ -86,6 +86,52 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
                     throw new Error("ERROR: An unknown error occured")
                 }
             }
+        }
+        else if (body.type == 'google') {
+            // Make sure OIDC provider does not already exist
+            await this.ensureProviderNotDeclared(body.data.name)
+
+            // Kick off event driven workflow
+            const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY, {
+                context: {
+                    oidcTarget: "google",
+                    providerName: body.data.name,
+                    googleClientId: body.data.googleClientId,
+                    googleClientSecret: body.data.googleClientSecret,
+                    redirectUris: body.data.redirectUris,
+                    rollback: false
+                },
+                workflow: [
+                    {
+                        topic: CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY,
+                        status: "PENDING",
+                        milestone: 1
+                    },
+                    {
+                        topic: CHANNEL.JOB_K3S_ADD_ISTIO_OIDC_PROVIDER,
+                        status: "PENDING",
+                        milestone: 2
+                    }
+                ],
+                rollbackWorkflow: [
+                    {
+                        topic: CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY,
+                        status: "PENDING",
+                        milestone: 1
+                    }
+                ]
+            })
+
+            // Check if error occured or not
+            if(result.context.rollback) {
+                console.error(result.workflow)
+                const errorJob = result.workflow.find(job => job.status  == "ERROR")
+                if(errorJob && errorJob.errorMessage) {
+                    throw new Error("ERROR: " + errorJob.errorMessage)
+                } else {
+                    throw new Error("ERROR: An unknown error occured")
+                }
+            }
         } else {
             throw new Unavailable('ERROR: Provider type not implemented yet')
         }

@@ -68,10 +68,12 @@ cd ..
 echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-stdin
 
 cp infra/dep/helm/helm .
+cp infra/dep/kubectl/kubectl .
 
 docker build -t registry.$DOMAIN/mdos-api:latest .
 
 rm -rf helm
+rm -rf kubectl
 
 docker push registry.$DOMAIN/mdos-api:latest
 
@@ -97,8 +99,7 @@ if [ ! -z $DO_DEPLOY ]; then
     rm -rf ./target_values.yaml
 
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
-    kubectl logs $POD_NAME -n mdos --follow
-
+    echo "kubectl logs $POD_NAME -n mdos"
 fi
 
 if [ ! -z $DO_RESTART ]; then
@@ -106,7 +107,8 @@ if [ ! -z $DO_RESTART ]; then
     kubectl delete pod $POD_NAME -n mdos
     sleep 1
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
-    kubectl logs $POD_NAME -n mdos --follow
+
+    echo "kubectl logs $POD_NAME -n mdos"
 fi
 
 # exec_in_pod() {

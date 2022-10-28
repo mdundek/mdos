@@ -1,4 +1,4 @@
-{{- $appName := lower $.Values.appName }}
+{{- $appName := .Values.appName -}}
 
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
@@ -36,9 +36,11 @@ metadata:
     compUuid: {{ $uuid }}
     tenantName: {{ $.Values.tenantName }}
 spec:
-      {{- if .gateway }}
+      {{- if .gateways }}
   gateways:
-    - {{ .gateway }}
+        {{- range .gateways }}
+    - {{ . }}
+        {{- end }}
       {{- else }}
   gateways:
     - mdos/https-gateway

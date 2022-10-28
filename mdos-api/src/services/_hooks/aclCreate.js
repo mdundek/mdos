@@ -82,6 +82,78 @@ const oidcProviderCreateHook = (context, jwtToken) => {
 }
 
 /**
+ * clusterIssuerCreateHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const clusterIssuerCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('cm-cluster-issuer'))) {
+        return context
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to create ClusterIssuers')
+}
+
+/**
+ * issuerCreateHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const issuerCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
+        return context
+    }
+    // If not namespace admin
+    if (jwtToken.resource_access[context.data.namespace] && (jwtToken.resource_access[context.data.namespace].roles.includes('admin') || jwtToken.resource_access[context.data.namespace].roles.includes('k8s-write'))) {
+        return context
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to create Issuers')
+}
+
+/**
+ * certificateCreateHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const certificateCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
+        return context
+    }
+    // If not namespace admin
+    if (jwtToken.resource_access[context.data.namespace] && (jwtToken.resource_access[context.data.namespace].roles.includes('admin') || jwtToken.resource_access[context.data.namespace].roles.includes('k8s-write'))) {
+        return context
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to create Certificates')
+}
+
+/**
+ * ingressGatewayCreateHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const ingressGatewayCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
+        return context
+    }
+    // If not namespace admin
+    if (jwtToken.resource_access[context.data.namespace] && (jwtToken.resource_access[context.data.namespace].roles.includes('admin') || jwtToken.resource_access[context.data.namespace].roles.includes('k8s-write'))) {
+        return context
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to create Ingress Gateway configs')
+}
+
+/**
  * Export
  *
  * @return {*} 
@@ -112,12 +184,22 @@ module.exports = function () {
             return await userRoleCreateHook(context, jwtToken)
         } else if (context.path == 'keycloak' && context.data.type == 'client-role') {
             return await clientRoleCreateHook(context, jwtToken)
-        } else if (context.path == 'kube' && context.data.type == 'tenantNamespace') {
-            return await namespaceCreateHook(context, jwtToken)
         } else if (context.path == 'oidc-provider') {
             return await oidcProviderCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'tenantNamespace') {
+            return await namespaceCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'cm-cluster-issuer') {
+            return await clusterIssuerCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'cm-issuer') {
+            return await issuerCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'cm-certificate') {
+            return await certificateCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'ingress-gateway') {
+            return await ingressGatewayCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'validate-ingress-gtw-hosts') {
+            return context
         } else {
-            console.log('Unknown: ', context.data, context.path)
+            console.log('Unknown create hook: ', context.data, context.path)
         }
         return context
     }

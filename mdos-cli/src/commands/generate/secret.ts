@@ -14,11 +14,7 @@ const YAML = require('yaml')
  * @extends {Command}
  */
 export default class Secret extends Command {
-    static aliases = [
-        'add:secret',
-        'secret:add',
-        'secret:generate',
-    ]
+    static aliases = ['add:secret', 'secret:add', 'secret:generate']
     static description = 'Add a secrets to you components for sensitive environement variables and secret config files'
 
     // ******* FLAGS *******
@@ -58,7 +54,7 @@ export default class Secret extends Command {
         // Collect data
         let responses = await inquirer.prompt([
             {
-                type: 'string',
+                type: 'input',
                 name: 'name',
                 message: 'Enter a name for this secret asset:',
                 validate: (value: string) => {
@@ -84,12 +80,34 @@ export default class Secret extends Command {
                 ],
             },
             {
-                type: 'string',
+                type: 'input',
                 name: 'mountpath',
                 when: (values: any) => {
                     return values.type == 'file'
                 },
                 message: 'Enter the folder directory path in your container that you want to mount these secret files into:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    return true
+                },
+            },
+            ,
+            {
+                name: 'useRef',
+                message: 'Do you want to reference an existing Secret for this mount point?',
+                type: 'confirm',
+                default: false,
+                when: (values: any) => {
+                    return values.type == 'file' || values.type == 'dir'
+                },
+            },
+            {
+                type: 'input',
+                name: 'ref',
+                when: (values: any) => {
+                    return values.useRef
+                },
+                message: 'Enter the Secret name to user:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
@@ -104,30 +122,36 @@ export default class Secret extends Command {
             name: string
             type: string
             mountPath?: string
-            entries: any
+            ref?: string
+            entries?: any
         }
 
-        const env: Secret = {
+        const secret: Secret = {
             name: responses.name,
             type: responses.type,
-            entries: [],
+        }
+
+        if (!responses.useRef) {
+            secret.entries = []
+        } else {
+            secret.ref = responses.ref
         }
 
         if (responses.type == 'env') {
-            env.entries.push({
+            secret.entries.push({
                 key: 'ENV_KEY',
                 value: 'my value',
             })
-        } else {
-            env.mountPath = responses.mountpath
-            env.entries.push({
-                name: 'mysecret',
+        } else if (!responses.useRef) {
+            secret.mountPath = responses.mountpath
+            secret.entries.push({
+                key: 'mysecret',
                 filename: 'myfile.conf',
                 value: 'some multinene config file\nmore lines here',
             })
         }
 
-        targetCompYaml.secrets.push(env)
+        targetCompYaml.secrets.push(secret)
 
         appYaml.components = appYaml.components.map((comp) => (comp.name == compName ? targetCompYaml : comp))
 

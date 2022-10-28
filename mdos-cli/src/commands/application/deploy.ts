@@ -128,7 +128,9 @@ export default class Deploy extends Command {
             process.exit(1)
         }
         if (!nsResponse.data.find((ns: { name: string }) => ns.name == appYaml.tenantName)) {
-            error(`Namespace '${appYaml.tenantName}' does not yet exists. It needs to be created first using the command 'mdos namespace create' before you can deploy applications to this namespace.`)
+            error(
+                `Namespace '${appYaml.tenantName}' does not yet exists. It needs to be created first using the command 'mdos namespace create' before you can deploy applications to this namespace.`
+            )
             process.exit(1)
         }
 
@@ -156,7 +158,7 @@ export default class Deploy extends Command {
             const regCreds = userCreds ? userCreds : await this.collectRegistryCredentials(flags)
             await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir, appYaml.tenantName)
         }
- 
+
         // Do some checks, make sure this deployment will not collide with existing deployments for other apps
         let deployedApps
         try {
@@ -215,7 +217,7 @@ export default class Deploy extends Command {
             error(errorMsg)
             process.exit(1)
         }
-        
+
         // Init realtime connection
         await this.initSocketIo()
 
@@ -462,7 +464,6 @@ export default class Deploy extends Command {
         }
     }
 
-    
     /**
      * Print application logs on error or interrupt
      *
@@ -489,11 +490,10 @@ export default class Deploy extends Command {
         }
     }
 
-    
     /**
      * Get the user registry credentials to push to the mdos registry
      *
-     * @return {*} 
+     * @return {*}
      * @memberof Deploy
      */
     async collectRegistryCredentials(flags: { username: string | undefined; password: string | undefined }) {
@@ -501,24 +501,24 @@ export default class Deploy extends Command {
             context('To push your images to the mdos registry, you need to provide your mdos username and password first')
 
             const questions = []
-            if(!flags.username) {
+            if (!flags.username) {
                 questions.push({
                     group: 'application',
-                    type: 'text',
+                    type: 'input',
                     name: 'username',
-                    message: 'Username:',
+                    message: 'Please enter your username:',
                     validate: (value: { trim: () => { (): any; new (): any; length: number } }) => {
                         if (value.trim().length == 0) return 'Mandatory field'
                         return true
                     },
                 })
             }
-            if(!flags.password) {
+            if (!flags.password) {
                 questions.push({
                     group: 'application',
                     type: 'password',
                     name: 'password',
-                    message: 'Password:',
+                    message: 'Please enter your password:',
                     validate: (value: { trim: () => { (): any; new (): any; length: number } }) => {
                         if (value.trim().length == 0) return 'Mandatory field'
                         return true
@@ -526,10 +526,10 @@ export default class Deploy extends Command {
                 })
             }
             let responses = {}
-            if(questions.length > 0) {
+            if (questions.length > 0) {
                 responses = await inquirer.prompt(questions)
             }
-            this.regCreds = {...flags, ...responses}
+            this.regCreds = { ...flags, ...responses }
         }
         return this.regCreds
     }

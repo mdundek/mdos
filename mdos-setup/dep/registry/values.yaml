@@ -16,7 +16,8 @@ components:
             svcPort: 443
     ingress:
       - name: ingress
-        gateway: mdos/https-gateway-mdos
+        gateways: 
+          - mdos/https-gateway-mdos
         matchHost: registry.<DOMAIN>
         targetPort: 443
         trafficType: https
@@ -71,7 +72,8 @@ components:
             svcPort: 443
     ingress:
       - name: ingress
-        gateway: mdos/https-gateway-mdos
+        gateways: 
+          - mdos/https-gateway-mdos
         matchHost: registry-auth.<DOMAIN>
         targetPort: 443
         trafficType: https
@@ -80,7 +82,7 @@ components:
         type: file
         mountPath: /config
         entries:
-          - name: auth-config
+          - key: auth-config
             filename: auth_config.yml
             value: |-
               server:
@@ -101,7 +103,7 @@ components:
         mountPath: /acl
         defaultMode: 0744
         entries:
-          - name: authentication.sh
+          - key: authentication.sh
             value: |-
               #!/bin/sh
               read u p
@@ -117,7 +119,7 @@ components:
                     fi
               fi
               exit 0
-          - name: authorization.sh
+          - key: authorization.sh
             value: |-
               #!/bin/sh
               read a

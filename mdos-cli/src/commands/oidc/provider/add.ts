@@ -1,7 +1,9 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
 const inquirer = require('inquirer')
-const { warn, filterQuestions, mergeFlags } = require('../../../lib/tools')
+const { warn, context, info, filterQuestions, mergeFlags } = require('../../../lib/tools')
+const fs = require('fs')
+const path = require('path')
 
 /**
  * Command
@@ -34,14 +36,49 @@ export default class Add extends Command {
             },
         },
         {
-            group: 'kc_oidc',
-            type: 'text',
-            name: 'clientId',
-            message: 'Enter a Keycloak client ID (application)?',
+            group: 'oidc',
+            type: 'input',
+            name: 'providerName',
+            message: 'Enter a name for this provider:',
+            when: (values: any) => {
+                return values.target == 'google'
+            },
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,10}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 10 characters)'
+                return true
+            },
+        },
+        {
+            group: 'oidc',
+            type: 'input',
+            name: 'jsonSecretPath',
+            message: 'Enter the path to your Google JSON credentials file:',
+            when: (values: any) => {
+                if (values.target == 'google') {
+                    info(
+                        `Download your Google OAuth JSON credentials file from your Google Cloud Console, and enter the path to this file now.`,
+                        false,
+                        true
+                    )
+                    context(
+                        `Make sure you add all redirect URLs that you intend to use, including the "/oauth2/callback" section (ex. https://my-app-1.mydomain.com/oauth2/callback)`,
+                        true,
+                        true
+                    )
+                    context(`If you use this provider on a ingress with a different domain name, it will not work.`, true, false)
+                }
+                return values.target == 'google'
+            },
+            validate: (value: any) => {
+                if (value.trim().length == 0) return `Mandatory field`
+                if (!fs.existsSync(value)) {
+                    return 'File not found'
+                }
+                if (!value.toLowerCase().endsWith('.json')) {
+                    return 'Expect a JSON file'
+                }
                 return true
             },
         },
@@ -93,8 +130,32 @@ export default class Add extends Command {
                 this.showError(error)
                 process.exit(1)
             }
+        } else if (oidcResponses.target == 'google') {
+            const authJsonText = fs.readFileSync(oidcResponses.jsonSecretPath, { encoding: 'utf8', flag: 'r' })
+            let authJson = null
+            try {
+                authJson = JSON.parse(authJsonText)
+            } catch (error) {}
+            // Create new client in Keycloak
+            CliUx.ux.action.start('Creating Google OIDC provider')
+            try {
+                await this.api(`oidc-provider`, 'post', {
+                    type: 'google',
+                    data: {
+                        name: `google-${oidcResponses.providerName}`,
+                        googleClientId: authJson.web.client_id,
+                        googleClientSecret: authJson.web.client_secret,
+                        redirectUris: authJson.web.redirect_uris,
+                    },
+                })
+                CliUx.ux.action.stop()
+            } catch (error) {
+                CliUx.ux.action.stop('error')
+                this.showError(error)
+                process.exit(1)
+            }
         } else {
-            warn('OIDC provider not implemented yet')
+            warn(`OIDC provider "${oidcResponses.target}" not implemented yet`)
             process.exit(1)
         }
     }

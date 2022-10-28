@@ -21,10 +21,10 @@ components:
           - port: 80
     ingress:
       - name: main
-        matchHost: mkdocs-mdos.mdundek.network
+        matchHost: foo.mdundek.network
         targetPort: 80
         trafficType: http
     oidc:
-      provider: kc-testspace
+      provider: kc-mdos-doc
       hosts:
-        - mkdocs-mdos.mdundek.network
+        - foo.mdundek.network

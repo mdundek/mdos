@@ -32,9 +32,9 @@ export default class ListRoles extends Command {
     static questions = [
         {
             group: 'user',
-            type: 'text',
+            type: 'input',
             name: 'username',
-            message: 'What username do you wish to get the roles for?',
+            message: 'What username do you wish to get the roles for:',
             validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
         },
     ]

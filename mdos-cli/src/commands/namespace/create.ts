@@ -36,9 +36,9 @@ export default class Create extends Command {
     static questions = [
         {
             group: 'client',
-            type: 'text',
+            type: 'input',
             name: 'namespace',
-            message: 'Enter a namespace name to create',
+            message: 'Enter a namespace name to create:',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
                 else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
