@@ -130,4 +130,4 @@ Therefore, build your applications using higher level artefacts that will transl
 
 ## Documentation
 
-Full documentation can be found [here](https://mdundek.github.io/mdos/)
+Detailed documentation can be found [here](https://mdundek.github.io/mdos/)
