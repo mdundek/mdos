@@ -3,7 +3,7 @@ hide:
   - navigation
 ---
 
-# Getting started
+# Getting Started
 
 We will build a similar `hello world` example application now, but to keep thinks simple, we will not deploy a backend component along with the frontend component, and not work with volumes yet. Those will be subjects for later on.  
 

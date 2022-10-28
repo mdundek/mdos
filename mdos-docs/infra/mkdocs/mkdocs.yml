@@ -43,5 +43,6 @@ markdown_extensions:
 nav:
     - Home: index.md
     - Install: installation.md
-    - Getting started: getting-started.md
-    - Reference documentation: reference-documentation.md
+    - Getting Started: getting-started.md
+    - Advanced Resources: advanced-resources.md
+    - Reference Documentation: reference-documentation.md
