@@ -1,6 +1,4 @@
 #!/bin/bash
-_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd $_DIR
 
 source ../lib/helpers.sh
 source ../lib/components.sh
@@ -37,6 +35,7 @@ git_pull_rebase() {
 check_if_git_has_unstaiged_changes() {
     local  __resultvar=$1
     C_FOLDER="$(basename $PWD)"
+    pwd
     GIT_LOGS=$(git status)
     if [[ "$GIT_LOGS" == *"Changes not staged for commit:"* ]]; then
         if [ "$2" != "strict" ]; then
