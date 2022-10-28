@@ -3,7 +3,7 @@
 {
     set -e
 
-    if [ "$EUID" -ne 0 ]
+    if [ "$EUID" -ne 0 ]; then
       SUDO='sudo'
       echo "This script requires superuser access."
       echo "Please run it as root or using sudo."
