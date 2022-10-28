@@ -14,7 +14,7 @@ const { error, filterQuestions, mergeFlags, info } = require('../../../lib/tools
  * @extends {Command}
  */
 export default class List extends Command {
-    static aliases = []
+    static aliases = ["cm:certificate:list", "cm:crt:list"]
     static description = 'List your certificates'
 
     // ******* FLAGS *******

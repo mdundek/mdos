@@ -14,7 +14,7 @@ const { error, filterQuestions, mergeFlags, info } = require('../../../lib/tools
  * @extends {Command}
  */
 export default class Delete extends Command {
-    static aliases = []
+    static aliases = ["cm:certificate:delete", "cm:crt:delete"]
     static description = 'Delete a Cert-Manager Issuers'
 
     // ******* FLAGS *******

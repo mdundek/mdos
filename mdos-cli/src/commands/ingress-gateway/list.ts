@@ -11,8 +11,8 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * @extends {Command}
  */
 export default class List extends Command {
-    static aliases = []
-    static description = 'List existting ingress gateway configs'
+    static aliases = ["gateway:list"]
+    static description = 'List existing ingress gateway configs'
 
     // ******* FLAGS *******
     static flags = {}

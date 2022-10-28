@@ -16,7 +16,7 @@ const { error, context, warn, filterQuestions, mergeFlags, info } = require('../
  */
 export default class Create extends Command {
     static aliases = []
-    static description = 'Create a new Certificate / TLS secret'
+    static description = 'Create a new Cert-Manager issuer'
 
     // ******* FLAGS *******
     static flags = {}

@@ -11,8 +11,8 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * @extends {Command}
  */
 export default class Remove extends Command {
-    static aliases = []
-    static description = 'Remove an existting ingress gateway config'
+    static aliases = ["gateway:remove"]
+    static description = 'Remove an existing ingress gateway config'
 
     // ******* FLAGS *******
     static flags = {}
