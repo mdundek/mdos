@@ -93,7 +93,7 @@ Among those, you will define your component `name`, `image` name and image `tag`
 
     **mdos generate component**
 
-    When using the MDos CLI to scaffold your application component, then the CLI will be asked to select amonst multiple network isolation options. You can read more about `NetworkPolicy` isolation configurations in the section [here](#networkpolicy)
+    When using the MDos CLI to scaffold your application component, then the CLI will ask you to select amonst multiple network isolation options. You can read more about `NetworkPolicy` isolation configurations in the section [here](#networkpolicy)
 
 ---
 
