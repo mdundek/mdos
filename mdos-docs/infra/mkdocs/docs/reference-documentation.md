@@ -554,9 +554,20 @@ Here is a more complex example that uses a `custom` scoped NetworkPolicy (please
 
 ### :octicons-codescan-16:{ .section-icon } OAuth2 OIDC
 
-#### :material-arrow-right-thin: Configure a OIDC provider
+You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variaty of OIDC providers such as Keycloak, Google, GitHub and others.
+
+To find out how to configure and add your OIDC providers, please refere to the chapter [Securing applications using OIDC providers](/mdos/advanced-resources/#securing-applications-using-oidc-providers) for more information.
+
 
 #### :material-arrow-right-thin: Protect your ingress with a OIDC provider
+
+To add OIDC authentication to one of your application configurations, simply specify which OIDC provider you want to enforce, and what hostname that was configured in your ingres section you want to be protected.
+
+There are numerout OOTB providers that you can configure, but the most flexible and customizable is the integrated `Keycloak` OIDC provider. It will allow you to create any role according to your needs, assign them to your users and gain access to those roles from your authenticated user sessions encoded in the JWT token. Simply use those roles within your applications to then determine fine grained ACL rules you wish to enforce.
+
+!!! info
+
+    For an example using the Keycloak OIDC authentication provider with custom roles and ACL, please refer to the chapter [Securing applications using OIDC providers](/mdos/advanced-resources/#securing-applications-using-oidc-providers)
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
@@ -578,6 +589,8 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Set pod resources
 
+This allows you to impose limits in terms of CPU / memory resources you application components can use. 
+
 ```yaml hl_lines="5 6 7 8 9 10 11" linenums="1"
 ...
 components:
@@ -596,6 +609,9 @@ components:
 ---
 
 ### :octicons-codescan-16:{ .section-icon } Execute pre-build commands
+
+MDos allows you to execute commands on the local machine every time you are about to deploy your application onto your Kubernetes cluster. Simply list the commands you wish to execute, and they will execute everytime you run the command `mdos application deploy`.  
+In this example, we are building a `mkdocs` project, then copy the resulting files over to the proper `volumes` directory ready for deployment
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...

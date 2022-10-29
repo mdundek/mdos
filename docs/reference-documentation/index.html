@@ -217,18 +217,6 @@
         
   
   
-
-
-  <li class="md-tabs__item">
-    <a href="../advanced-resources/" class="md-tabs__link">
-      Advanced Resources
-    </a>
-  </li>
-
-      
-        
-  
-  
     
   
 
@@ -236,6 +224,18 @@
   <li class="md-tabs__item">
     <a href="./" class="md-tabs__link md-tabs__link--active">
       Reference Documentation
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../advanced-resources/" class="md-tabs__link">
+      Advanced Resources
     </a>
   </li>
 
@@ -320,21 +320,6 @@
     <li class="md-nav__item">
       <a href="../getting-started/" class="md-nav__link">
         Getting Started
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../advanced-resources/" class="md-nav__link">
-        Advanced Resources
       </a>
     </li>
   
@@ -596,13 +581,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#configure-a-oidc-provider" class="md-nav__link">
-     Configure a OIDC provider
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#protect-your-ingress-with-a-oidc-provider" class="md-nav__link">
      Protect your ingress with a OIDC provider
   </a>
@@ -637,6 +615,21 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced-resources/" class="md-nav__link">
+        Advanced Resources
+      </a>
     </li>
   
 
@@ -882,13 +875,6 @@
   
     <nav class="md-nav" aria-label=" OAuth2 OIDC">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configure-a-oidc-provider" class="md-nav__link">
-     Configure a OIDC provider
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#protect-your-ingress-with-a-oidc-provider" class="md-nav__link">
@@ -1649,8 +1635,15 @@ The <code>uuid</code> field is a unique identifier for this application, all dep
 <p><img src="/mdos/img/networkPolicies/custom.png" alt="custom" width="800"/></p>
 <hr />
 <h3 id="oauth2-oidc"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> OAuth2 OIDC</h3>
-<h4 id="configure-a-oidc-provider"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Configure a OIDC provider</h4>
+<p>You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variaty of OIDC providers such as Keycloak, Google, GitHub and others.</p>
+<p>To find out how to configure and add your OIDC providers, please refere to the chapter <a href="/mdos/advanced-resources/#securing-applications-using-oidc-providers">Securing applications using OIDC providers</a> for more information.</p>
 <h4 id="protect-your-ingress-with-a-oidc-provider"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Protect your ingress with a OIDC provider</h4>
+<p>To add OIDC authentication to one of your application configurations, simply specify which OIDC provider you want to enforce, and what hostname that was configured in your ingres section you want to be protected.</p>
+<p>There are numerout OOTB providers that you can configure, but the most flexible and customizable is the integrated <code>Keycloak</code> OIDC provider. It will allow you to create any role according to your needs, assign them to your users and gain access to those roles from your authenticated user sessions encoded in the JWT token. Simply use those roles within your applications to then determine fine grained ACL rules you wish to enforce.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>For an example using the Keycloak OIDC authentication provider with custom roles and ACL, please refer to the chapter <a href="/mdos/advanced-resources/#securing-applications-using-oidc-providers">Securing applications using OIDC providers</a></p>
+</div>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-25-1">1</a></span>
 <span class="normal"><a href="#__codelineno-25-2">2</a></span>
 <span class="normal"><a href="#__codelineno-25-3">3</a></span>
@@ -1675,6 +1668,7 @@ The <code>uuid</code> field is a unique identifier for this application, all dep
 </div>
 <hr />
 <h3 id="set-pod-resources"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> Set pod resources</h3>
+<p>This allows you to impose limits in terms of CPU / memory resources you application components can use. </p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-26-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-26-2"> 2</a></span>
 <span class="normal"><a href="#__codelineno-26-3"> 3</a></span>
@@ -1701,6 +1695,8 @@ The <code>uuid</code> field is a unique identifier for this application, all dep
 </code></pre></div></td></tr></table></div>
 <hr />
 <h3 id="execute-pre-build-commands"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> Execute pre-build commands</h3>
+<p>MDos allows you to execute commands on the local machine every time you are about to deploy your application onto your Kubernetes cluster. Simply list the commands you wish to execute, and they will execute everytime you run the command <code>mdos application deploy</code>.<br />
+In this example, we are building a <code>mkdocs</code> project, then copy the resulting files over to the proper <code>volumes</code> directory ready for deployment</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-27-1">1</a></span>
 <span class="normal"><a href="#__codelineno-27-2">2</a></span>
 <span class="normal"><a href="#__codelineno-27-3">3</a></span>
@@ -1743,7 +1739,7 @@ The <code>uuid</code> field is a unique identifier for this application, all dep
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../advanced-resources/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Advanced Resources" rel="prev">
+        <a href="../getting-started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Getting Started" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1752,11 +1748,26 @@ The <code>uuid</code> field is a unique identifier for this application, all dep
               <span class="md-footer__direction">
                 Previous
               </span>
-              Advanced Resources
+              Getting Started
             </div>
           </div>
         </a>
       
+      
+        
+        <a href="../advanced-resources/" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced Resources" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Advanced Resources
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
       
     </nav>
   

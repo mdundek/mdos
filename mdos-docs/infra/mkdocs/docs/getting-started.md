@@ -19,7 +19,7 @@ Before we can start using the mdos CLI, we need to tell it what MDos API server 
 
     If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine `hosts` file before you prosceed.  
     In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
-    For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name](/installation/#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name)
+    For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name](/mdos/installation/#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name)
 
 To configure the target MDos platform API server endpoint with your CLI, use the following command:
 
@@ -237,19 +237,6 @@ That's it, your application should now be accessible on the following domain: `h
 
 ![Hello world](/mdos/img/getting-started/hello-world.png)
 
-## OIDC Providers for authentication
+!!! info "Next steps"
 
-### Create a Keycloak based OIDC Provider
-
-!!! note
-
-    The platform provided Keycloak instance is used for Keycloak based providers
-
-### Create a Google based OIDC Provider
-
-!!! warning
-
-    In construction
-
-## Kubectl OIDC setup for RBAC
-
+    Please have a look at the chapter [MDos application reference documentation](/mdos/reference-documentation/) for a complete list of what you can configure in the `mdos.yaml` file, as well as the chapter [Advanced Resources](/mdos/advanced-resources/) to find out how to maximize usage of the platform for more advanced use-cases and features. 

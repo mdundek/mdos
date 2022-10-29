@@ -222,8 +222,8 @@
 
 
   <li class="md-tabs__item">
-    <a href="../advanced-resources/" class="md-tabs__link">
-      Advanced Resources
+    <a href="../reference-documentation/" class="md-tabs__link">
+      Reference Documentation
     </a>
   </li>
 
@@ -234,8 +234,8 @@
 
 
   <li class="md-tabs__item">
-    <a href="../reference-documentation/" class="md-tabs__link">
-      Reference Documentation
+    <a href="../advanced-resources/" class="md-tabs__link">
+      Advanced Resources
     </a>
   </li>
 
@@ -399,40 +399,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#oidc-providers-for-authentication" class="md-nav__link">
-    OIDC Providers for authentication
-  </a>
-  
-    <nav class="md-nav" aria-label="OIDC Providers for authentication">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-a-keycloak-based-oidc-provider" class="md-nav__link">
-    Create a Keycloak based OIDC Provider
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#create-a-google-based-oidc-provider" class="md-nav__link">
-    Create a Google based OIDC Provider
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#kubectl-oidc-setup-for-rbac" class="md-nav__link">
-    Kubectl OIDC setup for RBAC
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -449,8 +415,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../advanced-resources/" class="md-nav__link">
-        Advanced Resources
+      <a href="../reference-documentation/" class="md-nav__link">
+        Reference Documentation
       </a>
     </li>
   
@@ -464,8 +430,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-documentation/" class="md-nav__link">
-        Reference Documentation
+      <a href="../advanced-resources/" class="md-nav__link">
+        Advanced Resources
       </a>
     </li>
   
@@ -547,40 +513,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#oidc-providers-for-authentication" class="md-nav__link">
-    OIDC Providers for authentication
-  </a>
-  
-    <nav class="md-nav" aria-label="OIDC Providers for authentication">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-a-keycloak-based-oidc-provider" class="md-nav__link">
-    Create a Keycloak based OIDC Provider
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#create-a-google-based-oidc-provider" class="md-nav__link">
-    Create a Google based OIDC Provider
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#kubectl-oidc-setup-for-rbac" class="md-nav__link">
-    Kubectl OIDC setup for RBAC
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -606,7 +538,7 @@
 <p class="admonition-title">Warning</p>
 <p>If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine <code>hosts</code> file before you prosceed.<br />
 In Linux and Mac OSX, your can configure those in your <code>/etc/hosts</code> file. In Windows, this file is located under <code>c:\Windows\System32\Drivers\etc\hosts</code>.<br />
-For more information, please refer to the chapter <a href="/installation/#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name">Special notes about self-signed certificates without a resolvable DNS name</a></p>
+For more information, please refer to the chapter <a href="/mdos/installation/#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name">Special notes about self-signed certificates without a resolvable DNS name</a></p>
 </div>
 <p>To configure the target MDos platform API server endpoint with your CLI, use the following command:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mdos configure api-endpoint https://mdos-api.mydomain.com
@@ -818,18 +750,10 @@ To learn more about everything that you can configure for your deployments in th
 </code></pre></div>
 <p>That's it, your application should now be accessible on the following domain: <code>https://hello-world.mydomain.com</code></p>
 <p><img alt="Hello world" src="/mdos/img/getting-started/hello-world.png" /></p>
-<h2 id="oidc-providers-for-authentication">OIDC Providers for authentication</h2>
-<h3 id="create-a-keycloak-based-oidc-provider">Create a Keycloak based OIDC Provider</h3>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The platform provided Keycloak instance is used for Keycloak based providers</p>
+<div class="admonition info">
+<p class="admonition-title">Next steps</p>
+<p>Please have a look at the chapter <a href="/mdos/reference-documentation/">MDos application reference documentation</a> for a complete list of what you can configure in the <code>mdos.yaml</code> file, as well as the chapter <a href="/mdos/advanced-resources/">Advanced Resources</a> to find out how to maximize usage of the platform for more advanced use-cases and features. </p>
 </div>
-<h3 id="create-a-google-based-oidc-provider">Create a Google based OIDC Provider</h3>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>In construction</p>
-</div>
-<h2 id="kubectl-oidc-setup-for-rbac">Kubectl OIDC setup for RBAC</h2>
 
 
 
@@ -870,13 +794,13 @@ To learn more about everything that you can configure for your deployments in th
       
       
         
-        <a href="../advanced-resources/" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced Resources" rel="next">
+        <a href="../reference-documentation/" class="md-footer__link md-footer__link--next" aria-label="Next: Reference Documentation" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Advanced Resources
+              Reference Documentation
             </div>
           </div>
           <div class="md-footer__button md-icon">
