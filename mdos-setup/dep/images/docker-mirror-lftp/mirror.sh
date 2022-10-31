@@ -13,6 +13,7 @@ logError() {
 sync_volume () {
     CURRENT_SYNC_SOURCE_DIR="${CURRENT_SYNC_SOURCE_DIR%/}"
     CURRENT_SYNC_TARGET_DIR="${CURRENT_SYNC_TARGET_DIR%/}"
+    CURRENT_SYNC_TRIGGER="${CURRENT_SYNC_TRIGGER%/}"
 
     logInfo "Start volume sync" "$CURRENT_SYNC_SOURCE_DIR" "$CURRENT_SYNC_TARGET_DIR"
 
@@ -23,22 +24,33 @@ sync_volume () {
         exit 1
     fi
 
-    echo ""
-    echo "***************** SYNC VOLUME *********************"
-    echo "Source dir: $CURRENT_SYNC_SOURCE_DIR"
-    echo "Target dir: $CURRENT_SYNC_TARGET_DIR"
-    echo "***************************************************"
-    echo ""
+    if [ "$CURRENT_SYNC_TRIGGER" == "initial" ]; then
+        if [ "$(ls -A $CURRENT_SYNC_TARGET_DIR)" ]; then
+            logInfo "Sync trigger is \"initial\", and target folder already has some data init. Skipping sync." "$CURRENT_SYNC_TARGET_DIR"
+        else
+            DO_SYNC=1
+        fi
+    else
+        DO_SYNC=1
+    fi
 
-    # Do the Job
-    lftp -u $FTP_USERNAME,$FTP_PASSWORD -p $PORT $PROTOCOL://$HOST <<-EOF
-    set ssl:verify-certificate no
-    set sftp:auto-confirm yes
-    mirror -v -e -s --parallel=$PARALLEL $CURRENT_SYNC_SOURCE_DIR $CURRENT_SYNC_TARGET_DIR
-    quit
+    if [ ! -z $DO_SYNC ]; then
+        echo ""
+        echo "***************** SYNC VOLUME *********************"
+        echo "Source dir: $CURRENT_SYNC_SOURCE_DIR"
+        echo "Target dir: $CURRENT_SYNC_TARGET_DIR"
+        echo "***************************************************"
+        echo ""
+
+        # Do the Job
+        lftp -u $FTP_USERNAME,$FTP_PASSWORD -p $PORT $PROTOCOL://$HOST <<-EOF
+        set ssl:verify-certificate no
+        set sftp:auto-confirm yes
+        mirror -v -e -s --parallel=$PARALLEL $CURRENT_SYNC_SOURCE_DIR $CURRENT_SYNC_TARGET_DIR
+        quit
 EOF
-
-    echo "=>DONE"
+        echo "=>DONE"
+    fi
 }
 
 # CREATED_AT
@@ -48,10 +60,13 @@ main() {
     # ENV VARS using concatenation
     IFS=';' read -ra SOURCE_DIR_ARRAY <<< "$SYNC_SOURCE_DIR"
     IFS=';' read -ra TARGET_DIR_ARRAY <<< "$SYNC_TARGET_DIR"
+    IFS=';' read -ra TRIGGERS_ARRAY <<< "$SYNC_TRIGGER"
+    
     ITER=0
     for i in "${SOURCE_DIR_ARRAY[@]}"; do
         CURRENT_SYNC_SOURCE_DIR=${SOURCE_DIR_ARRAY[$ITER]}
         CURRENT_SYNC_TARGET_DIR=${TARGET_DIR_ARRAY[$ITER]}
+        CURRENT_SYNC_TRIGGER=${TRIGGERS_ARRAY[$ITER]}
         ITER=$(expr $ITER + 1)
 
         # Do the sync...

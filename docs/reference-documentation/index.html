@@ -1184,7 +1184,8 @@ Your MDos project contains a <code>volumes</code> folder at the root, create a v
 <span class="normal"><a href="#__codelineno-11-7"> 7</a></span>
 <span class="normal"><a href="#__codelineno-11-8"> 8</a></span>
 <span class="normal"><a href="#__codelineno-11-9"> 9</a></span>
-<span class="normal"><a href="#__codelineno-11-10">10</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="nn">...</span><span class="w"></span>
+<span class="normal"><a href="#__codelineno-11-10">10</a></span>
+<span class="normal"><a href="#__codelineno-11-11">11</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="nn">...</span><span class="w"></span>
 <a id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
 <a id="__codelineno-11-3" name="__codelineno-11-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
 <a id="__codelineno-11-4" name="__codelineno-11-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
@@ -1192,9 +1193,28 @@ Your MDos project contains a <code>volumes</code> folder at the root, create a v
 </span><a id="__codelineno-11-6" name="__codelineno-11-6"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">static-website</span><span class="w"></span>
 </span><a id="__codelineno-11-7" name="__codelineno-11-7"></a><span class="hll"><span class="w">        </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/share/nginx/html</span><span class="w"></span>
 </span><a id="__codelineno-11-8" name="__codelineno-11-8"></a><span class="hll"><span class="w">        </span><span class="nt">syncVolume</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
-</span><a id="__codelineno-11-9" name="__codelineno-11-9"></a><span class="hll"><span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10Gi</span><span class="w"></span>
-</span><a id="__codelineno-11-10" name="__codelineno-11-10"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+</span><a id="__codelineno-11-9" name="__codelineno-11-9"></a><span class="hll"><span class="w">        </span><span class="nt">trigger</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">initial</span><span class="w"> </span><span class="c1"># or &quot;always&quot;</span><span class="w"></span>
+</span><a id="__codelineno-11-10" name="__codelineno-11-10"></a><span class="hll"><span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10Gi</span><span class="w"></span>
+</span><a id="__codelineno-11-11" name="__codelineno-11-11"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
+<table>
+<thead>
+<tr>
+<th><strong>"trigger" possible values</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>initial</td>
+<td>Synchronize local volume content only if the POD target volume is empty (first deployment)</td>
+</tr>
+<tr>
+<td>always</td>
+<td>Synchronize local volume content everytime this application is deployed</td>
+</tr>
+</tbody>
+</table>
 <p>Example volume folder structure in your MDos project folder:</p>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Project structure</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-12-1">1</a></span>
 <span class="normal"><a href="#__codelineno-12-2">2</a></span>

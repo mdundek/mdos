@@ -170,6 +170,7 @@ class SchemaV1 {
                                         mountPath: { type: 'string' },
                                         hostPath: { type: 'string' },
                                         syncVolume: { type: 'boolean' },
+                                        trigger: { type: 'string' },
                                         size: { type: 'string' }
                                     },
                                     required: ['name', 'mountPath'],
@@ -523,6 +524,15 @@ class SchemaV1 {
                                 instance: volume,
                                 stack: "'syncVolume' property is not compatible when using hostpaths",
                             })
+                        }
+                        if (entry.syncVolume) {
+                            if(!entry.trigger || !["initial", "always"].includes(entry.trigger)) {
+                                errors.push({
+                                    message: "'volume.syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",
+                                    instance: volume,
+                                    stack:  "'volume.syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",
+                                })
+                            }
                         }
                     }
                 }

@@ -82,6 +82,7 @@ spec:
 
     {{- $srcPaths := "" }}
     {{- $dstPaths := "" }}
+    {{- $syncTrigger := "" }}
     {{- $mdosSyncs := "" }}
 
     {{- range .volumes }}
@@ -91,12 +92,14 @@ spec:
 
           {{- $srcPaths = print $srcPaths  ";" $volumeSrcPath -}}
           {{- $dstPaths = print $dstPaths  ";" .mountPath -}}
+          {{- $syncTrigger = print $syncTrigger  ";" .trigger -}}
           {{- $mdosSyncs = print $srcPaths  " " .syncVolume -}}
         {{- else }}
           {{-  $volumeSrcPath := printf "%s/%s/%s" $appName "volumes" .name -}}
 
           {{- $srcPaths = print $volumeSrcPath -}}
           {{- $dstPaths = print .mountPath -}}
+          {{- $syncTrigger = print .trigger -}}
           {{- $mdosSyncs = print .syncVolume -}}
         {{- end }}
       {{- end }}
@@ -127,6 +130,8 @@ spec:
           value: {{ $srcPaths }}
         - name: SYNC_TARGET_DIR
           value: {{ $dstPaths }}
+        - name: SYNC_TRIGGER
+          value: {{ $syncTrigger }}
         - name: FTP_USERNAME
           value: {{ $ftpCredentials.username | quote }}
         - name: FTP_PASSWORD

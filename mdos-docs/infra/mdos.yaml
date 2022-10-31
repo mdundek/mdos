@@ -15,6 +15,7 @@ components:
       - name: docs
         mountPath: /usr/share/nginx/html
         syncVolume: true
+        trigger: always
     services:
       - name: http
         ports:

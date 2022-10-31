@@ -250,7 +250,7 @@ components:
 This MDos feature is designed to facilitate the way you can pre-populate files and folders into your volumes before your application starts up. This is usefull when you wish to pre-load a database with a pre-defined dataset, or to deploy a static website for example.  
 Your MDos project contains a `volumes` folder at the root, create a volume folder in there and store your static data in it. Then add the flag `syncVolume: true` to your volume config like this:
 
-```yaml hl_lines="5 6 7 8 9" linenums="1"
+```yaml hl_lines="5 6 7 8 9 10" linenums="1"
 ...
 components:
   - name: comp-1
@@ -259,9 +259,15 @@ components:
       - name: static-website
         mountPath: /usr/share/nginx/html
         syncVolume: true
+        trigger: initial # or "always"
         size: 10Gi
     ...
 ```
+
+| **"trigger" possible values** | **Description**                                                                            |
+|-------------------------------|--------------------------------------------------------------------------------------------|
+| initial                       | Synchronize local volume content only if the POD target volume is empty (first deployment) |
+| always                        | Synchronize local volume content everytime this application is deployed                    |
 
 Example volume folder structure in your MDos project folder:
 

@@ -111,13 +111,32 @@ export default class Volume extends Command {
                 default: false,
                 when: (values: any) => {
                     if (!values.useHostpath) {
-                        context('Content will be copied over to the cluster host on deployment', false, true)
+                        context('You can let MDos mirror data that is inside your local volume folder in this project directory structure with the target component POD volume during deployments.', false, true)
                         return true
                     } else {
                         return false
                     }
                 },
                 message: 'Do you want to populate your volume with some static content before the container starts?',
+            },
+            {
+                type: 'list',
+                name: 'syncTrigger',
+                default: false,
+                when: (values: any) => {
+                    return values.inject
+                },
+                message: 'What behaviour should this volume sync process follow?',
+                choices: [
+                    {
+                        name: 'Synchronize only when the volume inside the POD is empty (on first deploy)',
+                        value: "initial"
+                    },
+                    {
+                        name: 'Synchronize the volume with my local volume data every time I deploy this application',
+                        value: 'always'
+                    },
+                ],
             },
             {
                 type: 'number',
@@ -137,7 +156,8 @@ export default class Volume extends Command {
         if (!targetCompYaml.volumes) targetCompYaml.volumes = []
 
         type Volume = {
-            syncVolume?: boolean
+            syncVolume?: boolean,
+            trigger?: string,
             name?: string
             mountPath: string
             hostPath?: string
@@ -151,6 +171,7 @@ export default class Volume extends Command {
 
         if (responses.inject) {
             vol.syncVolume = true
+            vol.trigger = responses.syncTrigger
 
             try {
                 const volumeDirPath = path.join(volumesPath, responses.name)
