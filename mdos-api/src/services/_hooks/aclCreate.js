@@ -154,6 +154,25 @@ const oidcProviderCreateHook = (context, jwtToken) => {
 }
 
 /**
+ * sharedVolumeCreateHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const sharedVolumeCreateHook = (context, jwtToken) => {
+    // If mdos admin or list-user
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
+        return context
+    }
+    // If not namespace admin
+    if (jwtToken.resource_access[context.data.namespace] && (jwtToken.resource_access[context.data.namespace].roles.includes('admin') || jwtToken.resource_access[context.data.namespace].roles.includes('k8s-write'))) {
+        return context
+    }
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to create Shared Volumes')
+}
+
+/**
  * Export
  *
  * @return {*} 
@@ -196,6 +215,8 @@ module.exports = function () {
             return await certificateCreateHook(context, jwtToken)
         } else if (context.path == 'kube' && context.data.type == 'ingress-gateway') {
             return await ingressGatewayCreateHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.data.type == 'shared-volume') {
+            return await sharedVolumeCreateHook(context, jwtToken)
         } else if (context.path == 'kube' && context.data.type == 'validate-ingress-gtw-hosts') {
             return context
         } else {

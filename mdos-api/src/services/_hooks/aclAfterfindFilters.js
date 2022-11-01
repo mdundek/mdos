@@ -202,6 +202,20 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
 }
 
 /**
+ * sharedVolumesFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const sharedVolumesFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+    context.result = context.result.filter((pvc) => jwtToken.resource_access[pvc.metadata.namespace])
+    return context
+}
+
+/**
  * Export
  *
  * @return {*} 
@@ -253,6 +267,8 @@ module.exports = function () {
             return await tlsSecretFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'certificates') {
             return await certificatesFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'shared-volumes') {
+            return await sharedVolumesFilterHook(context, jwtToken)
         } else {
             console.log('Unknown filter hook: ', context.params.query, context.path)
         }

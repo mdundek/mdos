@@ -98,7 +98,19 @@ exports.Kube = class Kube extends KubeCore {
             }
             const certData = await this.app.get('kube').generateUserKubectlCertificates(jwtToken.email)
             return certData
-        } else {
+        } 
+        /******************************************
+         *  LOOKUP READ-WRITE-MANY PVCs
+         ******************************************/
+         else if (params.query.target == 'shared-volumes') {
+            // Make sure namespace exists
+            if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
+            let nsRwmPvcs = await this.app.get('kube').getWriteManyPvcs(params.query.namespace, params.query.name ? params.query.name : null)
+            return nsRwmPvcs
+        } 
+        else {
             throw new BadRequest('ERROR: Malformed API request')
         }
     }
@@ -121,6 +133,17 @@ exports.Kube = class Kube extends KubeCore {
                 await this.app.get('kube').createSecret(data.namespace, data.name, data.data)
             }
         } 
+        /******************************************
+        *  CREATE READ-WRITE-MANY PVC
+        ******************************************/
+        else if (data.type == 'shared-volume') {
+            const existingPvc = await this.app.get('kube').getPvcs(data.namespace, data.name)
+            if (existingPvc.length > 0) {
+                throw new BadRequest("ERROR: There is already a Volume with this name")
+            } else {
+                await this.app.get('kube').createWriteManyPvc(data.namespace, data.name, data.size)
+            }
+       } 
         /******************************************
          *  CREATE CERT MANAGER ISSUER
          ******************************************/
@@ -509,6 +532,21 @@ exports.Kube = class Kube extends KubeCore {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type)
+        } 
+        /******************************************
+         *  DELETE READ-WRITE-MANY PVC
+         ******************************************/
+         else if (params.query.target == 'shared-volume') {
+            // Make sure namespace exists
+            if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
+            const existingPvc = await this.app.get('kube').getPvcs(params.query.namespace, id)
+            if (existingPvc.length == 0) {
+                throw new BadRequest("ERROR: Volume not found")
+            } else {
+                await this.deleteWriteManyPvc(params.query.namespace, id)
+            }
         } 
         /******************************************
          *  UNINSTALL / DELETE ISSUER
