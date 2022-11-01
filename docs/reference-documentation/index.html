@@ -1160,17 +1160,13 @@ Volumes are defined by a <code>name</code>, a <code>mountPath</code> that indica
 <a id="__codelineno-10-5" name="__codelineno-10-5"></a><span class="hll"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w"></span>
 </span><a id="__codelineno-10-6" name="__codelineno-10-6"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">database-storage</span><span class="w"></span>
 </span><a id="__codelineno-10-7" name="__codelineno-10-7"></a><span class="hll"><span class="w">        </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/data/db</span><span class="w"></span>
-</span><a id="__codelineno-10-8" name="__codelineno-10-8"></a><span class="hll"><span class="w">        </span><span class="nt">ref</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-shared-volume</span><span class="w"> </span><span class="c1"># existing secret / configMap name to reference</span><span class="w"></span>
+</span><a id="__codelineno-10-8" name="__codelineno-10-8"></a><span class="hll"><span class="w">        </span><span class="nt">sharedVolumeName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-shared-volume</span><span class="w"> </span><span class="c1"># existing shared-volume</span><span class="w"></span>
 </span><a id="__codelineno-10-9" name="__codelineno-10-9"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 <div class="admonition tip">
 <p class="admonition-title">CLI command</p>
 <p><strong>mdos shared-volume create</strong><br />
 <strong>mdos generate volume</strong></p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Shared volumes are not implemented yet, they will come soon</p>
 </div>
 <h4 id="pre-populate-volumes"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Pre-populate volumes</h4>
 <p>This MDos feature is designed to facilitate the way you can pre-populate files and folders into your volumes before your application starts up. This is usefull when you wish to pre-load a database with a pre-defined dataset, or to deploy a static website for example.<br />
