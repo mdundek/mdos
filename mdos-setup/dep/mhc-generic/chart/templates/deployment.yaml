@@ -613,11 +613,16 @@ spec:
         {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= PVC =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
 
         {{- if not .hostPath }}
+          {{- if .sharedVolumeName }} 
+        - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .sharedVolumeName }}
+          {{- else }}
         - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
           persistentVolumeClaim:
             claimName: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+          {{- end }}
         {{- end }}
-
       {{- end }}
     {{- end }}
 

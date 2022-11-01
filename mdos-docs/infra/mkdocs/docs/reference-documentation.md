@@ -241,10 +241,6 @@ components:
     **mdos shared-volume create**  
     **mdos generate volume**
 
-!!! warning
-
-    Shared volumes are not implemented yet, they will come soon
-
 #### :material-arrow-right-thin: Pre-populate volumes
 
 This MDos feature is designed to facilitate the way you can pre-populate files and folders into your volumes before your application starts up. This is usefull when you wish to pre-load a database with a pre-defined dataset, or to deploy a static website for example.  
