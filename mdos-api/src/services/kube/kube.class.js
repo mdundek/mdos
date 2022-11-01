@@ -100,6 +100,17 @@ exports.Kube = class Kube extends KubeCore {
             return certData
         } 
         /******************************************
+         *  LOOKUP PVCs
+         ******************************************/
+         else if (params.query.target == 'volumes') {
+            // Make sure namespace exists
+            if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
+            let nsPvcs = await this.app.get('kube').getPvcs(params.query.namespace, null)
+            return nsPvcs
+        } 
+        /******************************************
          *  LOOKUP READ-WRITE-MANY PVCs
          ******************************************/
          else if (params.query.target == 'shared-volumes') {

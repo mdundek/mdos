@@ -269,6 +269,8 @@ module.exports = function () {
             return await certificatesFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'shared-volumes') {
             return await sharedVolumesFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'volumes') {
+            return await sharedVolumesFilterHook(context, jwtToken)
         } else {
             console.log('Unknown filter hook: ', context.params.query, context.path)
         }
