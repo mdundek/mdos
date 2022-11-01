@@ -52,15 +52,6 @@ export default class Create extends Command {
             process.exit(1)
         }
 
-        // Collect shared volumes
-        let sharedVolumesResponse: { data: any[] }
-        try {
-            sharedVolumesResponse = await this.api(`kube?target=volumes&namespace=${agregatedResponses.namespace}`, 'get')
-        } catch (err) {
-            this.showError(err)
-            process.exit(1)
-        }
-
         // Select target namespace
         let response = await inquirer.prompt([
             {
@@ -73,6 +64,15 @@ export default class Create extends Command {
             },
         ])
         agregatedResponses = { ...agregatedResponses, ...response }
+
+        // Collect shared volumes
+        let sharedVolumesResponse: { data: any[] }
+        try {
+            sharedVolumesResponse = await this.api(`kube?target=volumes&namespace=${agregatedResponses.namespace}`, 'get')
+        } catch (err) {
+            this.showError(err)
+            process.exit(1)
+        }
 
         // Collect name
         response = await inquirer.prompt({
@@ -102,6 +102,7 @@ export default class Create extends Command {
         agregatedResponses = { ...agregatedResponses, ...response }
         
         // Create volume
+        console.log()
         CliUx.ux.action.start('Creating shared volume')
         try {
             await this.api(`kube`, 'post', {

@@ -549,7 +549,7 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
          else if (params.query.target == 'shared-volume') {
             // Make sure namespace exists
-            if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+            if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             const existingPvc = await this.app.get('kube').getPvcs(params.query.namespace, id)

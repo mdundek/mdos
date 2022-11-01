@@ -1,4 +1,5 @@
 import { Flags, CliUx } from '@oclif/core'
+import { AnyRecord } from 'dns'
 import Command from '../../base'
 const inquirer = require('inquirer')
 const { error, context, filterQuestions, mergeFlags, info } = require('../../lib/tools')
@@ -7,12 +8,12 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * Command
  *
  * @export
- * @class List
+ * @class Delete
  * @extends {Command}
  */
-export default class List extends Command {
-    static aliases = ["volume:list"]
-    static description = 'List existing Shared Volumes'
+export default class Delete extends Command {
+    static aliases = ["volume:remove"]
+    static description = 'Delete an existing Shared Volume'
 
     // ******* FLAGS *******
     static flags = {}
@@ -26,9 +27,9 @@ export default class List extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(List)
+        const { flags } = await this.parse(Delete)
 
-        let agregatedResponses:any = {}
+        let agregatedResponses: any = {}
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
@@ -47,8 +48,8 @@ export default class List extends Command {
             this.showError(err)
             process.exit(1)
         }
-        if(nsResponse.data.length == 0) {
-            error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+        if (nsResponse.data.length == 0) {
+            error('No namespaces available. Did you create a new namespace yet (mdos ns create)?')
             process.exit(1)
         }
 
@@ -56,19 +57,19 @@ export default class List extends Command {
         let response = await inquirer.prompt([
             {
                 name: 'namespace',
-                message: 'Select namespace for which you wish to list Shared Volumes for:',
+                message: 'Select namespace for which you wish to delete a Shared Volumes from:',
                 type: 'list',
                 choices: nsResponse.data.map((o: { name: any }) => {
                     return { name: o.name }
                 }),
             },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         // Get namespace shared volumes
-        let volResponse
+        let volResponse:any
         try {
-            volResponse = await this.api(`kube?target=shared-volumes&namespace=${response.namespace}`, 'get')
+            volResponse = await this.api(`kube?target=shared-volumes&namespace=${agregatedResponses.namespace}`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)
@@ -80,9 +81,15 @@ export default class List extends Command {
         }
 
         console.log()
+        let index = 1
         CliUx.ux.table(
             volResponse.data,
             {
+                index: {
+                    header: 'NR',
+                    minWidth: 5,
+                    get: (row: any) => index++,
+                },
                 name: {
                     header: 'NAME',
                     minWidth: 25,
@@ -98,5 +105,33 @@ export default class List extends Command {
             }
         )
         console.log()
+
+        // Collect index to delete
+        response = await inquirer.prompt([
+            {
+                name: 'sharedVolumeIndex',
+                message: 'What Shared Volume number do you wish to delete?',
+                type: 'input',
+                validate: (value: any) => {
+                    const num = Number(value)
+                    if (isNaN(num) || (Number.isInteger(num) && num <= 0)) return 'Number (integer) expected'
+                    else if (num <= 0 || num > volResponse.data.length) return 'Index out of range'
+                    return true
+                },
+            },
+        ])
+        agregatedResponses = { ...agregatedResponses, ...response }
+
+        console.log()
+        // Delete shared volume block
+        CliUx.ux.action.start('Deleting Shared Volume')
+        try {
+            await this.api(`kube/${volResponse.data[parseInt(agregatedResponses.sharedVolumeIndex)-1].metadata.name}?target=shared-volume&namespace=${agregatedResponses.namespace}`, 'delete')
+            CliUx.ux.action.stop()
+        } catch (error) {
+            CliUx.ux.action.stop('error')
+            this.showError(error)
+            process.exit(1)
+        }
     }
 }
