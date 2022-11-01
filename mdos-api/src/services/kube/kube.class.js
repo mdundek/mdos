@@ -556,7 +556,7 @@ exports.Kube = class Kube extends KubeCore {
             if (existingPvc.length == 0) {
                 throw new BadRequest("ERROR: Volume not found")
             } else {
-                await this.deleteWriteManyPvc(params.query.namespace, id)
+                await this.app.get('kube').deleteWriteManyPvc(params.query.namespace, id)
             }
         } 
         /******************************************
