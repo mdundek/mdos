@@ -508,8 +508,9 @@ class KubeBase extends KubeBaseConstants {
      * deleteWriteManyPvc
      * 
      * @param {*} namespace 
+     * @param {*} name 
      */
-    async deleteWriteManyPvc(namespace) {
+    async deleteWriteManyPvc(namespace, name) {
         await axios.delete(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespace}/persistentvolumeclaims/${name}`, this.k8sAxiosHeader)
     }
 
