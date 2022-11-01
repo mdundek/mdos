@@ -232,7 +232,7 @@ components:
     volumes:
       - name: database-storage
         mountPath: /usr/data/db
-        ref: my-shared-volume # existing secret / configMap name to reference
+        sharedVolumeName: my-shared-volume # existing shared-volume
     ...
 ```
 
