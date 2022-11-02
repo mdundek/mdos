@@ -179,16 +179,10 @@ const oidcProviderCreateHook = (context, jwtToken) => {
  * @returns
  */
  const changePasswordCreateHook = (context, jwtToken) => {
-    console.log(JSON.stringify(jwtToken, null, 4))
-    console.log(JSON.stringify(context.data, null, 4))
-    // If mdos admin or list-user
-    // if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
-    //     return context
-    // }
-    // // If not namespace admin
-    // if (jwtToken.resource_access[context.data.namespace] && (jwtToken.resource_access[context.data.namespace].roles.includes('admin') || jwtToken.resource_access[context.data.namespace].roles.includes('k8s-write'))) {
-    //     return context
-    // }
+    if(jwtToken.username == context.data.username) {
+        return context
+    }
+
     // Otherwise unauthorized
     throw new errors.Forbidden('ERROR: You are not authorized to change this user password')
 }
