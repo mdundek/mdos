@@ -173,6 +173,27 @@ const oidcProviderCreateHook = (context, jwtToken) => {
 }
 
 /**
+ * changePasswordCreateHook
+ * @param {*} context
+ * @param {*} jwtToken
+ * @returns
+ */
+ const changePasswordCreateHook = (context, jwtToken) => {
+    console.log(JSON.stringify(jwtToken, null, 4))
+    console.log(JSON.stringify(context.data, null, 4))
+    // If mdos admin or list-user
+    // if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin'))) {
+    //     return context
+    // }
+    // // If not namespace admin
+    // if (jwtToken.resource_access[context.data.namespace] && (jwtToken.resource_access[context.data.namespace].roles.includes('admin') || jwtToken.resource_access[context.data.namespace].roles.includes('k8s-write'))) {
+    //     return context
+    // }
+    // Otherwise unauthorized
+    throw new errors.Forbidden('ERROR: You are not authorized to change this user password')
+}
+
+/**
  * Export
  *
  * @return {*} 
@@ -203,6 +224,8 @@ module.exports = function () {
             return await userRoleCreateHook(context, jwtToken)
         } else if (context.path == 'keycloak' && context.data.type == 'client-role') {
             return await clientRoleCreateHook(context, jwtToken)
+        } else if (context.path == 'keycloak' && context.data.type == 'change-password') {
+            return await changePasswordCreateHook(context, jwtToken)
         } else if (context.path == 'oidc-provider') {
             return await oidcProviderCreateHook(context, jwtToken)
         } else if (context.path == 'kube' && context.data.type == 'tenantNamespace') {

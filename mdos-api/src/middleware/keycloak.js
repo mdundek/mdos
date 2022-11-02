@@ -698,6 +698,44 @@ class Keycloak {
      *
      *
      * @param {*} realm
+     * @param {*} userId
+     * @memberof Keycloak
+     */
+    async updateUserPassword(realm, userName, newPassword) {
+        let accessToken = await this._getAccessToken()
+
+        const responseAllUsers = await axios.get(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/${realm}/users`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            }
+        })
+
+        const userUuid = responseAllUsers.data.find((u) => u.username == userName).id
+        accessToken = await this._getAccessToken()
+
+        await axios.put(
+            `https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/mdos/users/${userUuid}/reset-password`,
+            {
+                type: 'password',
+                value: newPassword,
+                temporary: false,
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            }
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} realm
      * @param {*} clientId
      * @return {*} 
      * @memberof Keycloak
