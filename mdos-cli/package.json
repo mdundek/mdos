@@ -75,6 +75,9 @@
             "auth": {
                 "description": "Manage platform users and roles"
             },
+            "shared-volume": {
+                "description": "Manage your shared volumes"
+            },
             "auth:tenant": {
                 "description": "Manage platform tenant scope roles"
             },

@@ -1,7 +1,7 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { warn, filterQuestions, mergeFlags } = require('../../lib/tools')
+const { error, filterQuestions, mergeFlags } = require('../../lib/tools')
 
 /**
  * Command
@@ -41,13 +41,23 @@ export default class ChangePassword extends Command {
 
         let response = await inquirer.prompt([
             {
-                group: 'user',
-                type: 'input',
+                type: 'password',
                 name: 'password',
                 message: 'Enter your new password:',
                 validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
+            },
+            {
+                type: 'password',
+                name: 'passwordConfirm',
+                message: 'Confirm password:',
+                validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
             }
         ])
+
+        if(response.password !== response.passwordConfirm) {
+            error("Passwords do not match")
+            process.exit(1)
+        }
 
         console.log()
         CliUx.ux.action.start('Changing your keycloak password')
