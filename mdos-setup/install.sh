@@ -224,13 +224,13 @@ collect_user_input() {
         AVAIL_DISK_SPACE=$(df /var | sed -n 2p | awk '{printf "%.0f \n", $4/1024/1024}')
     fi
 
-    # Substract 10Gb as reserve from the available disk space
-    AVAIL_DISK_SPACE=$((AVAIL_DISK_SPACE-5))
+    # Substract 15Gb as reserve from the available disk space (for Loki and other internal components)
+    AVAIL_DISK_SPACE=$((AVAIL_DISK_SPACE-15))
 
     # Make sure we have enougth disk space
-    if [ "$AVAIL_DISK_SPACE" -lt "20" ]; then
+    if [ "$AVAIL_DISK_SPACE" -lt "30" ]; then
         EARLY_EXIT=1
-        error "Insufficient disk space, a minimum of 20Gb of available disk space is required, but only ${AVAIL_DISK_SPACE}Gi are available"
+        error "Insufficient disk space, a minimum of 30Gb of available disk space is required, but only ${AVAIL_DISK_SPACE}Gi are available"
         exit 1
     fi
 
@@ -1735,6 +1735,21 @@ EOF
     cd $C_DIR
 }
 
+# ############################################
+# ############ INSTALL LOKI STACK ############
+# ############################################
+install_loki_stack() {
+    helm repo add grafana https://grafana.github.io/helm-charts &>> $LOG_FILE
+    helm repo update &>> $LOG_FILE
+
+    kubectl create ns loki-stack &>> $LOG_FILE
+    helm upgrade --install loki --namespace=loki-stack grafana/loki-stack --version 2.6.0 \
+        --set loki.persistence.enabled=true \
+        --set loki.persistence.size="10Gi" \
+        --set loki.persistence.storageClassName="longhorn" \
+        --atomic &>> $LOG_FILE
+}
+
 
 # ###########################################################################################################################
 # ########################################################### MAIN ##########################################################
@@ -1928,6 +1943,13 @@ EOF
         info "Install Longhorn..."
         install_longhorn
         set_env_step_data "INST_STEP_LONGHORN" "1"
+    fi
+
+    # INSTALL LOKI
+    if [ -z $INST_STEP_LOKI ]; then
+        info "Install Locki-Stack..."
+        install_loki_stack
+        set_env_step_data "INST_STEP_LOKI" "1"
     fi
 
     # SETUP FIREWALL
