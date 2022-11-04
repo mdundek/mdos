@@ -240,7 +240,7 @@ dependencies() {
             echo "fs.inotify.max_queued_events = 50384
 fs.inotify.max_user_instances = 512
 fs.inotify.max_user_watches = 110645" >> /etc/sysctl.conf
-            sysctl --system
+            sysctl --system &>> $LOG_FILE
         fi
     fi
 }
