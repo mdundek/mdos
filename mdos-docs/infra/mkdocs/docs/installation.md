@@ -250,6 +250,7 @@ XXX.XXX.XXX.XXX mdos-api.mydomain.com
 XXX.XXX.XXX.XXX mdos-ftp.mydomain.com
 XXX.XXX.XXX.XXX mdos-ftp-api.mydomain.com
 XXX.XXX.XXX.XXX longhorn.mydomain.com
+XXX.XXX.XXX.XXX grafana.mydomain.com
 ```
 
 <!-- ## Extra

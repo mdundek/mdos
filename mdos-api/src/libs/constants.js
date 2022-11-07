@@ -16,6 +16,7 @@ module.exports = Object.freeze({
         'istio-system',
         'longhorn-system',
         'rabbitmq',
-        'cert-manager'
+        'cert-manager',
+        'loki-stack'
     ]
 });
