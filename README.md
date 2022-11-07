@@ -38,7 +38,7 @@ MDos goes beyond just simplifying kubernetes deployments, it also adds mechanism
 MDos is multi-tenant oriented, it is designed to be shared between teams, yet secured so that everyone has privacy and security on the cluster. -->
 
 > **Warning**
-> MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
+> MDos is in under developement at the moment, it should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
 
 ## In a Nutshell
 
