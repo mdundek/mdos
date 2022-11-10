@@ -475,6 +475,77 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * createWriteManyPvc
+     * 
+     * @param {*} namespace 
+     * @param {*} name 
+     * @param {*} size 
+     */
+    async createWriteManyPvc(namespace, name, size) {
+        await axios.post(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespace}/persistentvolumeclaims`,
+            {
+                apiVersion: "v1",
+                kind: "PersistentVolumeClaim",
+                metadata: {
+                    name: name
+                },
+                spec: {
+                    accessModes: ["ReadWriteMany"],
+                    storageClassName: "longhorn",
+                    resources: {
+                        requests: {
+                            storage: size
+                        }
+                    }
+                }
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     * deleteWriteManyPvc
+     * 
+     * @param {*} namespace 
+     * @param {*} name 
+     */
+    async deleteWriteManyPvc(namespace, name) {
+        await axios.delete(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespace}/persistentvolumeclaims/${name}`, this.k8sAxiosHeader)
+    }
+
+    /**
+     * getWriteManyPvcs
+     * 
+     * @param {*} namespace 
+     */
+    async getWriteManyPvcs(namespace, pvcName) {
+        const pvcList = await this.getPvcs(namespace, pvcName)
+        return pvcList.filter(pvc => pvc.spec.accessModes.includes('ReadWriteMany'))
+    }
+
+    /**
+     * getPvcs
+     * 
+     * @param {*} namespace 
+     * @param {*} pvcName 
+     * @returns 
+     */
+    async getPvcs(namespace, pvcName) {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespace}/persistentvolumeclaims`, this.k8sAxiosHeader)
+        let pvcList
+        if(pvcName) {
+            const targetObj = res.data.items.find(pvc => pvc.metadata.name == pvcName)
+            if(targetObj) pvcList = [targetObj]
+            else pvcList = []
+        } else {
+            pvcList = res.data.items
+        }
+        
+        return pvcList
+    }
+
+    /**
      *
      *
      * @param {*} namespaceName

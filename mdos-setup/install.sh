@@ -39,11 +39,47 @@ while [ "$1" != "" ]; do
         --reset )
             rm -rf $HOME/.mdos
         ;;
+        --broker-size )
+            shift
+            BROKER_SIZE_OVERWRITE=$1
+        ;;
+        --keycloak-size )
+            shift
+            KEYCLOAK_SIZE_OVERWRITE=$1
+        ;;
+        --loki-size )
+            shift
+            LOKI_SIZE_OVERWRITE=$1
+        ;;
         * ) error "Invalid parameter detected: $1"
             exit 1
     esac
     shift
 done
+
+# ############################################
+# ################# VARIABLES ################
+# ############################################
+RABBIT_MQ_VOLUME_SIZE=3
+LOKI_VOLUME_SIZE=5
+KEYCLOAK_VOLUME_SIZE=5
+
+REGISTRY_MIN_VOLUME_SIZE=5
+EXTRA_RESERVED_VOLUME_SIZE=5
+# ############################################
+
+if [ ! -z $BROKER_SIZE_OVERWRITE ]; then
+    RABBIT_MQ_VOLUME_SIZE=$BROKER_SIZE_OVERWRITE
+fi
+if [ ! -z $LOKI_SIZE_OVERWRITE ]; then
+    LOKI_VOLUME_SIZE=$LOKI_SIZE_OVERWRITE
+fi
+if [ ! -z $KEYCLOAK_SIZE_OVERWRITE ]; then
+    KEYCLOAK_VOLUME_SIZE=$KEYCLOAK_SIZE_OVERWRITE
+fi
+
+DISK_TOTAL_RESERVED=$((RABBIT_MQ_VOLUME_SIZE+LOKI_VOLUME_SIZE+KEYCLOAK_VOLUME_SIZE+REGISTRY_MIN_VOLUME_SIZE+EXTRA_RESERVED_VOLUME_SIZE))
+DISK_TOTAL_FIXED_RESERVED=$((RABBIT_MQ_VOLUME_SIZE+LOKI_VOLUME_SIZE+KEYCLOAK_VOLUME_SIZE+EXTRA_RESERVED_VOLUME_SIZE))
 
 # LOAD INSTALLATION TRACKING LOGS
 INST_ENV_PATH="$HOME/.mdos/install.dat"
@@ -224,18 +260,15 @@ collect_user_input() {
         AVAIL_DISK_SPACE=$(df /var | sed -n 2p | awk '{printf "%.0f \n", $4/1024/1024}')
     fi
 
-    # Substract 10Gb as reserve from the available disk space
-    AVAIL_DISK_SPACE=$((AVAIL_DISK_SPACE-5))
-
     # Make sure we have enougth disk space
-    if [ "$AVAIL_DISK_SPACE" -lt "20" ]; then
+    if [ "$AVAIL_DISK_SPACE" -lt "$DISK_TOTAL_RESERVED" ]; then
         EARLY_EXIT=1
-        error "Insufficient disk space, a minimum of 20Gb of available disk space is required, but only ${AVAIL_DISK_SPACE}Gi are available"
+        error "Insufficient disk space, a minimum of ${DISK_TOTAL_RESERVED}Gb of available disk space is required, but only ${AVAIL_DISK_SPACE}Gi are available"
         exit 1
     fi
 
     # REGISTRY
-    REMAINING_DISK=$((AVAIL_DISK_SPACE-5)) # Keep min 5 Gi for RabbitMQ
+    REGISTRY_MAX_DISK_SIZE=$((AVAIL_DISK_SPACE-DISK_TOTAL_FIXED_RESERVED))
     print_section_title "Private registry"
     if [ -z $REGISTRY_SIZE ]; then
         context_print "MDos provides you with a private registry that you can use to store your application"
@@ -246,19 +279,19 @@ collect_user_input() {
         re='^[0-9]+$'
         while ! [[ $REGISTRY_SIZE =~ $re ]] ; do
             error "Invalide number, ingeger representing Gigabytes is expected"
-            user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
+            user_input REGISTRY_SIZE "How many Gi (Gigabytes) do you want to allocate to your registry volume:"
         done
 
-        while [ "$((REMAINING_DISK-REGISTRY_SIZE))" -lt "0" ]; do
-            error "Insufficient disk space, you can allocate a maximum of ${REMAINING_DISK}Gi"
-            user_input REGISTRY_SIZE "How many Gi do you want to allocate to your registry volume:"
+        while [ "$((REGISTRY_MAX_DISK_SIZE-REGISTRY_SIZE))" -lt "0" ]; do
+            error "Insufficient disk space, you can allocate a maximum of ${REGISTRY_MAX_DISK_SIZE}Gi"
+            user_input REGISTRY_SIZE "How many Gi (Gigabytes) do you want to allocate to your registry volume:"
         done
-    elif [ "$((REMAINING_DISK-REGISTRY_SIZE))" -lt "0" ]; then
+    elif [ "$((REGISTRY_MAX_DISK_SIZE-REGISTRY_SIZE))" -lt "0" ]; then
         EARLY_EXIT=1
-        error "Insufficient disk space, you can allocate a maximum of ${REMAINING_DISK}Gi"
+        error "Insufficient disk space, you can allocate a maximum of ${REGISTRY_MAX_DISK_SIZE}Gi"
         exit 1
     fi
-    REMAINING_DISK=$((AVAIL_DISK_SPACE-REGISTRY_SIZE))
+    REMAINING_DISK=$((AVAIL_DISK_SPACE-REGISTRY_SIZE-DISK_TOTAL_FIXED_RESERVED))
 
     # FTP
     print_section_title "FTP volume sync server"
@@ -296,25 +329,9 @@ collect_user_input() {
         fi
     fi
 
-    # RABBITMQ
-    if [ "$REMAINING_DISK" -lt "5" ]; then
-        EARLY_EXIT=1
-        error "You are running low on disk space, you only have ${REMAINING_DISK}Gi left on your Kubernetes storage device, which is insufficient to run the platform in a stable manner"
-        exit 1
-    elif [ "$REMAINING_DISK" -lt "8" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-3))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
-        RABBITMQ_STORAGE_SIZE="3"
-    elif [ "$REMAINING_DISK" -lt "10" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-5))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
-        RABBITMQ_STORAGE_SIZE="5"
-    elif [ "$REMAINING_DISK" -lt "20" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-10))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
-        RABBITMQ_STORAGE_SIZE="10"
-    elif [ "$REMAINING_DISK" -lt "30" ]; then
-        warn "You are running low on disk space, you only have $((REMAINING_DISK-15))Gi left on your Kubernetes storage device. The stability of the platform is at risk!"
-        RABBITMQ_STORAGE_SIZE="15"
-    else
-        RABBITMQ_STORAGE_SIZE="20"
+    # DISK PESSURE WARNINGS IF ANY
+    if [ "$REMAINING_DISK" -lt "10" ]; then
+        warn "You are running low on disk space, you only have ${REMAINING_DISK}Gi left on your Kubernetes storage device once everything is installed"
     fi
 }
 
@@ -651,6 +668,9 @@ configure_etc_hosts() {
     fi
     if [ "$(cat /etc/hosts | grep keycloak.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 keycloak.$DOMAIN" >> /etc/hosts
+    fi
+    if [ "$(cat /etc/hosts | grep grafana.$DOMAIN)" == "" ]; then
+        echo "127.0.0.1 grafana.$DOMAIN" >> /etc/hosts
     fi
     if [ "$(cat /etc/hosts | grep mdos-api.$DOMAIN)" == "" ]; then
         echo "127.0.0.1 mdos-api.$DOMAIN" >> /etc/hosts
@@ -1136,6 +1156,8 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.registry = "registry.'$DOMAIN'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.mdosRegistry = "registry.'$DOMAIN'"')
 
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].volumes[0].size = "'$KEYCLOAK_VOLUME_SIZE'Gi"')
+
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[0].value = "'$POSTGRES_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_PASSWORD'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
@@ -1537,7 +1559,7 @@ spec:
     type: NodePort
   persistence:
     storageClassName: longhorn
-    storage: ${RABBITMQ_STORAGE_SIZE}Gi
+    storage: ${RABBIT_MQ_VOLUME_SIZE}Gi
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -1735,6 +1757,104 @@ EOF
     cd $C_DIR
 }
 
+# ############################################
+# ############ INSTALL LOKI STACK ############
+# ############################################
+install_loki_stack() {
+    helm repo add grafana https://grafana.github.io/helm-charts &>> $LOG_FILE
+    helm repo update &>> $LOG_FILE
+
+    kubectl create ns loki-stack &>> $LOG_FILE
+
+    LOKI_CONFIG="auth_enabled: false
+chunk_store_config:
+  max_look_back_period: 0s
+compactor:
+  shared_store: filesystem
+  working_directory: /data/loki/boltdb-shipper-compactor
+ingester:
+  chunk_block_size: 262144
+  chunk_idle_period: 3m
+  chunk_retain_period: 1m
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  max_transfer_retries: 0
+  wal:
+    dir: /data/loki/wal
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+schema_config:
+  configs:
+  - from: \"2020-10-24\"
+    index:
+      period: 24h
+      prefix: index_
+    object_store: filesystem
+    schema: v11
+    store: boltdb-shipper
+server:
+  http_listen_port: 3100
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /data/loki/boltdb-shipper-active
+    cache_location: /data/loki/boltdb-shipper-cache
+    cache_ttl: 24h
+    shared_store: filesystem
+  filesystem:
+    directory: /data/loki/chunks
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 168h"
+
+    cat <<EOF | kubectl apply -f &>> $LOG_FILE -
+apiVersion: v1
+data:
+  loki.yaml: $(echo -n "$LOKI_CONFIG" | base64 -w 0)
+kind: Secret
+metadata:
+  name: loki-config
+  namespace: loki-stack
+type: Opaque
+EOF
+
+    helm upgrade --install loki --namespace=loki-stack grafana/loki-stack --version 2.6.0 \
+        --set loki.persistence.enabled=true \
+        --set loki.persistence.size="${LOKI_VOLUME_SIZE}Gi" \
+        --set loki.persistence.storageClassName="longhorn" \
+        --set loki.existingSecretForConfig="loki-config" \
+        --set grafana.enabled=true \
+        --set grafana.adminUser="$KEYCLOAK_USER" \
+        --set grafana.adminPassword="$KEYCLOAK_PASS" \
+        --atomic &>> $LOG_FILE
+
+    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  labels:
+    app: grafana-ui
+  name: grafana-ui-ingress
+  namespace: loki-stack
+spec:
+  gateways:
+  - mdos/https-gateway
+  hosts:
+  - grafana.$DOMAIN
+  http:
+  - name: grafana-ui-ingress
+    route:
+    - destination:
+        host: loki-grafana.loki-stack.svc.cluster.local
+        port:
+          number: 80
+EOF
+}
+
 
 # ###########################################################################################################################
 # ########################################################### MAIN ##########################################################
@@ -1824,6 +1944,7 @@ EOF
                     echo "          <MDOS_VM_IP> registry-auth.$DOMAIN"
                     echo "          <MDOS_VM_IP> keycloak.$DOMAIN"
                     echo "          <MDOS_VM_IP> longhorn.$DOMAIN"
+                    echo "          <MDOS_VM_IP> grafana.$DOMAIN"
                     echo ""
                 fi
             fi
@@ -1836,6 +1957,7 @@ EOF
                 echo "          - registry-auth.$DOMAIN"
                 echo "          - keycloak.$DOMAIN:30999"
                 echo "          - longhorn.$DOMAIN"
+                echo "          - grafana.$DOMAIN"
                 echo ""
                 echo "      You will have to allow inbound traffic on the following ports:"
                 echo "          - 443 (HTTPS traffic for the MDos API)"
@@ -1974,6 +2096,13 @@ EOF
         info "Setup Longhorn virtual service..."
         setup_longhorn_vs
         set_env_step_data "INST_STEP_LONGHORN_VS" "1"
+    fi
+
+    # INSTALL LOKI
+    if [ -z $INST_STEP_LOKI ]; then
+        info "Install Locki-Stack..."
+        install_loki_stack
+        set_env_step_data "INST_STEP_LOKI" "1"
     fi
 
     # INSTALL REGISTRY

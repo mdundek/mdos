@@ -10,7 +10,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/1.2.0 darwin-x64 node-v18.9.0
+mdos-cli/1.3.1 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -74,6 +74,18 @@ USAGE
 * [`mdos client show`](#mdos-client-show)
 * [`mdos client show-roles`](#mdos-client-show-roles)
 * [`mdos client show roles`](#mdos-client-show-roles-1)
+* [`mdos cm cert create`](#mdos-cm-cert-create)
+* [`mdos cm cert delete`](#mdos-cm-cert-delete)
+* [`mdos cm cert list`](#mdos-cm-cert-list)
+* [`mdos cm certificate create`](#mdos-cm-certificate-create)
+* [`mdos cm certificate delete`](#mdos-cm-certificate-delete)
+* [`mdos cm certificate list`](#mdos-cm-certificate-list)
+* [`mdos cm crt create`](#mdos-cm-crt-create)
+* [`mdos cm crt delete`](#mdos-cm-crt-delete)
+* [`mdos cm crt list`](#mdos-cm-crt-list)
+* [`mdos cm issuer create`](#mdos-cm-issuer-create)
+* [`mdos cm issuer delete`](#mdos-cm-issuer-delete)
+* [`mdos cm issuer list`](#mdos-cm-issuer-list)
 * [`mdos conf add`](#mdos-conf-add)
 * [`mdos conf generate`](#mdos-conf-generate)
 * [`mdos config add`](#mdos-config-add)
@@ -99,6 +111,9 @@ USAGE
 * [`mdos deploy applications`](#mdos-deploy-applications)
 * [`mdos env add`](#mdos-env-add)
 * [`mdos env generate`](#mdos-env-generate)
+* [`mdos gateway add`](#mdos-gateway-add)
+* [`mdos gateway list`](#mdos-gateway-list)
+* [`mdos gateway remove`](#mdos-gateway-remove)
 * [`mdos gen app`](#mdos-gen-app)
 * [`mdos gen comp`](#mdos-gen-comp)
 * [`mdos generate app`](#mdos-generate-app)
@@ -118,6 +133,9 @@ USAGE
 * [`mdos get-config`](#mdos-get-config)
 * [`mdos get config`](#mdos-get-config-1)
 * [`mdos help [COMMAND]`](#mdos-help-command)
+* [`mdos ingress-gateway add`](#mdos-ingress-gateway-add)
+* [`mdos ingress-gateway list`](#mdos-ingress-gateway-list)
+* [`mdos ingress-gateway remove`](#mdos-ingress-gateway-remove)
 * [`mdos ingress add`](#mdos-ingress-add)
 * [`mdos ingress generate`](#mdos-ingress-generate)
 * [`mdos kc client add-role`](#mdos-kc-client-add-role)
@@ -182,9 +200,7 @@ USAGE
 * [`mdos service add`](#mdos-service-add)
 * [`mdos service generate`](#mdos-service-generate)
 * [`mdos set-kubeconfig`](#mdos-set-kubeconfig)
-* [`mdos show-config`](#mdos-show-config)
 * [`mdos show client`](#mdos-show-client)
-* [`mdos show config`](#mdos-show-config-1)
 * [`mdos show namespace`](#mdos-show-namespace)
 * [`mdos show ns`](#mdos-show-ns)
 * [`mdos sso app`](#mdos-sso-app)
@@ -1521,6 +1537,186 @@ ALIASES
   $ mdos kc client show roles
 ```
 
+## `mdos cm cert create`
+
+Create a new Certificate / TLS secret
+
+```
+USAGE
+  $ mdos cm cert create
+
+DESCRIPTION
+  Create a new Certificate / TLS secret
+
+ALIASES
+  $ mdos cm certificate create
+  $ mdos cm crt create
+```
+
+## `mdos cm cert delete`
+
+Delete a Cert-Manager Issuers
+
+```
+USAGE
+  $ mdos cm cert delete
+
+DESCRIPTION
+  Delete a Cert-Manager Issuers
+
+ALIASES
+  $ mdos cm certificate delete
+  $ mdos cm crt delete
+```
+
+## `mdos cm cert list`
+
+List your certificates
+
+```
+USAGE
+  $ mdos cm cert list
+
+DESCRIPTION
+  List your certificates
+
+ALIASES
+  $ mdos cm certificate list
+  $ mdos cm crt list
+```
+
+## `mdos cm certificate create`
+
+Create a new Certificate / TLS secret
+
+```
+USAGE
+  $ mdos cm certificate create
+
+DESCRIPTION
+  Create a new Certificate / TLS secret
+
+ALIASES
+  $ mdos cm certificate create
+  $ mdos cm crt create
+```
+
+## `mdos cm certificate delete`
+
+Delete a Cert-Manager Issuers
+
+```
+USAGE
+  $ mdos cm certificate delete
+
+DESCRIPTION
+  Delete a Cert-Manager Issuers
+
+ALIASES
+  $ mdos cm certificate delete
+  $ mdos cm crt delete
+```
+
+## `mdos cm certificate list`
+
+List your certificates
+
+```
+USAGE
+  $ mdos cm certificate list
+
+DESCRIPTION
+  List your certificates
+
+ALIASES
+  $ mdos cm certificate list
+  $ mdos cm crt list
+```
+
+## `mdos cm crt create`
+
+Create a new Certificate / TLS secret
+
+```
+USAGE
+  $ mdos cm crt create
+
+DESCRIPTION
+  Create a new Certificate / TLS secret
+
+ALIASES
+  $ mdos cm certificate create
+  $ mdos cm crt create
+```
+
+## `mdos cm crt delete`
+
+Delete a Cert-Manager Issuers
+
+```
+USAGE
+  $ mdos cm crt delete
+
+DESCRIPTION
+  Delete a Cert-Manager Issuers
+
+ALIASES
+  $ mdos cm certificate delete
+  $ mdos cm crt delete
+```
+
+## `mdos cm crt list`
+
+List your certificates
+
+```
+USAGE
+  $ mdos cm crt list
+
+DESCRIPTION
+  List your certificates
+
+ALIASES
+  $ mdos cm certificate list
+  $ mdos cm crt list
+```
+
+## `mdos cm issuer create`
+
+Create a new Cert-Manager issuer
+
+```
+USAGE
+  $ mdos cm issuer create
+
+DESCRIPTION
+  Create a new Cert-Manager issuer
+```
+
+## `mdos cm issuer delete`
+
+Delete a Cert-Manager Issuers
+
+```
+USAGE
+  $ mdos cm issuer delete
+
+DESCRIPTION
+  Delete a Cert-Manager Issuers
+```
+
+## `mdos cm issuer list`
+
+List Cert-Manager Issuers
+
+```
+USAGE
+  $ mdos cm issuer list
+
+DESCRIPTION
+  List Cert-Manager Issuers
+```
+
 ## `mdos conf add`
 
 Configure environement variables and config files for your components
@@ -1788,10 +1984,11 @@ Scaffold a new application component for the application in the current director
 
 ```
 USAGE
-  $ mdos create comp [-n <value>]
+  $ mdos create comp [-n <value>] [-p <value>]
 
 FLAGS
-  -n, --name=<value>  An application component name
+  -n, --name=<value>           An application component name
+  -p, --networkPolicy=<value>  Network Policy to apply to this component
 
 DESCRIPTION
   Scaffold a new application component for the application in the current directory
@@ -1809,10 +2006,11 @@ Scaffold a new application component for the application in the current director
 
 ```
 USAGE
-  $ mdos create component [-n <value>]
+  $ mdos create component [-n <value>] [-p <value>]
 
 FLAGS
-  -n, --name=<value>  An application component name
+  -n, --name=<value>           An application component name
+  -p, --networkPolicy=<value>  Network Policy to apply to this component
 
 DESCRIPTION
   Scaffold a new application component for the application in the current directory
@@ -2160,6 +2358,51 @@ ALIASES
   $ mdos env generate
 ```
 
+## `mdos gateway add`
+
+Add a new ingress gateway config
+
+```
+USAGE
+  $ mdos gateway add
+
+DESCRIPTION
+  Add a new ingress gateway config
+
+ALIASES
+  $ mdos gateway add
+```
+
+## `mdos gateway list`
+
+List existing ingress gateway configs
+
+```
+USAGE
+  $ mdos gateway list
+
+DESCRIPTION
+  List existing ingress gateway configs
+
+ALIASES
+  $ mdos gateway list
+```
+
+## `mdos gateway remove`
+
+Remove an existing ingress gateway config
+
+```
+USAGE
+  $ mdos gateway remove
+
+DESCRIPTION
+  Remove an existing ingress gateway config
+
+ALIASES
+  $ mdos gateway remove
+```
+
 ## `mdos gen app`
 
 Scaffold a new application in the current directory
@@ -2188,10 +2431,11 @@ Scaffold a new application component for the application in the current director
 
 ```
 USAGE
-  $ mdos gen comp [-n <value>]
+  $ mdos gen comp [-n <value>] [-p <value>]
 
 FLAGS
-  -n, --name=<value>  An application component name
+  -n, --name=<value>           An application component name
+  -p, --networkPolicy=<value>  Network Policy to apply to this component
 
 DESCRIPTION
   Scaffold a new application component for the application in the current directory
@@ -2253,10 +2497,11 @@ Scaffold a new application component for the application in the current director
 
 ```
 USAGE
-  $ mdos generate comp [-n <value>]
+  $ mdos generate comp [-n <value>] [-p <value>]
 
 FLAGS
-  -n, --name=<value>  An application component name
+  -n, --name=<value>           An application component name
+  -p, --networkPolicy=<value>  Network Policy to apply to this component
 
 DESCRIPTION
   Scaffold a new application component for the application in the current directory
@@ -2274,10 +2519,11 @@ Scaffold a new application component for the application in the current director
 
 ```
 USAGE
-  $ mdos generate component [-n <value>]
+  $ mdos generate component [-n <value>] [-p <value>]
 
 FLAGS
-  -n, --name=<value>  An application component name
+  -n, --name=<value>           An application component name
+  -p, --networkPolicy=<value>  Network Policy to apply to this component
 
 DESCRIPTION
   Scaffold a new application component for the application in the current directory
@@ -2554,11 +2800,9 @@ DESCRIPTION
 
 ALIASES
   $ mdos get config
-  $ mdos show config
-  $ mdos show-config
 ```
 
-_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/get-config.ts)_
+_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/get-config.ts)_
 
 ## `mdos get config`
 
@@ -2573,8 +2817,6 @@ DESCRIPTION
 
 ALIASES
   $ mdos get config
-  $ mdos show config
-  $ mdos show-config
 ```
 
 ## `mdos help [COMMAND]`
@@ -2596,6 +2838,51 @@ DESCRIPTION
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.12/src/commands/help.ts)_
+
+## `mdos ingress-gateway add`
+
+Add a new ingress gateway config
+
+```
+USAGE
+  $ mdos ingress-gateway add
+
+DESCRIPTION
+  Add a new ingress gateway config
+
+ALIASES
+  $ mdos gateway add
+```
+
+## `mdos ingress-gateway list`
+
+List existing ingress gateway configs
+
+```
+USAGE
+  $ mdos ingress-gateway list
+
+DESCRIPTION
+  List existing ingress gateway configs
+
+ALIASES
+  $ mdos gateway list
+```
+
+## `mdos ingress-gateway remove`
+
+Remove an existing ingress gateway config
+
+```
+USAGE
+  $ mdos ingress-gateway remove
+
+DESCRIPTION
+  Remove an existing ingress gateway config
+
+ALIASES
+  $ mdos gateway remove
+```
 
 ## `mdos ingress add`
 
@@ -3299,7 +3586,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3313,7 +3600,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -4134,24 +4421,7 @@ DESCRIPTION
   Retrieve user kubeconfig file and set up
 ```
 
-_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.2.0/dist/commands/set-kubeconfig.ts)_
-
-## `mdos show-config`
-
-Get configutation parameter(s) for your local CLI environement
-
-```
-USAGE
-  $ mdos show-config
-
-DESCRIPTION
-  Get configutation parameter(s) for your local CLI environement
-
-ALIASES
-  $ mdos get config
-  $ mdos show config
-  $ mdos show-config
-```
+_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/set-kubeconfig.ts)_
 
 ## `mdos show client`
 
@@ -4178,23 +4448,6 @@ ALIASES
   $ mdos namespaces show
   $ mdos client show
   $ mdos show client
-```
-
-## `mdos show config`
-
-Get configutation parameter(s) for your local CLI environement
-
-```
-USAGE
-  $ mdos show config
-
-DESCRIPTION
-  Get configutation parameter(s) for your local CLI environement
-
-ALIASES
-  $ mdos get config
-  $ mdos show config
-  $ mdos show-config
 ```
 
 ## `mdos show namespace`

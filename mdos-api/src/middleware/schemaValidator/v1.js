@@ -144,17 +144,9 @@ class SchemaV1 {
                                         },
                                         targetPort: { type: 'integer' },
                                         trafficType: { type: 'string', enum: ['http', 'https'] },
-                                        subPath: { type: 'string' },
-                                        tlsKeyPath: { type: 'string' },
-                                        tlsCrtPath: { type: 'string' },
-                                        tldMountPath: { type: 'string' },
+                                        subPath: { type: 'string' }
                                     },
                                     required: ['name', 'matchHost', 'targetPort'],
-                                    dependencies: {
-                                        tlsKeyPath: ['tlsCrtPath', 'tldMountPath'],
-                                        tlsCrtPath: ['tlsKeyPath', 'tldMountPath'],
-                                        tldMountPath: ['tlsCrtPath', 'tlsKeyPath'],
-                                    },
                                     additionalProperties: false,
                                 },
                             },
@@ -169,7 +161,9 @@ class SchemaV1 {
                                         },
                                         mountPath: { type: 'string' },
                                         hostPath: { type: 'string' },
+                                        sharedVolumeName: { type: 'string' },
                                         syncVolume: { type: 'boolean' },
+                                        trigger: { type: 'string' },
                                         size: { type: 'string' }
                                     },
                                     required: ['name', 'mountPath'],
@@ -517,11 +511,34 @@ class SchemaV1 {
                 // Volumes
                 if (component.volumes) {
                     for (const volume of component.volumes) {
-                        if (volume.hostPath && entry.syncVolume) {
+                        if (volume.hostPath && volume.syncVolume) {
                             errors.push({
                                 message: "'syncVolume' property is not compatible when using hostpaths",
                                 instance: volume,
                                 stack: "'syncVolume' property is not compatible when using hostpaths",
+                            })
+                        }
+                        if (volume.syncVolume) {
+                            if(!volume.trigger || !["initial", "always"].includes(volume.trigger)) {
+                                errors.push({
+                                    message: "'syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",
+                                    instance: volume,
+                                    stack:  "'syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",
+                                })
+                            }
+                        }
+                        if (volume.hostPath && volume.sharedVolumeName) {
+                            errors.push({
+                                message: "'hostPath' property is not compatible when using sharedVolumeName",
+                                instance: volume,
+                                stack: "'hostPath' property is not compatible when using sharedVolumeName",
+                            })
+                        }
+                        if (!volume.hostPath && !volume.sharedVolumeName) {
+                            errors.push({
+                                message: "'size' property is mandatory when not using hostPath or sharedVolumeName property",
+                                instance: volume,
+                                stack: "'size' property is mandatory when not using hostPath or sharedVolumeName property",
                             })
                         }
                     }

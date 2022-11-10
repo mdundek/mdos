@@ -59,6 +59,20 @@ exports.Mdos = class Mdos extends MdosCore {
                 throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
             }
 
+            // Make sure shared volume references exist
+            for(const component of valuesYaml.components) {
+                if(component.volumes) {
+                    for(const volume of component.volumes) {
+                        if(volume.sharedVolumeName) {
+                            let pvcMatch = await this.app.get('kube').getWriteManyPvcs(valuesYaml.tenantName, volume.sharedVolumeName)
+                            if(pvcMatch.length == 0) {
+                                throw new BadRequest(`ERROR: Shared Volume name ${volume.sharedVolumeName} not found`)
+                            }
+                        }
+                    }
+                }
+            }
+
             // Enrich values data
             valuesYaml = await this.enrichValuesForDeployment(valuesYaml)
 

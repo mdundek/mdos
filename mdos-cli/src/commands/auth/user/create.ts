@@ -1,7 +1,7 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
 const inquirer = require('inquirer')
-const { warn, filterQuestions, mergeFlags } = require('../../../lib/tools')
+const { warn, error, filterQuestions, mergeFlags } = require('../../../lib/tools')
 
 /**
  * Command
@@ -38,13 +38,20 @@ export default class Create extends Command {
         },
         {
             group: 'user',
-            type: 'input',
+            type: 'password',
             name: 'password',
             message: 'Enter password for new user:',
             validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
         },
         {
-            group: 'user',
+            group: 'userRepeat',
+            type: 'password',
+            name: 'passwordRepeat',
+            message: 'Confirm password:',
+            validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
+        },
+        {
+            group: 'userEmail',
             type: 'input',
             name: 'email',
             message: 'Enter user email address for new user:',
@@ -75,12 +82,23 @@ export default class Create extends Command {
         let q = filterQuestions(Create.questions, 'user', flags)
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
+        q = filterQuestions(Create.questions, 'userRepeat', flags)
+        let responsesRepeat = q.length > 0 ? await inquirer.prompt(q) : {}
+
+        if(responses.password !== responsesRepeat.passwordRepeat) {
+            error("Passwords do not match")
+            process.exit(1)
+        }
+
+        q = filterQuestions(Create.questions, 'userEmail', flags)
+        let responsesEmail = q.length > 0 ? await inquirer.prompt(q) : {}
+
         CliUx.ux.action.start('Creating Keycloak user')
         try {
             await this.api(`keycloak`, 'post', {
                 type: 'user',
                 realm: 'mdos',
-                ...mergeFlags(responses, flags),
+                ...mergeFlags({...responses, ...responsesEmail}, flags),
             })
             CliUx.ux.action.stop()
 

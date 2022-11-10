@@ -152,9 +152,11 @@ const oidcProviderFilterHook = async (context, jwtToken) => {
  * @returns 
  */
 const certManagerIssuersFilterHook = async (context, jwtToken) => {
+    context.result = context.result.filter((issuer) => issuer.metadata.name != "mdos-issuer")
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
+    
     context.result = context.result.filter((issuer) => issuer.kind == "ClusterIssuer" ? true : jwtToken.resource_access[issuer.metadata.namespace])
     return context
 }
@@ -166,6 +168,7 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
  * @returns 
  */
  const certManagerClusterIssuersFilterHook = async (context, jwtToken) => {
+    context.result = context.result.filter((issuer) => issuer.metadata.name != "mdos-issuer")
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
@@ -198,6 +201,20 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
         return context
     }
     context.result = context.result.filter((secret) => jwtToken.resource_access[secret.metadata.namespace])
+    return context
+}
+
+/**
+ * sharedVolumesFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const sharedVolumesFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+    context.result = context.result.filter((pvc) => jwtToken.resource_access[pvc.metadata.namespace])
     return context
 }
 
@@ -253,6 +270,10 @@ module.exports = function () {
             return await tlsSecretFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'certificates') {
             return await certificatesFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'shared-volumes') {
+            return await sharedVolumesFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'volumes') {
+            return await sharedVolumesFilterHook(context, jwtToken)
         } else {
             console.log('Unknown filter hook: ', context.params.query, context.path)
         }

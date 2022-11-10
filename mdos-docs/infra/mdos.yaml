@@ -15,6 +15,10 @@ components:
       - name: docs
         mountPath: /usr/share/nginx/html
         syncVolume: true
+        trigger: always
+      - name: test-shared
+        mountPath: /test
+        sharedVolumeName: vol1
     services:
       - name: http
         ports:

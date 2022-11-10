@@ -9,11 +9,14 @@ hide:
 MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency
 
 <figure markdown>
-  ![Overview](/img/overview.png)
+  ![Overview](/mdos/img/overview.png)
 </figure>
 
 !!! warning
     MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
+
+This documentation is for the `MDos` platform Git repository available [here](https://github.com/mdundek/mdos)
+
 ---
 
 ## In a Nutshell
@@ -24,7 +27,7 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 * Greatly simplifies complex Kubernetes application deployment patterns
 * Provides tools to deal with hard to solve storage related challanges
 * Protect your applications by delegating authentication to MDos using Oauth2 & OIDC
-* Simply focus on your application RBAC logic by inspecting the user JWT token
+* Hassle free TLS certificate management
 
 ### Why would you want to use it?
 
@@ -58,12 +61,12 @@ Those can be split into 5 families:
 3. Advanced volume and storage workflows
 4. Multi-tenant based segregation
 5. OIDC / OAuth2 authentication & Application RBAC
+6. Cert-Manager for TLS certificate issuer and secret management
 
 ### 1. Application specific resource configurations
 
 Using the MDos CLI and a unified `mdos.yaml` application descriptor file, you can build complex Kubernetes deployment senarios without any knowledge of Kubernetes resource definition types such as `Deployments`, `StatefulSets`, `Pods`, `Services`, `PV & PVCs`, `VirtualServices`, `Secrets`, `ConfigMaps`, `NetworkPolicies` ... (just to name a few)  
 Therefore, build your applications using higher level artefacts that will translate to lower level Kubernetes resource definitions based on Kubernetes best practices.  
-Amongst other things, the MDos CLI allows you to:
 
 * Scaffold a new `application` workspace
 * Scaffold a application `component` inside your mdos `application`
@@ -72,6 +75,7 @@ Amongst other things, the MDos CLI allows you to:
 * Expose your application components to other resources within the cluster 
 * Configure hostname based ingress rules to allow access to your application components from outside of the cluster
 * Mount various volume types to your application components
+* ...
 
 ### 2. Deploy and debug your applications
 
@@ -94,6 +98,11 @@ Amongst other things, the MDos CLI allows you to:
 
 ### 5. OIDC / OAuth2 authentication & Application RBAC
 
-* Provision OIDC / OAuth2 based Authentication providers to your cluster ready to use (Keycloak internal or Google only for now)
+* Provision OIDC / OAuth2 based Authentication providers to your cluster ready to use
 * Link OIDC / OAuth2 provisioned providers to your application components to protect those resources (no app changes needed)
 * Assign roles to your users specifically on each tenant / keycloak client, allowing you to implement your ACL logic without having to deal with authentication at all
+
+### 6. Cert-Manager for TLS certificate issuer and secret management
+
+* Register Cert-Manager Issuers onto your cluster or namespace
+* Generate and manage certificates / secrets from your Issuers

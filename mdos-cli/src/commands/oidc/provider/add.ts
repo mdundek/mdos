@@ -18,71 +18,12 @@ export default class Add extends Command {
 
     // ******* FLAGS *******
     static flags = {
-        target: Flags.string({ char: 't', description: 'OIDC target' }),
-        clienId: Flags.string({ description: 'Keycloak client id name' }),
+        target: Flags.string({ char: 't', description: 'OIDC target' })
     }
     // *********************
 
     // ***** QUESTIONS *****
-    static questions = [
-        {
-            group: 'oidc',
-            type: 'list',
-            name: 'target',
-            message: 'What OIDC target do you want to add to the platform?',
-            choices: ['Keycloak client', 'Google'],
-            filter(val: string) {
-                return val.toLowerCase()
-            },
-        },
-        {
-            group: 'oidc',
-            type: 'input',
-            name: 'providerName',
-            message: 'Enter a name for this provider:',
-            when: (values: any) => {
-                return values.target == 'google'
-            },
-            validate: (value: any) => {
-                if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,10}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 10 characters)'
-                return true
-            },
-        },
-        {
-            group: 'oidc',
-            type: 'input',
-            name: 'jsonSecretPath',
-            message: 'Enter the path to your Google JSON credentials file:',
-            when: (values: any) => {
-                if (values.target == 'google') {
-                    info(
-                        `Download your Google OAuth JSON credentials file from your Google Cloud Console, and enter the path to this file now.`,
-                        false,
-                        true
-                    )
-                    context(
-                        `Make sure you add all redirect URLs that you intend to use, including the "/oauth2/callback" section (ex. https://my-app-1.mydomain.com/oauth2/callback)`,
-                        true,
-                        true
-                    )
-                    context(`If you use this provider on a ingress with a different domain name, it will not work.`, true, false)
-                }
-                return values.target == 'google'
-            },
-            validate: (value: any) => {
-                if (value.trim().length == 0) return `Mandatory field`
-                if (!fs.existsSync(value)) {
-                    return 'File not found'
-                }
-                if (!value.toLowerCase().endsWith('.json')) {
-                    return 'Expect a JSON file'
-                }
-                return true
-            },
-        },
-    ]
+    static questions = []
     // *********************
 
     // *********************
@@ -100,8 +41,69 @@ export default class Add extends Command {
             process.exit(1)
         }
 
-        let q = filterQuestions(Add.questions, 'oidc', flags)
-        const oidcResponses = q.length > 0 ? await inquirer.prompt(q) : {}
+        let targetResponse:any
+        if(!flags.target) {
+            targetResponse = await inquirer.prompt([{
+                group: 'oidc',
+                type: 'list',
+                name: 'target',
+                message: 'What OIDC target do you want to add to the platform?',
+                choices: ['Keycloak client', 'Google'],
+                filter(val: string) {
+                    return val.toLowerCase()
+                },
+            }])
+        }
+        const target = flags.target ? flags.target : targetResponse.target
+
+        let oidcResponses = await inquirer.prompt([{
+            group: 'oidc',
+            type: 'input',
+            name: 'providerName',
+            message: 'Enter a name for this provider:',
+            when: (values: any) => {
+                return target == 'google'
+            },
+            validate: (value: any) => {
+                if (value.trim().length == 0) return `Mandatory field`
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,10}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 10 characters)'
+                return true
+            },
+        },
+        {
+            group: 'oidc',
+            type: 'input',
+            name: 'jsonSecretPath',
+            message: 'Enter the path to your Google JSON credentials file:',
+            when: (values: any) => {
+                if (target == 'google') {
+                    info(
+                        `Download your Google OAuth JSON credentials file from your Google Cloud Console, and enter the path to this file now.`,
+                        false,
+                        true
+                    )
+                    context(
+                        `Make sure you add all redirect URLs that you intend to use, including the "/oauth2/callback" section (ex. https://my-app-1.mydomain.com/oauth2/callback)`,
+                        true,
+                        true
+                    )
+                    context(`If you use this provider on a ingress with a different domain name, it will not work.`, true, false)
+                }
+                return target == 'google'
+            },
+            validate: (value: any) => {
+                if (value.trim().length == 0) return `Mandatory field`
+                if (!fs.existsSync(value)) {
+                    return 'File not found'
+                }
+                if (!value.toLowerCase().endsWith('.json')) {
+                    return 'Expect a JSON file'
+                }
+                return true
+            },
+        }])
+        oidcResponses.target = target
 
         if (oidcResponses.target == 'keycloak client') {
             // Get client id & uuid

@@ -133,6 +133,15 @@ exports.Keycloak = class Keycloak extends KeycloakCore {
 
             // Regenerate namespace rolebindings in cluster
             await this.app.get('kube').applyUserRoleBindingsForNamespaces()
+        } else if (body.type == 'change-password') {
+            // Make sure realm exists
+            await this.realmCheck(body.realm)
+
+            // Make sure user does not exist
+            await this.userExistsCheck(body.realm, body.username)
+
+            // Create keycloak user
+            await this.app.get('keycloak').updateUserPassword(body.realm, body.username, body.password)
         }
         return body
     }

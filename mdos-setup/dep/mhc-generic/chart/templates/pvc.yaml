@@ -6,7 +6,8 @@
 
   {{- if .volumes }}
     {{- range .volumes }}
-      {{- if not .hostPath }} 
+      {{- if not .hostPath }}
+        {{- if not .sharedVolumeName }} 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -24,10 +25,11 @@ spec:
       
   resources:
     requests:
-        {{- if .size }}
+          {{- if .size }}
       storage: {{ .size }}
-        {{- else }}
+          {{- else }}
       storage: 1Gi
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}

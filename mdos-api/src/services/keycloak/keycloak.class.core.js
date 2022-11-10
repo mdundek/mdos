@@ -1,4 +1,4 @@
-const { Conflict, Unavailable } = require('@feathersjs/errors')
+const { Conflict, Unavailable, NotFound } = require('@feathersjs/errors')
 const CommonCore = require('../common.class.core')
 
 /**
@@ -28,6 +28,19 @@ class KeycloakCore extends CommonCore {
         const response = await this.app.get('keycloak').getUsers(realm)
         if (response.find((o) => o.username.toLowerCase() == username.toLowerCase() || (o.email && o.email.toLowerCase() == email.toLowerCase()))) {
             throw new Conflict('ERROR: Keycloak username already exists')
+        }
+    }
+
+    /**
+     * userCheck
+     * @param {*} realm
+     * @param {*} username
+     */
+     async userExistsCheck(realm, username) {
+        // Make sure username exists
+        const response = await this.app.get('keycloak').getUsers(realm)
+        if (!response.find((o) => o.username.toLowerCase() == username.toLowerCase())) {
+            throw new NotFound('ERROR: Keycloak username does not exist')
         }
     }
 

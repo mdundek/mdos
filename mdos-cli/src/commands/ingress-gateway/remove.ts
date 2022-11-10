@@ -117,7 +117,7 @@ export default class Remove extends Command {
                 type: 'input',
                 validate: (value: any) => {
                     const num = Number(value)
-                    if (Number.isInteger(num) && num <= 0) return 'Number (integer) expected'
+                    if (isNaN(num) || (Number.isInteger(num) && num <= 0)) return 'Number (integer) expected'
                     else if (num <= 0 || num > gtwResponse.data[0].spec.servers.length) return 'Index out of range'
                     return true
                 },

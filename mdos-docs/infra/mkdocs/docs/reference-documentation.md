@@ -7,7 +7,7 @@ hide:
 
 ## Anatomy of an application
 
-![Anatomy](/img/anatomy.png){ align=right }
+![Anatomy](/mdos/img/anatomy.png){ align=right }
 Applications are to be seen as a higher level concept, an application in `mdos` is composed of one or more application components. Application components are your actual project asset placeholders (source code), where one component could be an API backend server for instance, and a second component would hold your front end application and so on.  
 Every application component can have one or more volumes attached to it for storage persistance & data mirroring. 
 
@@ -93,7 +93,7 @@ Among those, you will define your component `name`, `image` name and image `tag`
 
     **mdos generate component**
 
-    When using the MDos CLI to scaffold your application component, then the CLI will be asked to select amonst multiple network isolation options. You can read more about `NetworkPolicy` isolation configurations in the section [here](#networkpolicy)
+    When using the MDos CLI to scaffold your application component, then the CLI will ask you to select amonst multiple network isolation options. You can read more about `NetworkPolicy` isolation configurations in the section [here](#networkpolicy)
 
 ---
 
@@ -188,7 +188,13 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Persisted Volumes
 
+Volumes in Kubernetes come in all sorts and chapes. The most common one being the `Persisted Volume` to store your application data, but volumes can also be composed of files stored as ConfigMaps and Secrets, or a combination of both.  
+Let's have a look at the various ways to use volumes in MDos.
+
 #### :material-arrow-right-thin: Standard volumes
+
+This is the de-facto volume type, standard volumes are `PersistedVolumes` in Kubernetees, they start out empty (see them as a new partition that get's mounted onto your application environment) so that you can write data to it and ensure this data is persisted even on reboots, crashes...
+Volumes are defined by a `name`, a `mountPath` that indicates where this volume partition needs to be mounted onto your application POD, and a `size` parameter to indicate what size this volume should have (size of the volume partition to be allocated).
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
@@ -202,15 +208,21 @@ components:
     ...
 ```
 
+The default `StorageClass` is based on the open source project `Longhorn`, a Block Storage solution that is very convenient and versatile.
+
 !!! tip "CLI command"
 
     **mdos generate volume**
 
 #### :material-arrow-right-thin: Shared volumes
 
+Shared volumes are NFS based volumes that can be shared amonst multiple application components. To use them, those volumes need to be created upfront using the following command:
+
 ```sh
 mdos shared-volume create
 ```
+
+Once this volume is created on the clustter, you can reference this volume in your application components:
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
@@ -220,17 +232,21 @@ components:
     volumes:
       - name: database-storage
         mountPath: /usr/data/db
-        ref: my-shared-volume # existing secret / configMap name to reference
+        sharedVolumeName: my-shared-volume # existing shared-volume
     ...
 ```
 
 !!! tip "CLI command"
 
+    **mdos shared-volume create**  
     **mdos generate volume**
 
 #### :material-arrow-right-thin: Pre-populate volumes
 
-```yaml hl_lines="5 6 7 8 9" linenums="1"
+This MDos feature is designed to facilitate the way you can pre-populate files and folders into your volumes before your application starts up. This is usefull when you wish to pre-load a database with a pre-defined dataset, or to deploy a static website for example.  
+Your MDos project contains a `volumes` folder at the root, create a volume folder in there and store your static data in it. Then add the flag `syncVolume: true` to your volume config like this:
+
+```yaml hl_lines="5 6 7 8 9 10" linenums="1"
 ...
 components:
   - name: comp-1
@@ -239,9 +255,17 @@ components:
       - name: static-website
         mountPath: /usr/share/nginx/html
         syncVolume: true
+        trigger: initial # or "always"
         size: 10Gi
     ...
 ```
+
+| **"trigger" possible values** | **Description**                                                                            |
+|-------------------------------|--------------------------------------------------------------------------------------------|
+| initial                       | Synchronize local volume content only if the POD target volume is empty (first deployment) |
+| always                        | Synchronize local volume content everytime this application is deployed                    |
+
+Example volume folder structure in your MDos project folder:
 
 ```title="Project structure" hl_lines="3 4 5" linenums="1"
 ...
@@ -252,11 +276,15 @@ components:
 └── mdos.yaml
 ```
 
+Then, when you deploy your application using the command `mdos application deploy`, this data will be synchronized with your application compopnent volume before it starts.
+
 !!! tip "CLI command"
 
     **mdos generate volume**
 
 #### :material-arrow-right-thin: HostPath mounts
+
+HostPath volumees do not use `PersistedVolumes`, they are direct mount points from the host file system with the application container. Those volume types are not recommended, they do not scale and are only recomended for debugging purposes.
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
@@ -278,9 +306,19 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } ReadOnly volumes & files
 
+Read-only volumes are volumes that contain data such as certificates, scripts or any other type of files that your applications depend on to work.
+
 #### :material-arrow-right-thin: Using Secrets
 
+You can create and mount a Kubernetes `Secret` as a volume mount point using two different approaches:
+
 === "Mount as directory"
+
+    Here, your secret will be mounted as a directory, meaning that all values from your secret will be available as files inside your `mountPath` directory. 
+    
+    !!! tip "Changing secret values"
+
+        This is a good approach if your `Secret` get's updated from time to time, this way of mounting Secrets in a Kubernetes ensures that those updated values are reflected back in the mounted files inside your PODs without restarting them.
 
     ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18 19" linenums="1"
     ...
@@ -306,6 +344,8 @@ components:
     ```
 
 === "Mount as files"
+
+    In this case, you can mount individual files from a Secret, rather than a whole secret.
 
     ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21" linenums="1"
     ...
@@ -338,7 +378,15 @@ components:
 
 #### :material-arrow-right-thin: Using ConfigMaps
 
+You can create and mount a Kubernetes `ConfigMaps` as a volume mount point using two different approaches:
+
 === "Mount as directory"
+
+    Here, your secret will be mounted as a directory, meaning that all values from your ConfigMap will be available as files inside your `mountPath` directory. 
+    
+    !!! tip "Changing ConfigMap values"
+
+        This is a good approach if your `ConfigMap` get's updated from time to time, this way of mounting ConfigMaps in a Kubernetes ensures that those updated values are reflected back in the mounted files inside your PODs without restarting them.
 
     ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18" linenums="1"
     ...
@@ -363,6 +411,8 @@ components:
     ```
 
 === "Mount as files"
+
+    In this case, you can mount individual files from a ConfigMap, rather than a whole ConfigMap.
 
     ```yaml hl_lines="5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" linenums="1"
     ...
@@ -393,6 +443,8 @@ components:
     **mdos generate config**
 
 #### :material-arrow-right-thin: From existing ConfigMap or Secret
+
+It is also possible to mount `Secrets` or `ConfigMaps` from external references inside your container POD's, rather than creating those objects along with your application deployments. This is usefull if you need to decouple the lifecycle of your `Secrets` or `ConfigMaps` from your actual applications themselves. As an example, imagine a `Secret` that holds your application certificate data that is managed by `Cert-Manager`, those secrets might get updated in any point in time and your application deployment should in no way overwrite this `Secret` data on deployments. In this case, you will simply reference the target secret you wish to mount. Of course, those `Secrets` and/or `ConfigMaps` should exist upfront before you deploy your applications that make use of them. 
 
 === "Mount as directory"
 
@@ -435,23 +487,47 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Environement Variables
 
+Environment variables are a core concept of almost any cloud application. They can also be content sensitive in some cases (ex. passwords, private keys...), in which case you should consider using Kubernetes `Secrets` rather than `ConfigMaps`, or directly coding those as environment variables in your deployment YAML files.
+
 #### :material-arrow-right-thin: Using ConfigMaps or Secrets
 
-```yaml hl_lines="5 6 7 8 9 10 11 12" linenums="1"
-...
-components:
-  - name: comp-1
+If all you need is to set environement variables for your application components, use the following example:
+
+=== "As Secret"
+
+    ```yaml hl_lines="5 6 7 8 9 10 11 12" linenums="1"
     ...
-    secrets: # or configs
-      - name: config-params
-        type: env
-        entries:
-          - key: MY_VAR_1
-            value: "my vlaue"
-          - key: MY_VAR_2
-            value: "my other vlaue"
+    components:
+      - name: comp-1
+        ...
+        secrets:
+          - name: config-params
+            type: env
+            entries:
+              - key: MY_VAR_1
+                value: "my vlaue"
+              - key: MY_VAR_2
+                value: "my other vlaue"
+        ...
+    ```
+
+=== "As ConfigMap"
+
+    ```yaml hl_lines="5 6 7 8 9 10 11 12" linenums="1"
     ...
-```
+    components:
+      - name: comp-1
+        ...
+        configs:
+          - name: config-params
+            type: env
+            entries:
+              - key: MY_VAR_1
+                value: "my vlaue"
+              - key: MY_VAR_2
+                value: "my other vlaue"
+        ...
+    ```
 
 !!! tip "CLI command"
 
@@ -459,22 +535,46 @@ components:
 
 #### :material-arrow-right-thin: From existing ConfigMap or Secret
 
-```yaml hl_lines="5 6 7 8 9 10 11 12 13" linenums="1"
-...
-components:
-  - name: comp-1
+It is also possible to reference `Secrets` or `ConfigMaps` from external references inside your container POD's, rather than creating those objects along with your application deployments.  
+Of course, those `Secrets` and/or `ConfigMaps` should exist upfront before you deploy your applications that make use of them. 
+
+=== "From existing Secret"
+
+    ```yaml hl_lines="5 6 7 8 9 10 11 12 13" linenums="1"
     ...
-    secrets: # or configs
-      - name: rabbitmq-creds
-        type: env
-        ref: rabbitmq-cluster-default-user # existing secret / configMap name to reference
-        entries:
-          - name: RABBIT_PORT # variable name to set
-            key: PORT # variable key name from the ref. secret / config
-          - name: RABBIT_HOST
-            key: HOST
-...
-```
+    components:
+      - name: comp-1
+        ...
+        secrets:
+          - name: rabbitmq-creds
+            type: env
+            ref: rabbitmq-cluster-default-user # existing secret / configMap name to reference
+            entries:
+              - name: RABBIT_PORT # variable name to set
+                key: PORT # variable key name from the ref. secret / config
+              - name: RABBIT_HOST
+                key: HOST
+    ...
+    ```
+
+=== "From existing ConfigMap"
+
+    ```yaml hl_lines="5 6 7 8 9 10 11 12 13" linenums="1"
+    ...
+    components:
+      - name: comp-1
+        ...
+        configs:
+          - name: rabbitmq-creds
+            type: env
+            ref: rabbitmq-cluster-default-user # existing secret / configMap name to reference
+            entries:
+              - name: RABBIT_PORT # variable name to set
+                key: PORT # variable key name from the ref. secret / config
+              - name: RABBIT_HOST
+                key: HOST
+    ...
+    ```
 
 !!! tip "CLI command"
 
@@ -486,13 +586,16 @@ components:
 
 #### :material-arrow-right-thin: Exposing ports using services
 
+Applications often expose services using a specific port(s). Remember, in Kubernetes, POD IP addresses are ephemeral. They change every time your POD is restarted. To allow applications to talk to your application services, you need a Kubernetes `Service` object to allow your application component to be auto-discoverable by other application components, hense the `Service` in Kubernetes.  
+To create a service endpoint for your various ports, use the following syntax:
+
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
 components:
   - name: comp-1
     ...
     services:
-      - name: http
+      - name: http-service
         ports:
           - port: 80
 ...
@@ -503,6 +606,8 @@ components:
     **mdos generate service**
 
 #### :material-arrow-right-thin: Configure Ingress
+
+By default, applications in Kubernetes are only reachable from other components that are also running inside your cluster. To make application component services accessible from outside your clustyer, you will have to add an `ingress` to your application component, this will expose this service endpoint to the outside world using a host / domain name. 
 
 ```yaml hl_lines="5 6 7 8 9" linenums="1"
 ...
@@ -517,8 +622,19 @@ components:
 ...
 ```
 
+| **"trafficType" possible values** | **Description**                                                                                             |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------|
+| http                              | The ingress will be configured to route traffic comming from port 80 to the port specified in `targetPort`  |
+| https                             | The ingress will be configured to route traffic comming from port 443 to the port specified in `targetPort` |
+
+!!! note
+
+    If your `matchHost` value is a subdomain of your root MDos domain name configured during the platform installation and your traffic type is `https`, then nothing else is needed for ingress to work OOTB.  
+    Now if you would like to use a different host / domain name to respond to your traffic for this component ingress, then you will have to create a `ingress-gateway` object first using the command `mdos ingress-gateway create`. For more details, refer back to the chapter [Managing your Domain specific Ingress-Gateways](/mdos/advanced-resources/#managing-your-domain-specific-ingress-gateways).
+
 !!! tip "CLI command"
 
+    **mdos ingress-gateway create**  
     **mdos generate ingress**
 
 #### :material-arrow-right-thin: NetworkPolicy
@@ -548,15 +664,26 @@ The `custom` scope let's you specify specifically what application components fr
 
 Here is a more complex example that uses a `custom` scoped NetworkPolicy (please note the addition of the `allow` array value in this case):  
 
-<img src="/img/networkPolicies/custom.png" alt="custom" width="800"/>
+<img src="/mdos/img/networkPolicies/custom.png" alt="custom" width="800"/>
 
 ---
 
 ### :octicons-codescan-16:{ .section-icon } OAuth2 OIDC
 
-#### :material-arrow-right-thin: Configure a OIDC provider
+You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variaty of OIDC providers such as Keycloak, Google, GitHub and others.
+
+To find out how to configure and add your OIDC providers, please refere to the chapter [Securing applications using OIDC providers](/mdos/advanced-resources/#securing-applications-using-oidc-providers) for more information.
+
 
 #### :material-arrow-right-thin: Protect your ingress with a OIDC provider
+
+To add OIDC authentication to one of your application configurations, simply specify which OIDC provider you want to enforce, and what hostname that was configured in your ingres section you want to be protected.
+
+There are numerout OOTB providers that you can configure, but the most flexible and customizable is the integrated `Keycloak` OIDC provider. It will allow you to create any role according to your needs, assign them to your users and gain access to those roles from your authenticated user sessions encoded in the JWT token. Simply use those roles within your applications to then determine fine grained ACL rules you wish to enforce.
+
+!!! info
+
+    For an example using the Keycloak OIDC authentication provider with custom roles and ACL, please refer to the chapter [Securing applications using OIDC providers](/mdos/advanced-resources/#securing-applications-using-oidc-providers)
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
@@ -578,6 +705,8 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Set pod resources
 
+This allows you to impose limits in terms of CPU / memory resources you application components can use. 
+
 ```yaml hl_lines="5 6 7 8 9 10 11" linenums="1"
 ...
 components:
@@ -596,6 +725,9 @@ components:
 ---
 
 ### :octicons-codescan-16:{ .section-icon } Execute pre-build commands
+
+MDos allows you to execute commands on the local machine every time you are about to deploy your application onto your Kubernetes cluster. Simply list the commands you wish to execute, and they will execute everytime you run the command `mdos application deploy`.  
+In this example, we are building a `mkdocs` project, then copy the resulting files over to the proper `volumes` directory ready for deployment
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...

@@ -1,5 +1,5 @@
 site_name: MDos
-site_url: https://mkdocs-mdos.mdundek.network/
+site_url: https://mdundek.github.io/mdos/
 theme:
   name: material
   palette: 
@@ -40,8 +40,10 @@ markdown_extensions:
   - pymdownx.mark
   - pymdownx.tilde
   - md_in_html
+  - tables
 nav:
     - Home: index.md
     - Install: installation.md
-    - Getting started: getting-started.md
-    - Reference documentation: reference-documentation.md
+    - Getting Started: getting-started.md
+    - Reference Documentation: reference-documentation.md
+    - Advanced Resources: advanced-resources.md

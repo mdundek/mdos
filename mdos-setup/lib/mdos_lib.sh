@@ -39,7 +39,7 @@ os_check() {
 }
 
 resources_check() {
-    # CHECK THAT SUFFICIENT MEMORY AND DISK IS AVAILABLE
+    # CHECK THAT SUFFICIENT MEMORY IS AVAILABLE
     FREE_MB=$(awk '/MemAvailable/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
     if [ "$FREE_MB" -lt "$1" ]; then
         error "Insufficient memory, minimum $2 of available (free) memory is required for this installation"
@@ -235,6 +235,12 @@ dependencies() {
             
             # Install docker compose
             apt-get install docker-compose-plugin -y &>> $LOG_FILE
+
+            # Increase file watcher for OS
+            echo "fs.inotify.max_queued_events = 50384
+fs.inotify.max_user_instances = 512
+fs.inotify.max_user_watches = 110645" >> /etc/sysctl.conf
+            sysctl --system &>> $LOG_FILE
         fi
     fi
 }
