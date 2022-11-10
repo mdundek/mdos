@@ -97,28 +97,6 @@ export default class Deploy extends Command {
             process.exit(1)
         }
 
-        // Read certificates if any and replace cert paths with actual values
-        for (const component of appYaml.components) {
-            if (component.ingress) {
-                for (const ingress of component.ingress) {
-                    if (ingress.tlsKeyPath) {
-                        if (!fs.existsSync(ingress.tlsKeyPath)) {
-                            error(`File: '${ingress.tlsKeyPath}' not found`)
-                            process.exit(1)
-                        }
-                        ingress.tlsKeyPath = fs.readFileSync(ingress.tlsKeyPath, 'utf8').toString()
-                    }
-                    if (ingress.tlsCrtPath) {
-                        if (!fs.existsSync(ingress.tlsCrtPath)) {
-                            error(`File: '${ingress.tlsCrtPath}' not found`)
-                            process.exit(1)
-                        }
-                        ingress.tlsCrtPath = fs.readFileSync(ingress.tlsCrtPath, 'utf8').toString()
-                    }
-                }
-            }
-        }
-
         // Make sure namespace has been created before we do anything else
         let nsResponse
         try {

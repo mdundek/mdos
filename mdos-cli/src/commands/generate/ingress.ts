@@ -79,19 +79,6 @@ export default class Ingress extends Command {
                 type: 'input',
                 name: 'host',
                 message: 'What domain name do you want to use to access your component:',
-                when: (values: any) => {
-                    context(
-                        'NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
-                        false,
-                        true
-                    )
-                    context(
-                        'You can also use the mdos root wildcard domain and cluster wide wildcard ingress gateway if you like, and use a sub-domain for this ingress.',
-                        true,
-                        true
-                    )
-                    return true
-                },
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
@@ -101,7 +88,7 @@ export default class Ingress extends Command {
                 type: 'confirm',
                 name: 'useSubPath',
                 default: false,
-                message: 'Do you want to match a subpath for this host (fan-out)?',
+                message: 'Do you want to match a subpath for this root domain name (fan-out)?',
             },
             {
                 type: 'input',
@@ -118,7 +105,7 @@ export default class Ingress extends Command {
             {
                 type: 'list',
                 name: 'port',
-                message: 'What target port should this traffic be redirected to?',
+                message: 'What service target port should this traffic be redirected to?',
                 choices: allPortsArray.map((p: { port: any }) => {
                     return { name: p.port }
                 }),
@@ -126,10 +113,17 @@ export default class Ingress extends Command {
             {
                 type: 'list',
                 name: 'type',
-                message: 'What type of traffic will this ingress redirect to?',
+                message: 'What type of traffic will this ingress use?',
                 when: (values: any) => {
                     context(
-                        'Incomming traffic to the Ingress controller is always over HTTPS. The ingress controller then terminates this TLS connection and routes the traffic to your application internally over HTTP. If your application requires that a dedicated certificate is available inside your POD, then you can specify this now.'
+                        'NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
+                        false,
+                        true
+                    )
+                    context(
+                        'If your application requires that a dedicated certificate is available inside your POD (versus terminating the TLS connection on the gateway), then specify HTTPS here.',
+                        true, 
+                        false
                     )
                     return true
                 },
@@ -141,45 +135,7 @@ export default class Ingress extends Command {
                         name: 'https',
                     },
                 ],
-            },
-            {
-                type: 'input',
-                name: 'tlsKey',
-                when: (values: any) => {
-                    return values.type == 'https'
-                },
-                message: 'Enter the full path to your certificate key file:',
-                validate: (value: string) => {
-                    if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!fs.existsSync(value)) return 'Invalid path'
-                    return true
-                },
-            },
-            {
-                type: 'input',
-                name: 'tlsCrt',
-                when: (values: any) => {
-                    return values.type == 'https'
-                },
-                message: 'Enter the full path to your certificate crt file:',
-                validate: (value: string) => {
-                    if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!fs.existsSync(value)) return 'Invalid path'
-                    return true
-                },
-            },
-            {
-                type: 'input',
-                name: 'tldMountDir',
-                when: (values: any) => {
-                    return values.type == 'https'
-                },
-                message: 'Enter the container mount path for the certificate files:',
-                validate: (value: string) => {
-                    if (value.trim().length == 0) return 'Mandatory field'
-                    return true
-                },
-            },
+            }
         ])
 
         // Update ingress
@@ -191,9 +147,6 @@ export default class Ingress extends Command {
             targetPort: number
             trafficType: string
             subPath?: string
-            tlsKeyPath?: string
-            tlsCrtPath?: string
-            tldMountPath?: string
         }
 
         const ing: Ingress = {
@@ -204,12 +157,6 @@ export default class Ingress extends Command {
         }
 
         if (responses.subPath) ing.subPath = responses.subPath
-
-        if (responses.tlsKey) ing.tlsKeyPath = responses.tlsKey
-
-        if (responses.tlsCrt) ing.tlsCrtPath = responses.tlsCrt
-
-        if (responses.tldMountDir) ing.tldMountPath = responses.tldMountDir
 
         targetCompYaml.ingress.push(ing)
 

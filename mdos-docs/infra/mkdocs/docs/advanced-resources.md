@@ -209,6 +209,9 @@ and follow the directions.
 
 Cert-manager is a great extention for Kubernetes, allowing you to generate and manage your domain specific TLS certificates automatically. That said, you still need to understand how to configure it for your needs.  
 The first thing you need is a certificate `issuer`. Those are used to interact with your Certificate authority and your DNS provider in order to configure the necessary challenges required to obtain your certificates.  
+
+### Certificate Issuers
+
 Let's say you purchased the domain name `mdos-is-awesome.com`. You now need a valid certificate so that you can use your domain name to access your applications. The type of `issuer` you will have to create depends on the DNS provider you use to manage your newly purchased domain name. Here are a few examples of DNS providers that `cert-manager` supports directly:
 
 * Akamai
@@ -239,7 +242,7 @@ stringData:
   api-key: <YOUR CLOUDFLARE API KEY>
 ---
 apiVersion: cert-manager.io/v1
-kind: Issuer
+kind: ClusterIssuer
 metadata:
   name: my-cloudflare-issuer
 spec:
@@ -290,23 +293,167 @@ mdos cm issuer list
 
  CERTIFICATE NAME                    NAMESPACE                STATUS
  ─────────────────────────────────── ──────────────────────── ──────────────
- mdos-issuer                         mdos                     Ready
  my-cloudflare-issuer                none (ClusterIssuer)     Ready
 ```
 
-Please note, here you see 2 distinct Issuers available and ready to use. Your newly created Issuer named `my-cloudflare-issuer`, but there is also another issuer called `mdos-issuer`. This issuer is available by default in this case because we used `cert-manager` to create and manage the MDos system domain name during the installation of the platform. This domain name issuer corresponds to the domain name that you use to acces the MDos components such as Keycloak, the Controller API server, Loki / Grafana... It is a wildcard domain name and certificate, and ca 
+If your issuer has the status `READY`, you are good to go to generate some certificates for us.
 
+### Create new certificates for your applications
+
+This part is easy, now that we have a working `Issuer`, we can go ahead and generate a `certificate` for one or multiple domain names at once. To do so, execute the command:
+
+```sh hl_lines="1" linenums="1"
+mdos cm certificate create
+
+? Select a namespace for which to create a certificate for: my-tenant-namespace
+? Enter a name for this certificate: mdos-is-awesome-crt
+? Use cert-manager to generate and manage your certificate, or provide the certificate files manually: Use Cert-Manager
+? What Cert-Manager issuer would you like to use: my-cloudflare-issuer (ClusterIssuer)
+? Enter a target domain name (ex. frontend.mydomain.com or *.mydomain.com): mdos-is-awesome.com
+? Would you like to add another domain name for this certificate request? No
+Creating certificate... done
+```
+
+On line 6, we selected our `Issuer` instance we created previously, and on line 7 we can list all domain names (including wild card domains if available) as we need for this certificate.  
+Let's list the available certificates on our cluster:
+
+```sh hl_lines="1"
+mdos cm certificate list
+? Select a namespace for which to create a certificate for: my-tenant-namespace
+
+ CERTIFICATE NAME         ISSUER NAME                 STATUS         MESSAGE
+ ──────────────────────── ─────────────────────────── ────────────── ─────────────────────────────────────────────
+ mdos-is-awesome-crt      my-cloudflare-issuer        Ready          Certificate is up to date and has not expired
+
+
+ TLS SECRET NAME
+ ──────────────────────────────────
+ mdos-is-awesome-crt
+```
+
+Here you can see that the certificate object is `Ready`, and the generated kubernetes `Secret` is available under the same name than the certificate object you just created.  
+
+That's it, you can now move on to use this new secret in your `Ingress-gateways`, this will be detailed in the next chapter, so just read on.
 
 ---
 
 ## Managing your Domain specific Ingress-Gateways
+
+![Clients and roles](/mdos/img/gateway.png){: style="width:500px" align=right }
+Ingress gateways are used to instruct Kubernetes on how and what domain names to expose outside of the kubernetes cluster. Is is a cloud native `reverse-proxy` so to speak that listens for traffic on specific ports and for specific domains. You can configure your certificates on those gateways if you wish to terminate the TLS connection before thraffic reaches your application for certain domains, or let the traffic pass through as-is to your target applications, allowing you to terminate the TLS connection in your application directly.  
+
+!!! warning
+
+    When you create a new `Ingress Gateway` for a specific tenant namespace, it will do nothing on it's own until you deploy an application that configures a `ingress` rule for it. In other words, if you define an `ingress` config on one of your application components, then you first need to configure your `Ingress gateway` to allow this traffic type for your domain. More on this in the next section.
+
+So that's for the theory of it. Lets' see how you can create a new `Ingress Gateway` in your tenant namespace:
+
+``` hl_lines="1"
+mdos ingress-gateway add
+
+? Select namespace for which you wish to edit the Ingress Gateway for: my-tenant-namespace
+? What type of traffic are you intending to enforce for this config? (Use arrow keys)
+❯ HTTP (Listen on port 80, forwards to port 80)
+  HTTPS, pass-through (Listen on port 443, forwards to port 443)
+  HTTPS, terminate TLS (Listen on port 443, forwards to port 80)
+...
+```
+
+First, you select the tenant namespace for which you want to create a new gateway for.  
+Second, you have to specify what traffic type you wish to configure on that gateway (`HTTP`, `HTTPS, terminate TLS`, or `HTTPS, pass-through`).  
+
+Let's say we choose to create a configuration that will terminate the TLS connection on the gateway itself for a specific domain name. We are not talking about `ingress` configs yet, first we need to configure our gateway so that it knows that we want to route certain domain names in a specific way. So if I select the option `HTTPS, terminate TLS`, it will allow us to select amongst all available TLS certificate secrets found in that namespace. 
+
+```
+...
+? What type of traffic are you intending to enforce for this config? HTTPS, terminate TLS (Listen on port 443, forwards to port 80)
+? Enter a target domain name (ex. frontend.mydomain.com): mdos-is-awesome.com
+? Would you like to add another domain name host to this Ingress Gateway? No
+? What TLS secret holds your certificate and key data for these domains? mdos-is-awesome-crt
+
+Creating ingress-gateway server config... done
+```
+
+The `Ingress Gateway` is now configures to allow this type of traffic for your application `ingress`.  
+You can list your gateway configurations using the MDos CLI:
+
+``` hl_lines="1"
+mdos ingress-gateway list
+
+? Select namespace for which you wish to list Ingress Gateways for: my-tenant-namespace
+
+ TRAFFIC TYPE             HOSTS               SECRET
+ ──────────────────────── ─────────────────── ────────────────────
+ HTTPS, terminate TLS     mdos-is-awesome.com mdos-is-awesome-crt
+```
+
+### Configure an ingress rule for your application that uses this gateway config
+
+Now that we have our ingress gateway configured to allow incommin traffic for our new domain `mdos-is-awesome.com` on port 443 that terminates the TLS connection on the gateway for us, we can configure this domain name as an ingress in our `mdos.yaml` application metadata file. We recommend to use the MDos CLI to do this, but you can also do this manually by editing the `mdos.yaml` file.  
+Let's use the CLI here to configure our ingress. Position your terminal inside your application `component` directory, and execute the command:
+
+``` hl_lines="1"
+mdos generate ingress
+
+? Enter a name for the ingress: my-ingress
+? What domain name do you want to use to access your component: mdos-is-awesome.com
+? Do you want to match a subpath for this host (fan-out)? No
+? What target port should this traffic be redirected to? 80
+
+NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).
+If your application requires that a dedicated certificate is available inside your POD (versus terminating the TLS connection on the gateway), then specify HTTPS here.
+
+? What type of traffic will this ingress redirect to? http
+```
+
+This will update your application `mdos.yaml` file with the new ingress rule:
+
+```yaml hl_lines="5 6 7 8 9" linenums="1"
+...
+components:
+  - name: comp-1
+    ...
+    ingress:
+      - name: my-ingress
+        matchHost: mdos-is-awesome.com
+        targetPort: 80
+        trafficType: http
+...
+```
+
+!!! info
+
+    MDos will automatically identify what `Ingress Gateway` matches this ingress configuration when you deploy it, and use it to expose your application for that domain.
+
+Now what if you wish to terminate a TLS connection directly in your application? Simple, set the `trafficType` to `https`, and it will use the `Ingress Gateway` that is configured to let HTTPS traffic pass through all the way to your application on port 443. You will of course need the certificate `key` and `crt` files to terminate this connection inside your application, simply reference the TLS `Secret` that holds the certificate files from your namespace, and mount it as a volume inside your pod. Here is the `mdos.yaml` configuration that will allow you to do so:
+
+```yaml hl_lines="9 12 13 14" linenums="1"
+...
+components:
+  - name: comp-1
+    ...
+    ingress:
+      - name: my-ingress
+        matchHost: mdos-is-awesome.com
+        targetPort: 443
+        trafficType: https
+    secrets:
+      - name: my-ca
+        type: dir
+        mountPath: /etc/x509/https
+        ref: mdos-is-awesome-crt
+...
+```
+
+This will mount the files `tls.crt` and `tls.key` inside the folder `/etc/x509/https` on your running containers. You can now use those to terminate your TLS connection.
 
 ---
 
 ## Populate static volume data for your applications
 
 ![Volume sync](/mdos/img/volume-sync.png){: style="width:600px" align=right }
-Every new volume that is created for your application is completely empty at first! This is how Kubernetees deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema & dataset, a static website that serves as a base for my application etc. Often it is exactly what you want in a persisted volme, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!  
+Every new volume that is created for your application is completely empty at first! This is how Kubernetees deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema & dataset, a static website that serves as a base for my application etc. Often, an empty volume is what you want in a persisted volme, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!  
+
 MDos provides an efficient way for dealing with those use-cases. An MDos application project can have volumes declared that contain data you wish to pre-load onto your PODs before your application starts on the cluster. You will simply have to add the flag `syncVolume: true` to the declared volume inside your application component in your `mdos.yaml` file, and mdos will automatically sync this volume data to your pod volume before it starts your application component (see [Pre-populate volumes](/mdos/reference-documentation/#pre-populate-volumes) in the reference documentation for an example configuration for your `mdos.yaml` file).  
 
 Let's have a look at the above example to see in details what actually happens here:

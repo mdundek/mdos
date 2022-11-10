@@ -480,12 +480,52 @@
     Managing your Issuers &amp; TLS Certificates using Cert-Manager
   </a>
   
+    <nav class="md-nav" aria-label="Managing your Issuers &amp; TLS Certificates using Cert-Manager">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#certificate-issuers" class="md-nav__link">
+    Certificate Issuers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#so-how-do-you-create-a-new-issuer-for-your-new-domain-name" class="md-nav__link">
+    So how do you create a new issuer for your new domain name?
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-new-certificates-for-your-applications" class="md-nav__link">
+    Create new certificates for your applications
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#managing-your-domain-specific-ingress-gateways" class="md-nav__link">
     Managing your Domain specific Ingress-Gateways
   </a>
+  
+    <nav class="md-nav" aria-label="Managing your Domain specific Ingress-Gateways">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-an-ingress-rule-for-your-application-that-uses-this-gateway-config" class="md-nav__link">
+    Configure an ingress rule for your application that uses this gateway config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -631,12 +671,52 @@
     Managing your Issuers &amp; TLS Certificates using Cert-Manager
   </a>
   
+    <nav class="md-nav" aria-label="Managing your Issuers &amp; TLS Certificates using Cert-Manager">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#certificate-issuers" class="md-nav__link">
+    Certificate Issuers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#so-how-do-you-create-a-new-issuer-for-your-new-domain-name" class="md-nav__link">
+    So how do you create a new issuer for your new domain name?
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-new-certificates-for-your-applications" class="md-nav__link">
+    Create new certificates for your applications
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#managing-your-domain-specific-ingress-gateways" class="md-nav__link">
     Managing your Domain specific Ingress-Gateways
   </a>
+  
+    <nav class="md-nav" aria-label="Managing your Domain specific Ingress-Gateways">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-an-ingress-rule-for-your-application-that-uses-this-gateway-config" class="md-nav__link">
+    Configure an ingress rule for your application that uses this gateway config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -896,13 +976,258 @@ For more information of how to configure your Google account for instance can be
 </div>
 <hr />
 <h2 id="managing-your-issuers-tls-certificates-using-cert-manager">Managing your Issuers &amp; TLS Certificates using Cert-Manager</h2>
+<p>Cert-manager is a great extention for Kubernetes, allowing you to generate and manage your domain specific TLS certificates automatically. That said, you still need to understand how to configure it for your needs.<br />
+The first thing you need is a certificate <code>issuer</code>. Those are used to interact with your Certificate authority and your DNS provider in order to configure the necessary challenges required to obtain your certificates.  </p>
+<h3 id="certificate-issuers">Certificate Issuers</h3>
+<p>Let's say you purchased the domain name <code>mdos-is-awesome.com</code>. You now need a valid certificate so that you can use your domain name to access your applications. The type of <code>issuer</code> you will have to create depends on the DNS provider you use to manage your newly purchased domain name. Here are a few examples of DNS providers that <code>cert-manager</code> supports directly:</p>
+<ul>
+<li>Akamai</li>
+<li>AzureDNS</li>
+<li>CloudFlare</li>
+<li>Google</li>
+<li>Route53</li>
+<li>DigitalOcean</li>
+</ul>
+<p>But others can be configured as well, using external third party webhook instances.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>For further details about available <code>issuers</code> and how to configure those, please refer to the <code>cert-manager</code> documentation available <a href="https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers">here</a></p>
+</div>
+<h3 id="so-how-do-you-create-a-new-issuer-for-your-new-domain-name">So how do you create a new issuer for your new domain name?</h3>
+<p>Issuers are deployed using a simple <code>yaml</code> file. Please note that you only need one issuer per DNS provider account, once you have configured this issuer, you can reference it for every new domain name certificate you wish to create.<br />
+Let's say your domain name is managed by <code>CloudFlare</code>, in this case you can create a new issuer for your domain name with the following yaml file:</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">issuer.yaml</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-10-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-10-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-10-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-10-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-10-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-10-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-10-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-10-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-10-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-10-10">10</a></span>
+<span class="normal"><a href="#__codelineno-10-11">11</a></span>
+<span class="normal"><a href="#__codelineno-10-12">12</a></span>
+<span class="normal"><a href="#__codelineno-10-13">13</a></span>
+<span class="normal"><a href="#__codelineno-10-14">14</a></span>
+<span class="normal"><a href="#__codelineno-10-15">15</a></span>
+<span class="normal"><a href="#__codelineno-10-16">16</a></span>
+<span class="normal"><a href="#__codelineno-10-17">17</a></span>
+<span class="normal"><a href="#__codelineno-10-18">18</a></span>
+<span class="normal"><a href="#__codelineno-10-19">19</a></span>
+<span class="normal"><a href="#__codelineno-10-20">20</a></span>
+<span class="normal"><a href="#__codelineno-10-21">21</a></span>
+<span class="normal"><a href="#__codelineno-10-22">22</a></span>
+<span class="normal"><a href="#__codelineno-10-23">23</a></span>
+<span class="normal"><a href="#__codelineno-10-24">24</a></span>
+<span class="normal"><a href="#__codelineno-10-25">25</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span><span class="w"></span>
+<a id="__codelineno-10-2" name="__codelineno-10-2"></a><span class="hll"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Secret</span><span class="w"></span>
+</span><a id="__codelineno-10-3" name="__codelineno-10-3"></a><span class="nt">metadata</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-4" name="__codelineno-10-4"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cloudflare-api-key-secret</span><span class="w"></span>
+<a id="__codelineno-10-5" name="__codelineno-10-5"></a><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Opaque</span><span class="w"></span>
+<a id="__codelineno-10-6" name="__codelineno-10-6"></a><span class="nt">stringData</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-7" name="__codelineno-10-7"></a><span class="hll"><span class="w">  </span><span class="nt">api-key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR CLOUDFLARE API KEY&gt;</span><span class="w"></span>
+</span><a id="__codelineno-10-8" name="__codelineno-10-8"></a><span class="nn">---</span><span class="w"></span>
+<a id="__codelineno-10-9" name="__codelineno-10-9"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cert-manager.io/v1</span><span class="w"></span>
+<a id="__codelineno-10-10" name="__codelineno-10-10"></a><span class="hll"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusterIssuer</span><span class="w"></span>
+</span><a id="__codelineno-10-11" name="__codelineno-10-11"></a><span class="nt">metadata</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-12" name="__codelineno-10-12"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-cloudflare-issuer</span><span class="w"></span>
+<a id="__codelineno-10-13" name="__codelineno-10-13"></a><span class="nt">spec</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-14" name="__codelineno-10-14"></a><span class="hll"><span class="w">  </span><span class="nt">acme</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-10-15" name="__codelineno-10-15"></a><span class="hll"><span class="w">    </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR LETS-ENCRYPT EMAIL ADDRESS&gt;</span><span class="w"></span>
+</span><a id="__codelineno-10-16" name="__codelineno-10-16"></a><span class="hll"><span class="w">    </span><span class="nt">server</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://acme-v02.api.letsencrypt.org/directory</span><span class="w"></span>
+</span><a id="__codelineno-10-17" name="__codelineno-10-17"></a><span class="w">    </span><span class="nt">privateKeySecretRef</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-18" name="__codelineno-10-18"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">letsencrypt-prod</span><span class="w"></span>
+<a id="__codelineno-10-19" name="__codelineno-10-19"></a><span class="w">    </span><span class="nt">solvers</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-20" name="__codelineno-10-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dns01</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-10-21" name="__codelineno-10-21"></a><span class="hll"><span class="w">        </span><span class="nt">cloudflare</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-10-22" name="__codelineno-10-22"></a><span class="hll"><span class="w">          </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR CLOUDFLARE EMAIL ADDRESS&gt;</span><span class="w"></span>
+</span><a id="__codelineno-10-23" name="__codelineno-10-23"></a><span class="hll"><span class="w">          </span><span class="nt">apiKeySecretRef</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-10-24" name="__codelineno-10-24"></a><span class="hll"><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cloudflare-api-key-secret</span><span class="w"></span>
+</span><a id="__codelineno-10-25" name="__codelineno-10-25"></a><span class="hll"><span class="w">            </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">api-key</span><span class="w"></span>
+</span></code></pre></div></td></tr></table></div>
+<p>In this example, you have a <code>Secret</code> that holds your CloudFlare API Key (that you get from your CloudFlare account profile page), and a <code>Issuer</code>.<br />
+The issuer references a Certificate authority, in this case we use <code>Let's Encrypt</code> to generate the certificate for us (line 14, <code>acme</code> is used here, all we need to do is point to the desired certificate management API endpoint on line 16).<br />
+On line 21 we specify the DNS solver that is managing our domain name(s). This part will need to be configured to point to the <code>Secret</code> we create in the first block, the one that holds our CloudFlare API Key, and our CloudFlare account email address (line 22).  </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Depending on your specific requirements in terms of domain DNS manager and certificate autority, this <code>yaml</code> file will have to be adapted to suit your needs. Again, further details of how you can configure those can be found <a href="https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers">here</a> </p>
+</div>
+<p>You are now ready to deploy this <code>Issuer</code> onto your cluster using the MDos CLI:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="hll">mdos cm issuer create
+</span><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>? What <span class="nb">type</span> of issuer <span class="k">do</span> you wish to create? ClusterIssuer <span class="o">(</span>Cluster wide<span class="o">)</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>? Enter the path to your Issuer YAML file: /Users/mdundek/issuer.yaml
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>INFO : ClusterIssuer name: my-cloudflare-issuer
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>Creating issuer... <span class="k">done</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Depending on your needs, there are to Issuer types you can choose from: <code>Issuer</code> or <code>ClusterIssuer</code>. Depending on the issuer type, you will be able to create <code>certificates</code> from <strong>any</strong> tenant namespace (ClusterIssuer), or only for a specific tenant namespace (Issuer).  </p>
+</div>
+<p>That's it, you are ready to create certificates for this issuer.<br />
+To list your available issuers, run the command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="hll">mdos cm issuer list
+</span><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a> CERTIFICATE NAME                    NAMESPACE                STATUS
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a> ─────────────────────────────────── ──────────────────────── ──────────────
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a> my-cloudflare-issuer                none <span class="o">(</span>ClusterIssuer<span class="o">)</span>     Ready
+</code></pre></div>
+<p>If your issuer has the status <code>READY</code>, you are good to go to generate some certificates for us.</p>
+<h3 id="create-new-certificates-for-your-applications">Create new certificates for your applications</h3>
+<p>This part is easy, now that we have a working <code>Issuer</code>, we can go ahead and generate a <code>certificate</code> for one or multiple domain names at once. To do so, execute the command:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-13-1">1</a></span>
+<span class="normal"><a href="#__codelineno-13-2">2</a></span>
+<span class="normal"><a href="#__codelineno-13-3">3</a></span>
+<span class="normal"><a href="#__codelineno-13-4">4</a></span>
+<span class="normal"><a href="#__codelineno-13-5">5</a></span>
+<span class="normal"><a href="#__codelineno-13-6">6</a></span>
+<span class="normal"><a href="#__codelineno-13-7">7</a></span>
+<span class="normal"><a href="#__codelineno-13-8">8</a></span>
+<span class="normal"><a href="#__codelineno-13-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1"></a><span class="hll">mdos cm certificate create
+</span><a id="__codelineno-13-2" name="__codelineno-13-2"></a>
+<a id="__codelineno-13-3" name="__codelineno-13-3"></a>? Select a namespace <span class="k">for</span> which to create a certificate <span class="k">for</span>: my-tenant-namespace
+<a id="__codelineno-13-4" name="__codelineno-13-4"></a>? Enter a name <span class="k">for</span> this certificate: mdos-is-awesome-crt
+<a id="__codelineno-13-5" name="__codelineno-13-5"></a>? Use cert-manager to generate and manage your certificate, or provide the certificate files manually: Use Cert-Manager
+<a id="__codelineno-13-6" name="__codelineno-13-6"></a>? What Cert-Manager issuer would you like to use: my-cloudflare-issuer <span class="o">(</span>ClusterIssuer<span class="o">)</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7"></a>? Enter a target domain name <span class="o">(</span>ex. frontend.mydomain.com or *.mydomain.com<span class="o">)</span>: mdos-is-awesome.com
+<a id="__codelineno-13-8" name="__codelineno-13-8"></a>? Would you like to add another domain name <span class="k">for</span> this certificate request? No
+<a id="__codelineno-13-9" name="__codelineno-13-9"></a>Creating certificate... <span class="k">done</span>
+</code></pre></div></td></tr></table></div>
+<p>On line 6, we selected our <code>Issuer</code> instance we created previously, and on line 7 we can list all domain names (including wild card domains if available) as we need for this certificate.<br />
+Let's list the available certificates on our cluster:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="hll">mdos cm certificate list
+</span><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>? Select a namespace <span class="k">for</span> which to create a certificate <span class="k">for</span>: my-tenant-namespace
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a> CERTIFICATE NAME         ISSUER NAME                 STATUS         MESSAGE
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a> ──────────────────────── ─────────────────────────── ────────────── ─────────────────────────────────────────────
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a> mdos-is-awesome-crt      my-cloudflare-issuer        Ready          Certificate is up to date and has not expired
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a> TLS SECRET NAME
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a> ──────────────────────────────────
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a> mdos-is-awesome-crt
+</code></pre></div>
+<p>Here you can see that the certificate object is <code>Ready</code>, and the generated kubernetes <code>Secret</code> is available under the same name than the certificate object you just created.  </p>
+<p>That's it, you can now move on to use this new secret in your <code>Ingress-gateways</code>, this will be detailed in the next chapter, so just read on.</p>
 <hr />
 <h2 id="managing-your-domain-specific-ingress-gateways">Managing your Domain specific Ingress-Gateways</h2>
+<p><img align="right" alt="Clients and roles" src="/mdos/img/gateway.png" style="width:500px" />
+Ingress gateways are used to instruct Kubernetes on how and what domain names to expose outside of the kubernetes cluster. Is is a cloud native <code>reverse-proxy</code> so to speak that listens for traffic on specific ports and for specific domains. You can configure your certificates on those gateways if you wish to terminate the TLS connection before thraffic reaches your application for certain domains, or let the traffic pass through as-is to your target applications, allowing you to terminate the TLS connection in your application directly.  </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When you create a new <code>Ingress Gateway</code> for a specific tenant namespace, it will do nothing on it's own until you deploy an application that configures a <code>ingress</code> rule for it. In other words, if you define an <code>ingress</code> config on one of your application components, then you first need to configure your <code>Ingress gateway</code> to allow this traffic type for your domain. More on this in the next section.</p>
+</div>
+<p>So that's for the theory of it. Lets' see how you can create a new <code>Ingress Gateway</code> in your tenant namespace:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="hll">mdos ingress-gateway add
+</span><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>? Select namespace for which you wish to edit the Ingress Gateway for: my-tenant-namespace
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>? What type of traffic are you intending to enforce for this config? (Use arrow keys)
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>❯ HTTP (Listen on port 80, forwards to port 80)
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>  HTTPS, pass-through (Listen on port 443, forwards to port 443)
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>  HTTPS, terminate TLS (Listen on port 443, forwards to port 80)
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>...
+</code></pre></div>
+<p>First, you select the tenant namespace for which you want to create a new gateway for.<br />
+Second, you have to specify what traffic type you wish to configure on that gateway (<code>HTTP</code>, <code>HTTPS, terminate TLS</code>, or <code>HTTPS, pass-through</code>).  </p>
+<p>Let's say we choose to create a configuration that will terminate the TLS connection on the gateway itself for a specific domain name. We are not talking about <code>ingress</code> configs yet, first we need to configure our gateway so that it knows that we want to route certain domain names in a specific way. So if I select the option <code>HTTPS, terminate TLS</code>, it will allow us to select amongst all available TLS certificate secrets found in that namespace. </p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>...
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>? What type of traffic are you intending to enforce for this config? HTTPS, terminate TLS (Listen on port 443, forwards to port 80)
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>? Enter a target domain name (ex. frontend.mydomain.com): mdos-is-awesome.com
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>? Would you like to add another domain name host to this Ingress Gateway? No
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>? What TLS secret holds your certificate and key data for these domains? mdos-is-awesome-crt
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>Creating ingress-gateway server config... done
+</code></pre></div>
+<p>The <code>Ingress Gateway</code> is now configures to allow this type of traffic for your application <code>ingress</code>.<br />
+You can list your gateway configurations using the MDos CLI:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="hll">mdos ingress-gateway list
+</span><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>? Select namespace for which you wish to list Ingress Gateways for: my-tenant-namespace
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a> TRAFFIC TYPE             HOSTS               SECRET
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a> ──────────────────────── ─────────────────── ────────────────────
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a> HTTPS, terminate TLS     mdos-is-awesome.com mdos-is-awesome-crt
+</code></pre></div>
+<h3 id="configure-an-ingress-rule-for-your-application-that-uses-this-gateway-config">Configure an ingress rule for your application that uses this gateway config</h3>
+<p>Now that we have our ingress gateway configured to allow incommin traffic for our new domain <code>mdos-is-awesome.com</code> on port 443 that terminates the TLS connection on the gateway for us, we can configure this domain name as an ingress in our <code>mdos.yaml</code> application metadata file. We recommend to use the MDos CLI to do this, but you can also do this manually by editing the <code>mdos.yaml</code> file.<br />
+Let's use the CLI here to configure our ingress. Position your terminal inside your application <code>component</code> directory, and execute the command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="hll">mdos generate ingress
+</span><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>? Enter a name for the ingress: my-ingress
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>? What domain name do you want to use to access your component: mdos-is-awesome.com
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>? Do you want to match a subpath for this host (fan-out)? No
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>? What target port should this traffic be redirected to? 80
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>NOTE: Make sure you have configured your namespace spacific &quot;Ingress Gateway&quot; to handle this domain name and traffic type (HTTP and/or HTTPS).
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>If your application requires that a dedicated certificate is available inside your POD (versus terminating the TLS connection on the gateway), then specify HTTPS here.
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>? What type of traffic will this ingress redirect to? http
+</code></pre></div>
+<p>This will update your application <code>mdos.yaml</code> file with the new ingress rule:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-19-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-19-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-19-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-19-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-19-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-19-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-19-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-19-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-19-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-19-10">10</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1"></a><span class="nn">...</span><span class="w"></span>
+<a id="__codelineno-19-2" name="__codelineno-19-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-19-3" name="__codelineno-19-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
+<a id="__codelineno-19-4" name="__codelineno-19-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<a id="__codelineno-19-5" name="__codelineno-19-5"></a><span class="hll"><span class="w">    </span><span class="nt">ingress</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-19-6" name="__codelineno-19-6"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-ingress</span><span class="w"></span>
+</span><a id="__codelineno-19-7" name="__codelineno-19-7"></a><span class="hll"><span class="w">        </span><span class="nt">matchHost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mdos-is-awesome.com</span><span class="w"></span>
+</span><a id="__codelineno-19-8" name="__codelineno-19-8"></a><span class="hll"><span class="w">        </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w"></span>
+</span><a id="__codelineno-19-9" name="__codelineno-19-9"></a><span class="hll"><span class="w">        </span><span class="nt">trafficType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span><span class="w"></span>
+</span><a id="__codelineno-19-10" name="__codelineno-19-10"></a><span class="nn">...</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>MDos will automatically identify what <code>Ingress Gateway</code> matches this ingress configuration when you deploy it, and use it to expose your application for that domain.</p>
+</div>
+<p>Now what if you wish to terminate a TLS connection directly in your application? Simple, set the <code>trafficType</code> to <code>https</code>, and it will use the <code>Ingress Gateway</code> that is configured to let HTTPS traffic pass through all the way to your application on port 443. You will of course need the certificate <code>key</code> and <code>crt</code> files to terminate this connection inside your application, simply reference the TLS <code>Secret</code> that holds the certificate files from your namespace, and mount it as a volume inside your pod. Here is the <code>mdos.yaml</code> configuration that will allow you to do so:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-20-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-20-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-20-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-20-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-20-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-20-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-20-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-20-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-20-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-20-10">10</a></span>
+<span class="normal"><a href="#__codelineno-20-11">11</a></span>
+<span class="normal"><a href="#__codelineno-20-12">12</a></span>
+<span class="normal"><a href="#__codelineno-20-13">13</a></span>
+<span class="normal"><a href="#__codelineno-20-14">14</a></span>
+<span class="normal"><a href="#__codelineno-20-15">15</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1"></a><span class="nn">...</span><span class="w"></span>
+<a id="__codelineno-20-2" name="__codelineno-20-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-20-3" name="__codelineno-20-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
+<a id="__codelineno-20-4" name="__codelineno-20-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<a id="__codelineno-20-5" name="__codelineno-20-5"></a><span class="w">    </span><span class="nt">ingress</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-20-6" name="__codelineno-20-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-ingress</span><span class="w"></span>
+<a id="__codelineno-20-7" name="__codelineno-20-7"></a><span class="w">        </span><span class="nt">matchHost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mdos-is-awesome.com</span><span class="w"></span>
+<a id="__codelineno-20-8" name="__codelineno-20-8"></a><span class="w">        </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">443</span><span class="w"></span>
+<a id="__codelineno-20-9" name="__codelineno-20-9"></a><span class="hll"><span class="w">        </span><span class="nt">trafficType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https</span><span class="w"></span>
+</span><a id="__codelineno-20-10" name="__codelineno-20-10"></a><span class="w">    </span><span class="nt">secrets</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-20-11" name="__codelineno-20-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-ca</span><span class="w"></span>
+<a id="__codelineno-20-12" name="__codelineno-20-12"></a><span class="hll"><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dir</span><span class="w"></span>
+</span><a id="__codelineno-20-13" name="__codelineno-20-13"></a><span class="hll"><span class="w">        </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/x509/https</span><span class="w"></span>
+</span><a id="__codelineno-20-14" name="__codelineno-20-14"></a><span class="hll"><span class="w">        </span><span class="nt">ref</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mdos-is-awesome-crt</span><span class="w"></span>
+</span><a id="__codelineno-20-15" name="__codelineno-20-15"></a><span class="nn">...</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p>This will mount the files <code>tls.crt</code> and <code>tls.key</code> inside the folder <code>/etc/x509/https</code> on your running containers. You can now use those to terminate your TLS connection.</p>
 <hr />
 <h2 id="populate-static-volume-data-for-your-applications">Populate static volume data for your applications</h2>
 <p><img align="right" alt="Volume sync" src="/mdos/img/volume-sync.png" style="width:600px" />
-Every new volume that is created for your application is completely empty at first! This is how Kubernetees deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema &amp; dataset, a static website that serves as a base for my application etc. Often it is exactly what you want in a persisted volme, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!<br />
-MDos provides an efficient way for dealing with those use-cases. An MDos application project can have volumes declared that contain data you wish to pre-load onto your PODs before your application starts on the cluster. You will simply have to add the flag <code>syncVolume: true</code> to the declared volume inside your application component in your <code>mdos.yaml</code> file, and mdos will automatically sync this volume data to your pod volume before it starts your application component (see <a href="/mdos/reference-documentation/#pre-populate-volumes">Pre-populate volumes</a> in the reference documentation for an example configuration for your <code>mdos.yaml</code> file).  </p>
+Every new volume that is created for your application is completely empty at first! This is how Kubernetees deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema &amp; dataset, a static website that serves as a base for my application etc. Often, an empty volume is what you want in a persisted volme, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!  </p>
+<p>MDos provides an efficient way for dealing with those use-cases. An MDos application project can have volumes declared that contain data you wish to pre-load onto your PODs before your application starts on the cluster. You will simply have to add the flag <code>syncVolume: true</code> to the declared volume inside your application component in your <code>mdos.yaml</code> file, and mdos will automatically sync this volume data to your pod volume before it starts your application component (see <a href="/mdos/reference-documentation/#pre-populate-volumes">Pre-populate volumes</a> in the reference documentation for an example configuration for your <code>mdos.yaml</code> file).  </p>
 <p>Let's have a look at the above example to see in details what actually happens here:</p>
 <table>
 <thead>

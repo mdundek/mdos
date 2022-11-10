@@ -144,17 +144,9 @@ class SchemaV1 {
                                         },
                                         targetPort: { type: 'integer' },
                                         trafficType: { type: 'string', enum: ['http', 'https'] },
-                                        subPath: { type: 'string' },
-                                        tlsKeyPath: { type: 'string' },
-                                        tlsCrtPath: { type: 'string' },
-                                        tldMountPath: { type: 'string' },
+                                        subPath: { type: 'string' }
                                     },
                                     required: ['name', 'matchHost', 'targetPort'],
-                                    dependencies: {
-                                        tlsKeyPath: ['tlsCrtPath', 'tldMountPath'],
-                                        tlsCrtPath: ['tlsKeyPath', 'tldMountPath'],
-                                        tldMountPath: ['tlsCrtPath', 'tlsKeyPath'],
-                                    },
                                     additionalProperties: false,
                                 },
                             },
