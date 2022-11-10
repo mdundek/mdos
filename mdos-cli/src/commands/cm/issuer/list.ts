@@ -62,7 +62,7 @@ export default class List extends Command {
             [...issuerResponse.data, ...clusterIssuerResponse.data],
             {
                 name: {
-                    header: 'CERTIFICATE NAME',
+                    header: 'ISSUER NAME',
                     minWidth: 30,
                     get: (row:any) => row.metadata.name,
                 },

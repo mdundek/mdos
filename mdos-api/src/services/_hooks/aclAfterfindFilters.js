@@ -155,6 +155,7 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
+    console.log(JSON.stringify(context.result, null, 4))
     context.result = context.result
         .filter((issuer) => issuer.kind == "ClusterIssuer" ? true : jwtToken.resource_access[issuer.metadata.namespace])
         .filter((issuer) => issuer.metadata.name != "mdos-issuer")
