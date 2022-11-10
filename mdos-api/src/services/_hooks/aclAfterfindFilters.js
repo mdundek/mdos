@@ -152,13 +152,12 @@ const oidcProviderFilterHook = async (context, jwtToken) => {
  * @returns 
  */
 const certManagerIssuersFilterHook = async (context, jwtToken) => {
+    context.result = context.result.filter((issuer) => issuer.metadata.name != "mdos-issuer")
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
-    console.log(JSON.stringify(context.result, null, 4))
-    context.result = context.result
-        .filter((issuer) => issuer.kind == "ClusterIssuer" ? true : jwtToken.resource_access[issuer.metadata.namespace])
-        .filter((issuer) => issuer.metadata.name != "mdos-issuer")
+    
+    context.result = context.result.filter((issuer) => issuer.kind == "ClusterIssuer" ? true : jwtToken.resource_access[issuer.metadata.namespace])
     return context
 }
 
@@ -169,12 +168,11 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
  * @returns 
  */
  const certManagerClusterIssuersFilterHook = async (context, jwtToken) => {
+    context.result = context.result.filter((issuer) => issuer.metadata.name != "mdos-issuer")
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
-    context.result = context.result
-        .filter((issuer) => issuer.kind == "ClusterIssuer" ? true : false)
-        .filter((issuer) => issuer.metadata.name != "mdos-issuer")
+    context.result = context.result.filter((issuer) => issuer.kind == "ClusterIssuer" ? true : false)
     return context
 }
 
