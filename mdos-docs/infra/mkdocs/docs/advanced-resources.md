@@ -207,6 +207,96 @@ and follow the directions.
 
 ## Managing your Issuers & TLS Certificates using Cert-Manager
 
+Cert-manager is a great extention for Kubernetes, allowing you to generate and manage your domain specific TLS certificates automatically. That said, you still need to understand how to configure it for your needs.  
+The first thing you need is a certificate `issuer`. Those are used to interact with your Certificate authority and your DNS provider in order to configure the necessary challenges required to obtain your certificates.  
+Let's say you purchased the domain name `mdos-is-awesome.com`. You now need a valid certificate so that you can use your domain name to access your applications. The type of `issuer` you will have to create depends on the DNS provider you use to manage your newly purchased domain name. Here are a few examples of DNS providers that `cert-manager` supports directly:
+
+* Akamai
+* AzureDNS
+* CloudFlare
+* Google
+* Route53
+* DigitalOcean
+
+But others can be configured as well, using external third party webhook instances.
+
+!!! tip
+
+    For further details about available `issuers` and how to configure those, please refer to the `cert-manager` documentation available [here](https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers)
+
+### So how do you create a new issuer for your new domain name? 
+
+Issuers are deployed using a simple `yaml` file. Please note that you only need one issuer per DNS provider account, once you have configured this issuer, you can reference it for every new domain name certificate you wish to create.  
+Let's say your domain name is managed by `CloudFlare`, in this case you can create a new issuer for your domain name with the following yaml file:
+
+``` yaml title="issuer.yaml" linenums="1" hl_lines="2 7 10 14-16 21-25"
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-key-secret
+type: Opaque
+stringData:
+  api-key: <YOUR CLOUDFLARE API KEY>
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: my-cloudflare-issuer
+spec:
+  acme:
+    email: <YOUR LETS-ENCRYPT EMAIL ADDRESS>
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        cloudflare:
+          email: <YOUR CLOUDFLARE EMAIL ADDRESS>
+          apiKeySecretRef:
+            name: cloudflare-api-key-secret
+            key: api-key
+```
+
+In this example, you have a `Secret` that holds your CloudFlare API Key (that you get from your CloudFlare account profile page), and a `Issuer`.  
+The issuer references a Certificate authority, in this case we use `Let's Encrypt` to generate the certificate for us (line 14, `acme` is used here, all we need to do is point to the desired certificate management API endpoint on line 16).  
+On line 21 we specify the DNS solver that is managing our domain name(s). This part will need to be configured to point to the `Secret` we create in the first block, the one that holds our CloudFlare API Key, and our CloudFlare account email address (line 22).  
+
+!!! note
+
+    Depending on your specific requirements in terms of domain DNS manager and certificate autority, this `yaml` file will have to be adapted to suit your needs. Again, further details of how you can configure those can be found [here](https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers) 
+
+You are now ready to deploy this `Issuer` onto your cluster using the MDos CLI:
+
+```sh hl_lines="1"
+mdos cm issuer create
+
+? What type of issuer do you wish to create? ClusterIssuer (Cluster wide)
+? Enter the path to your Issuer YAML file: /Users/mdundek/issuer.yaml
+
+INFO : ClusterIssuer name: my-cloudflare-issuer
+
+Creating issuer... done
+```
+
+!!! tip
+
+    Depending on your needs, there are to Issuer types you can choose from: `Issuer` or `ClusterIssuer`. Depending on the issuer type, you will be able to create `certificates` from __any__ tenant namespace (ClusterIssuer), or only for a specific tenant namespace (Issuer).  
+
+That's it, you are ready to create certificates for this issuer.  
+To list your available issuers, run the command:
+
+```sh hl_lines="1"
+mdos cm issuer list
+
+ CERTIFICATE NAME                    NAMESPACE                STATUS
+ ─────────────────────────────────── ──────────────────────── ──────────────
+ mdos-issuer                         mdos                     Ready
+ my-cloudflare-issuer                none (ClusterIssuer)     Ready
+```
+
+Please note, here you see 2 distinct Issuers available and ready to use. Your newly created Issuer named `my-cloudflare-issuer`, but there is also another issuer called `mdos-issuer`. This issuer is available by default in this case because we used `cert-manager` to create and manage the MDos system domain name during the installation of the platform. This domain name issuer corresponds to the domain name that you use to acces the MDos components such as Keycloak, the Controller API server, Loki / Grafana... It is a wildcard domain name and certificate, and ca 
+
+
 ---
 
 ## Managing your Domain specific Ingress-Gateways
