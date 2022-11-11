@@ -261,6 +261,8 @@ setup_master_firewall() {
             if [ "$(firewall-cmd --list-all | grep '10257/tcp')" == "" ]; then
                 firewall-cmd --zone=public --add-port=10257/tcp &>> $LOG_FILE
             fi
+            firewall-cmd --permanent --add-masquerade
+            firewall-cmd –reload
         fi
     fi
 }
