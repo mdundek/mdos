@@ -1999,6 +1999,12 @@ EOF
     fi
     set +Ee
 
+    # SETUP FIREWALL
+    if [ -z $SETUP_FIREWALL_RULES ]; then
+        setup_master_firewall
+        set_env_step_data "SETUP_FIREWALL_RULES" "1"
+    fi
+
     # Make sure we have connectivity to within the cluster
     info "Testing connectivity from Kubernetes PODs..."
     kube_internet_check CON_SUCCESS &>> $LOG_FILE
@@ -2040,12 +2046,6 @@ EOF
         info "Install Longhorn..."
         install_longhorn
         set_env_step_data "INST_STEP_LONGHORN" "1"
-    fi
-
-    # SETUP FIREWALL
-    if [ -z $SETUP_FIREWALL_RULES ]; then
-        setup_master_firewall
-        set_env_step_data "SETUP_FIREWALL_RULES" "1"
     fi
 
     # PREPARE NAMESPACES
