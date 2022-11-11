@@ -61,7 +61,7 @@ init_firewall() {
             echo ""
         fi
     elif command -v firewall-cmd >/dev/null; then
-        if [ "$(firewall-cmd --state | grep 'running')" == "" ]; then
+        if [ "$(systemctl status firewalld | grep 'Active: active (running)')" == "" ]; then
             question "Your firewall is currently disabled."
             yes_no USE_FIREWALL "Do you want to enable it now and configure the necessary ports for the platform?" 1
             if [ "$USE_FIREWALL" == "yes" ]; then
@@ -397,7 +397,7 @@ dependencies() {
 
         if ! command -v docker &> /dev/null; then
             yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &>> $LOG_FILE
-            yum install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y &>> $LOG_FILE
+            yum install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y --allowerasing &>> $LOG_FILE
             systemctl start docker &>> $LOG_FILE
             groupadd docker &>> $LOG_FILE || true
             getent passwd | while IFS=: read -r name password uid gid gecos home shell; do
@@ -405,6 +405,15 @@ dependencies() {
                     usermod -aG docker $name
                 fi
             done
+
+            # Make sure Docker has a DNS server configured
+            if [ ! -f /etc/docker/daemon.json ] || [ "$(cat /etc/docker/daemon.json)" == "" ]; then
+                touch /etc/docker/daemon.json
+                cat "{
+    \"dns\": [\"8.8.8.8\"]
+}"
+                systemctl restart docker
+            fi
         fi
     fi
 
