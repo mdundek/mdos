@@ -10,7 +10,7 @@ hide:
 
 !!! info
 
-    At the moment, only Ubuntu >= 20.04 is supported for the MDos platform itself. Debian and Alpine are planned next.
+    At the moment, the MDos platform has been tested on `Ubuntu >= 20.04`, `CentOS >= 8` and `Debian >= buster`.
     The MDos CLI is available for Max, linux and Windows
 
 First, clone this repo on your target machine:
@@ -176,9 +176,33 @@ To add a new worker node to your mdos cluster deployment, clone the `mdso` repo 
 sudo ./mdos-setup/install-worker.sh
 ```
 
-!!! warning
+This process is straight forward. Simply follow the instructions and you will have a new worker node in your cluster:
 
-    Under construction
+```sh
+INFO: Update system and install dependencies...
+Your firewall is currently disabled.
+Do you want to enable it now and configure the necessary ports for the platform?
+>   Yes 
+>   No 
+
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+
+MDos K3S master node host IP address: 192.168.50.177
+
+To allow this worker node to join the MDos K3S Cluster, a "Node-token" is required.
+You can find this token on the Master node by executing the command:
+
+sudo cat /var/lib/rancher/k3s/server/node-token
+
+K3S Master node-token: K1006ae41f56fc2f08eeb1d3ead2863347bc9785a9672f12fd31cb310cc0a9658ea::server:a6b26d8340c023c847e86b64b66416154684
+
+INFO: Installing K3S worker node...
+INFO: Setting up firewall rules...
+INFO: Cleaning up...
+Log details of the installation can be found here: /root/11_11_2022_10_29_37_mdos_install.log
+INFO: Done!
+```
 
 ---
 

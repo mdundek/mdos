@@ -50,9 +50,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-# Set up firewall
-init_firewall
-
 # ############################################
 # ############# COLLECT USER DATA ############
 # ############################################
@@ -156,6 +153,9 @@ setup_worker_firewall
     # ############### MAIN ################
     info "Update system and install dependencies..."
     dependencies
+
+    # Set up firewall
+    init_firewall
    
     # COLLECT USER DATA
     collect_user_input

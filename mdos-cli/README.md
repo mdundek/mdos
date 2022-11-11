@@ -10,7 +10,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/1.3.1 darwin-x64 node-v18.9.0
+mdos-cli/1.4.0 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -200,6 +200,9 @@ USAGE
 * [`mdos service add`](#mdos-service-add)
 * [`mdos service generate`](#mdos-service-generate)
 * [`mdos set-kubeconfig`](#mdos-set-kubeconfig)
+* [`mdos shared-volume create`](#mdos-shared-volume-create)
+* [`mdos shared-volume delete`](#mdos-shared-volume-delete)
+* [`mdos shared-volume list`](#mdos-shared-volume-list)
 * [`mdos show client`](#mdos-show-client)
 * [`mdos show namespace`](#mdos-show-namespace)
 * [`mdos show ns`](#mdos-show-ns)
@@ -219,6 +222,7 @@ USAGE
 * [`mdos storage generate`](#mdos-storage-generate)
 * [`mdos user add`](#mdos-user-add)
 * [`mdos user add role`](#mdos-user-add-role)
+* [`mdos user change-password`](#mdos-user-change-password)
 * [`mdos user create`](#mdos-user-create)
 * [`mdos user create-role`](#mdos-user-create-role)
 * [`mdos user create role`](#mdos-user-create-role-1)
@@ -233,7 +237,10 @@ USAGE
 * [`mdos user show-roles`](#mdos-user-show-roles)
 * [`mdos user show roles`](#mdos-user-show-roles-1)
 * [`mdos volume add`](#mdos-volume-add)
+* [`mdos volume create`](#mdos-volume-create)
 * [`mdos volume generate`](#mdos-volume-generate)
+* [`mdos volume list`](#mdos-volume-list)
+* [`mdos volume remove`](#mdos-volume-remove)
 
 ## `mdos add client`
 
@@ -2802,7 +2809,7 @@ ALIASES
   $ mdos get config
 ```
 
-_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/get-config.ts)_
+_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.4.0/dist/commands/get-config.ts)_
 
 ## `mdos get config`
 
@@ -3586,7 +3593,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.4.0/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3600,7 +3607,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.4.0/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -3971,11 +3978,10 @@ Configure / add a new OIDC provider to the platform
 
 ```
 USAGE
-  $ mdos oidc create [-t <value>] [--clienId <value>]
+  $ mdos oidc create [-t <value>]
 
 FLAGS
   -t, --target=<value>  OIDC target
-  --clienId=<value>     Keycloak client id name
 
 DESCRIPTION
   Configure / add a new OIDC provider to the platform
@@ -4038,11 +4044,10 @@ Configure / add a new OIDC provider to the platform
 
 ```
 USAGE
-  $ mdos oidc provider add [-t <value>] [--clienId <value>]
+  $ mdos oidc provider add [-t <value>]
 
 FLAGS
   -t, --target=<value>  OIDC target
-  --clienId=<value>     Keycloak client id name
 
 DESCRIPTION
   Configure / add a new OIDC provider to the platform
@@ -4061,11 +4066,10 @@ Configure / add a new OIDC provider to the platform
 
 ```
 USAGE
-  $ mdos oidc provider create [-t <value>] [--clienId <value>]
+  $ mdos oidc provider create [-t <value>]
 
 FLAGS
   -t, --target=<value>  OIDC target
-  --clienId=<value>     Keycloak client id name
 
 DESCRIPTION
   Configure / add a new OIDC provider to the platform
@@ -4421,7 +4425,52 @@ DESCRIPTION
   Retrieve user kubeconfig file and set up
 ```
 
-_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.3.1/dist/commands/set-kubeconfig.ts)_
+_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.4.0/dist/commands/set-kubeconfig.ts)_
+
+## `mdos shared-volume create`
+
+Create a new shared volume
+
+```
+USAGE
+  $ mdos shared-volume create
+
+DESCRIPTION
+  Create a new shared volume
+
+ALIASES
+  $ mdos volume create
+```
+
+## `mdos shared-volume delete`
+
+Delete an existing Shared Volume
+
+```
+USAGE
+  $ mdos shared-volume delete
+
+DESCRIPTION
+  Delete an existing Shared Volume
+
+ALIASES
+  $ mdos volume remove
+```
+
+## `mdos shared-volume list`
+
+List existing Shared Volumes
+
+```
+USAGE
+  $ mdos shared-volume list
+
+DESCRIPTION
+  List existing Shared Volumes
+
+ALIASES
+  $ mdos volume list
+```
 
 ## `mdos show client`
 
@@ -4529,11 +4578,10 @@ Configure / add a new OIDC provider to the platform
 
 ```
 USAGE
-  $ mdos sso create [-t <value>] [--clienId <value>]
+  $ mdos sso create [-t <value>]
 
 FLAGS
   -t, --target=<value>  OIDC target
-  --clienId=<value>     Keycloak client id name
 
 DESCRIPTION
   Configure / add a new OIDC provider to the platform
@@ -4596,11 +4644,10 @@ Configure / add a new OIDC provider to the platform
 
 ```
 USAGE
-  $ mdos sso provider add [-t <value>] [--clienId <value>]
+  $ mdos sso provider add [-t <value>]
 
 FLAGS
   -t, --target=<value>  OIDC target
-  --clienId=<value>     Keycloak client id name
 
 DESCRIPTION
   Configure / add a new OIDC provider to the platform
@@ -4619,11 +4666,10 @@ Configure / add a new OIDC provider to the platform
 
 ```
 USAGE
-  $ mdos sso provider create [-t <value>] [--clienId <value>]
+  $ mdos sso provider create [-t <value>]
 
 FLAGS
   -t, --target=<value>  OIDC target
-  --clienId=<value>     Keycloak client id name
 
 DESCRIPTION
   Configure / add a new OIDC provider to the platform
@@ -4865,6 +4911,18 @@ ALIASES
   $ mdos user create-role
   $ mdos user create role
   $ mdos kc user create role
+```
+
+## `mdos user change-password`
+
+Change Password for a logged in user
+
+```
+USAGE
+  $ mdos user change-password
+
+DESCRIPTION
+  Change Password for a logged in user
 ```
 
 ## `mdos user create`
@@ -5197,6 +5255,21 @@ ALIASES
   $ mdos storage generate
 ```
 
+## `mdos volume create`
+
+Create a new shared volume
+
+```
+USAGE
+  $ mdos volume create
+
+DESCRIPTION
+  Create a new shared volume
+
+ALIASES
+  $ mdos volume create
+```
+
 ## `mdos volume generate`
 
 Persist your data using volumes / storage for your components
@@ -5222,6 +5295,36 @@ ALIASES
   $ mdos volume generate
   $ mdos generate storage
   $ mdos storage generate
+```
+
+## `mdos volume list`
+
+List existing Shared Volumes
+
+```
+USAGE
+  $ mdos volume list
+
+DESCRIPTION
+  List existing Shared Volumes
+
+ALIASES
+  $ mdos volume list
+```
+
+## `mdos volume remove`
+
+Delete an existing Shared Volume
+
+```
+USAGE
+  $ mdos volume remove
+
+DESCRIPTION
+  Delete an existing Shared Volume
+
+ALIASES
+  $ mdos volume remove
 ```
 <!-- commandsstop -->  # Usage
 
