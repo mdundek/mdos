@@ -262,7 +262,7 @@ setup_master_firewall() {
                 firewall-cmd --zone=public --add-port=10257/tcp &>> $LOG_FILE
             fi
             firewall-cmd --permanent --add-masquerade
-            firewall-cmd –reload
+            firewall-cmd --reload
         fi
     fi
 }
