@@ -1927,9 +1927,10 @@ EOF
 
     trap _catch ERR
     trap _finally EXIT
-
+    dependencies_consent
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
+        
         info "Update system and install dependencies..."
         dependencies
         set_env_step_data "INST_STEP_DEPENDENCY" "1"

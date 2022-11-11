@@ -154,7 +154,24 @@ init_firewall() {
             echo ""
         fi
     else
-        warn "Configure your firewall to allow traffic on port 0.0.0.0:22, 0.0.0.0:30979 and 192.168.0.0/16:8080"
+        warn "Configure your firewall to allow traffic on the following ports:"
+        context "          * 443/tcp"
+        context "          * 6443/tcp"
+        context "          * 30999/tcp"
+        context "          * 3915/tcp"
+        context "          * 3916/tcp"
+        context "          * 3917/tcp"
+        context "          * 3918/tcp"
+        context "          * 3919/tcp"
+        context "          * 3920/tcp"
+        context "          * 179/tcp"
+        context "          * 4789/udp"
+        context "          * 2379/tcp"
+        context "          * 2380/tcp"
+        context "          * 10250/tcp"
+        context "          * 10259/tcp"
+        context "          * 10257/tcp"
+        echo ""
     fi
 }
 
@@ -390,6 +407,51 @@ failsafe_docker_push() {
 # ############################################
 # ############### DEPENDENCIES ###############
 # ############################################
+dependencies_consent() {
+    warn "This script will install some required dependencies:"
+    if [ "$PSYSTEM" == "APT" ]; then
+        context "          * ufw"
+        context "          * jq"
+        context "          * ca-certificates"
+        context "          * curl"
+        context "          * tar"
+        context "          * gnupg"
+        context "          * apache2-utils"
+        context "          * python3"
+        context "          * unzip"
+        context "          * nfs-common"
+        context "          * open-iscsi"
+        context "          * lsb-release"
+        
+    elif [ "$PSYSTEM" == "DNF" ]; then
+        context "          * yum-utils "
+        context "          * firewalld"
+        context "          * jq"
+        context "          * tar"
+        context "          * ca-certificates"
+        context "          * curl"
+        context "          * gnupg"
+        context "          * httpd-tools"
+        context "          * python3"
+        context "          * unzip"
+        context "          * nfs-utils"
+        context "          * iscsi-initiator-utils"
+        context "          * redhat-lsb-core"
+    fi
+    context "          * docker"
+    context "          * helm"
+    echo ""
+    if [ "$PSYSTEM" == "DNF" ]; then
+        context "          => and disable selinux"
+        echo ""
+    fi
+    yes_no DEP_CONTINUE "Continue?" 1
+    if [ "$DEP_CONTINUE" != "yes" ]; then
+        exit 1
+    fi
+    echo ""
+}
+
 dependencies() {
     # -=-=-=-=-=-=-= DEBIAN, UBUNTU... -=-=-=-=-=-=-=
     if [ "$PSYSTEM" == "APT" ]; then
