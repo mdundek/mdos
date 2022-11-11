@@ -440,6 +440,7 @@ dependencies_consent() {
     fi
     context_print "          * docker"
     context_print "          * helm"
+    context_print "          * k3s"
     echo ""
     if [ "$PSYSTEM" == "DNF" ]; then
         context_print "          => and disable selinux"
