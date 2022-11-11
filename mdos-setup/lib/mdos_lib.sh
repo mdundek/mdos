@@ -11,7 +11,7 @@ internet_check() {
 docker_internet_check() {
     # Make sure Docker has a DNS server configured (only on YUM systems, had some issues with this on Centos)
     if [ "$PSYSTEM" == "DNF" ]; then
-        if [ ! -f /etc/docker/daemon.json ] || [ "$(cat /etc/docker/daemon.json)" == "" ]; then
+        if [ ! -f /etc/docker/daemon.json ] || [ "$(cat /etc/docker/daemon.json | grep "dns" | xargs)" == "dns: []" ]; then
             DNS_IP=$(cat /etc/resolv.conf | grep -m 1 "nameserver " | head -1 | cut -d ' ' -f 2)
             if [ "$DNS_IP" != "" ]; then
                 touch /etc/docker/daemon.json
