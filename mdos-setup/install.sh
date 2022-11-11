@@ -1975,6 +1975,12 @@ EOF
         configure_etc_hosts
     fi
 
+    # SETUP FIREWALL
+    if [ -z $SETUP_FIREWALL_RULES ]; then
+        setup_master_firewall
+        set_env_step_data "SETUP_FIREWALL_RULES" "1"
+    fi
+
     # INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
         info "Installing K3S..."
@@ -1995,12 +2001,6 @@ EOF
         kubectl=$(whereis kubectl | cut -d: -f2 | xargs)
     fi
     set +Ee
-
-    # SETUP FIREWALL
-    if [ -z $SETUP_FIREWALL_RULES ]; then
-        setup_master_firewall
-        set_env_step_data "SETUP_FIREWALL_RULES" "1"
-    fi
 
     # Make sure we have connectivity to within the cluster
     info "Testing connectivity from Kubernetes PODs..."
