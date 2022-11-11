@@ -22,9 +22,9 @@ docker_internet_check() {
             fi
         fi
     fi
-    
+
     docker pull curlimages/curl:7.86.0 >/dev/null
-    DCON=$(docker run --rm curlimages/curl https://oauth2-proxy.github.io/manifests/index.yaml)
+    DCON=$(docker run --rm curlimages/curl -sI https://oauth2-proxy.github.io/manifests/index.yaml)
     DCON=$(echo "$DCON" | grep "HTTP/2 200")
     if [ "$DCON" == "" ]; then
         error "Your docker daemon does not seem to have internet connectivity."
