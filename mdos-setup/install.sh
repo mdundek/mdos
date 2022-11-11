@@ -2013,7 +2013,11 @@ EOF
 
     # Make sure we have connectivity to within the cluster
     info "Testing connectivity from Kubernetes PODs..."
-    kube_internet_check
+    kube_internet_check CON_SUCCESS
+    if [ "$CON_SUCCESS" == "1" ]; then
+        error "Your kubernetes cluster PODs dont seem to have internet connectivity."
+        exit 1
+    fi
 
     # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
     if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then

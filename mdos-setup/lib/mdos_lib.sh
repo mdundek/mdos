@@ -9,7 +9,22 @@ internet_check() {
 }
 
 docker_internet_check() {
-    DCON=$(docker run --rm curlimages/curl:7.86.0 -Is https://oauth2-proxy.github.io/manifests/index.yaml)
+    # Make sure Docker has a DNS server configured (only on YUM systems, had some issues with this on Centos)
+    if [ "$PSYSTEM" == "DNF" ]; then
+        if [ ! -f /etc/docker/daemon.json ] || [ "$(cat /etc/docker/daemon.json)" == "" ]; then
+            DNS_IP=$(cat /etc/resolv.conf | grep -m 1 "nameserver " | head -1 | cut -d ' ' -f 2)
+            if [ "$DNS_IP" != "" ]; then
+                touch /etc/docker/daemon.json
+                echo "{
+        \"dns\": [\"$DNS_IP\"]
+    }" > /etc/docker/daemon.json
+                systemctl restart docker
+            fi
+        fi
+    fi
+    
+    docker pull curlimages/curl:7.86.0 >/dev/null
+    DCON=$(docker run --rm curlimages/curl https://oauth2-proxy.github.io/manifests/index.yaml)
     DCON=$(echo "$DCON" | grep "HTTP/2 200")
     if [ "$DCON" == "" ]; then
         error "Your docker daemon does not seem to have internet connectivity."
@@ -18,12 +33,28 @@ docker_internet_check() {
 }
 
 kube_internet_check() {
-    KCON=$($kubectl run mycurlpod --rm --image=curlimages/curl --stdin --tty -- /bin/sh -c "sleep 3 && curl -Is https://oauth2-proxy.github.io/manifests/index.yaml")
-    KCON=$(echo "$KCON" | grep "HTTP/2 200")
-    if [ "$KCON" == "" ]; then
-        error "Your kubernetes cluster PODs dont seem to have internet connectivity."
-        exit 1
-    fi
+    local  __resultvar=$1
+    docker pull curlimages/curl:7.86.0
+    set +Ee
+    unset CTEST_DONE
+    ATTEMPTS=0
+    while [ -z $CTEST_DONE ]; do
+        KCON=$($kubectl run mycurlpod --rm --image=curlimages/curl:7.86.0 --stdin --tty -- /bin/sh -c "sleep 3 && curl -Is https://oauth2-proxy.github.io/manifests/index.yaml")
+        KCON=$(echo "$KCON" | grep "HTTP/2 200")
+        if [ "$KCON" != "" ]; then
+            eval $__resultvar="0"
+            CTEST_DONE=1
+        else
+            if [ "$ATTEMPTS" -gt 5 ]; then
+                eval $__resultvar="1"
+                CTEST_DONE=1
+
+            fi
+            ATTEMPTS=$((ATTEMPTS+1))
+            sleep 5
+        fi
+    done
+    set -Ee
 }
 
 os_check() {
@@ -431,15 +462,6 @@ dependencies() {
                     usermod -aG docker $name
                 fi
             done
-
-            # Make sure Docker has a DNS server configured
-            if [ ! -f /etc/docker/daemon.json ] || [ "$(cat /etc/docker/daemon.json)" == "" ]; then
-                touch /etc/docker/daemon.json
-                cat "{
-    \"dns\": [\"8.8.8.8\"]
-}"
-                systemctl restart docker
-            fi
         fi
     fi
 
