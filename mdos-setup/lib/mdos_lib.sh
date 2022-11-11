@@ -487,7 +487,6 @@ dependencies_consent() {
     if [ "$DEP_CONTINUE" != "yes" ]; then
         exit 1
     fi
-    echo ""
 }
 
 dependencies() {
