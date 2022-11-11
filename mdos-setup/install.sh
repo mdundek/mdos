@@ -32,7 +32,7 @@ internet_check
 os_check
 
 # Resource check
-# resources_check 3500 4GB
+resources_check 3500 4GB
 
 LOG_FILE="$HOME/$(date +'%m_%d_%Y_%H_%M_%S')_mdos_install.log"
 

@@ -25,6 +25,9 @@ echo "
                                                                                                                                                       
 "    
 
+# Make sure connectivity to the internet is ok
+internet_check
+
 # Os checks
 os_check
 
@@ -84,30 +87,6 @@ collect_user_input() {
 }
 
 # ############################################
-# ################# FIREWALL #################
-# ############################################
-setup_worker_firewall() {
-    # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
-    if [ "$USE_FIREWALL" == "yes" ]; then
-        if command -v ufw >/dev/null; then
-            info "Setting up firewall rules..."
-            if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
-                ufw allow 443 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep 'HTTPS\|6443' | grep 'ALLOW')" == "" ]; then
-                ufw allow 6443 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep 'HTTPS\|30999' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30999 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '10250' | grep 'ALLOW')" == "" ]; then
-                ufw allow 10250 &>> $LOG_FILE
-            fi
-        fi
-    fi
-}
-
-# ############################################
 # ############### INSTALL K3S ################
 # ############################################
 install_k3s_worker() {
@@ -151,11 +130,15 @@ setup_worker_firewall
     trap _finally EXIT
 
     # ############### MAIN ################
+    dependencies_consent
     info "Update system and install dependencies..."
     dependencies
 
     # Set up firewall
     init_firewall
+
+    # SETUP FIREWALL
+    setup_worker_firewall
    
     # COLLECT USER DATA
     collect_user_input
@@ -163,7 +146,4 @@ setup_worker_firewall
     # INSTALL K3S
     info "Installing K3S worker node..."
     install_k3s_worker
-
-    # SETUP FIREWALL
-    setup_worker_firewall
 )

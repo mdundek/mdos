@@ -284,6 +284,43 @@ setup_master_firewall() {
     fi
 }
 
+setup_worker_firewall() {
+    # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
+    if [ "$USE_FIREWALL" == "yes" ]; then
+        if command -v ufw >/dev/null; then
+            info "Setting up firewall rules..."
+            if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
+                ufw allow 443 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep 'HTTPS\|6443' | grep 'ALLOW')" == "" ]; then
+                ufw allow 6443 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep 'HTTPS\|30999' | grep 'ALLOW')" == "" ]; then
+                ufw allow 30999 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '10250' | grep 'ALLOW')" == "" ]; then
+                ufw allow 10250 &>> $LOG_FILE
+            fi
+        fi
+    elif command -v firewall-cmd >/dev/null; then
+        info "Setting up firewall rules..."
+        if [ "$(firewall-cmd --list-all | grep '443/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=443/tcp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '6443/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=6443/tcp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '30999/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=30999/tcp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '10250/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=10250/tcp &>> $LOG_FILE
+        fi
+        firewall-cmd --permanent --add-masquerade &>> $LOG_FILE
+        firewall-cmd --reload &>> $LOG_FILE
+    fi
+}
+
 # ############### UPDATE ENV DATA VALUE ################
 set_env_step_data() {
     sed -i '/'$1'=/d' $INST_ENV_PATH
