@@ -400,6 +400,7 @@ dependencies() {
             jq \
             ca-certificates \
             curl \
+            tar \
             gnupg \
             apache2-utils \
             python3 \
@@ -460,6 +461,7 @@ dependencies() {
             yum-utils \
             firewalld \
             jq \
+            tar \
             ca-certificates \
             curl \
             gnupg \

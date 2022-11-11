@@ -849,19 +849,16 @@ EOF
 # ############### INSTALL HELM ###############
 # ############################################
 install_helm() {
-    set -Ee
     if ! command -v helm &> /dev/null; then
-        set +Ee
         if [ ! -f /usr/local/bin/helm ]; then
-            curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-            chmod 700 get_helm.sh
-            ./get_helm.sh &>> $LOG_FILE
-            rm -rf ./get_helm.sh
+            cd dep/helm
+            tar -xf ./helm.tar.gz &>> $LOG_FILE
+            mv ./linux-amd64/helm /usr/local/bin
+            rm -rf ./linux-amd64
+            chmod a+x /usr/local/bin/helm
+            cd ../..
         fi
-    else
-        set +Ee
     fi
-    
 }
 
 # ############################################
