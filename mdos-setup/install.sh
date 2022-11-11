@@ -25,6 +25,9 @@ echo '
                                                            
 '     
 
+# Make sure connectivity to the internet is ok
+internet_check
+
 # Os checks
 os_check
 
@@ -1947,6 +1950,10 @@ EOF
         set_env_step_data "INST_STEP_DEPENDENCY" "1"
     fi
 
+    # Make sure we have connectivity to the internet from docker
+    info "Testing connectivity from Docker daemon..."
+    docker_internet_check
+
     # Set up firewall
     init_firewall
 
@@ -2003,6 +2010,10 @@ EOF
         kubectl=$(whereis kubectl | cut -d: -f2 | xargs)
     fi
     set +Ee
+
+    # Make sure we have connectivity to within the cluster
+    info "Testing connectivity from Kubernetes PODs..."
+    kube_internet_check
 
     # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
     if [ "$CERT_MODE" == "SELF_SIGNED" ] || [ ! -z $PROV_CERT_IS_SELFSIGNED ]; then

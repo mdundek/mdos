@@ -1,5 +1,31 @@
 #!/bin/bash
 
+internet_check() {
+    wget -q --spider http://google.com
+    if [ $? -ne 0 ]; then
+        error "You need access to the internet in order to install the MDos platform."
+        exit 1
+    fi
+}
+
+docker_internet_check() {
+    DCON=$(docker run --rm curlimages/curl:7.86.0 -Is https://oauth2-proxy.github.io/manifests/index.yaml)
+    DCON=$(echo "$DCON" | grep "HTTP/2 200")
+    if [ "$DCON" == "" ]; then
+        error "Your docker daemon does not seem to have internet connectivity."
+        exit 1
+    fi
+}
+
+kube_internet_check() {
+    KCON=$($kubectl run mycurlpod --rm --image=curlimages/curl --stdin --tty -- /bin/sh -c "sleep 3 && curl -Is https://oauth2-proxy.github.io/manifests/index.yaml")
+    KCON=$(echo "$KCON" | grep "HTTP/2 200")
+    if [ "$KCON" == "" ]; then
+        error "Your kubernetes cluster PODs dont seem to have internet connectivity."
+        exit 1
+    fi
+}
+
 os_check() {
     # CHECK PACKAGE SYSTEM
     if command -v apt-get >/dev/null; then
