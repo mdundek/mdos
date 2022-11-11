@@ -1615,9 +1615,9 @@ EOF
 }
 
 # ############################################
-# ########### INSTALL HELM FTP REG ###########
+# ############# INSTALL FTP REG ##############
 # ############################################
-install_helm_ftp() {
+install_ftpd() {
     C_DIR="$(pwd)"
     
     # Build mdos-api image
@@ -2170,7 +2170,7 @@ EOF
     # INSTALL MDOS FTP
     if [ -z $INST_STEP_MDOS_FTP ]; then
         info "Install MDos FTP server..."
-        install_helm_ftp
+        install_ftpd
         set_env_step_data "INST_STEP_MDOS_FTP" "1"
     fi
 
