@@ -23,8 +23,8 @@ docker_internet_check() {
         fi
     fi
 
-    docker pull curlimages/curl:7.86.0 >/dev/null
-    DCON=$(docker run --rm curlimages/curl -sI https://oauth2-proxy.github.io/manifests/index.yaml)
+    docker pull curlimages/curl:7.86.0 &>> $LOG_FILE
+    DCON=$(docker run --rm curlimages/curl:7.86.0 -sI https://oauth2-proxy.github.io/manifests/index.yaml)
     DCON=$(echo "$DCON" | grep "HTTP/2 200")
     if [ "$DCON" == "" ]; then
         error "Your docker daemon does not seem to have internet connectivity."
@@ -261,8 +261,8 @@ setup_master_firewall() {
             if [ "$(firewall-cmd --list-all | grep '10257/tcp')" == "" ]; then
                 firewall-cmd --zone=public --add-port=10257/tcp &>> $LOG_FILE
             fi
-            firewall-cmd --permanent --add-masquerade
-            firewall-cmd --reload
+            firewall-cmd --permanent --add-masquerade &>> $LOG_FILE
+            firewall-cmd --reload &>> $LOG_FILE
         fi
     fi
 }
@@ -474,8 +474,8 @@ dependencies() {
 
         systemctl enable iscsid &>> $LOG_FILE
 
-        # setenforce 0
-        # sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+        setenforce 0
+        sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
         if ! command -v docker &> /dev/null; then
             yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &>> $LOG_FILE
