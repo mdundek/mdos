@@ -1942,7 +1942,7 @@ EOF
     docker_internet_check
 
     # Set up firewall
-    init_firewall
+    init_firewall master
 
     # COLLECT USER DATA
     collect_user_input

@@ -135,7 +135,7 @@ setup_worker_firewall
     dependencies
 
     # Set up firewall
-    init_firewall
+    init_firewall worker
 
     # SETUP FIREWALL
     setup_worker_firewall

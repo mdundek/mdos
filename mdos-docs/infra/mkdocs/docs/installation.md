@@ -10,8 +10,8 @@ hide:
 
 !!! info
 
-    At the moment, the MDos platform has been tested on `Ubuntu >= 20.04`, `CentOS >= 8` and `Debian >= buster`.
-    The MDos CLI is available for Max, linux and Windows
+    At the moment, the MDos platform has been tested on `Ubuntu >= 20.04`, `CentOS >= 8` and `Debian >= buster`  
+    The MDos CLI is available for `MacOS`, `linux` and `Windows`
 
 First, clone this repo on your target machine:
 
@@ -33,9 +33,34 @@ Install the platform by calling the following script as root:
 sudo ./mdos-setup/install.sh
 ```
 
+The MDos platform has a few dependencies, you will need to consent so that the script is allowed to install and configure those dependencies:
+
+<img src="/mdos/img/installation/dependencies.png" alt="ip" width="500"/>
+
 During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.
 
 <img src="/mdos/img/installation/ip.png" alt="ip" width="600"/>
+
+!!! note
+
+    If you choose to not let the script configure your firewall, the configure the following firewall rules to allow the platform to run:
+
+    * 443/tcp
+    * 6443/tcp
+    * 30999/tcp
+    * 3915/tcp
+    * 3916/tcp
+    * 3917/tcp
+    * 3918/tcp
+    * 3919/tcp
+    * 3920/tcp
+    * 179/tcp
+    * 4789/udp
+    * 2379/tcp
+    * 2380/tcp
+    * 10250/tcp
+    * 10259/tcp
+    * 10257/tcp
 
 #### :material-arrow-right-thin: Administrator credentials 
 
@@ -203,6 +228,15 @@ INFO: Cleaning up...
 Log details of the installation can be found here: /root/11_11_2022_10_29_37_mdos_install.log
 INFO: Done!
 ```
+
+!!! note
+
+    If you choose to not let the script configure your firewall, the configure the following firewall rules to allow the platform to run:
+
+    * 443/tcp
+    * 6443/tcp
+    * 30999/tcp
+    * 10250/tcp
 
 ---
 
