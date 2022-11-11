@@ -1602,19 +1602,7 @@ EOF
    
     sleep 1
     # Restart the CoreDNS pod
-    unset FOUND_RUNNING_POD
-    while [ -z $FOUND_RUNNING_POD ]; do
-        while read POD_LINE ; do 
-            COREDNS_POD_NAME=`echo "$POD_LINE" | awk 'END {print $1}'`
-            POD_STATUS=`echo "$POD_LINE" | awk 'END {print $3}'`
-            if [ "$POD_STATUS" == "Running" ]; then
-                FOUND_RUNNING_POD=1
-            fi
-        done < <($kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
-        sleep 1
-    done
-    
-    $kubectl delete pod $COREDNS_POD_NAME -n kube-system &>> $LOG_FILE
+    restart_coredns
     sleep 2
     
     unset FOUND_RUNNING_POD
@@ -2013,7 +2001,7 @@ EOF
 
     # Make sure we have connectivity to within the cluster
     info "Testing connectivity from Kubernetes PODs..."
-    kube_internet_check CON_SUCCESS
+    kube_internet_check CON_SUCCESS &>> $LOG_FILE
     if [ "$CON_SUCCESS" == "1" ]; then
         error "Your kubernetes cluster PODs dont seem to have internet connectivity."
         exit 1
