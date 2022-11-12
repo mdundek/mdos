@@ -53,6 +53,7 @@ components:
 
     volumes:
       - name: host-data-volume
+        storageClass: local-path
         mountPath: /var/lib/postgresql/data
         subPath: data
         size: 5Gi
