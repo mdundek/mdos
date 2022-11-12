@@ -21,10 +21,9 @@ exports.RegAuthentication = class RegAuthentication {
      */
     async find(params) {
         const plainCreds = JSON.parse(Buffer.from(params.query.creds, 'base64').toString('utf8'))
-
-        console.log(plainCreds)
         // Login
         const result = await this.app.get('keycloak').getUserAccessToken('mdos', plainCreds.username, plainCreds.password)
+        console.log(result)
         if(result.error)
             throw new Forbidden("Invalid credentials")
         return 'ok'
