@@ -170,6 +170,18 @@ class MdosCore extends CommonCore {
                     if(ingress.trafficType == "http") {
                         const httpAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTP")
                         const httpsTerminateAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_SIMPLE")
+
+
+
+                        console.log(JSON.stringify(ingress, null, 4))
+                        console.log("------------------------------------------")
+                        console.log(JSON.stringify(httpAvailable, null, 4))
+                        console.log("------------------------------------------")
+                        console.log(JSON.stringify(httpsTerminateAvailable, null, 4))
+
+
+
+
                         gtwConfigured = !httpAvailable[ingress.matchHost] || !httpsTerminateAvailable[ingress.matchHost]
                     } else {
                         const httpsPassthrough = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_PASSTHROUGH")
@@ -214,7 +226,7 @@ class MdosCore extends CommonCore {
                     return ingress
                 })
 
-                console.log(JSON.stringify(component.ingress, null, 4))
+                
                
                 let errorMsgs = []
                 if(ingressInUseErrors.length > 0) {
