@@ -805,7 +805,7 @@ class KubeBase extends KubeBaseConstants {
         fs.writeFileSync('./values.yaml', YAML.stringify(values))
 
         try {
-            console.log("YEP, error is here")
+            console.log(this.genericHelmChartPath)
             await this._asyncChildHelmDeploy(
                 `${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --timeout 10m0s --atomic`,
                 processId,
@@ -814,7 +814,6 @@ class KubeBase extends KubeBaseConstants {
                 values.appName
             )
         } catch (error) {
-            console.log(error)
             if (doCreateNs) {
                 try {
                     await this.deleteNamespace(namespace)
