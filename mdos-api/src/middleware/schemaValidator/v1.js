@@ -30,7 +30,7 @@ class SchemaV1 {
                 },
                 uuid: {
                     type: 'string',
-                    pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                    pattern: /^[a-zA-Z0-9]+[a-zA-Z0-9\-]{2,20}$/,
                 },
                 components: {
                     type: 'array',
@@ -43,7 +43,7 @@ class SchemaV1 {
                             },
                             uuid: {
                                 type: 'string',
-                                pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                pattern: /^[a-zA-Z0-9]+[a-zA-Z0-9\-]{2,20}$/,
                             },
                             image: { type: 'string' },
                             tag: { type: 'string' },
@@ -534,7 +534,7 @@ class SchemaV1 {
                                 stack: "'hostPath' property is not compatible when using sharedVolumeName",
                             })
                         }
-                        if (!volume.hostPath && !volume.sharedVolumeName) {
+                        if (!volume.hostPath && !volume.size) {
                             errors.push({
                                 message: "'size' property is mandatory when not using hostPath or sharedVolumeName property",
                                 instance: volume,

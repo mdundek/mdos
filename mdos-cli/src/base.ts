@@ -142,7 +142,7 @@ export default abstract class extends Command {
     checkIfDomainSet() {
         let API_URI = this.getConfig('MDOS_API_URI')
         if (!API_URI) {
-            error("Please set your mdos domain name using the command 'mdos set domain <your domain here>'")
+            error("Please set your mdos domain name using the command 'mdos configure api-endpoint https://mdos-api.<your domain here>'")
             process.exit(1)
         }
         return API_URI

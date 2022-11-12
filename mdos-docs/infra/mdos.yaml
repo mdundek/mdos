@@ -16,9 +16,7 @@ components:
         mountPath: /usr/share/nginx/html
         syncVolume: true
         trigger: always
-      - name: test-shared
-        mountPath: /test
-        sharedVolumeName: vol1
+        size: 1Gi
     services:
       - name: http
         ports:
@@ -28,7 +26,3 @@ components:
         matchHost: foo.mdundek.network
         targetPort: 80
         trafficType: http
-    oidc:
-      provider: kc-mdos-doc
-      hosts:
-        - foo.mdundek.network
