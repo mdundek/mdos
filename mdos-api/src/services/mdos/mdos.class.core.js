@@ -172,8 +172,9 @@ class MdosCore extends CommonCore {
                         const httpsTerminateAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_SIMPLE")
 
 
-
                         console.log(JSON.stringify(ingress, null, 4))
+                        console.log("------------------------------------------")
+                        console.log(JSON.stringify(hostMatrix, null, 4))
                         console.log("------------------------------------------")
                         console.log(JSON.stringify(httpAvailable, null, 4))
                         console.log("------------------------------------------")
