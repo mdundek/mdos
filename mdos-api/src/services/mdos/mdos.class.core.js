@@ -168,28 +168,28 @@ class MdosCore extends CommonCore {
                 component.ingress = component.ingress.map((ingress) => {
                     let gtwConfigured = false
                     if(ingress.trafficType == "http") {
-                        const httpAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTP")
-                        const httpsTerminateAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_SIMPLE")
+                        const httpGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTP")
+                        const httpsTerminateGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_SIMPLE")
 
 
                         console.log(JSON.stringify(ingress, null, 4))
                         console.log("------------------------------------------")
                         console.log(JSON.stringify(hostMatrix, null, 4))
                         console.log("------------------------------------------")
-                        console.log(JSON.stringify(httpAvailable, null, 4))
+                        console.log(JSON.stringify(httpGatewayFound, null, 4))
                         console.log("------------------------------------------")
-                        console.log(JSON.stringify(httpsTerminateAvailable, null, 4))
+                        console.log(JSON.stringify(httpsTerminateGatewayFound, null, 4))
 
 
 
 
-                        gtwConfigured = !httpAvailable[ingress.matchHost] || !httpsTerminateAvailable[ingress.matchHost]
+                        gtwConfigured = httpGatewayFound[ingress.matchHost] || httpsTerminateGatewayFound[ingress.matchHost]
                     } else {
-                        const httpsPassthrough = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_PASSTHROUGH")
-                        gtwConfigured = !httpsPassthrough[ingress.matchHost]
+                        const httpsPassthroughGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_PASSTHROUGH")
+                        gtwConfigured = httpsPassthroughGatewayFound[ingress.matchHost]
                     }
 
-                    // If not available for new gateway config, then it means that we have a match
+                    // If not available for any gateway config, then it means that we have a match
                     if(gtwConfigured) {
                         let targetGtws = []
 
