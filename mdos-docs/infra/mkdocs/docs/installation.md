@@ -338,4 +338,9 @@ mount -a
 
 mkdir -p /media/hdd/sdb1/longhorn
 mkdir -p /media/hdd/sdb2/longhorn
+
+mkdir -p /media/hdd/sdb2/mdos-ftp
+mkdir -p /media/hdd/sdb2/mdos-keycloak
+
+/home/mdundek/tls.crt
 ``` -->
