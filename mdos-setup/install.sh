@@ -222,6 +222,29 @@ collect_user_input() {
         fi
     fi
 
+    # KEYCLOAK STORAGE
+    print_section_title "Keycloak Storage"
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        user_input KEYCLOAK_HOST_PATH "Specify the path where you wish to store the Keycloak database files at (absolute path):"
+        if [[ ${KEYCLOAK_HOST_PATH} =~ $pathRe ]]; then
+            LOOP_BREAK=1
+        else
+            error "Invalid folder path"
+        fi
+    done
+    if [ ! -d $KEYCLOAK_HOST_PATH ]; then
+        warn "This directory path does not exist."
+        set +Ee
+        yes_no CREATE_KC_PATH "Would you like to create this folder?"
+        set -Ee
+        if [ "$CREATE_KC_PATH" == "yes" ]; then
+            mkdir -p $KEYCLOAK_HOST_PATH
+        else
+            exit 1
+        fi
+    fi
+
     # LONGHORN
     print_section_title "Kubernetes Storage"
     context_print "MDos uses Longhorn as the primary storage class for your Kubernetes workload data volumes."
@@ -1126,7 +1149,8 @@ install_keycloak() {
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.mdosRegistry = "registry.'$DOMAIN'"')
 
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].volumes[0].size = "'$KEYCLOAK_VOLUME_SIZE'Gi"')
-
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].volumes[0].hostPath = "'$KEYCLOAK_HOST_PATH'"')
+    
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].secrets[0].entries[0].value = "'$POSTGRES_USER'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_PASSWORD'"')
     KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
