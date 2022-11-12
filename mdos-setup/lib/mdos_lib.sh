@@ -608,8 +608,8 @@ dependencies() {
 
         systemctl enable iscsid &>> $LOG_FILE
 
-        # setenforce 0
-        # sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+        setenforce 0
+        sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
         if ! command -v docker &> /dev/null; then
             yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &>> $LOG_FILE
