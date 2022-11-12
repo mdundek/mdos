@@ -10,8 +10,8 @@ hide:
 
 !!! info
 
-    At the moment, the MDos platform has been tested on `Ubuntu >= 20.04`, `CentOS >= 8` and `Debian >= buster`  
-    Other versions for those 3 distributions might work, but I have not tested them.   
+    At the moment, the MDos platform has been tested on `Ubuntu >= 20.04` and `Debian >= buster`. I am currently working on porting the platform to `CentOS` as well, but it is not ready yet.  
+    Other versions for those 2 distributions might work, but I have not tested them.   
     The MDos CLI is available for `MacOS`, `linux` and `Windows`
 
 First, clone this repo on your target machine:
