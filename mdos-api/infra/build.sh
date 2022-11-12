@@ -108,7 +108,7 @@ if [ ! -z $DO_RESTART ]; then
     sleep 1
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
 
-    echo "kubectl logs $POD_NAME -n mdos"
+    kubectl logs $POD_NAME -n mdos --follow
 fi
 
 # exec_in_pod() {

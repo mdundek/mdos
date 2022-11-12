@@ -170,19 +170,6 @@ class MdosCore extends CommonCore {
                     if(ingress.trafficType == "http") {
                         const httpGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTP")
                         const httpsTerminateGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_SIMPLE")
-
-
-                        console.log(JSON.stringify(ingress, null, 4))
-                        console.log("------------------------------------------")
-                        console.log(JSON.stringify(hostMatrix, null, 4))
-                        console.log("------------------------------------------")
-                        console.log(JSON.stringify(httpGatewayFound, null, 4))
-                        console.log("------------------------------------------")
-                        console.log(JSON.stringify(httpsTerminateGatewayFound, null, 4))
-
-
-
-
                         gtwConfigured = httpGatewayFound[ingress.matchHost] || httpsTerminateGatewayFound[ingress.matchHost]
                     } else {
                         const httpsPassthroughGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_PASSTHROUGH")
@@ -227,8 +214,6 @@ class MdosCore extends CommonCore {
                     return ingress
                 })
 
-                
-               
                 let errorMsgs = []
                 if(ingressInUseErrors.length > 0) {
                     errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))
