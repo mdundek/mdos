@@ -750,8 +750,12 @@ install_longhorn() {
     cp $_DIR/dep/longhorn/chart/values.yaml $_DIR/dep/longhorn/chart/values_backup.yaml
 
     LONGHORN_VALUES="$(cat $_DIR/dep/longhorn/chart/values.yaml)"
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.persistence.defaultClassReplicaCount = 2')
 
     LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.defaultReplicaCount = 2')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.replicaAutoBalance = "least-effort"')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.replicaSoftAntiAffinity = true')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.replicaZoneSoftAntiAffinity = true')
     if [ "$CUSTOM_LH_PATH" == "yes" ]; then
         LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.defaultDataPath = "'$LONGHORN_DEFAULT_DIR'"')
     fi
