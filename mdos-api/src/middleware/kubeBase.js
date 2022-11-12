@@ -805,7 +805,6 @@ class KubeBase extends KubeBaseConstants {
         fs.writeFileSync('./values.yaml', YAML.stringify(values))
 
         try {
-            console.log(this.genericHelmChartPath)
             await this._asyncChildHelmDeploy(
                 `${this.HELM_BASE_CMD} upgrade --install -n ${namespace} --values ./values.yaml ${values.appName} ${this.genericHelmChartPath} --timeout 10m0s --atomic`,
                 processId,
