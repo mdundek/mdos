@@ -2149,6 +2149,7 @@ EOF
         info "Install OAuth2 proxy..."
         install_oauth2_proxy
         set_env_step_data "INST_STEP_OAUTH" "1"
+        sleep 10 # Make sure the new CRDs become available
     fi
 
     # PROTECT LONGHORN UI

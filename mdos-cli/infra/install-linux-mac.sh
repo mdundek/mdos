@@ -70,5 +70,4 @@
     # test the CLI
     LOCATION=$(command -v mdos)
     echo "mdos installed to $LOCATION"
-    mdos --version
 }

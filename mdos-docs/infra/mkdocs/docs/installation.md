@@ -322,8 +322,8 @@ XXX.XXX.XXX.XXX grafana.mydomain.com
 
 ```sh title="Example of disk mounts in linux"
 # Create mount folders
-mkdir -p /media/hdd/sdb1/longhorn
-mkdir -p /media/hdd/sdb2/longhorn
+mkdir -p /media/hdd/sdb1
+mkdir -p /media/hdd/sdb2
 
 # Get partition UUIDs
 lsblk -o NAME,FSTYPE,UUID
@@ -331,8 +331,11 @@ lsblk -o NAME,FSTYPE,UUID
 # Open fstab file
 vi /etc/fstab
 
-echo "UUID=5dd2af09-b490-43bf-a688-e8c5f6a557ef /media/hdd/sdb1/longhorn ext4 defaults 0 2" >> /etc/fstab
-echo "UUID=445d3106-669d-492e-b537-b444e9a666b2 /media/hdd/sdb2/longhorn ext4 defaults 0 2" >> /etc/fstab
+echo "UUID=5dd2af09-b490-43bf-a688-e8c5f6a557ef /media/hdd/sdb1 ext4 defaults 0 2" >> /etc/fstab
+echo "UUID=445d3106-669d-492e-b537-b444e9a666b2 /media/hdd/sdb2 ext4 defaults 0 2" >> /etc/fstab
 
 mount -a
+
+mkdir -p /media/hdd/sdb1/longhorn
+mkdir -p /media/hdd/sdb2/longhorn
 ``` -->
