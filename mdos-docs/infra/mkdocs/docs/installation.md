@@ -11,6 +11,7 @@ hide:
 !!! info
 
     At the moment, the MDos platform has been tested on `Ubuntu >= 20.04`, `CentOS >= 8` and `Debian >= buster`  
+    Other versions for those 3 distributions might work, but I have not tested them.   
     The MDos CLI is available for `MacOS`, `linux` and `Windows`
 
 First, clone this repo on your target machine:
@@ -59,6 +60,7 @@ During the installation procedure, you will be asked to provide a few details. Y
     * 2379/tcp
     * 2380/tcp
     * 10250/tcp
+    * 10255/tcp
     * 10259/tcp
     * 10257/tcp
 
@@ -235,8 +237,11 @@ INFO: Done!
 
     * 443/tcp
     * 6443/tcp
+    * 2379/tcp
+    * 2380/tcp
     * 30999/tcp
     * 10250/tcp
+    * 10255/tcp
 
 ---
 

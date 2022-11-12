@@ -156,6 +156,7 @@ init_firewall() {
     else
         warn "Configure your firewall to allow traffic on the following ports:"
         if [ "$1" == "master" ]; then
+            context_print "          * 179/tcp"
             context_print "          * 443/tcp"
             context_print "          * 6443/tcp"
             context_print "          * 30999/tcp"
@@ -165,18 +166,21 @@ init_firewall() {
             context_print "          * 3918/tcp"
             context_print "          * 3919/tcp"
             context_print "          * 3920/tcp"
-            context_print "          * 179/tcp"
             context_print "          * 4789/udp"
             context_print "          * 2379/tcp"
             context_print "          * 2380/tcp"
             context_print "          * 10250/tcp"
+            context_print "          * 10255/tcp"
             context_print "          * 10259/tcp"
             context_print "          * 10257/tcp"
         else
             context_print "          * 443/tcp"
             context_print "          * 6443/tcp"
+            context_print "          * 2379/tcp"
+            context_print "          * 2380/tcp"
             context_print "          * 30999/tcp"
             context_print "          * 10250/tcp"
+            context_print "          * 10255/tcp"
         fi
         echo ""
     fi
@@ -229,6 +233,9 @@ setup_master_firewall() {
             if [ "$(ufw status | grep '10250' | grep 'ALLOW')" == "" ]; then
                 ufw allow 10250 &>> $LOG_FILE
             fi
+            if [ "$(ufw status | grep '10255' | grep 'ALLOW')" == "" ]; then
+                ufw allow 10255 &>> $LOG_FILE
+            fi
             if [ "$(ufw status | grep '10259' | grep 'ALLOW')" == "" ]; then
                 ufw allow 10259 &>> $LOG_FILE
             fi
@@ -279,6 +286,9 @@ setup_master_firewall() {
             if [ "$(firewall-cmd --list-all | grep '10250/tcp')" == "" ]; then
                 firewall-cmd --zone=public --add-port=10250/tcp &>> $LOG_FILE
             fi
+            if [ "$(firewall-cmd --list-all | grep '10255/tcp')" == "" ]; then
+                firewall-cmd --zone=public --add-port=10255/tcp &>> $LOG_FILE
+            fi
             if [ "$(firewall-cmd --list-all | grep '10259/tcp')" == "" ]; then
                 firewall-cmd --zone=public --add-port=10259/tcp &>> $LOG_FILE
             fi
@@ -308,6 +318,15 @@ setup_worker_firewall() {
             if [ "$(ufw status | grep '10250' | grep 'ALLOW')" == "" ]; then
                 ufw allow 10250 &>> $LOG_FILE
             fi
+            if [ "$(ufw status | grep '10255' | grep 'ALLOW')" == "" ]; then
+                ufw allow 10255 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '2379' | grep 'ALLOW')" == "" ]; then
+                ufw allow 2379 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '2380' | grep 'ALLOW')" == "" ]; then
+                ufw allow 2380 &>> $LOG_FILE
+            fi
         fi
     elif command -v firewall-cmd >/dev/null; then
         info "Setting up firewall rules..."
@@ -322,6 +341,15 @@ setup_worker_firewall() {
         fi
         if [ "$(firewall-cmd --list-all | grep '10250/tcp')" == "" ]; then
             firewall-cmd --zone=public --add-port=10250/tcp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '10255/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=10255/tcp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '2379/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=2379/tcp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '2380/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=2380/tcp &>> $LOG_FILE
         fi
         firewall-cmd --permanent --add-masquerade &>> $LOG_FILE
         firewall-cmd --reload &>> $LOG_FILE
@@ -580,8 +608,8 @@ dependencies() {
 
         systemctl enable iscsid &>> $LOG_FILE
 
-        setenforce 0
-        sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+        # setenforce 0
+        # sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
         if ! command -v docker &> /dev/null; then
             yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &>> $LOG_FILE
