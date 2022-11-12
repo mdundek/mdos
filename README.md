@@ -103,6 +103,7 @@ Therefore, build your applications using higher level artefacts that will transl
 * Register Cert-Manager Issuers onto your cluster or namespace
 * Generate and manage certificates / secrets from your Issuers
 
-## Documentation
+## Installation & Documentation
 
-Detailed documentation can be found [here](https://mdundek.github.io/mdos/)
+The project documentation is hosted separately, you can access it [here](https://mdundek.github.io/mdos/)  
+Instructions on how to install the platform is also described there, please refer to [this](https://mdundek.github.io/mdos/installation/) page for more details.
