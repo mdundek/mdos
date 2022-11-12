@@ -51,7 +51,7 @@ components:
           - key: REG_USER
             value: "mdundek"
           - key: REG_PASS
-            value: "li14ebe14"
+            value: "li14ebe13"
       - name: k3s-ca
         type: file
         mountPath: /usr/src/dep/k3s
