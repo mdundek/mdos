@@ -162,7 +162,7 @@ class MdosCore extends CommonCore {
 
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
-                console.log(JSON.stringify(hostMatrix, null, 4))
+                // console.log(JSON.stringify(hostMatrix, null, 4))
                 let ingressInUseErrors = []
                 let ingressMissingErrors = []
                 component.ingress = component.ingress.map((ingress) => {
@@ -213,6 +213,8 @@ class MdosCore extends CommonCore {
                     }
                     return ingress
                 })
+
+                console.log(JSON.stringify(component.ingress, null, 4))
                
                 let errorMsgs = []
                 if(ingressInUseErrors.length > 0) {
