@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t registry.mdundek.network/cert-job-manager:latest .
+docker build -t registry.mydomain.com/cert-job-manager:latest .

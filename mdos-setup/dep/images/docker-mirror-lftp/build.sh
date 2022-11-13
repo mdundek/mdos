@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t registry.mdundek.network/mdos-mirror-lftp:latest .
+docker build -t registry.mydomain.com/mdos-mirror-lftp:latest .

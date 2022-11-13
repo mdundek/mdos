@@ -2,7 +2,7 @@ version: '3'
 
 services:
   mdos_ftpd_server:
-    image: registry.mdundek.network/mdos-ftp-bot:latest
+    image: registry.mydomain.com/mdos-ftp-bot:latest
     container_name: mdos-ftpd-bot
     ports:
       - "3039:3039"

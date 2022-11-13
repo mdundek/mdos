@@ -11,7 +11,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
-DOMAIN=mdundek.network
+DOMAIN=mydomain.com
 
 cd ..
 

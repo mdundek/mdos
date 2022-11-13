@@ -20,7 +20,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
-DOMAIN=mdundek.network
+DOMAIN=mydomain.com
 
 # ############### MDOS APP DEPLOY ################
 mdos_deploy_app() {
@@ -85,7 +85,7 @@ fi
 cd ./infra
 
 if [ ! -z $DO_DEPLOY ]; then
-    DOMAIN=mdundek.network
+    DOMAIN=mydomain.com
     OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 

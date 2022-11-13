@@ -23,6 +23,6 @@ components:
           - port: 80
     ingress:
       - name: main
-        matchHost: foo.mdundek.network
+        matchHost: foo.mydomain.com
         targetPort: 80
         trafficType: http
