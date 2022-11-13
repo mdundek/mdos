@@ -656,9 +656,6 @@ class Keycloak {
         })
 
         const userUuid = responseAllUsers.data.find((u) => u.username == userName).id
-
-        await new Promise(r => setTimeout(r, 2000));
-
         accessToken = await this._getAccessToken()
 
         await axios.put(
@@ -676,13 +673,6 @@ class Keycloak {
                 },
             }
         )
-
-        console.log(`https://keycloak.${this.rootDomain}:${process.env.KC_PORT}/admin/realms/mdos/users/${userUuid}/reset-password`)
-        console.log(JSON.stringify({
-            type: 'password',
-            value: password,
-            temporary: false,
-        }))
     }
 
     /**
