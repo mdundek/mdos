@@ -156,31 +156,33 @@ init_firewall() {
     else
         warn "Configure your firewall to allow traffic on the following ports:"
         if [ "$1" == "master" ]; then
-            context_print "          * 179/tcp"
-            context_print "          * 443/tcp"
-            context_print "          * 6443/tcp"
-            context_print "          * 30999/tcp"
-            context_print "          * 3915/tcp"
-            context_print "          * 3916/tcp"
-            context_print "          * 3917/tcp"
-            context_print "          * 3918/tcp"
-            context_print "          * 3919/tcp"
-            context_print "          * 3920/tcp"
-            context_print "          * 4789/udp"
-            context_print "          * 2379/tcp"
-            context_print "          * 2380/tcp"
-            context_print "          * 10250/tcp"
-            context_print "          * 10255/tcp"
-            context_print "          * 10259/tcp"
-            context_print "          * 10257/tcp"
+            context_print "          * 179   / TCP"
+            context_print "          * 443   / TCP"
+            context_print "          * 6443  / TCP"
+            context_print "          * 30999 / TCP"
+            context_print "          * 3915  / TCP"
+            context_print "          * 3916  / TCP"
+            context_print "          * 3917  / TCP"
+            context_print "          * 3918  / TCP"
+            context_print "          * 3919  / TCP"
+            context_print "          * 3920  / TCP"
+            context_print "          * 2379  / TCP"
+            context_print "          * 2380  / TCP"
+            context_print "          * 10250 / TCP"
+            context_print "          * 10255 / TCP"
+            context_print "          * 10259 / TCP"
+            context_print "          * 10257 / TCP"
+            context_print "          * 4789  / UDP"
         else
-            context_print "          * 443/tcp"
-            context_print "          * 6443/tcp"
-            context_print "          * 2379/tcp"
-            context_print "          * 2380/tcp"
-            context_print "          * 30999/tcp"
-            context_print "          * 10250/tcp"
-            context_print "          * 10255/tcp"
+            context_print "          * 179   / TCP"
+            context_print "          * 443   / TCP"
+            context_print "          * 6443  / TCP"
+            context_print "          * 2379  / TCP"
+            context_print "          * 2380  / TCP"
+            context_print "          * 30999 / TCP"
+            context_print "          * 10250 / TCP"
+            context_print "          * 10255 / TCP"
+            context_print "          * 4789  / UDP"
         fi
         echo ""
     fi
@@ -327,6 +329,12 @@ setup_worker_firewall() {
             if [ "$(ufw status | grep '2380' | grep 'ALLOW')" == "" ]; then
                 ufw allow 2380 &>> $LOG_FILE
             fi
+            if [ "$(ufw status | grep '4789' | grep 'ALLOW')" == "" ]; then
+                ufw allow 4789 &>> $LOG_FILE
+            fi
+            if [ "$(ufw status | grep '179' | grep 'ALLOW')" == "" ]; then
+                ufw allow 179 &>> $LOG_FILE
+            fi
         fi
     elif command -v firewall-cmd >/dev/null; then
         info "Setting up firewall rules..."
@@ -350,6 +358,12 @@ setup_worker_firewall() {
         fi
         if [ "$(firewall-cmd --list-all | grep '2380/tcp')" == "" ]; then
             firewall-cmd --zone=public --add-port=2380/tcp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '4789/udp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=4789/udp &>> $LOG_FILE
+        fi
+        if [ "$(firewall-cmd --list-all | grep '179/tcp')" == "" ]; then
+            firewall-cmd --zone=public --add-port=179/tcp &>> $LOG_FILE
         fi
         firewall-cmd --permanent --add-masquerade &>> $LOG_FILE
         firewall-cmd --reload &>> $LOG_FILE
