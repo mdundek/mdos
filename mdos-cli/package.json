@@ -109,6 +109,7 @@
     },
     "scripts": {
         "package": "oclif pack tarballs",
+        "package-win": "oclif pack win",
         "build": "shx rm -rf dist && tsc -b && cp -r ./src/lib ./dist",
         "lint": "eslint . --ext .ts --config .eslintrc",
         "postpack": "shx rm -f oclif.manifest.json",
