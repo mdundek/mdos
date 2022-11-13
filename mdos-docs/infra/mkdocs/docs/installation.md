@@ -10,8 +10,9 @@ hide:
 
 !!! info
 
-    At the moment, only Ubuntu >= 20.04 is supported for the MDos platform itself. Debian and Alpine are planned next.
-    The MDos CLI is available for Max, linux and Windows
+    At the moment, the MDos platform has been tested on `Ubuntu >= 20.04` and `Debian >= buster`. I am currently working on porting the platform to `CentOS` as well, but it is not ready yet.  
+    Other versions for those 2 distributions might work, but I have not tested them.   
+    The MDos CLI is available for `MacOS`, `linux` and `Windows`
 
 First, clone this repo on your target machine:
 
@@ -21,9 +22,24 @@ git clone https://github.com/mdundek/mdos.git
 
 ### Before you start
 
-The installation will require that you configure a valid domain name and a certificate for the mdos base platform (for developement purposes you can choose to work with a self-signed certificate).
+The installation will require that you configure a valid __domain name__ and a certificate for the mdos base platform (for developement purposes you can choose to work with a self-signed certificate and by editing your `/etc/hosts` file. This will prevent certain features to work, such as SSO for instance. It is recommended to have a real domain name and a valid certificate for the full experience).
 
 If you plan on using `cert-manager` to manage your certificate, then you will have to prepare a `Issuer` yaml file upfront before you go ahead and start the installation script (see bellow for an example using a CloudFlare issuer).
+
+!!! warning "LoadBalancers & Ports"
+
+    You will have to ensure that traffic to the following ports is routed for the following domain names from anywhere you wish to interact with the MDos platform from. So if you have load balancers in place, please route the following traffic for the following domains & ports to your target node IP address:  
+
+    | Domain                        | Port      | Description  |
+    | :---------------------------: | --------- | ------------ |
+    | __keycloak__.YOUR_DOMAIN      | 30999     | User to administer your Keycloak instance and to authenticate your users |
+    | __mdos-api__.YOUR_DOMAIN      | 443       | The MDos API platform REST interface, used by the MDos CLI |
+    | __mdos-ftp-api__.YOUR_DOMAIN  | 443       | The MDOs FTP Server admin API REST interface, used by the MDos CLI & Controller |
+    | __mdos-ftp__.YOUR_DOMAIN      | 3915-3920 | The FTP Ports used to transfer data to / from the FTP server |
+    | __registry__.YOUR_DOMAIN      | 443       | The private Docker registry |
+    | __registry-auth__.YOUR_DOMAIN | 443       | The private Docker registry authentication server |
+    | __longhorn__.YOUR_DOMAIN      | 443       | Longhorn storage solution administrative console |
+    | __grafana__.YOUR_DOMAIN       | 443       | Grafana Dashboard for your Loki log aggregator |
 
 ### Master node & MDos control plane
 
@@ -33,9 +49,31 @@ Install the platform by calling the following script as root:
 sudo ./mdos-setup/install.sh
 ```
 
+The MDos platform has a few dependencies, you will need to consent so that the script is allowed to install and configure those dependencies:
+
+<img src="/mdos/img/installation/dependencies.png" alt="ip" width="500"/>
+
 During the installation procedure, you will be asked to provide a few details. You will have to start by providing your MDos platform host IP address. Then select if you would like to automatically configure the host firewall in order to allow the required traffic policies for MDos.
 
 <img src="/mdos/img/installation/ip.png" alt="ip" width="600"/>
+
+!!! info "Firewall rules"
+
+    If you choose to NOT let the script configure your firewall, then configure the following firewall rules to allow the platform to run properly:
+
+    | Port          | Protocol | Description  |
+    | :-----------: | :------: | ------------ |
+    | 443           | TCP      | Kubernetes hosted applications, routed through the Ingress LoadBalancer Port |
+    | 6443          | TCP      | Kube-API REST server  |
+    | 30999         | TCP      | Keycloak NodePort, needed to circumvent IstioIngress for OAuth2 purposes |
+    | 3915 - 3920   | TCP      | MDos FTP Server port |
+    | 179           | TCP      | Calico BGP Port |
+    | 4789          | UDP      | Calico networking with VXLAN enabled |
+    | 2379          | TCP      | etcd client requests |
+    | 2380          | TCP      | etcd peer communication |
+    | 10250         | TCP      | Anonymous authentication is disabled. X509 client certificate is required |
+    | 10255         | TCP      | Read only port for the Kubelet. |
+    | 10259 & 10257 | TCP      | Serve HTTPS with authentication and authorization. |
 
 #### :material-arrow-right-thin: Administrator credentials 
 
@@ -176,9 +214,49 @@ To add a new worker node to your mdos cluster deployment, clone the `mdso` repo 
 sudo ./mdos-setup/install-worker.sh
 ```
 
-!!! warning
+This process is straight forward. Simply follow the instructions and you will have a new worker node in your cluster:
 
-    Under construction
+```sh
+INFO: Update system and install dependencies...
+Your firewall is currently disabled.
+Do you want to enable it now and configure the necessary ports for the platform?
+>   Yes 
+>   No 
+
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+
+MDos K3S master node host IP address: 192.168.50.177
+
+To allow this worker node to join the MDos K3S Cluster, a "Node-token" is required.
+You can find this token on the Master node by executing the command:
+
+sudo cat /var/lib/rancher/k3s/server/node-token
+
+K3S Master node-token: K1006ae41f56fc2f08eeb1d3ead2863347bc9785a9672f12fd31cb310cc0a9658ea::server:a6b26d8340c023c847e86b64b66416154684
+
+INFO: Installing K3S worker node...
+INFO: Setting up firewall rules...
+INFO: Cleaning up...
+Log details of the installation can be found here: /root/11_11_2022_10_29_37_mdos_install.log
+INFO: Done!
+```
+
+!!! info "Firewall rules"
+
+    If you choose to not let the script configure your firewall, the configure the following firewall rules to allow the platform to run:
+
+    | Port  | Protocol | Description  |
+    | :---: | -------- | ------------ |
+    | 443   | TCP      | Kubernetes hosted applications, routed through the Ingress LoadBalancer Port |
+    | 6443  | TCP      | Kube-API REST server  |
+    | 30999 | TCP      | Keycloak NodePort, needed to circumvent IstioIngress for OAuth2 purposes |
+    | 179   | TCP      | Calico BGP Port |
+    | 4789  | UDP      | Calico networking with VXLAN enabled |
+    | 2379  | TCP      | etcd client requests |
+    | 2380  | TCP      | etcd peer communication |
+    | 10250 | TCP      | Anonymous authentication is disabled. X509 client certificate is required |
+    | 10255 | TCP      | Read only port for the Kubelet. |
 
 ---
 
@@ -192,7 +270,7 @@ To set up the CLI in `/usr/local/lib/mdos` and `/usr/local/bin/mdos`, run the fo
 
 ```sh
 # Install latest version
-curl https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh | sudo bash
+curl -s https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh | sudo bash
 ```
 
 To install a specific version of the CLI, do:
@@ -201,7 +279,7 @@ To install a specific version of the CLI, do:
 # NOTE: the version in this example might be outdated. This example is simply to 
 # showcase how you can install a specific version of the CLI in case your mdos server
 # installation is on an older version
-curl https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh | sudo bash -s -- v1.2.0
+curl -s https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh | sudo bash -s -- v1.2.0
 ```
 
 ### Windows
@@ -259,8 +337,8 @@ XXX.XXX.XXX.XXX grafana.mydomain.com
 
 ```sh title="Example of disk mounts in linux"
 # Create mount folders
-mkdir -p /media/hdd/sdb1/longhorn
-mkdir -p /media/hdd/sdb2/longhorn
+mkdir -p /media/hdd/sdb1
+mkdir -p /media/hdd/sdb2
 
 # Get partition UUIDs
 lsblk -o NAME,FSTYPE,UUID
@@ -268,8 +346,16 @@ lsblk -o NAME,FSTYPE,UUID
 # Open fstab file
 vi /etc/fstab
 
-echo "UUID=5dd2af09-b490-43bf-a688-e8c5f6a557ef /media/hdd/sdb1/longhorn ext4 defaults 0 2" >> /etc/fstab
-echo "UUID=445d3106-669d-492e-b537-b444e9a666b2 /media/hdd/sdb2/longhorn ext4 defaults 0 2" >> /etc/fstab
+echo "UUID=5dd2af09-b490-43bf-a688-e8c5f6a557ef /media/hdd/sdb1 ext4 defaults 0 2" >> /etc/fstab
+echo "UUID=445d3106-669d-492e-b537-b444e9a666b2 /media/hdd/sdb2 ext4 defaults 0 2" >> /etc/fstab
 
 mount -a
+
+mkdir -p /media/hdd/sdb1/longhorn
+mkdir -p /media/hdd/sdb2/longhorn
+
+mkdir -p /media/hdd/sdb2/mdos-ftp
+mkdir -p /media/hdd/sdb2/mdos-keycloak
+
+/home/mdundek/tls.crt
 ``` -->

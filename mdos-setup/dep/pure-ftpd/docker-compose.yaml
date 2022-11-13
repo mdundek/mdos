@@ -16,9 +16,9 @@ services:
     environment:
       FTP_HOME_ROOT: /home/ftp_data
       M2M_USER: mdundek
-      M2M_PASSWORD: li14ebe14
+      M2M_PASSWORD: supersecret
       FTP_SERVER_MAIN_PORT: "3915"
       FTP_PASSIVE_PORTS: 3916:3920
-      PUBLICHOST: "mdos-ftp.mdundek.network"
+      PUBLICHOST: "mdos-ftp.mydomain.com"
       # ADDED_FLAGS: "--tls=2"
     restart: always

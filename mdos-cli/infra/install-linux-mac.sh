@@ -14,7 +14,7 @@
     if [ ! -z $1 ]; then
         CLI_VERSION=$1
     else
-        CLI_VERSION=v1.4.0
+        CLI_VERSION=v1.5.0
     fi
 
     if [[ ! ":$PATH:" == *":/usr/local/bin:"* ]]; then
@@ -70,5 +70,4 @@
     # test the CLI
     LOCATION=$(command -v mdos)
     echo "mdos installed to $LOCATION"
-    mdos --version
 }

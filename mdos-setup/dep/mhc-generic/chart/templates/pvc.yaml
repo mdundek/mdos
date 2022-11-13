@@ -21,8 +21,11 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+          {{- if .storageClass }}
+  storageClassName: {{ .storageClass | quote }}
+          {{- else }}
   storageClassName: "longhorn"
-      
+          {{- end }}
   resources:
     requests:
           {{- if .size }}

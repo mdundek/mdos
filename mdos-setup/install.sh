@@ -25,6 +25,9 @@ echo '
                                                            
 '     
 
+# Make sure connectivity to the internet is ok
+internet_check
+
 # Os checks
 os_check
 
@@ -89,9 +92,6 @@ if [ -f $INST_ENV_PATH ]; then
 else
     touch $HOME/.mdos/install.dat
 fi
-
-# Set up firewall
-init_firewall
 
 # ############################################
 # ############# COLLECT USER DATA ############
@@ -163,7 +163,7 @@ collect_user_input() {
         while [ -z $LOOP_BREAK ]; do
             user_input ISSUER_YAML_PATH "Please enter the absolute path to your Issuer yaml file (ex. /path/to/my-cert-manager-issuer.yaml):"
             if [ -f $ISSUER_YAML_PATH ]; then
-                ISSUER_NAME=$(cat $ISSUER_YAML_PATH | yq eval 'select(.kind == "Issuer") | .metadata.name')
+                ISSUER_NAME=$(cat $ISSUER_YAML_PATH | /usr/local/bin/yq eval 'select(.kind == "Issuer") | .metadata.name')
                 if [ "$ISSUER_NAME" != "mdos-issuer" ]; then
                     error "Issuer name has to be \"mdos-issuer\" (metadata.name: mdos-issuer)"
                 else
@@ -219,6 +219,29 @@ collect_user_input() {
             PROV_CERT_IS_SELFSIGNED=1
         else
             unset PROV_CERT_IS_SELFSIGNED
+        fi
+    fi
+
+    # KEYCLOAK STORAGE
+    print_section_title "Keycloak Storage"
+    unset LOOP_BREAK
+    while [ -z $LOOP_BREAK ]; do
+        user_input KEYCLOAK_HOST_PATH "Specify the path where you wish to store the Keycloak database files at (absolute path):"
+        if [[ ${KEYCLOAK_HOST_PATH} =~ $pathRe ]]; then
+            LOOP_BREAK=1
+        else
+            error "Invalid folder path"
+        fi
+    done
+    if [ ! -d $KEYCLOAK_HOST_PATH ]; then
+        warn "This directory path does not exist."
+        set +Ee
+        yes_no CREATE_KC_PATH "Would you like to create this folder?"
+        set -Ee
+        if [ "$CREATE_KC_PATH" == "yes" ]; then
+            mkdir -p $KEYCLOAK_HOST_PATH
+        else
+            exit 1
         fi
     fi
 
@@ -336,72 +359,12 @@ collect_user_input() {
 }
 
 # ############################################
-# ################# FIREWALL #################
-# ############################################
-setup_master_firewall() {
-    # Enable firewall ports if necessary for NGinx port forwarding proxy to istio HTTPS ingress gateway
-    if [ "$USE_FIREWALL" == "yes" ]; then
-        if command -v ufw >/dev/null; then
-            info "Setting up firewall rules..."
-            if [ "$(ufw status | grep 'HTTPS\|443' | grep 'ALLOW')" == "" ]; then
-                ufw allow 443 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep 'HTTPS\|6443' | grep 'ALLOW')" == "" ]; then
-                ufw allow 6443 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep 'HTTPS\|30999' | grep 'ALLOW')" == "" ]; then
-                ufw allow 30999 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '3915' | grep 'ALLOW')" == "" ]; then
-                ufw allow 3915 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '3916' | grep 'ALLOW')" == "" ]; then
-                ufw allow 3916 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '3917' | grep 'ALLOW')" == "" ]; then
-                ufw allow 3917 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '3918' | grep 'ALLOW')" == "" ]; then
-                ufw allow 3918 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '3919' | grep 'ALLOW')" == "" ]; then
-                ufw allow 3919 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '3920' | grep 'ALLOW')" == "" ]; then
-                ufw allow 3920 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '179' | grep 'ALLOW')" == "" ]; then
-                ufw allow 179 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '4789' | grep 'ALLOW')" == "" ]; then
-                ufw allow 4789 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '2379' | grep 'ALLOW')" == "" ]; then
-                ufw allow 2379 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '2380' | grep 'ALLOW')" == "" ]; then
-                ufw allow 2380 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '10250' | grep 'ALLOW')" == "" ]; then
-                ufw allow 10250 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '10259' | grep 'ALLOW')" == "" ]; then
-                ufw allow 10259 &>> $LOG_FILE
-            fi
-            if [ "$(ufw status | grep '10257' | grep 'ALLOW')" == "" ]; then
-                ufw allow 10257 &>> $LOG_FILE
-            fi
-        fi
-    fi
-}
-
-# ############################################
 # ############### CERT MANAGER ###############
 # ############################################
 setup_cert_manager() {
-    helm repo add jetstack https://charts.jetstack.io &>> $LOG_FILE
-    helm repo update &>> $LOG_FILE
-    helm install cert-manager jetstack/cert-manager \
+    $helm repo add jetstack https://charts.jetstack.io &>> $LOG_FILE
+    $helm repo update &>> $LOG_FILE
+    $helm install cert-manager jetstack/cert-manager \
         --namespace cert-manager \
         --create-namespace \
         --version v1.9.1 \
@@ -430,7 +393,7 @@ setup_cert_manager() {
                     CM_POD_UP=1
                 fi
             fi
-        done < <(kubectl get pods -n cert-manager 2>/dev/null)
+        done < <($kubectl get pods -n cert-manager 2>/dev/null)
         if [ ! -z $CM_POD_UP ] && [ ! -z $CM_INJ_POD_UP ] && [ ! -z $CM_WEBHOOK_POD_UP ]; then
             FOUND_RUNNING_POD=1
         fi
@@ -442,15 +405,15 @@ setup_cert_manager() {
 # ############ PREPARE NAMESPACES ############
 # ############################################
 prepare_namespaces(){
-    kubectl create ns mdos > /dev/null 2>&1 || true
-    kubectl create ns mdos-registry > /dev/null 2>&1 || true
-    kubectl create ns keycloak > /dev/null 2>&1 || true
+    $kubectl create ns mdos > /dev/null 2>&1 || true
+    $kubectl create ns mdos-registry > /dev/null 2>&1 || true
+    $kubectl create ns keycloak > /dev/null 2>&1 || true
 
     # Registry secret
     unset ELM_EXISTS
     k8s_ns_scope_exist ELM_EXISTS secret "regcred" "mdos"
     if [ -z $ELM_EXISTS ]; then
-        kubectl create secret docker-registry \
+        $kubectl create secret docker-registry \
             regcred \
             --docker-server=registry.$DOMAIN \
             --docker-username=$KEYCLOAK_USER \
@@ -463,7 +426,7 @@ prepare_namespaces(){
         unset ELM_EXISTS
         k8s_ns_scope_exist ELM_EXISTS secret "mdos-root-domain-tls" "mdos"
         if [ -z $ELM_EXISTS ]; then
-            kubectl create -n mdos secret tls mdos-root-domain-tls --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
+            $kubectl create -n mdos secret tls mdos-root-domain-tls --key=$SSL_ROOT/$PRIVKEY_FNAME --cert=$SSL_ROOT/$FULLCHAIN_FNAME &>> $LOG_FILE
         fi
     fi
 
@@ -471,7 +434,7 @@ prepare_namespaces(){
     unset ELM_EXISTS
     k8s_ns_scope_exist ELM_EXISTS secret "default" "mdos"
     if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+        cat <<EOF | $kubectl create -f &>> $LOG_FILE -
 apiVersion: v1
 kind: Secret
 metadata:
@@ -487,7 +450,7 @@ EOF
     unset ELM_EXISTS
     k8s_cluster_scope_exist ELM_EXISTS clusterrole "mdos-admin-role"
     if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+        cat <<EOF | $kubectl create -f &>> $LOG_FILE -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -509,7 +472,7 @@ EOF
     # Admin role binding
     k8s_cluster_scope_exist ELM_EXISTS clusterrolebinding "mdos-admin-role-binding"
     if [ -z $ELM_EXISTS ]; then
-        cat <<EOF | kubectl create -f &>> $LOG_FILE -
+        cat <<EOF | $kubectl create -f &>> $LOG_FILE -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -532,12 +495,12 @@ EOF
 cert_manager_mdos_issuer_and_crt_secret() {
     # Install Issuer (Secret + Issuer)
     info "Configure mdos cert-manager issuer..."
-    kubectl apply -f $ISSUER_YAML_PATH -n mdos &>> $LOG_FILE
+    $kubectl apply -f $ISSUER_YAML_PATH -n mdos &>> $LOG_FILE
 
     # Waiting for issuer to become ready
     unset LOOP_BREAK
     while [ -z $LOOP_BREAK ]; do
-        ISSUER_STATUS=$(kubectl get issuers -n mdos -o json | jq -r '.items[0].status.conditions[0].type')
+        ISSUER_STATUS=$($kubectl get issuers -n mdos -o json | jq -r '.items[0].status.conditions[0].type')
         if [ "$ISSUER_STATUS" == "Ready" ]; then
             LOOP_BREAK=1
         else
@@ -547,7 +510,7 @@ cert_manager_mdos_issuer_and_crt_secret() {
     
     # Create certificate
     info "Create MDos certificate using issuer for domain $DOMAIN..."
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -565,7 +528,7 @@ spec:
 EOF
 
     # Waiting for certificate to become available
-    while [ "$(kubectl get secret -n mdos | grep 'mdos-root-domain-tls')" == "" ]; do
+    while [ "$($kubectl get secret -n mdos | grep 'mdos-root-domain-tls')" == "" ]; do
         sleep 3
         ATTEMPTS=$((ATTEMPTS+1))
         if [ "$ATTEMPTS" -gt 100 ]; then
@@ -582,14 +545,14 @@ mdos_secret_replicator_job() {
 
     # Load image to containerd image context
     docker save registry.$DOMAIN/cert-manager-replicate-bot:latest > ./cert-manager-replicate-bot.tar
-    k3s ctr images import ./cert-manager-replicate-bot.tar &>> $LOG_FILE
+    $k3s ctr images import ./cert-manager-replicate-bot.tar &>> $LOG_FILE
     rm -rf ./cert-manager-replicate-bot.tar
     cd ../../..
 
     # Export certificate
     info "Create Kubernetes CronJob to export certificate for third party components..."
     mkdir -p /etc/letsencrypt/live/$DOMAIN
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: batch/v1
 kind: Job
 metadata: 
@@ -607,7 +570,7 @@ spec:
         command:
         - /bin/sh
         - -c
-        - kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=mdos-registry -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=keycloak -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=istio-system -f -
+        - $kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=mdos-registry -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=keycloak -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=istio-system -f -
       imagePullSecrets:
       - name: regcred
 EOF
@@ -615,7 +578,7 @@ EOF
     # Waiting for issuer to become ready
     unset LOOP_BREAK
     while [ -z $LOOP_BREAK ]; do
-        JOB_STATUS=$(kubectl get job mdos-crt-export-job -n mdos -o json | jq -r '.status.conditions[0].type')
+        JOB_STATUS=$($kubectl get job mdos-crt-export-job -n mdos -o json | jq -r '.status.conditions[0].type')
         if [ "$JOB_STATUS" == "Complete" ]; then
             LOOP_BREAK=1
         else
@@ -625,7 +588,7 @@ EOF
 
     # Now schedule a chronJob in Kubernetes to export the generated certificate once a day to
     # the local filesystem so that other services such as Keycloak and the FTP server can use it as well
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -645,7 +608,7 @@ spec:
             command:
             - /bin/sh
             - -c
-            - kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=mdos-registry -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=keycloak -f -;kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | kubectl apply --namespace=istio-system -f -
+            - $kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | $kubectl apply --namespace=mdos-registry -f -;$kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | $kubectl apply --namespace=keycloak -f -;$kubectl get secret mdos-root-domain-tls -n mdos -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s' | $kubectl apply --namespace=istio-system -f -
           imagePullSecrets:
           - name: regcred
 EOF
@@ -741,9 +704,22 @@ install_k3s() {
         fi
     done
 
+    # Make sure kubectl is installed
+    set -Ee
+    if ! command -v kubectl >/dev/null; then
+        if [ ! -f /usr/local/bin/kubectl ]; then
+            curl -LO "https://dl.k8s.io/release/v1.24.6/bin/linux/amd64/kubectl"
+            install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+        fi
+        kubectl="/usr/local/bin/kubectl"
+    else
+        kubectl=$(whereis kubectl | cut -d: -f2 | xargs)
+    fi
+    set +Ee
+
     # Install Calico
-    kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml &>> $LOG_FILE
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    $kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml &>> $LOG_FILE
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: operator.tigera.io/v1
 kind: Installation
 metadata:
@@ -767,7 +743,7 @@ EOF
 
     info "Waiting for kubernetes to become ready..."
     ATTEMPTS=0
-    while [ "$(kubectl get node | grep 'NotReady')" != "" ]; do
+    while [ "$($kubectl get node | grep 'NotReady')" != "" ]; do
         sleep 3
         ATTEMPTS=$((ATTEMPTS+1))
         if [ "$ATTEMPTS" -gt 100 ]; then
@@ -777,31 +753,43 @@ EOF
     done
 
     # Restart codedns to make sure external dns resolution works
-    kubectl -n kube-system rollout restart deployment coredns &>> $LOG_FILE
+    $kubectl -n kube-system rollout restart deployment coredns &>> $LOG_FILE
     sleep 10
 
     # Add label to master node to allow specific pods
     # to be scheduled on this node always
-    kubectl label nodes $(hostname) mdos-stack=true &>> $LOG_FILE
+    $kubectl label nodes $(hostname) mdos-stack=true &>> $LOG_FILE
 }
 
 # ############################################
 # ############# INSTALL LONGHORN #############
 # ############################################
 install_longhorn() {
+    $kubectl create namespace longhorn-system &>> $LOG_FILE
+    if [ "$PSYSTEM" == "DNF" ]; then
+        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.2.1/deploy/prerequisite/longhorn-iscsi-installation.yaml &>> $LOG_FILE
+        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.2.1/deploy/prerequisite/longhorn-nfs-installation.yaml &>> $LOG_FILE
+    fi
     cp $_DIR/dep/longhorn/chart/values.yaml $_DIR/dep/longhorn/chart/values_backup.yaml
 
     LONGHORN_VALUES="$(cat $_DIR/dep/longhorn/chart/values.yaml)"
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.persistence.defaultClassReplicaCount = 1')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.persistence.defaultDataLocality = "best-effort"')
 
-    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.defaultReplicaCount = 2')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.defaultReplicaCount = 1')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.replicaAutoBalance = "least-effort"')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.replicaSoftAntiAffinity = true')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.replicaZoneSoftAntiAffinity = true')
+    LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.defaultDataLocality = "best-effort"')
+    
     if [ "$CUSTOM_LH_PATH" == "yes" ]; then
-        LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | yq '.defaultSettings.defaultDataPath = "'$LONGHORN_DEFAULT_DIR'"')
+        LONGHORN_VALUES=$(echo "$LONGHORN_VALUES" | /usr/local/bin/yq '.defaultSettings.defaultDataPath = "'$LONGHORN_DEFAULT_DIR'"')
     fi
 
     printf "$LONGHORN_VALUES\n" > $_DIR/dep/longhorn/chart/values.yaml
 
-    helm install longhorn $_DIR/dep/longhorn/chart --values $_DIR/dep/longhorn/chart/values.yaml \
-        --namespace longhorn-system --create-namespace --atomic &>> $LOG_FILE
+    $helm install longhorn $_DIR/dep/longhorn/chart --values $_DIR/dep/longhorn/chart/values.yaml \
+        --namespace longhorn-system --atomic &>> $LOG_FILE
 
     rm -rf $_DIR/dep/longhorn/chart/values.yaml
     mv $_DIR/dep/longhorn/chart/values_backup.yaml $_DIR/dep/longhorn/chart/values.yaml
@@ -816,7 +804,7 @@ setup_longhorn_vs() {
     # Create Virtual Service
     set +Ee
     while [ -z $VS_SUCCESS ]; do
-        cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+        cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
@@ -850,7 +838,7 @@ EOF
 # ############# PROTEECT LONGHORN ############
 # ############################################
 protect_longhorn() {
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
@@ -893,10 +881,14 @@ EOF
 # ############################################
 install_helm() {
     if ! command -v helm &> /dev/null; then
-        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-        chmod 700 get_helm.sh
-        ./get_helm.sh &>> $LOG_FILE
-        rm -rf ./get_helm.sh
+        if [ ! -f /usr/local/bin/helm ]; then
+            cd dep/helm
+            tar -xf ./helm.tar.gz &>> $LOG_FILE
+            mv ./linux-amd64/helm /usr/local/bin
+            rm -rf ./linux-amd64
+            chmod a+x /usr/local/bin/helm
+            cd ../..
+        fi
     fi
 }
 
@@ -908,11 +900,11 @@ install_istio() {
     unset NS_EXISTS
     check_kube_namespace NS_EXISTS "istio-system"
     if [ -z $NS_EXISTS ]; then
-        kubectl create namespace istio-system &>> $LOG_FILE
+        $kubectl create namespace istio-system &>> $LOG_FILE
     fi
 
     # Install base istio components
-    helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system &>> $LOG_FILE
+    $helm upgrade --install istio-base ./dep/istio_helm/base -n istio-system &>> $LOG_FILE
 
     echo "meshConfig:
   accessLogFile: /dev/stdout
@@ -937,11 +929,11 @@ install_istio() {
       - set-cookie
       - content-type" > $_DIR/istiod-values.yaml
       
-    helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -f $_DIR/istiod-values.yaml -n istio-system &>> $LOG_FILE
+    $helm upgrade --install istiod ./dep/istio_helm/istio-control/istio-discovery -f $_DIR/istiod-values.yaml -n istio-system &>> $LOG_FILE
     rm -rf $_DIR/istiod-values.yaml
 
     ATTEMPTS=0
-    while [ "$(kubectl get pod -n istio-system | grep 'istiod-' | grep 'Running')" == "" ]; do
+    while [ "$($kubectl get pod -n istio-system | grep 'istiod-' | grep 'Running')" == "" ]; do
         sleep 3
         ATTEMPTS=$((ATTEMPTS+1))
         if [ "$ATTEMPTS" -gt 100 ]; then
@@ -950,10 +942,10 @@ install_istio() {
         fi
     done
     
-    helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system &>> $LOG_FILE
+    $helm upgrade --install istio-ingress ./dep/istio_helm/gateways/istio-ingress -n istio-system &>> $LOG_FILE
 
     ATTEMPTS=0
-    while [ "$(kubectl get pod -n istio-system | grep 'istio-ingressgateway-' | grep 'Running')" == "" ]; do
+    while [ "$($kubectl get pod -n istio-system | grep 'istio-ingressgateway-' | grep 'Running')" == "" ]; do
         sleep 3
         ATTEMPTS=$((ATTEMPTS+1))
         if [ "$ATTEMPTS" -gt 100 ]; then
@@ -968,7 +960,7 @@ install_istio() {
 
 deploy_istio_gateways() {
     # Deploy Istio Gateways
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
@@ -1064,16 +1056,16 @@ configs:
 deploy_reg_chart() {
     REG_VALUES="$(cat ./dep/registry/values.yaml)"
 
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
+    REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[0].ingress[0].matchHost = "registry.'$DOMAIN'"')
+    REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[1].ingress[0].matchHost = "registry-auth.'$DOMAIN'"')
+    REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[0].volumes[0].size = "'$REGISTRY_SIZE'Gi"')
+    REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[0].configs[0].entries[2].value = "https://registry-auth.'$DOMAIN'/auth"')
 
     if [ ! -z $NO_DNS ]; then
-        REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
-        REG_VALUES=$(echo "$REG_VALUES" | yq '.components[0].hostAliases[0].hostNames[0] = "registry-auth.'$DOMAIN'"')
+        REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
+        REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].hostNames[0] = "registry-auth.'$DOMAIN'"')
     else
-        REG_VALUES=$(echo "$REG_VALUES" | yq eval 'del(.components[0].hostAliases)')
+        REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq eval 'del(.components[0].hostAliases)')
     fi
 
     # AUTHENTICATION SCRIPT
@@ -1105,7 +1097,7 @@ fi
 EOL
 
     fi
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].configs[1].entries[0].value = "'"$(< ./authentication.sh)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[1].configs[1].entries[0].value = "'"$(< ./authentication.sh)"'"')
     rm -rf ./authentication.sh
 
     # AUTHORIZATION SCRIPT
@@ -1133,7 +1125,7 @@ else
 fi
 EOL
     fi
-    REG_VALUES=$(echo "$REG_VALUES" | yq '.components[1].configs[1].entries[1].value = "'"$(< ./authorization.sh)"'"')
+    REG_VALUES=$(echo "$REG_VALUES" | /usr/local/bin/yq '.components[1].configs[1].entries[1].value = "'"$(< ./authorization.sh)"'"')
     rm -rf ./authorization.sh
 
     printf "$REG_VALUES\n" > ./target_values.yaml
@@ -1153,21 +1145,22 @@ install_keycloak() {
     # Create / update keycloak values.yaml file
     KEYCLOAK_VAL=$(cat ./dep/keycloak/values.yaml)
 
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.registry = "registry.'$DOMAIN'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.mdosRegistry = "registry.'$DOMAIN'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.registry = "registry.'$DOMAIN'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.mdosRegistry = "registry.'$DOMAIN'"')
 
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].volumes[0].size = "'$KEYCLOAK_VOLUME_SIZE'Gi"')
-
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[0].value = "'$POSTGRES_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_PASSWORD'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].volumes[0].size = "'$KEYCLOAK_VOLUME_SIZE'Gi"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].volumes[0].hostPath = "'$KEYCLOAK_HOST_PATH'"')
     
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].ingress[0].matchHost = "keycloak.'$DOMAIN'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
-    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | yq '.components[1].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].secrets[0].entries[0].value = "'$POSTGRES_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].secrets[0].entries[1].value = "'$POSTGRES_PASSWORD'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[0].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
+    
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[1].ingress[0].matchHost = "keycloak.'$DOMAIN'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[1].secrets[0].entries[2].value = "'$KEYCLOAK_USER'"')
+    KEYCLOAK_VAL=$(echo "$KEYCLOAK_VAL" | /usr/local/bin/yq '.components[1].secrets[0].entries[3].value = "'$KEYCLOAK_PASS'"')
 
     collect_api_key() {
         echo ""
@@ -1365,7 +1358,7 @@ install_keycloak() {
         createMdosRole "cm-cluster-issuer"
 
         # Create secret with credentials
-        cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+        cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 kind: Secret
 metadata:
@@ -1411,10 +1404,10 @@ EOF
 # ########### INSTALL OAUTH2-PROXY ###########
 # ############################################
 install_oauth2_proxy() {
-    helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests &>> $LOG_FILE
-    helm repo update &>> $LOG_FILE
-    kubectl create ns oauth2-proxy &>> $LOG_FILE
-    kubectl label ns oauth2-proxy istio-injection=enabled &>> $LOG_FILE
+    $helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests &>> $LOG_FILE
+    $helm repo update &>> $LOG_FILE
+    $kubectl create ns oauth2-proxy &>> $LOG_FILE
+    $kubectl label ns oauth2-proxy istio-injection=enabled &>> $LOG_FILE
 
     echo "service:
   portNumber: 4180
@@ -1458,7 +1451,7 @@ config:
   hostname: \"keycloak.$DOMAIN\"" >> $_DIR/oauth2-proxy-values.yaml
     fi
 
-    helm upgrade --install -n oauth2-proxy \
+    $helm upgrade --install -n oauth2-proxy \
       --version 6.2.7 \
       --values $_DIR/oauth2-proxy-values.yaml \
       kc-mdos oauth2-proxy/oauth2-proxy --atomic &>> $LOG_FILE
@@ -1493,24 +1486,24 @@ install_mdos() {
     K3S_REG_DOMAIN="registry.$DOMAIN"
 
     if [ ! -z $NO_DNS ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
     else
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | yq eval 'del(.components[0].hostAliases)')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq eval 'del(.components[0].hostAliases)')
     fi
 
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.registry = "'$K3S_REG_DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.registry = "'$K3S_REG_DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 
@@ -1523,15 +1516,15 @@ install_mdos() {
 # ############# INSTALL RABBITMQ #############
 # ############################################
 install_rabbitmq() {
-    helm repo add bitnami https://charts.bitnami.com/bitnami &>> $LOG_FILE
-    helm install rabbit-operator bitnami/rabbitmq-cluster-operator --namespace rabbitmq --create-namespace --atomic &>> $LOG_FILE
+    $helm repo add bitnami https://charts.bitnami.com/bitnami &>> $LOG_FILE
+    $helm install rabbit-operator bitnami/rabbitmq-cluster-operator --namespace rabbitmq --create-namespace --atomic &>> $LOG_FILE
 
     # Wait untill available
     unset LOOP_BREAK
     while [ -z $LOOP_BREAK ]; do
-        DEP_STATUS=$(kubectl get deploy rabbit-operator-rabbitmq-cluster-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
+        DEP_STATUS=$($kubectl get deploy rabbit-operator-rabbitmq-cluster-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
         if [ "$DEP_STATUS" == "1" ]; then
-            DEP_STATUS=$(kubectl get deploy rabbit-operator-rabbitmq-messaging-topology-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
+            DEP_STATUS=$($kubectl get deploy rabbit-operator-rabbitmq-messaging-topology-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
             if [ "$DEP_STATUS" == "1" ]; then
                 LOOP_BREAK=1
             else
@@ -1543,7 +1536,7 @@ install_rabbitmq() {
     done 
 
     # Instantiate cluster
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
 metadata:
@@ -1581,7 +1574,7 @@ EOF
     # Wait for pod rabbitmq-cluster-server-0
     unset LOOP_BREAK
     while [ -z $LOOP_BREAK ]; do
-        DEP_STATUS=$(kubectl get pod rabbitmq-cluster-server-0 --namespace rabbitmq -o json 2> $LOG_FILE | jq -r '.status.phase')
+        DEP_STATUS=$($kubectl get pod rabbitmq-cluster-server-0 --namespace rabbitmq -o json 2> $LOG_FILE | jq -r '.status.phase')
         if [ "$DEP_STATUS" == "Running" ]; then
             LOOP_BREAK=1
         else
@@ -1590,10 +1583,10 @@ EOF
     done 
 
     # Copy credentials secret over to mdos namespace
-    SECRET_YAML=$(kubectl get secret rabbitmq-cluster-default-user -n rabbitmq -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s')
-    SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.ownerReferences)')
-    SECRET_YAML=$(echo "$SECRET_YAML" | yq eval 'del(.metadata.labels)')
-    cat <<EOF | k3s kubectl apply -n mdos -f &>> $LOG_FILE -
+    SECRET_YAML=$($kubectl get secret rabbitmq-cluster-default-user -n rabbitmq -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s')
+    SECRET_YAML=$(echo "$SECRET_YAML" | /usr/local/bin/yq eval 'del(.metadata.ownerReferences)')
+    SECRET_YAML=$(echo "$SECRET_YAML" | /usr/local/bin/yq eval 'del(.metadata.labels)')
+    cat <<EOF | $kubectl apply -n mdos -f &>> $LOG_FILE -
 $SECRET_YAML
 EOF
 }
@@ -1602,7 +1595,7 @@ EOF
 # ############ COREDNS DOMAIN CFG ############
 # ############################################
 consigure_core_dns_for_self_signed() {
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -1638,19 +1631,7 @@ EOF
    
     sleep 1
     # Restart the CoreDNS pod
-    unset FOUND_RUNNING_POD
-    while [ -z $FOUND_RUNNING_POD ]; do
-        while read POD_LINE ; do 
-            COREDNS_POD_NAME=`echo "$POD_LINE" | awk 'END {print $1}'`
-            POD_STATUS=`echo "$POD_LINE" | awk 'END {print $3}'`
-            if [ "$POD_STATUS" == "Running" ]; then
-                FOUND_RUNNING_POD=1
-            fi
-        done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
-        sleep 1
-    done
-    
-    kubectl delete pod $COREDNS_POD_NAME -n kube-system &>> $LOG_FILE
+    restart_coredns
     sleep 2
     
     unset FOUND_RUNNING_POD
@@ -1660,15 +1641,15 @@ EOF
             if [ "$POD_STATUS" == "Running" ]; then
                 FOUND_RUNNING_POD=1
             fi
-        done < <(kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
+        done < <($kubectl get pods -n kube-system | grep "coredns" 2>/dev/null)
         sleep 1
     done
 }
 
 # ############################################
-# ########### INSTALL HELM FTP REG ###########
+# ############# INSTALL FTP REG ##############
 # ############################################
-install_helm_ftp() {
+install_ftpd() {
     C_DIR="$(pwd)"
     
     # Build mdos-api image
@@ -1684,18 +1665,18 @@ install_helm_ftp() {
     cd $HOME/.mdos/pure-ftpd
 
     FTP_DOCKER_COMPOSE_VAL="$(cat ./docker-compose.yaml)"
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.image = "registry.'$DOMAIN'/mdos-ftp-bot:latest"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[0] = "'$FTP_DATA_HOME':/home/ftp_data/"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[1] = "'$HOME'/.mdos/pure-ftpd/passwd:/etc/pure-ftpd/passwd"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[2] = "'$SSL_ROOT'/'$FULLCHAIN_FNAME':/etc/ssl/private/pure-ftpd-cert.pem"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.volumes[3] = "'$SSL_ROOT'/'$PRIVKEY_FNAME':/etc/ssl/private/pure-ftpd-key.pem"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_USER = "'$KEYCLOAK_USER'"')
-    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.M2M_PASSWORD = "'$KEYCLOAK_PASS'"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.image = "registry.'$DOMAIN'/mdos-ftp-bot:latest"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.volumes[0] = "'$FTP_DATA_HOME':/home/ftp_data/"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.volumes[1] = "'$HOME'/.mdos/pure-ftpd/passwd:/etc/pure-ftpd/passwd"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.volumes[2] = "'$SSL_ROOT'/'$FULLCHAIN_FNAME':/etc/ssl/private/pure-ftpd-cert.pem"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.volumes[3] = "'$SSL_ROOT'/'$PRIVKEY_FNAME':/etc/ssl/private/pure-ftpd-key.pem"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.environment.M2M_USER = "'$KEYCLOAK_USER'"')
+    FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.environment.M2M_PASSWORD = "'$KEYCLOAK_PASS'"')
     
     if [ ! -z $NO_DNS ]; then
-        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "'$LOCAL_IP'"')
+        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "'$LOCAL_IP'"')
     else
-        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "mdos-ftp.'$DOMAIN'"')
+        FTP_DOCKER_COMPOSE_VAL=$(echo "$FTP_DOCKER_COMPOSE_VAL" | /usr/local/bin/yq '.services.mdos_ftpd_server.environment.PUBLICHOST = "mdos-ftp.'$DOMAIN'"')
     fi
 
     printf "$FTP_DOCKER_COMPOSE_VAL\n" > ./docker-compose.yaml
@@ -1703,7 +1684,7 @@ install_helm_ftp() {
     docker compose up -d &>> $LOG_FILE
 
     # Install endpoint to use K3S ingress for this
-    cat <<EOF | kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 kind: Service
 metadata:
@@ -1761,10 +1742,10 @@ EOF
 # ############ INSTALL LOKI STACK ############
 # ############################################
 install_loki_stack() {
-    helm repo add grafana https://grafana.github.io/helm-charts &>> $LOG_FILE
-    helm repo update &>> $LOG_FILE
+    $helm repo add grafana https://grafana.github.io/helm-charts &>> $LOG_FILE
+    $helm repo update &>> $LOG_FILE
 
-    kubectl create ns loki-stack &>> $LOG_FILE
+    $kubectl create ns loki-stack &>> $LOG_FILE
 
     LOKI_CONFIG="auth_enabled: false
 chunk_store_config:
@@ -1811,7 +1792,7 @@ table_manager:
   retention_deletes_enabled: true
   retention_period: 168h"
 
-    cat <<EOF | kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
 data:
   loki.yaml: $(echo -n "$LOKI_CONFIG" | base64 -w 0)
@@ -1822,7 +1803,7 @@ metadata:
 type: Opaque
 EOF
 
-    helm upgrade --install loki --namespace=loki-stack grafana/loki-stack --version 2.6.0 \
+    $helm upgrade --install loki --namespace=loki-stack grafana/loki-stack --version 2.6.0 \
         --set loki.persistence.enabled=true \
         --set loki.persistence.size="${LOKI_VOLUME_SIZE}Gi" \
         --set loki.persistence.storageClassName="longhorn" \
@@ -1832,7 +1813,7 @@ EOF
         --set grafana.adminPassword="$KEYCLOAK_PASS" \
         --atomic &>> $LOG_FILE
 
-    cat <<EOF | k3s kubectl apply -f &>> $LOG_FILE -
+    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
@@ -1978,13 +1959,21 @@ EOF
 
     trap _catch ERR
     trap _finally EXIT
-
+    
     # ############### MAIN ################
     if [ -z $INST_STEP_DEPENDENCY ]; then
+        dependencies_consent
         info "Update system and install dependencies..."
         dependencies
         set_env_step_data "INST_STEP_DEPENDENCY" "1"
     fi
+
+    # Make sure we have connectivity to the internet from docker
+    info "Testing connectivity from Docker daemon..."
+    docker_internet_check
+
+    # Set up firewall
+    init_firewall master
 
     # COLLECT USER DATA
     collect_user_input
@@ -2019,11 +2008,39 @@ EOF
         configure_etc_hosts
     fi
 
+    # SETUP FIREWALL
+    if [ -z $SETUP_FIREWALL_RULES ]; then
+        setup_master_firewall
+        set_env_step_data "SETUP_FIREWALL_RULES" "1"
+    fi
+
     # INSTALL K3S
     if [ -z $INST_STEP_K3S ]; then
         info "Installing K3S..."
         install_k3s
         set_env_step_data "INST_STEP_K3S" "1"
+    fi
+
+    # MAKE SURE WE SET THE ALIASES
+    set -Ee
+    if ! command -v k3s >/dev/null; then
+        k3s="/usr/local/bin/k3s"
+    else
+        k3s=$(whereis k3s | cut -d: -f2 | xargs)
+    fi
+    if ! command -v kubectl >/dev/null; then
+        kubectl="/usr/local/bin/kubectl"
+    else
+        kubectl=$(whereis kubectl | cut -d: -f2 | xargs)
+    fi
+    set +Ee
+
+    # Make sure we have connectivity to within the cluster
+    info "Testing connectivity from Kubernetes PODs..."
+    kube_internet_check CON_SUCCESS &>> $LOG_FILE
+    if [ "$CON_SUCCESS" == "1" ]; then
+        error "Your kubernetes cluster PODs dont seem to have internet connectivity."
+        exit 1
     fi
 
     # IF SELF SIGNED, ADD CUSTOM CORE-DNS CONFIG
@@ -2038,6 +2055,15 @@ EOF
         set_env_step_data "INST_STEP_HELM" "1"
     fi
 
+    # MAKE SURE WE SET THE ALIAS
+    set -Ee
+    if ! command -v helm >/dev/null; then
+        helm="/usr/local/bin/helm"
+    else
+        helm=$(whereis helm | cut -d: -f2 | xargs)
+    fi
+    set +Ee
+
     # INSTALL ISTIO
     if [ -z $INST_STEP_ISTIO ]; then
         info "Install Istio..."
@@ -2050,12 +2076,6 @@ EOF
         info "Install Longhorn..."
         install_longhorn
         set_env_step_data "INST_STEP_LONGHORN" "1"
-    fi
-
-    # SETUP FIREWALL
-    if [ -z $SETUP_FIREWALL_RULES ]; then
-        setup_master_firewall
-        set_env_step_data "SETUP_FIREWALL_RULES" "1"
     fi
 
     # PREPARE NAMESPACES
@@ -2156,6 +2176,7 @@ EOF
         info "Install OAuth2 proxy..."
         install_oauth2_proxy
         set_env_step_data "INST_STEP_OAUTH" "1"
+        sleep 10 # Make sure the new CRDs become available
     fi
 
     # PROTECT LONGHORN UI
@@ -2182,7 +2203,7 @@ EOF
     # INSTALL MDOS FTP
     if [ -z $INST_STEP_MDOS_FTP ]; then
         info "Install MDos FTP server..."
-        install_helm_ftp
+        install_ftpd
         set_env_step_data "INST_STEP_MDOS_FTP" "1"
     fi
 

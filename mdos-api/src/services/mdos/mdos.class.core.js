@@ -162,21 +162,21 @@ class MdosCore extends CommonCore {
 
                 // Set associated gateways
                 const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
-                console.log(JSON.stringify(hostMatrix, null, 4))
+                // console.log(JSON.stringify(hostMatrix, null, 4))
                 let ingressInUseErrors = []
                 let ingressMissingErrors = []
                 component.ingress = component.ingress.map((ingress) => {
                     let gtwConfigured = false
                     if(ingress.trafficType == "http") {
-                        const httpAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTP")
-                        const httpsTerminateAvailable = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_SIMPLE")
-                        gtwConfigured = !httpAvailable[ingress.matchHost] || !httpsTerminateAvailable[ingress.matchHost]
+                        const httpGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTP")
+                        const httpsTerminateGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_SIMPLE")
+                        gtwConfigured = httpGatewayFound[ingress.matchHost] || httpsTerminateGatewayFound[ingress.matchHost]
                     } else {
-                        const httpsPassthrough = this.app.get("kube").ingressGatewayTargetAvailable(hostMatrix, "HTTPS_PASSTHROUGH")
-                        gtwConfigured = !httpsPassthrough[ingress.matchHost]
+                        const httpsPassthroughGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_PASSTHROUGH")
+                        gtwConfigured = httpsPassthroughGatewayFound[ingress.matchHost]
                     }
 
-                    // If not available for new gateway config, then it means that we have a match
+                    // If not available for any gateway config, then it means that we have a match
                     if(gtwConfigured) {
                         let targetGtws = []
 
@@ -213,7 +213,7 @@ class MdosCore extends CommonCore {
                     }
                     return ingress
                 })
-               
+
                 let errorMsgs = []
                 if(ingressInUseErrors.length > 0) {
                     errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))

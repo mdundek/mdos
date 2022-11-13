@@ -379,7 +379,7 @@ exports.Kube = class Kube extends KubeCore {
                     registryUser: saUser,
                     registryPass: saPass,
                     kcSaUser: saUser,
-                    kcSaPass: saUser,
+                    kcSaPass: saPass,
                     rollback: false
                 },
                 workflow: [

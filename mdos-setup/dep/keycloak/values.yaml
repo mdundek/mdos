@@ -55,6 +55,7 @@ components:
       - name: host-data-volume
         mountPath: /var/lib/postgresql/data
         subPath: data
+        hostPath: /foo/bar
         size: 5Gi
 
   - name: keycloak

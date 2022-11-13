@@ -12,8 +12,12 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
   ![Overview](/mdos/img/overview.png)
 </figure>
 
-!!! warning
-    MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first. Please test it, provide some feedback, or even better, join the party in developing it further. 
+!!! warning "Disclaimer"
+    MDos is in beta stage at the moment, it is under developement and should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first.  
+    
+    __Please test it, provide some feedback, or even better, join the party in developing it further.__
+
+    If you encounter some miss-behaviour, or if you believe something needs to be adapted, create an issue on the [mdos git repo](https://github.com/mdundek/mdos) and I will come back to you shortly.
 
 This documentation is for the `MDos` platform Git repository available [here](https://github.com/mdundek/mdos)
 

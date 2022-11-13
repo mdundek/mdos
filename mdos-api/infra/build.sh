@@ -54,7 +54,7 @@ mdos_deploy_app() {
             regcred \
             --docker-server=registry.$DOMAIN \
             --docker-username=mdundek \
-            --docker-password=li14ebe14 \
+            --docker-password=li14ebe13 \
             -n $I_NS
     fi
 
@@ -65,7 +65,7 @@ mdos_deploy_app() {
 
 cd ..
 
-echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-stdin
+echo "li14ebe13" | docker login registry.$DOMAIN --username mdundek --password-stdin
 
 cp infra/dep/helm/helm .
 cp infra/dep/kubectl/kubectl .
@@ -99,7 +99,7 @@ if [ ! -z $DO_DEPLOY ]; then
     rm -rf ./target_values.yaml
 
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
-    echo "kubectl logs $POD_NAME -n mdos"
+    kubectl logs $POD_NAME -n mdos --follow
 fi
 
 if [ ! -z $DO_RESTART ]; then
@@ -108,7 +108,7 @@ if [ ! -z $DO_RESTART ]; then
     sleep 1
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
 
-    echo "kubectl logs $POD_NAME -n mdos"
+    kubectl logs $POD_NAME -n mdos --follow
 fi
 
 # exec_in_pod() {

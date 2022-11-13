@@ -51,7 +51,7 @@ components:
           - key: REG_USER
             value: "mdundek"
           - key: REG_PASS
-            value: "li14ebe14"
+            value: "li14ebe13"
       - name: k3s-ca
         type: file
         mountPath: /usr/src/dep/k3s
@@ -93,10 +93,10 @@ components:
     volumes:
       - name: mhc-generic-chart
         mountPath: /usr/src/dep/mhc-generic
-        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/mhc-generic/chart
+        hostPath: /home/mdundek/mdos/mdos-setup/dep/mhc-generic/chart
       - name: istiod-helm-volume
         mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
-        hostPath: /home/mdundek/workspaces/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
+        hostPath: /home/mdundek/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
           
     oidc:
       issuer: https://keycloak.mdundek.network:30999/realms/mdos

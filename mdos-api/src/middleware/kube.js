@@ -450,6 +450,26 @@ config:
         })
         return domainTargetsAvailable
     }
+
+    /**
+     * ingressGatewayTargetFound
+     * 
+     * @param {*} ingressGatewayDomainMatrix 
+     * @param {*} gatewayServerType 
+     */
+     ingressGatewayTargetFound(ingressGatewayDomainMatrix, gatewayServerType) {
+        const domainTargetsFound = {}
+        Object.keys(ingressGatewayDomainMatrix).forEach(domain => {
+            if(gatewayServerType == "HTTP") {
+                domainTargetsFound[domain] = ingressGatewayDomainMatrix[domain]["HTTP"].match == "EXACT" ? true : ingressGatewayDomainMatrix[domain]["HTTP"].match == "WILDCARD" ? true : false
+            } else if(gatewayServerType == "HTTPS_PASSTHROUGH") {
+                domainTargetsFound[domain] = (ingressGatewayDomainMatrix[domain]["HTTPS_PASSTHROUGH"].match == "EXACT" || ingressGatewayDomainMatrix[domain]["HTTPS_PASSTHROUGH"].match == "WILDCARD" ) ? true : false
+            } else if(gatewayServerType == "HTTPS_SIMPLE") {
+                domainTargetsFound[domain] = (ingressGatewayDomainMatrix[domain]["HTTPS_SIMPLE"].match == "EXACT" || ingressGatewayDomainMatrix[domain]["HTTPS_SIMPLE"].match == "WILDCARD" ) ? true : false
+            } 
+        })
+        return domainTargetsFound
+    }
 }
 
 module.exports = Kube
