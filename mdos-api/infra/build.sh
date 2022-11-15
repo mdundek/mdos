@@ -14,13 +14,20 @@ while [ "$1" != "" ]; do
         --export|-e )
             DO_EXPORT=1
         ;; 
+        --domain|-d )
+            shift
+            DOMAIN=$1
+        ;; 
         * ) echo "Invalid parameter detected => $1"
             exit 1
     esac
     shift
 done
 
-DOMAIN=mydomain.com
+if [ -z $DOMAIN ]; then
+    echo "Missing parameter: --domain <your domain>"
+    exit 1
+fi
 
 # ############### MDOS APP DEPLOY ################
 mdos_deploy_app() {
