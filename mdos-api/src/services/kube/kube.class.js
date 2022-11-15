@@ -77,7 +77,7 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         else if (params.query.target == 'applications') {
             // Make sure namespace exists
-            if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+            if (params.query.clientId != "*" && !(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             let nsApps = await this.getMdosApplications(params.query.clientId)

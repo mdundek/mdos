@@ -1,7 +1,7 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { error, context, filterQuestions, mergeFlags, info } = require('../../lib/tools')
+const { error, warn, context, filterQuestions, mergeFlags, info } = require('../../lib/tools')
 
 /**
  * Command
@@ -69,13 +69,15 @@ export default class List extends Command {
         let gtwResponse
         try {
             gtwResponse = await this.api(`kube?target=gateways&namespace=${response.namespace}&name=mdos-ns-gateway`, 'get')
+            let gtwResponseAlt = await this.api(`kube?target=gateways&name=mdos-ns-gateway`, 'get')
+            console.log(gtwResponseAlt.data)
         } catch (err) {
             this.showError(err)
             process.exit(1)
         }
 
         if(gtwResponse.data.length == 0) {
-            error("No Ingress Gateway configured yet for this namespace")
+            warn("No Ingress Gateway configured yet for this namespace")
             process.exit(1)
         }
 
