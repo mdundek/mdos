@@ -771,6 +771,7 @@ class KubeBase extends KubeBaseConstants {
      * @memberof KubeBase
      */
     async getHelmChartValues(namespace, chartName) {
+        console.log(`${this.HELM_BASE_CMD} get values ${chartName} ${namespace == "*" ? "-A" : "-n " + namespace}`)
         const result = await terminalCommand(`${this.HELM_BASE_CMD} get values ${chartName} ${namespace == "*" ? "-A" : "-n " + namespace}`)
         console.log(result)
         return YAML.parse(result.join('\n'))
