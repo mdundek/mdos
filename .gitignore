@@ -5,6 +5,7 @@
 **/node_modules
 .DS_Store
 mdos-api/creds/*
+mdos-api/infra/values.yaml
 mdos-docs/infra/mkdocs/mkdocs/site
 mdos-setup/cloudflare.ini
 mdos-setup/deprecated/*
