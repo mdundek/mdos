@@ -14,7 +14,7 @@ while [ "$1" != "" ]; do
         --export|-e )
             DO_EXPORT=1
         ;; 
-        --domain|-d )
+        --domain )
             shift
             DOMAIN=$1
         ;; 
