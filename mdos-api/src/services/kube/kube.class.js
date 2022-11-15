@@ -77,17 +77,11 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         else if (params.query.target == 'applications') {
             // Make sure namespace exists
-            try {
-                if (params.query.clientId != "*" && !(await this.app.get('kube').hasNamespace(params.query.clientId))) {
-                    throw new NotFound('ERROR: Namespace does not exist')
-                }
-                let nsApps = await this.getMdosApplications(params.query.clientId)
-                return nsApps
-            } catch (error) {
-                console.log(error)
-                throw error
+            if (params.query.clientId != "*" && !(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+                throw new NotFound('ERROR: Namespace does not exist')
             }
-            
+            let nsApps = await this.getMdosApplications(params.query.clientId)
+            return nsApps
         } 
         /******************************************
         *  GENERATE USER KUBECTL CERTIFICATE
