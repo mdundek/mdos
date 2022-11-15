@@ -1,4 +1,4 @@
-registry: registry.mydomain.com
+registry: registry.<DOMAIN>
 tenantName: mdos
 appName: mdos
 uuid: KG75-7D58-mdos
@@ -19,7 +19,7 @@ components:
 
     ingress:
       - name: http-ingress
-        matchHost: mdos-api.mydomain.com
+        matchHost: mdos-api.<DOMAIN>
         targetPort: 3030
         trafficType: http
         
@@ -28,7 +28,7 @@ components:
         type: env
         entries:
           - key: ROOT_DOMAIN
-            value: "mydomain.com"
+            value: "<DOMAIN>"
           - key: GEN_HELM_PATH_PATH
             value: "/usr/src/dep/mhc-generic"
           - key: ISTIO_CHART_PATH
@@ -99,11 +99,11 @@ components:
         hostPath: /home/mdundek/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
           
     oidc:
-      issuer: https://keycloak.mydomain.com:30999/realms/mdos
-      jwksUri: https://keycloak.mydomain.com:30999/realms/mdos/protocol/openid-connect/certs
+      issuer: https://keycloak.<DOMAIN>:30999/realms/mdos
+      jwksUri: https://keycloak.<DOMAIN>:30999/realms/mdos/protocol/openid-connect/certs
       provider: kc-mdos
       hosts:
-        - mdos-api.mydomain.com
+        - mdos-api.<DOMAIN>
       excludePaths:
         - /registry_domain
         
