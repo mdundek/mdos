@@ -49,7 +49,7 @@ export default class List extends Command {
             const response = await this.api(`kube?target=applications&clientId=${clientResponse.clientId}`, 'get')
 
             let gtwResponseAlt = await this.api(`kube?target=applications&clientId=*`, 'get')
-            console.log(gtwResponseAlt.data)
+            // console.log(gtwResponseAlt.data)
 
             const treeData = computeApplicationTree(response.data)
 

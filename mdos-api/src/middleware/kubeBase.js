@@ -4,6 +4,7 @@ const https = require('https')
 const YAML = require('yaml')
 const fs = require('fs')
 let _ = require('lodash')
+const Constants = require('../libs/constants');
 const { terminalCommand, terminalCommandAsync } = require('../libs/terminal')
 const { isBuffer } = require('lodash')
 
@@ -268,6 +269,9 @@ class KubeBase extends KubeBaseConstants {
     async getApplicationDeployments(namespaceName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+
+        res.data.items = res.data.items.filter(item => !Constants.RESERVED_NAMESPACES.includes(item.metadata.namespace))
+
         console.log(JSON.stringify(res.data, null, 4))
         return res.data
     }
