@@ -2,6 +2,7 @@
 *-error.log
 /.nyc_output
 /dist
+/dist-cli
 /lib
 /package-lock.json
 /tmp

@@ -145,7 +145,7 @@ gen_and_publish_release_and_assets() {
         mkdir -p ./dist-cli
         mv ./dist/mdos-v${CURRENT_APP_VERSION}*.tar.gz ./dist-cli
         mv ./dist/mdos-v${CURRENT_APP_VERSION}*.tar.xz ./dist-cli
-
+        rm -rf ./dist
         npm run package-win
         cd ./dist/win32
         if [ ! -z $AUID ]; then
