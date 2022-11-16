@@ -123,6 +123,9 @@ gen_and_publish_release_and_assets() {
     generate_release_files() {
         # Package files
         cd $REPO_DIR/mdos-cli
+
+        rm -rf ./tmp
+
         npm run package
         
 
