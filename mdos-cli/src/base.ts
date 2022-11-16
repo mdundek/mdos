@@ -252,7 +252,7 @@ export default abstract class extends Command {
      *
      * @param flags
      */
-    async collectClientId(flags: any, question: string) {
+    async collectClientId(flags: any, question: string, includeAll?: boolean) {
         // Get all realm Clients
         const clientResponse = await this.api('keycloak?target=clients&realm=mdos', 'get')
         if (clientResponse.data.length == 0) {
@@ -273,18 +273,30 @@ export default abstract class extends Command {
             }
             clientResponses = { clientId: targetClient.clientId, clientUuid: targetClient.id }
         } else {
+            if(includeAll) {
+                clientResponse.data.push({
+                    clientId: "-all available to me-",
+                    id: "*"
+                })
+            }
+
             clientResponses = await inquirer.prompt([
                 {
                     name: 'clientUuid',
                     message: question,
                     type: 'list',
                     choices: clientResponse.data.map((o: { clientId: any; id: any }) => {
-                        return { name: o.clientId, value: o.id }
+                        return { name: `Namespace: ${o.clientId}`, value: o.id }
                     }),
                 },
             ])
-            const targetClient = clientResponse.data.find((o: { id: any }) => o.id == clientResponses.clientUuid)
-            clientResponses.clientId = targetClient.clientId
+            if(clientResponses.clientUuid == "*") {
+                clientResponses.clientId = "*"
+            } else {
+                const targetClient = clientResponse.data.find((o: { id: any }) => o.id == clientResponses.clientUuid)
+                clientResponses.clientId = targetClient.clientId
+            }
+            
         }
         return clientResponses
     }

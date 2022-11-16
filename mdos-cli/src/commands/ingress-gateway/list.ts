@@ -52,23 +52,32 @@ export default class List extends Command {
             process.exit(1)
         }
 
-        // Select target namespace
-        let response = await inquirer.prompt([
-            {
-                name: 'namespace',
-                message: 'Select namespace for which you wish to list Ingress Gateways for:',
-                type: 'list',
-                choices: nsResponse.data.map((o: { name: any }) => {
-                    return { name: o.name }
-                }),
-            },
-        ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        // Get client id & uuid
+        let clientResponse
+        try {
+            clientResponse = await this.collectClientId(flags, 'Select namespace for which you wish to list Ingress Gateways for:', true)
+        } catch (error) {
+            this.showError(error)
+            process.exit(1)
+        }
+
+        // // Select target namespace
+        // let response = await inquirer.prompt([
+        //     {
+        //         name: 'namespace',
+        //         message: 'Select namespace for which you wish to list Ingress Gateways for:',
+        //         type: 'list',
+        //         choices: nsResponse.data.map((o: { name: any }) => {
+        //             return { name: o.name }
+        //         }),
+        //     },
+        // ])
+        agregatedResponses = {...agregatedResponses, ...{namespace: clientResponse.clientId}}
 
         // Get namespace gateway
         let gtwResponse
         try {
-            gtwResponse = await this.api(`kube?target=gateways&namespace=${response.namespace}&name=mdos-ns-gateway`, 'get')
+            gtwResponse = await this.api(`kube?target=gateways&namespace=${agregatedResponses.namespace}&name=mdos-ns-gateway`, 'get')
             let gtwResponseAlt = await this.api(`kube?target=gateways&name=mdos-ns-gateway`, 'get')
             console.log(gtwResponseAlt.data)
         } catch (err) {
