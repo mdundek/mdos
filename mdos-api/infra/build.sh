@@ -14,13 +14,20 @@ while [ "$1" != "" ]; do
         --export|-e )
             DO_EXPORT=1
         ;; 
+        --domain )
+            shift
+            DOMAIN=$1
+        ;; 
         * ) echo "Invalid parameter detected => $1"
             exit 1
     esac
     shift
 done
 
-DOMAIN=mydomain.com
+if [ -z $DOMAIN ]; then
+    echo "Missing parameter: --domain <your domain>"
+    exit 1
+fi
 
 # ############### MDOS APP DEPLOY ################
 mdos_deploy_app() {
@@ -85,7 +92,6 @@ fi
 cd ./infra
 
 if [ ! -z $DO_DEPLOY ]; then
-    DOMAIN=mydomain.com
     OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
     OIDC_ISSUER_URL=$(echo $OIDC_DISCOVERY | jq -r .issuer)
     OIDC_JWKS_URI=$(echo $OIDC_DISCOVERY | jq -r .jwks_uri) 
@@ -94,6 +100,8 @@ if [ ! -z $DO_DEPLOY ]; then
 
     # Deploy keycloak
     cat ./values.yaml > ./target_values.yaml
+
+    sed -i "s|<DOMAIN>|$DOMAIN|g" ./target_values.yaml
 
     mdos_deploy_app
     rm -rf ./target_values.yaml

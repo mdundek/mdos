@@ -38,7 +38,7 @@ export default class List extends Command {
         // Get client id & uuid
         let clientResponse
         try {
-            clientResponse = await this.collectClientId(flags, 'What client do you want to list applications for')
+            clientResponse = await this.collectClientId(flags, 'What client do you want to list applications for', true)
         } catch (error) {
             this.showError(error)
             process.exit(1)
@@ -47,12 +47,12 @@ export default class List extends Command {
         // List apps
         try {
             const response = await this.api(`kube?target=applications&clientId=${clientResponse.clientId}`, 'get')
-            const treeData = computeApplicationTree(response.data)
+            const treeData = computeApplicationTree(response.data, clientResponse.clientId == "*")
 
             console.log()
 
             if (Object.keys(treeData).length == 0) {
-                context('No applications deployed for this tenant', true, true)
+                context('There are no applications deployed, or you do not have sufficient permissions to see them', true, true)
             } else {
                 console.log(treeify.asTree(treeData, true))
             }

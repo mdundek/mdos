@@ -339,11 +339,11 @@ const getConsoleLineHandel = (initialValue) => {
  * @param {*} data
  * @return {*} 
  */
-const computeApplicationTree = (data) => {
+const computeApplicationTree = (data, appendNamespace) => {
     let treeData = {}
     for (const app of data) {
         if (app.isHelm) {
-            const appNodeName = `${chalk.red('MDos application')}: ${chalk.gray(app.name)}`
+            const appNodeName = `${chalk.red('MDos application')}: ${chalk.gray(app.name)} ${appendNamespace ? chalk.yellow(`(Namespace: ${app.namespace})`) : ""}`
             treeData[appNodeName] = {}
             for (const component of app.values.components) {
                 const appCompNodeName = `${chalk.blue('Component')}: ${chalk.gray(component.name)}`

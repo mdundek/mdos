@@ -25,17 +25,17 @@ class KubeCore extends CommonCore {
      * @param {*} clientId
      */
     async getMdosApplications(clientId) {
-        let nsApps = await this.app.get('kube').getApplicationDeployments(clientId)
+        let nsApps = await this.app.get('kube').getApplicationDeployments(clientId == "*" ? "" : clientId)
         const apps = []
         for (const dep of nsApps.items) {
             if (dep.metadata.annotations && dep.metadata.annotations['meta.helm.sh/release-name']) {
                 if (!apps.find((a) => a.isHelm && a.name == dep.metadata.annotations['meta.helm.sh/release-name'])) {
-                    const chartValues = await this.app.get('kube').getHelmChartValues(clientId, dep.metadata.annotations['meta.helm.sh/release-name'])
+                    const chartValues = await this.app.get('kube').getHelmChartValues(dep.metadata.namespace, dep.metadata.annotations['meta.helm.sh/release-name'])
                     apps.push({
                         isHelm: true,
                         type: 'deployment',
                         name: dep.metadata.annotations['meta.helm.sh/release-name'],
-                        namespace: clientId,
+                        namespace: dep.metadata.namespace,
                         values: chartValues,
                     })
                 } else if (!apps.find((a) => a.name == dep.name)) {
@@ -43,13 +43,13 @@ class KubeCore extends CommonCore {
                         isHelm: false,
                         type: 'deployment',
                         name: dep.name,
-                        namespace: clientId,
+                        namespace: dep.metadata.namespace,
                     })
                 }
             }
         }
 
-        nsApps = await this.app.get('kube').getApplicationStatefulSets(clientId)
+        nsApps = await this.app.get('kube').getApplicationStatefulSets(clientId == "*" ? "" : clientId)
         for (const dep of nsApps.items) {
             if (dep.metadata.annotations && dep.metadata.annotations['meta.helm.sh/release-name']) {
                 if (!apps.find((a) => a.isHelm && a.name == dep.metadata.annotations['meta.helm.sh/release-name'])) {
@@ -57,14 +57,14 @@ class KubeCore extends CommonCore {
                         isHelm: true,
                         type: 'statefulSet',
                         name: dep.metadata.annotations['meta.helm.sh/release-name'],
-                        namespace: clientId,
+                        namespace: dep.metadata.namespace,
                     })
                 } else if (!apps.find((a) => a.name == dep.name)) {
                     apps.push({
                         isHelm: false,
                         type: 'statefulSet',
                         name: dep.name,
-                        namespace: clientId,
+                        namespace: dep.metadata.namespace,
                     })
                 }
             }

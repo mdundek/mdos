@@ -38,7 +38,7 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
         else if (params.query.target == 'gateways') {
-            let gateways = await this.app.get('kube').getIstioGateways(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            let gateways = await this.app.get('kube').getIstioGateways(params.query.namespace && params.query.namespace != "*" ? params.query.namespace : "", params.query.name ? params.query.name : false)
             if(params.query.host)
                 return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
             else
@@ -77,7 +77,7 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         else if (params.query.target == 'applications') {
             // Make sure namespace exists
-            if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+            if (params.query.clientId != "*" && !(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             let nsApps = await this.getMdosApplications(params.query.clientId)

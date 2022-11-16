@@ -4,6 +4,7 @@ const https = require('https')
 const YAML = require('yaml')
 const fs = require('fs')
 let _ = require('lodash')
+const Constants = require('../libs/constants');
 const { terminalCommand, terminalCommandAsync } = require('../libs/terminal')
 const { isBuffer } = require('lodash')
 
@@ -268,6 +269,7 @@ class KubeBase extends KubeBaseConstants {
     async getApplicationDeployments(namespaceName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/deployments`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+        res.data.items = res.data.items.filter(item => !Constants.RESERVED_NAMESPACES.includes(item.metadata.namespace))
         return res.data
     }
 
@@ -399,11 +401,9 @@ class KubeBase extends KubeBaseConstants {
     async getIstioGateways(namespaceName, gatewayName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+        
         if(gatewayName) {
-            const allGateways = []
-            const namedGateway = res.data.items.find(gtw => gtw.metadata.name == gatewayName)
-            if(namedGateway) allGateways.push(namedGateway)
-            return allGateways
+            return res.data.items.filter(gtw => gtw.metadata.name == gatewayName)
         } else {
             return res.data.items
         }
@@ -581,6 +581,7 @@ class KubeBase extends KubeBaseConstants {
     async getApplicationStatefulSets(namespaceName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/apps/v1/namespaces/${namespaceName}/statefulsets`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
+        res.data.items = res.data.items.filter(item => !Constants.RESERVED_NAMESPACES.includes(item.metadata.namespace))
         return res.data
     }
 
@@ -771,8 +772,8 @@ class KubeBase extends KubeBaseConstants {
      * @memberof KubeBase
      */
     async getHelmChartValues(namespace, chartName) {
-        const result = await terminalCommand(`${this.HELM_BASE_CMD} get values ${chartName} -n ${namespace}`)
-        return YAML.parse(result.join('\n'))
+        const result = await terminalCommand(`${this.HELM_BASE_CMD} get values ${chartName} ${namespace == "*" ? "-A" : "-n " + namespace}`)
+        return result[1] == "null" ? "" : YAML.parse(result.join('\n'))
     }
 
     /**

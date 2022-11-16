@@ -7,9 +7,9 @@ hide:
 
 We will build a similar `hello world` example application now, but to keep thinks simple, we will not deploy a backend component along with the frontend component, and not work with volumes yet. Those will be subjects for later on.  
 
-First, we need to configure our MDos CLI so that it knows how to talk to our MDos API server.
-
 ## MDos "Hello World" example
+
+<object width="100%" height="800"><param name="movie" value="https://www.youtube.com/v/W7PUZd0LD_o&hl=en&fs=1&vq=hd720"></param><param name="allowFullScreen" value="true"></param><embed src="https://www.youtube.com/v/W7PUZd0LD_o&hl=en&fs=1&vq=hd720" type="application/x-shockwave-flash" allowfullscreen="true" width="100%" height="800"></embed></object>
 
 ### Configure your CLI to point to a MDos platform API host
 

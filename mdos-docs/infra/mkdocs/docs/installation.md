@@ -5,7 +5,6 @@ hide:
 
 # Installation & setup
 
-
 ## Install the MDos (server) platform
 
 !!! info
@@ -40,6 +39,8 @@ If you plan on using `cert-manager` to manage your certificate, then you will ha
     | __registry-auth__.YOUR_DOMAIN | 443       | The private Docker registry authentication server |
     | __longhorn__.YOUR_DOMAIN      | 443       | Longhorn storage solution administrative console |
     | __grafana__.YOUR_DOMAIN       | 443       | Grafana Dashboard for your Loki log aggregator |
+
+<object width="100%" height="800"><param name="movie" value="https://www.youtube.com/v/bknK2jO9yhk&hl=en&fs=1&vq=hd720"></param><param name="allowFullScreen" value="true"></param><embed src="https://www.youtube.com/v/bknK2jO9yhk&hl=en&fs=1&vq=hd720" type="application/x-shockwave-flash" allowfullscreen="true" width="100%" height="800"></embed></object>
 
 ### Master node & MDos control plane
 
