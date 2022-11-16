@@ -401,12 +401,9 @@ class KubeBase extends KubeBaseConstants {
     async getIstioGateways(namespaceName, gatewayName) {
         const myUrlWithParams = new URL(`https://${this.K3S_API_SERVER}/apis/networking.istio.io/v1beta1/namespaces/${namespaceName}/gateways`)
         const res = await axios.get(myUrlWithParams.href, this.k8sAxiosHeader)
-        console.log(res.data.items)
+        
         if(gatewayName) {
-            const allGateways = []
-            const namedGateway = res.data.items.find(gtw => gtw.metadata.name == gatewayName)
-            if(namedGateway) allGateways.push(namedGateway)
-            return allGateways
+            return res.data.items.filter(gtw => gtw.metadata.name == gatewayName)
         } else {
             return res.data.items
         }
