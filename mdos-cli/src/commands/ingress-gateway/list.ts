@@ -76,8 +76,6 @@ export default class List extends Command {
             process.exit(1)
         }
 
-        console.log(gtwResponse.data)
-
         let allServers: any[] = []
         gtwResponse.data.forEach((gtw: any) => {
             gtw.spec.servers = gtw.spec.servers.map((server: any) => {
@@ -103,6 +101,10 @@ export default class List extends Command {
                 certificate: {
                     header: 'SECRET',
                     get: (row: any) => (row.tls ? (row.tls.mode == 'SIMPLE' ? row.tls.credentialName : '') : ''),
+                },
+                namespace: {
+                    header: 'NAMESPACE',
+                    get: (row: any) => row.namespace,
                 },
             },
             {
