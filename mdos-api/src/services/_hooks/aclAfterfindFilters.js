@@ -210,11 +210,25 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
  * @param {*} jwtToken 
  * @returns 
  */
- const sharedVolumesFilterHook = async (context, jwtToken) => {
+const sharedVolumesFilterHook = async (context, jwtToken) => {
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
     context.result = context.result.filter((pvc) => jwtToken.resource_access[pvc.metadata.namespace])
+    return context
+}
+
+/**
+ * gatewaysFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+const gatewaysFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+    context.result = context.result.filter((gateway) => jwtToken.resource_access[gateway.metadata.namespace])
     return context
 }
 
@@ -274,6 +288,8 @@ module.exports = function () {
             return await sharedVolumesFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'volumes') {
             return await sharedVolumesFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'gateways') {
+            return await gatewaysFilterHook(context, jwtToken)
         } else {
             console.log('Unknown filter hook: ', context.params.query, context.path)
         }
