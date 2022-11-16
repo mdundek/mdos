@@ -124,6 +124,7 @@ gen_and_publish_release_and_assets() {
         # Package files
         cd $REPO_DIR/mdos-cli
         npm run package
+        
 
         # Rename files
         cd ./dist
@@ -139,6 +140,22 @@ gen_and_publish_release_and_assets() {
                 mv $f ${f/-$AUID/}   
             done
         fi
+
+        cd ..
+        mkdir -p ./dist-cli
+        mv ./dist/mdos-v${CURRENT_APP_VERSION}*.tar.gz ./dist-cli
+        mv ./dist/mdos-v${CURRENT_APP_VERSION}*.tar.xz ./dist-cli
+
+        npm run package-win
+        cd ./dist/win32
+        if [ ! -z $AUID ]; then
+            for f in ./*.exe; do
+                mv $f ${f/-$AUID/}   
+            done
+        fi
+        cd ../..
+        mv ./dist/win32/mdos-v${CURRENT_APP_VERSION}*.exe ./dist-cli
+
         cd ../..
     }
 
@@ -152,7 +169,7 @@ gen_and_publish_release_and_assets() {
 
         # Create release
         if [ ! -z $GEN_CLI_BIN ]; then
-            gh release create --generate-notes --target release $TAG_NAME ./mdos-cli/dist/*.tar.*
+            gh release create --generate-notes --target release $TAG_NAME ./mdos-cli/dist-cli/*
         else
             gh release create --generate-notes --target release $TAG_NAME
         fi
@@ -175,6 +192,7 @@ gen_and_publish_release_and_assets() {
     # Clean up
     if [ ! -z $GEN_CLI_BIN ]; then
         rm -rf ./mdos-cli/dist/*.tar.*
+        rm -rf ./mdos-cli/dist/win32
     fi
 }
 

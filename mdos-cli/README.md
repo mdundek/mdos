@@ -6,7 +6,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/1.5.0 darwin-x64 node-v18.9.0
+mdos-cli/1.5.2 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -108,6 +108,7 @@ USAGE
 * [`mdos env add`](#mdos-env-add)
 * [`mdos env generate`](#mdos-env-generate)
 * [`mdos gateway add`](#mdos-gateway-add)
+* [`mdos gateway create`](#mdos-gateway-create)
 * [`mdos gateway list`](#mdos-gateway-list)
 * [`mdos gateway remove`](#mdos-gateway-remove)
 * [`mdos gen app`](#mdos-gen-app)
@@ -130,6 +131,7 @@ USAGE
 * [`mdos get config`](#mdos-get-config-1)
 * [`mdos help [COMMAND]`](#mdos-help-command)
 * [`mdos ingress-gateway add`](#mdos-ingress-gateway-add)
+* [`mdos ingress-gateway create`](#mdos-ingress-gateway-create)
 * [`mdos ingress-gateway list`](#mdos-ingress-gateway-list)
 * [`mdos ingress-gateway remove`](#mdos-ingress-gateway-remove)
 * [`mdos ingress add`](#mdos-ingress-add)
@@ -2374,6 +2376,25 @@ DESCRIPTION
 
 ALIASES
   $ mdos gateway add
+  $ mdos gateway create
+  $ mdos ingress-gateway create
+```
+
+## `mdos gateway create`
+
+Add a new ingress gateway config
+
+```
+USAGE
+  $ mdos gateway create
+
+DESCRIPTION
+  Add a new ingress gateway config
+
+ALIASES
+  $ mdos gateway add
+  $ mdos gateway create
+  $ mdos ingress-gateway create
 ```
 
 ## `mdos gateway list`
@@ -2805,7 +2826,7 @@ ALIASES
   $ mdos get config
 ```
 
-_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.0/dist/commands/get-config.ts)_
+_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.2/dist/commands/get-config.ts)_
 
 ## `mdos get config`
 
@@ -2855,6 +2876,25 @@ DESCRIPTION
 
 ALIASES
   $ mdos gateway add
+  $ mdos gateway create
+  $ mdos ingress-gateway create
+```
+
+## `mdos ingress-gateway create`
+
+Add a new ingress gateway config
+
+```
+USAGE
+  $ mdos ingress-gateway create
+
+DESCRIPTION
+  Add a new ingress gateway config
+
+ALIASES
+  $ mdos gateway add
+  $ mdos gateway create
+  $ mdos ingress-gateway create
 ```
 
 ## `mdos ingress-gateway list`
@@ -3589,7 +3629,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.0/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.2/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3603,7 +3643,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.0/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.2/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -4421,7 +4461,7 @@ DESCRIPTION
   Retrieve user kubeconfig file and set up
 ```
 
-_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.0/dist/commands/set-kubeconfig.ts)_
+_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.2/dist/commands/set-kubeconfig.ts)_
 
 ## `mdos shared-volume create`
 
