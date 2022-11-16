@@ -140,7 +140,11 @@ gen_and_publish_release_and_assets() {
         done
         if [ ! -z $AUID ]; then
             for f in ./*.tar.*; do
-                mv $f ${f/-$AUID/}   
+                if [[ $f == *"-win32-"* ]]; then
+                    rm -rf $f
+                else
+                    mv $f ${f/-$AUID/}  
+                fi 
             done
         fi
 
@@ -149,6 +153,7 @@ gen_and_publish_release_and_assets() {
         mv ./dist/mdos-v${CURRENT_APP_VERSION}*.tar.gz ./dist-cli
         mv ./dist/mdos-v${CURRENT_APP_VERSION}*.tar.xz ./dist-cli
         rm -rf ./dist
+
         npm run package-win
         cd ./dist/win32
         if [ ! -z $AUID ]; then
@@ -159,7 +164,7 @@ gen_and_publish_release_and_assets() {
         cd ../..
         mv ./dist/win32/mdos-v${CURRENT_APP_VERSION}*.exe ./dist-cli
 
-        cd ../..
+        cd ..
     }
 
     git_release() {
