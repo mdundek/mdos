@@ -38,8 +38,9 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
         else if (params.query.target == 'gateways') {
+            console.log(params.query.namespace && params.query.namespace != "*" ? params.query.namespace : "", params.query.name ? params.query.name : false)
             let gateways = await this.app.get('kube').getIstioGateways(params.query.namespace && params.query.namespace != "*" ? params.query.namespace : "", params.query.name ? params.query.name : false)
-            console.log(gateways)
+           
             if(params.query.host)
                 return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
             else
