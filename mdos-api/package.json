@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Mdos API server",
-    "version": "1.5.1",
+    "version": "1.5.2",
   "homepage": "",
   "private": true,
   "main": "src",
