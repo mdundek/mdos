@@ -23,7 +23,9 @@ This documentation is for the `MDos` platform Git repository available [here](ht
 
 ---
 
-## In a Nutshell
+
+## Focus on your applications, forget about the complexity of countless low level YAML files to deploy simple use cases on your cluster 
+![Volume sync](/mdos/img/example_yaml.png){: style="width:500px" align=right }
 
 * Build & deploy your applications on Kubernetes
 * No Kubernetes skills needed to perform complex workflows
