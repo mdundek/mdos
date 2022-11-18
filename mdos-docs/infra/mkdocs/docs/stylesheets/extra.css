@@ -9,3 +9,21 @@
 .section-icon {
 	color: #1DA1F2;
 }
+
+@media all and (min-width: 900px) {
+	.wrapper {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 10px;
+		grid-auto-rows: minmax(100px, auto);
+	}
+	.wrapper .left {
+		grid-column: 1 / 3;
+		grid-row: 1;
+	}
+	.wrapper .right {
+		grid-column: 3 / 4;
+		grid-row: 1;
+	}
+}
+  
