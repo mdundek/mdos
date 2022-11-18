@@ -18,16 +18,17 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 ## Focus on your applications, forget about the complexity of countless low level YAML files to deploy simple use cases on your cluster
 
 <p align="right">
-  <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/infra/mkdocs/docs/img/example_yaml.png?raw=true">
+  <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/infra/mkdocs/docs/img/example_yaml.png?raw=true" width="400px">
+  <ul>
+    <li>Build & deploy your applications on Kubernetes</li>
+    <li>No Kubernetes skills needed to perform complex workflows</li>
+    <li>Hassle free secure multi-tenant cluster usage and isolation</li>
+    <li>Greatly simplifies complex Kubernetes application deployment patterns</li>
+    <li>Provides tools to deal with hard to solve storage related challanges</li>
+    <li>Protect your applications by delegating authentication to MDos using Oauth2 & OIDC</li>
+    <li>Hassle free TLS certificate management</li>
+  </ul>
 </p>
-
-* Build & deploy your applications on Kubernetes
-* No Kubernetes skills needed to perform complex workflows
-* Hassle free secure multi-tenant cluster usage and isolation
-* Greatly simplifies complex Kubernetes application deployment patterns
-* Provides tools to deal with hard to solve storage related challanges
-* Protect your applications by delegating authentication to MDos using Oauth2 & OIDC
-* Hassle free TLS certificate management
 
 ### Why would you want to use it?
 
