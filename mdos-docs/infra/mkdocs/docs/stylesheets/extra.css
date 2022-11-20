@@ -6,6 +6,10 @@
 	--md-code-fg-color: #adbac8;
 }
 
+.md-typeset h1, .md-content__button {
+    display: none;
+}
+
 .section-icon {
 	color: #1DA1F2;
 }
