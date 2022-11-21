@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mdos-api-configs
+  labels:
+    app: api
+    appUuid: KG75-7D58-mdos
+    compUuid: KG75-7D58-api
+    tenantName: mdos
+data:
+  GEN_HELM_PATH_PATH: "/usr/src/dep/mhc-generic"
+  RUN_TARGET: "pod"
+  API_MODE: "FRAMEWORK"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mdos-api-http
+  labels:
+    app: api
+    appUuid: KG75-7D58-mdos
+    compUuid: KG75-7D58-api
+    tenantName: mdos
+spec:
+  type: ClusterIP
+  ports:
+    - targetPort: 3030
+      port: 3030
+      name: http-3030
+  selector:
+    appUuid: KG75-7D58-mdos
+    compUuid: KG75-7D58-api
+    app: api
+    tenantName: mdos
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mdos-api
+  labels:
+    app: api
+    appUuid: KG75-7D58-mdos
+    compUuid: KG75-7D58-api
+    tenantName: mdos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      appUuid: KG75-7D58-mdos
+      compUuid: KG75-7D58-api
+      app: api
+      tenantName: mdos
+  template:
+    metadata:
+      labels:
+        app: api
+        appUuid: KG75-7D58-mdos
+        compUuid: KG75-7D58-api
+        tenantName: mdos
+        date: "1668940129"
+    spec:
+      containers:
+        - name: mdos-api
+          image: "mdundek/mdos-api:latest"
+          imagePullPolicy: Always
+          env:
+            - name: RABBIT_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-cluster-default-user
+                  key: port
+            - name: RABBIT_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-cluster-default-user
+                  key: host
+            - name: RABBIT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-cluster-default-user
+                  key: username
+            - name: RABBIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-cluster-default-user
+                  key: password
+            - name: GEN_HELM_PATH_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: mdos-api-configs
+                  key: GEN_HELM_PATH_PATH
+            - name: RUN_TARGET
+              valueFrom:
+                configMapKeyRef:
+                  name: mdos-api-configs
+                  key: RUN_TARGET
+            - name: API_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: mdos-api-configs
+                  key: API_MODE
+          ports:
+          - name: http-3030
+            containerPort: 3030
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mdos-api-http-ingress
+spec:
+  ingressClassName: istio
+  rules:
+  - host: mdos-api.mydomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mdos-api-http
+            port:
+              number: 3030

@@ -16,6 +16,8 @@ RUN mv mc /usr/bin
 
 RUN mkdir -p /home/node/app/tmp
 
+COPY mhc-generic /usr/src/dep/mhc-generic
+
 # Create app directory
 WORKDIR /usr/src/app
 

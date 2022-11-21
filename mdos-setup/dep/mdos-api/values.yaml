@@ -42,6 +42,8 @@ components:
             value: "/usr/src/dep/k3s/client-ca.key"
           - key: KC_PORT
             value: "30999"
+          - key: API_MODE
+            value: "FULL"
 
     secrets:
       - name: creds

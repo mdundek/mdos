@@ -25,6 +25,8 @@ exports.Mdos = class Mdos extends MdosCore {
     async get(id, params) {
         if (id == 'user-info') {
             return await this.computeUserInfo(params.headers, params.query)
+        } else if (id == 'api-mode') {
+            return {mdos_framework_only: this.app.get("mdos_framework_only")}
         } else {
             throw new BadRequest('ERROR: Malformed API request')
         }

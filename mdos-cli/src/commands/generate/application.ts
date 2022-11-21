@@ -25,48 +25,45 @@ export default class Application extends Command {
         tenantName: Flags.string({ char: 't', description: 'A tenant name that this application belongs to' }),
         applicationName: Flags.string({ char: 'n', description: 'An application name' }),
     }
-    // *********************
-
-    // ***** QUESTIONS *****
-    static questions = [
-        {
-            group: 'application',
-            type: 'input',
-            name: 'applicationName',
-            message: 'Enter a application name:',
-            validate: (value: string) => {
-                if (value.trim().length == 0) return 'Mandatory field'
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                if (fs.existsSync(path.join(process.cwd(), value))) {
-                    return 'A folder with this name already exists in this directory'
-                }
-                return true
-            },
-        },
-        {
-            group: 'application',
-            type: 'input',
-            name: 'tenantName',
-            message: 'Enter a tenant name that this application belongs to:',
-            validate: (value: string) => {
-                if (value.trim().length == 0) return 'Mandatory field'
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                return true
-            },
-        },
-    ]
-    // *********************
 
     // *********************
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
+        const questions = [
+            {
+                group: 'application',
+                type: 'input',
+                name: 'applicationName',
+                message: 'Enter a application name:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    if (fs.existsSync(path.join(process.cwd(), value))) {
+                        return 'A folder with this name already exists in this directory'
+                    }
+                    return true
+                },
+            },
+            {
+                group: 'application',
+                type: 'input',
+                name: 'tenantName',
+                message: this.getConfig('FRAMEWORK_MODE') ? 'Enter a target namespace name for this application:' : 'Enter a tenant name that this application belongs to:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    return true
+                },
+            },
+        ]
+
         const { flags } = await this.parse(Application)
 
         // Collect info
-        let q = filterQuestions(Application.questions, 'application', flags)
+        let q = filterQuestions(questions, 'application', flags)
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
         // Make sure app folder does not exist yet

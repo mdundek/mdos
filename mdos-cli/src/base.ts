@@ -95,7 +95,9 @@ export default abstract class extends Command {
      * @param key
      * @param value
      */
-    setConfig(key: any, value: any) {
+    async setConfig(key: any, value: any) {
+        const apiMode = await axios.get(`${value}/mdos/api-mode`)
+        this.configData.FRAMEWORK_MODE = apiMode.data.mdos_framework_only
         this.configData[key] = value
         fs.writeFileSync(this.configPath, JSON.stringify(this.configData, null, 4))
     }
@@ -111,16 +113,23 @@ export default abstract class extends Command {
     async api(endpoint: string, method: string, body?: any, skipTokenInjection?: boolean) {
         const API_URI = this.checkIfDomainSet()
 
-        // Set oauth2 cookie if necessary
         const axiosConfig: AxiosConfig = {
             timeout: 0,
             httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         }
 
-        axiosConfig.headers = {
-            Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}`,
-            mdos_version: pjson.version,
+        // Set oauth2 cookie if necessary
+        if(this.getConfig('FRAMEWORK_MODE')) {
+            axiosConfig.headers = {
+                mdos_version: pjson.version,
+            }
+        } else {
+            axiosConfig.headers = {
+                Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}`,
+                mdos_version: pjson.version,
+            }
         }
+        
         axiosConfig.timeout = 1000 * 60 * 10
 
         if (method.toLowerCase() == 'post') {

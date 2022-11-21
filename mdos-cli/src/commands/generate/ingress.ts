@@ -115,6 +115,9 @@ export default class Ingress extends Command {
                 name: 'type',
                 message: 'What type of traffic will this ingress use?',
                 when: (values: any) => {
+                    // If in framework mode, do not show this question
+                    if(this.getConfig('FRAMEWORK_MODE')) return false
+                    
                     context(
                         'NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
                         false,
@@ -137,6 +140,65 @@ export default class Ingress extends Command {
                 ],
             }
         ])
+
+
+
+
+        // If in Framework mode, we need to ask about TLS certificates
+        if(this.getConfig('FRAMEWORK_MODE')) {
+            // Gateway type
+            const responseFrameworkMode = await inquirer.prompt({
+                type: 'list',
+                name: 'trafficType',
+                message: 'What type of traffic are you intending to enforce for this config?',
+                choices: [
+                    {
+                        name: 'HTTP (Listen on port 80, forwards to port 80)',
+                        value: 'HTTP',
+                    },
+                    {
+                        name: 'HTTPS, pass-through (Listen on port 443, forwards to port 443)',
+                        value: 'HTTPS_PASSTHROUGH',
+                    },
+                    {
+                        name: 'HTTPS, terminate TLS (Listen on port 443, forwards to port 80)',
+                        value: 'HTTPS_SIMPLE',
+                    },
+                ],
+            })
+
+            let tlsSecretResponse: { data: any[] }
+            let responseTlsSecret
+            if (responseFrameworkMode.trafficType == 'HTTPS_SIMPLE') {
+                // Collect tls secrets
+                try {
+                    tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=${appYaml.tenantName}`, 'get')
+                } catch (err) {
+                    this.showError(err)
+                    process.exit(1)
+                }
+                if (tlsSecretResponse.data.length == 0) {
+                    error('There are no TLS Secrets available in this namespace. Did you create a certificate in this namespace first?')
+                    process.exit(1)
+                }
+
+                responseTlsSecret = await inquirer.prompt({
+                    type: 'list',
+                    name: 'tlsSecretName',
+                    message: 'What TLS secret holds your certificate and key data for this domain?',
+                    choices: tlsSecretResponse.data.map((secret: any) => {
+                        return {
+                            name: secret.metadata.name,
+                            value: secret.metadata.name,
+                        }
+                    }),
+                })
+            }
+        }
+
+
+
+
 
         // Update ingress
         if (!targetCompYaml.ingress) targetCompYaml.ingress = []

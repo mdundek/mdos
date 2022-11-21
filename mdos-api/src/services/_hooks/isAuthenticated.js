@@ -8,7 +8,7 @@ const errors = require('@feathersjs/errors')
 module.exports = function () {
     return async (context) => {
         // Is auth disabled?
-        if (process.env.NO_ADMIN_AUTH == 'true') return context
+        if (process.env.NO_ADMIN_AUTH == 'true' || context.app.get("mdos_framework_only")) return context
         if (context.params.provider != 'rest')
             // Internal calls don't need authentication
             return context
