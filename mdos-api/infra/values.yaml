@@ -60,22 +60,22 @@ components:
             filename: client-ca.crt
             value: |-
               -----BEGIN CERTIFICATE-----
-              MIIBdjCCAR2gAwIBAgIBADAKBggqhkjOPQQDAjAjMSEwHwYDVQQDDBhrM3MtY2xp
-              ZW50LWNhQDE2NjQ4OTEzNzEwHhcNMjIxMDA0MTM0OTMxWhcNMzIxMDAxMTM0OTMx
-              WjAjMSEwHwYDVQQDDBhrM3MtY2xpZW50LWNhQDE2NjQ4OTEzNzEwWTATBgcqhkjO
-              PQIBBggqhkjOPQMBBwNCAARS1BakGbSB5JU1Pmeb7bZs39j65FvshraZQ5Z86pWb
-              Q/KspeoLG+X6iYUoDChioIzCqhovAwaueL7CBo5Ybauko0IwQDAOBgNVHQ8BAf8E
-              BAMCAqQwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU2e2vB6ez7YpjURl3GEmX
-              LIlIHVkwCgYIKoZIzj0EAwIDRwAwRAIgMn8EQhxBD0g/fkzACLDEIytKB9dAvOwQ
-              GXbD2z2LoUkCIHLe3J8SggB4Ff8Rh5YQm1B/4wntAJfeajFjAOolVF33
+              MIIBdzCCAR2gAwIBAgIBADAKBggqhkjOPQQDAjAjMSEwHwYDVQQDDBhrM3MtY2xp
+              ZW50LWNhQDE2NjgyODY4NzYwHhcNMjIxMTEyMjEwMTE2WhcNMzIxMTA5MjEwMTE2
+              WjAjMSEwHwYDVQQDDBhrM3MtY2xpZW50LWNhQDE2NjgyODY4NzYwWTATBgcqhkjO
+              PQIBBggqhkjOPQMBBwNCAATKv3+3JHRZhHYZ6gSAhS+DZ3KqKy8z3Olx3gjH9CLk
+              +iXYVILEsxC+X2QCVxMhKzVLgZE3TDpx5Qe2pcki/Avmo0IwQDAOBgNVHQ8BAf8E
+              BAMCAqQwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUkel05YvriJTcE44HPe0D
+              YE7FxKAwCgYIKoZIzj0EAwIDSAAwRQIgHTup3mWeNlaeJvNX4ePsWO+JzIHD92Ho
+              GPXjaNj5Hl4CIQCh9PH1EbFywtsvFxm8ESRUjVP3m2TosKVVeOeuxP7KXQ==
               -----END CERTIFICATE-----
           - key: client-key
             filename: client-ca.key
             value: |-
               -----BEGIN EC PRIVATE KEY-----
-              MHcCAQEEIK6insBao51Whvf8F6LPDWH7ht19M7vuZQwOg8eUEIYPoAoGCCqGSM49
-              AwEHoUQDQgAEUtQWpBm0geSVNT5nm+22bN/Y+uRb7Ia2mUOWfOqVm0PyrKXqCxvl
-              +omFKAwoYqCMwqoaLwMGrni+wgaOWG2rpA==
+              MHcCAQEEIKAM/nDpnGRmsi3RFCcQAM4mDgSXeFiUfd3P4n+kdR5uoAoGCCqGSM49
+              AwEHoUQDQgAEyr9/tyR0WYR2GeoEgIUvg2dyqisvM9zpcd4Ix/Qi5Pol2FSCxLMQ
+              vl9kAlcTISs1S4GRN0w6ceUHtqXJIvwL5g==
               -----END EC PRIVATE KEY-----
       - name: rabbitmq-creds
         type: env

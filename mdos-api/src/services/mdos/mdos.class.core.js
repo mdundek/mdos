@@ -101,7 +101,7 @@ class MdosCore extends CommonCore {
         valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`
         valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`
 
-        // If sync volues , make sure we have a minio secret
+        // If sync volues, make sure we have a ftpd secret
         if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }

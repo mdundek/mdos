@@ -1,5 +1,6 @@
 site_name: MDos
 site_url: https://mdundek.github.io/mdos/
+repo_url: https://github.com/mdundek/mdos
 theme:
   name: material
   palette: 

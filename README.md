@@ -15,11 +15,7 @@ MDos is a Kubernetes based application runtime platform, it's aim is to greatly 
 >
 > If you encounter some miss-behaviour, or if you believe something needs to be adapted, create an issue and I will come back to you shortly.
 
-## Focus on your applications, forget about the complexity of countless low level YAML files to deploy simple use cases on your cluster
-
-<p align="right">
-  <img src="https://github.com/mdundek/mdos/blob/main/mdos-docs/infra/mkdocs/docs/img/example_yaml.png?raw=true">
-</p>
+## In a Nutshell
 
 * Build & deploy your applications on Kubernetes
 * No Kubernetes skills needed to perform complex workflows

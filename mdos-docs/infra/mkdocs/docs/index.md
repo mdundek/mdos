@@ -9,7 +9,7 @@ hide:
 MDos is a Kubernetes based application runtime platform, it's aim is to greatly simplify the process of creating, building and deploying applications on a Kubernetes cluster without compromising on security and efficiency
 
 <figure markdown>
-  ![Overview](/mdos/img/overview.png)
+  ![Overview](/mdos/img/overview.png){ width="700" }
 </figure>
 
 !!! warning "Disclaimer"
@@ -24,8 +24,10 @@ This documentation is for the `MDos` platform Git repository available [here](ht
 ---
 
 
+
+<div class="wrapper" markdown>
+  <div class="left" markdown>
 ## Focus on your applications, forget about the complexity of countless low level YAML files to deploy simple use cases on your cluster 
-![Volume sync](/mdos/img/example_yaml.png){: style="width:500px" align=right }
 
 * Build & deploy your applications on Kubernetes
 * No Kubernetes skills needed to perform complex workflows
@@ -34,6 +36,51 @@ This documentation is for the `MDos` platform Git repository available [here](ht
 * Provides tools to deal with hard to solve storage related challanges
 * Protect your applications by delegating authentication to MDos using Oauth2 & OIDC
 * Hassle free TLS certificate management
+  </div>
+  <div class="right" markdown>
+!!! example ""
+
+    ```yaml
+    schemaVersion: v1
+    tenantName: a-team
+    appName: hello-world
+    components:
+      - name: server
+        image: hello-world
+        tag: 0.0.1
+        services:
+          - name: http
+            ports:
+              - port: 8080
+        configs:
+          - name: config-params
+            type: env
+            entries:
+              - key: MQTT_URL
+                value: "mqtt://hello-world-mosquitto-mqtt:1883"
+        ingress:
+          - name: http-ingress
+            matchHost: hello-world.yourdomain.com
+            targetPort: 8080
+            trafficType: http
+      - name: mosquitto
+        image: eclipse-mosquitto
+        tag: latest
+        services:
+          - name: mqtt
+            ports:
+              - port: 1883
+    ```
+  </div>
+</div>
+
+
+<!-- ![Volume sync](/mdos/img/example_yaml.png){: style="width:500px" align=right } -->
+
+
+    
+
+
 
 ### Why would you want to use it?
 
