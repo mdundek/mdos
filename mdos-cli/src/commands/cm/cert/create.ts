@@ -32,6 +32,15 @@ export default class Create extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Create)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if(this.getConfig('FRAMEWORK_MODE')) {
+            // Not supported in framework only mode
+            error("This command is only available for MDos managed environements")
+            process.exit(1)
+        }
+        
         let agregatedResponses: any = {}
 
         // Make sure we have a valid oauth2 cookie token

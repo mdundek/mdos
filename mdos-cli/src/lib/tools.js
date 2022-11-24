@@ -172,12 +172,11 @@ const extractErrorMessage = (error) => {
     
     if (errorMsg.length > 0) {
         const mainErrMessage = errorMsg.filter(msg => msg.indexOf("ERROR: ") == 0).map(msg => msg.substring(7))
-        return mainErrMessage.length > 0 ? mainErrMessage.join('\n') : errorMsg.join('\n')
+        return mainErrMessage.length > 0 ? mainErrMessage.join('\n') : "An unknown server error occured"
     } else {
         return 'An unknown error occured!'
     }
 }
-
 
 /**
  * Private: Is integer string a positive value

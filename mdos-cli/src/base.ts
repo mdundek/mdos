@@ -96,9 +96,18 @@ export default abstract class extends Command {
      * @param value
      */
     async setConfig(key: any, value: any) {
+        this.configData[key] = value
+        fs.writeFileSync(this.configPath, JSON.stringify(this.configData, null, 4))
+    }
+
+    /**
+     * setApiEndpoint
+     * @param value 
+     */
+    async setApiEndpoint(value: any) {
         const apiMode = await axios.get(`${value}/mdos/api-mode`)
         this.configData.FRAMEWORK_MODE = apiMode.data.mdos_framework_only
-        this.configData[key] = value
+        this.configData.MDOS_API_URI = value
         fs.writeFileSync(this.configPath, JSON.stringify(this.configData, null, 4))
     }
 
@@ -151,7 +160,7 @@ export default abstract class extends Command {
     checkIfDomainSet() {
         let API_URI = this.getConfig('MDOS_API_URI')
         if (!API_URI) {
-            error("Please set your mdos domain name using the command 'mdos configure api-endpoint https://mdos-api.<your domain here>'")
+            error("Please set your mdos domain name using the command 'mdos configure api-endpoint http ://mdos-api.<your domain here>'")
             process.exit(1)
         }
         return API_URI
@@ -183,7 +192,6 @@ export default abstract class extends Command {
 
         if (!token || token.length == 0) {
             if (!skipAuthMsg) warn('Authentication required')
-
             const responses = await inquirer.prompt(
                 [
                     {

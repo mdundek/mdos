@@ -32,6 +32,9 @@ export default class Ingress extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Ingress)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
         // Detect mdos project yaml file
         const appYamlPath = path.join(path.dirname(process.cwd()), 'mdos.yaml')
         if (!fs.existsSync(appYamlPath)) {
@@ -63,6 +66,18 @@ export default class Ingress extends Command {
 
         const allPortsArray = targetCompYaml.services.map((s: { ports: any }) => s.ports).flat()
 
+        type Ingress = {
+            name: string
+            matchHost: string
+            targetPort: number
+            trafficType: string
+            subPath?: string,
+            tlsSecretName?: string
+        }
+
+        // Update ingress
+        if (!targetCompYaml.ingress) targetCompYaml.ingress = []
+        
         let responses = await inquirer.prompt([
             {
                 type: 'input',
@@ -141,9 +156,6 @@ export default class Ingress extends Command {
             }
         ])
 
-
-
-
         // If in Framework mode, we need to ask about TLS certificates
         if(this.getConfig('FRAMEWORK_MODE')) {
             // Gateway type
@@ -166,11 +178,11 @@ export default class Ingress extends Command {
                     },
                 ],
             })
+            responses.trafficType = responseFrameworkMode.trafficType
 
-            let tlsSecretResponse: { data: any[] }
-            let responseTlsSecret
-            if (responseFrameworkMode.trafficType == 'HTTPS_SIMPLE') {
+            if (responses.trafficType == 'HTTPS_SIMPLE') {
                 // Collect tls secrets
+                let tlsSecretResponse: { data: any[] }
                 try {
                     tlsSecretResponse = await this.api(`kube?target=tls-secrets&namespace=${appYaml.tenantName}`, 'get')
                 } catch (err) {
@@ -182,7 +194,7 @@ export default class Ingress extends Command {
                     process.exit(1)
                 }
 
-                responseTlsSecret = await inquirer.prompt({
+                const responseTlsSecret = await inquirer.prompt({
                     type: 'list',
                     name: 'tlsSecretName',
                     message: 'What TLS secret holds your certificate and key data for this domain?',
@@ -193,34 +205,31 @@ export default class Ingress extends Command {
                         }
                     }),
                 })
+                responses = { ...responses, ...responseTlsSecret }
             }
+
+            const ing: Ingress = {
+                name: responses.name,
+                matchHost: responses.host,
+                targetPort: responses.port,
+                trafficType: responses.trafficType,
+            }
+            if (responses.trafficType == 'HTTPS_SIMPLE') ing.tlsSecretName = responses.tlsSecretName
+            if (responses.subPath) ing.subPath = responses.subPath
+    
+            targetCompYaml.ingress.push(ing)
+        } else {
+            const ing: Ingress = {
+                name: responses.name,
+                matchHost: responses.host,
+                targetPort: responses.port,
+                trafficType: responses.type,
+            }
+    
+            if (responses.subPath) ing.subPath = responses.subPath
+    
+            targetCompYaml.ingress.push(ing)
         }
-
-
-
-
-
-        // Update ingress
-        if (!targetCompYaml.ingress) targetCompYaml.ingress = []
-
-        type Ingress = {
-            name: string
-            matchHost: string
-            targetPort: number
-            trafficType: string
-            subPath?: string
-        }
-
-        const ing: Ingress = {
-            name: responses.name,
-            matchHost: responses.host,
-            targetPort: responses.port,
-            trafficType: responses.type,
-        }
-
-        if (responses.subPath) ing.subPath = responses.subPath
-
-        targetCompYaml.ingress.push(ing)
 
         appYaml.components = appYaml.components.map((comp: any) => (comp.name == compName ? targetCompYaml : comp))
 

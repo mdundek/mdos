@@ -61,11 +61,13 @@ export default class SetKubeconfig extends Command {
                             
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        try {
-            await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
+        if(!this.getConfig('FRAMEWORK_MODE')) {
+            try {
+                await this.validateJwt()
+            } catch (error) {
+                this.showError(error)
+                process.exit(1)
+            }
         }
 
         // Get user certificate

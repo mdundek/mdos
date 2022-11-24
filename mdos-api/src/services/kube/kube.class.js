@@ -38,6 +38,9 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
         else if (params.query.target == 'gateways') {
+            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
             let gateways = await this.app.get('kube').getIstioGateways(params.query.namespace && params.query.namespace != "*" ? params.query.namespace : "", params.query.name ? params.query.name : false)
             if(params.query.host)
                 return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
@@ -48,6 +51,9 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP CERTIFICATES
          ******************************************/
         else if (params.query.target == 'certificates') {
+            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
             let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
             if(params.query.hosts)
                 return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
@@ -58,6 +64,9 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP TLS SECRETS
          ******************************************/
         else if (params.query.target == 'tls-secrets') {
+            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
             let secrets = await this.app.get('kube').getTlsSecrets(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
             return secrets
         }
@@ -65,6 +74,9 @@ exports.Kube = class Kube extends KubeCore {
          *  LOOKUP CERT-MANAGER ISSUERS
          ******************************************/
         else if (params.query.target == 'cm-issuers') {
+            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
             let issuers = await this.app.get('kube').getCertManagerIssuers(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
             return issuers
         }
@@ -359,95 +371,112 @@ exports.Kube = class Kube extends KubeCore {
          *  CREATE NEW TENANT NAMESPACE
          ******************************************/
         else if (data.type == 'tenantNamespace') {
-            // Make sure keycloak is deployed
-            await this.keycloakInstallCheck()
+            // MDos framework only mode
+            if(this.app.get("mdos_framework_only")) {
+                if(!data.namespace || data.namespace.trim().length == 0) throw new Error('ERROR: Missing namespace name')
 
-            // Make sure realm exists
-            await this.realmCheck(data.realm)
+                const nsCheck = await this.app.get('kube').hasNamespace(data.namespace)
+                if(nsCheck) {
+                    throw new Error('ERROR: Namespace already exists')
+                }
+                // Create namespace
+                await this.app.get('kube').createNamespace({
+                    name: data.namespace,
+                    skipSidecar: true,
+                    skipRBAC: true
+                })
+            } 
+            // MDos full mode
+            else {
+                // Make sure keycloak is deployed
+                await this.keycloakInstallCheck()
 
-            // Make sure client ID does not exist
-            await this.clientDoesNotExistCheck(data.realm, data.namespace)
+                // Make sure realm exists
+                await this.realmCheck(data.realm)
 
-            const saUser = nanoid().toLowerCase()
-            const saPass = nanoid().toLowerCase()
+                // Make sure client ID does not exist
+                await this.clientDoesNotExistCheck(data.realm, data.namespace)
 
-            // Kick off event driven workflow
-            const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_CREATE_NAMESPACE, {
-                context: {
-                    namespace: data.namespace,
-                    realm: data.realm,
-                    registryUser: saUser,
-                    registryPass: saPass,
-                    kcSaUser: saUser,
-                    kcSaPass: saPass,
-                    rollback: false
-                },
-                workflow: [
-                    {
-                        topic: CHANNEL.JOB_K3S_CREATE_NAMESPACE,
-                        status: "PENDING",
-                        milestone: 1
+                const saUser = nanoid().toLowerCase()
+                const saPass = nanoid().toLowerCase()
+
+                // Kick off event driven workflow
+                const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_CREATE_NAMESPACE, {
+                    context: {
+                        namespace: data.namespace,
+                        realm: data.realm,
+                        registryUser: saUser,
+                        registryPass: saPass,
+                        kcSaUser: saUser,
+                        kcSaPass: saPass,
+                        rollback: false
                     },
-                    {
-                        topic: CHANNEL.JOB_KC_CREATE_CLIENT,
-                        status: "PENDING",
-                        milestone: 2
-                    },
-                    {
-                        topic: CHANNEL.JOB_KC_CREATE_CLIENT_ROLES,
-                        status: "PENDING"
-                    },
-                    {
-                        topic: CHANNEL.JOB_FTPD_CREATE_CREDENTIALS,
-                        status: "PENDING",
-                        milestone: 3
-                    },
-                    {
-                        topic: CHANNEL.JOB_KC_CREATE_CLIENT_SA,
-                        status: "PENDING",
-                        milestone: 4
-                    },
-                    {
-                        topic: CHANNEL.JOB_K3S_CREATE_REG_SECRET,
-                        status: "PENDING"
-                    },
-                    {
-                        topic: CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS,
-                        status: "PENDING"
+                    workflow: [
+                        {
+                            topic: CHANNEL.JOB_K3S_CREATE_NAMESPACE,
+                            status: "PENDING",
+                            milestone: 1
+                        },
+                        {
+                            topic: CHANNEL.JOB_KC_CREATE_CLIENT,
+                            status: "PENDING",
+                            milestone: 2
+                        },
+                        {
+                            topic: CHANNEL.JOB_KC_CREATE_CLIENT_ROLES,
+                            status: "PENDING"
+                        },
+                        {
+                            topic: CHANNEL.JOB_FTPD_CREATE_CREDENTIALS,
+                            status: "PENDING",
+                            milestone: 3
+                        },
+                        {
+                            topic: CHANNEL.JOB_KC_CREATE_CLIENT_SA,
+                            status: "PENDING",
+                            milestone: 4
+                        },
+                        {
+                            topic: CHANNEL.JOB_K3S_CREATE_REG_SECRET,
+                            status: "PENDING"
+                        },
+                        {
+                            topic: CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS,
+                            status: "PENDING"
+                        }
+                    ],
+                    rollbackWorkflow: [
+                        {
+                            topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
+                            status: "PENDING",
+                            milestone: 4
+                        },
+                        {
+                            topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
+                            status: "PENDING",
+                            milestone: 3
+                        },
+                        {
+                            topic: CHANNEL.JOB_KC_DELETE_CLIENT,
+                            status: "PENDING",
+                            milestone: 2
+                        },
+                        {
+                            topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
+                            status: "PENDING",
+                            milestone: 1
+                        }
+                    ]
+                })
+
+                // Check if error occured or not
+                if(result.context.rollback) {
+                    const errorJob = result.workflow.find(job => job.status  == "ERROR")
+                    if(errorJob && errorJob.errorMessage) {
+                        throw new Error("ERROR: " + errorJob.errorMessage)
+                    } else {
+                        throw new Error("ERROR: An unknown error occured")
                     }
-                ],
-                rollbackWorkflow: [
-                    {
-                        topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
-                        status: "PENDING",
-                        milestone: 4
-                    },
-                    {
-                        topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
-                        status: "PENDING",
-                        milestone: 3
-                    },
-                    {
-                        topic: CHANNEL.JOB_KC_DELETE_CLIENT,
-                        status: "PENDING",
-                        milestone: 2
-                    },
-                    {
-                        topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
-                        status: "PENDING",
-                        milestone: 1
-                    }
-                ]
-            })
-
-            // Check if error occured or not
-            if(result.context.rollback) {
-                console.error(result.workflow)
-                const errorJob = result.workflow.find(job => job.status  == "ERROR")
-                if(errorJob && errorJob.errorMessage) {
-                    throw new Error("ERROR: " + errorJob.errorMessage)
-                } else {
-                    throw new Error("ERROR: An unknown error occured")
                 }
             }
         }

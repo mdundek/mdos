@@ -35,7 +35,7 @@ export default class ApiEndpoint extends Command {
             process.exit(1)
         } else {
             try {
-                await this.setConfig('MDOS_API_URI', `${args.uri}${flags.dev ? ":3030":""}`)
+                await this.setApiEndpoint(`${args.uri}${flags.dev ? ":3030":""}`)
                 success("Done")
             } catch (error) {
                 this.showError(error)

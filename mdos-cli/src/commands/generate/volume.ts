@@ -34,6 +34,9 @@ export default class Volume extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Volume)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
         // Get volumes base path
         const volumesPath = path.join(path.dirname(process.cwd()), 'volumes')
 
@@ -173,13 +176,15 @@ export default class Volume extends Command {
             } 
             // Yes, shared
             else {
-                // Make sure we have a valid oauth2 cookie token
-                // otherwise, collect it
-                try {
-                    await this.validateJwt()
-                } catch (error) {
-                    this.showError(error)
-                    process.exit(1)
+                if(!this.getConfig('FRAMEWORK_MODE')) {
+                    // Make sure we have a valid oauth2 cookie token
+                    // otherwise, collect it
+                    try {
+                        await this.validateJwt()
+                    } catch (error) {
+                        this.showError(error)
+                        process.exit(1)
+                    }
                 }
 
                 // Get namespace shared volumes

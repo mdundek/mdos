@@ -21,8 +21,8 @@ docker push mdundek/mdos-api:latest
 
 cd $_DIR
 kubectl apply -f mdos-framework.yaml -n mdos
-sleep 5
+sleep 15
 
 POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
-echo "kubectl logs $POD_NAME -n mdos"
-# kubectl logs $POD_NAME -n mdos --follow
+# echo "kubectl logs $POD_NAME -n mdos"
+kubectl logs $POD_NAME -n mdos --follow

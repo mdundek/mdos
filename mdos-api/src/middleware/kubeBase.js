@@ -648,8 +648,10 @@ class KubeBase extends KubeBaseConstants {
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, nsJson, this.k8sAxiosHeader)
 
         // Create Roles for admin & non admin user profiles in namespace
-        await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSAdminRoles(namespaceName), this.k8sAxiosHeader)
-        await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSUserRoles(namespaceName), this.k8sAxiosHeader)
+        if (!data.skipRBAC) {
+            await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSAdminRoles(namespaceName), this.k8sAxiosHeader)
+            await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSUserRoles(namespaceName), this.k8sAxiosHeader)
+        }
     }
 
     /**

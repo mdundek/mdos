@@ -27,6 +27,15 @@ export default class Protect extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Protect)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if(this.getConfig('FRAMEWORK_MODE')) {
+            // Not supported in framework only mode
+            error("This command is only available for MDos managed environements")
+            process.exit(1)
+        }
+
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), 'mdos.yaml')
         let componentName: any
