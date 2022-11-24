@@ -1,7 +1,7 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { success, context, error, lftp, isDockerInstalled, buildPushComponent } = require('../../lib/tools')
+const { success, context, error, lftp, isDockerInstalled, buildPushComponent, buildPushComponentFmMode } = require('../../lib/tools')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
@@ -40,7 +40,6 @@ export default class Deploy extends Command {
             context('https://docs.docker.com/engine/install/', true, false)
             process.exit(1)
         }
-
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), 'mdos.yaml')
         let appRootDir = process.cwd()
@@ -52,7 +51,6 @@ export default class Deploy extends Command {
             }
             appRootDir = path.dirname(process.cwd())
         }
-
         // Load mdos yaml file
         let appYamlBase64
         let appYaml: {
@@ -70,23 +68,24 @@ export default class Deploy extends Command {
             this.showError(error)
             process.exit(1)
         }
-
         // Validate app schema
         if (!appYaml.schemaVersion || typeof appYaml.schemaVersion != 'string') {
             error('Missing schema version in your manifest (expected property: schemaVersion)')
             process.exit(1)
         }
 
-        // Make sure we have a valid oauth2 cookie token
-        // otherwise, collect it
         let userCreds = null
-        try {
-            userCreds = await this.validateJwt(false, flags)
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
+        if(!this.getConfig('FRAMEWORK_MODE')) {
+            // Make sure we have a valid oauth2 cookie token
+            // otherwise, collect it
+            try {
+                userCreds = await this.validateJwt(false, flags)
+            } catch (error) {
+                this.showError(error)
+                process.exit(1)
+            }
         }
-
+        
         // Validate application schema
         const response = await this.api('schema-validator/v1', 'put', appYaml)
         if (response.data.length > 0) {
@@ -111,30 +110,69 @@ export default class Deploy extends Command {
             )
             process.exit(1)
         }
+        if(!this.getConfig('FRAMEWORK_MODE')) {
 
-        // Get credentials for lftp
-        let userInfo
-        try {
-            userInfo = await this.api(`mdos/user-info?namespace=${appYaml.tenantName}&appName=${appYaml.appName}`, 'GET')
-        } catch (err) {
-            this.showError(err)
-            process.exit(1)
-        }
-
-        // Sync volumes
-        let volSourcePath = path.join(appRootDir, 'volumes')
-        const volumeUpdates = await lftp(volSourcePath, appYaml.appName, userInfo.data.lftpCreds)
-
-        // Build / push application
-        for (let appComp of appYaml.components) {
-            let targetRegistry = null
-            if (appComp.registry) {
-                targetRegistry = appComp.registry
-            } else if (!appComp.publicRegistry) {
-                targetRegistry = userInfo.data.registry
+            console.log("===>")
+            // Get credentials for lftp
+            let userInfo
+            try {
+                userInfo = await this.api(`mdos/user-info?namespace=${appYaml.tenantName}&appName=${appYaml.appName}`, 'GET')
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
             }
-            const regCreds = userCreds ? userCreds : await this.collectRegistryCredentials(flags)
-            await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir, appYaml.tenantName)
+
+            // Sync volumes
+            let volSourcePath = path.join(appRootDir, 'volumes')
+            await lftp(volSourcePath, appYaml.appName, userInfo.data.lftpCreds)
+
+            // Build / push application
+            for (let appComp of appYaml.components) {
+                let targetRegistry = null
+                if (appComp.registry) {
+                    targetRegistry = appComp.registry
+                } else if (!appComp.publicRegistry) {
+                    targetRegistry = userInfo.data.registry
+                }
+                const regCreds = userCreds ? userCreds : await this.collectRegistryCredentials(flags)
+                await buildPushComponent(userInfo.data, regCreds, targetRegistry, appComp, appRootDir, appYaml.tenantName)
+            }
+        } else {
+            // Build / push application
+            let pullSecretResponse= null
+            for (let appComp of appYaml.components) {
+                let targetRegistry = null
+                if (appComp.registry) {
+                    targetRegistry = appComp.registry
+                }
+
+                if(appComp.imagePullSecrets && appComp.imagePullSecrets.length > 0) {
+                    // Collect imagepull secrets
+                    if(!pullSecretResponse) {
+                        try {
+                            pullSecretResponse = await this.api(`kube?target=image-pull-secrets&namespace=${appYaml.tenantName}`, 'get')
+                        } catch (err) {
+                            this.showError(err)
+                            process.exit(1)
+                        }
+                    }
+                    const pullSecret = pullSecretResponse.data.find((secret: any) => secret.metadata.name == appComp.imagePullSecrets[0].name)
+                    if(!pullSecret) {
+                        error(`ImagePullSecret "${appComp.imagePullSecrets[0].name}" was not found in your target namespace`)
+                        process.exit(1)
+                    }
+
+                    // Extract registry credentials
+                    const regCreds = Buffer.from(pullSecret.data['.dockerconfigjson'], 'base64').toString('utf-8');
+                    const regAuth = JSON.parse(regCreds).auths
+                    const hostCreds = targetRegistry ? (regAuth[targetRegistry] || regAuth[Object.keys(regAuth)[0]]) : regAuth[Object.keys(regAuth)[0]]
+
+                    await buildPushComponentFmMode(targetRegistry, hostCreds, appComp, appRootDir)
+                }
+                else {
+                    await buildPushComponentFmMode(targetRegistry, null, appComp, appRootDir)
+                }
+            }
         }
 
         // Do some checks, make sure this deployment will not collide with existing deployments for other apps
@@ -145,7 +183,6 @@ export default class Deploy extends Command {
             this.showError(err)
             process.exit(1)
         }
-
         let errorMsg: string | null = null
         // Make sure deployed apps with same uuid do not have different names
         for (const deployedApp of deployedApps.data) {
@@ -165,32 +202,7 @@ export default class Deploy extends Command {
                 }
             }
         }
-
-        // check that volume names are not already in use by other apps
-        // NOTE: Probably obsolete checks. Need error UC to implement right
-        // if(!errorMsg) {
-        //     let allOtherVolumeNames: any[] = []
-        //     for(const deployedApp of deployedApps.data) {
-        //         // If other app
-        //         if(!errorMsg && deployedApp.isHelm && appYaml.name != deployedApp.name) {
-        //             for(const deployedComponent of deployedApp.values.components) {
-        //                 if(deployedComponent.volumes) {
-        //                     allOtherVolumeNames = [...allOtherVolumeNames, ...deployedComponent.volumes.map((thisVol: { name: any }) => thisVol.name)]
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     appYaml.components.forEach((thisComp: { volumes: any[] }) => {
-        //         if(!errorMsg && thisComp.volumes) {
-        //             thisComp.volumes.forEach((thisVol: { name: any }) => {
-        //                 if(allOtherVolumeNames.includes(thisVol.name)) {
-        //                     errorMsg = `The volume '${thisVol.name}' is already used by an other application in this namespace`
-        //                 }
-        //             })
-        //         }
-        //     })
-        // }
-
+        
         if (errorMsg) {
             error(errorMsg)
             process.exit(1)

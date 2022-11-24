@@ -71,6 +71,16 @@ exports.Kube = class Kube extends KubeCore {
             return secrets
         }
         /******************************************
+         *  LOOKUP IMAGE PULL SECRETS
+         ******************************************/
+         else if (params.query.target == 'image-pull-secrets') {
+            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
+            let secrets = await this.app.get('kube').getImagePullSecrets(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            return secrets
+        }
+        /******************************************
          *  LOOKUP CERT-MANAGER ISSUERS
          ******************************************/
         else if (params.query.target == 'cm-issuers') {
@@ -509,59 +519,75 @@ exports.Kube = class Kube extends KubeCore {
          *  DELETE TENANT NAMESPACE
          ******************************************/
         if (params.query.target == 'tenantNamespace') {
-            // Make sure keycloak is deployed
-            await this.keycloakInstallCheck()
+            // MDos framework only mode
+            if(this.app.get("mdos_framework_only")) {
+                if(!id || id.trim().length == 0) throw new Error('ERROR: Missing namespace name')
 
-            // Make sure realm exists
-            await this.realmCheck(params.query.realm)
+                // Make sure namespace exists
+                if (!(await this.app.get('kube').hasNamespace(id))) {
+                    throw new Error("ERROR: Namespace not found")
+                }
 
-            // Make sure namespace exists
-            if (!(await this.app.get('kube').hasNamespace(id.toLowerCase()))) {
-                throw new Error("ERROR: Namespace not found")
-            }
+                // Delete namespace
+                await this.app.get('kube').deleteNamespace(id)
+            } 
+            // MDos full mode
+            else {
+                // Make sure keycloak is deployed
+                await this.keycloakInstallCheck()
 
-            // Kick off event driven workflow
-            const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_DELETE_NAMESPACE, {
-                context: {
-                    namespace: id,
-                    realm: params.query.realm,
-                    rollback: false
-                },
-                workflow: [
-                    {
-                        topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
-                        status: "PENDING",
-                        milestone: 1
+                // Make sure realm exists
+                await this.realmCheck(params.query.realm)
+
+                // Make sure namespace exists
+                if (!(await this.app.get('kube').hasNamespace(id.toLowerCase()))) {
+                    throw new Error("ERROR: Namespace not found")
+                }
+
+                // Kick off event driven workflow
+                const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_DELETE_NAMESPACE, {
+                    context: {
+                        namespace: id,
+                        realm: params.query.realm,
+                        rollback: false
                     },
-                    {
-                        topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
-                        status: "PENDING",
-                        milestone: 2
-                    },
-                    {
-                        topic: CHANNEL.JOB_KC_DELETE_CLIENT,
-                        status: "PENDING",
-                        milestone: 3
-                    },
-                    {
-                        topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
-                        status: "PENDING",
-                        milestone: 4
+                    workflow: [
+                        {
+                            topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
+                            status: "PENDING",
+                            milestone: 1
+                        },
+                        {
+                            topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
+                            status: "PENDING",
+                            milestone: 2
+                        },
+                        {
+                            topic: CHANNEL.JOB_KC_DELETE_CLIENT,
+                            status: "PENDING",
+                            milestone: 3
+                        },
+                        {
+                            topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
+                            status: "PENDING",
+                            milestone: 4
+                        }
+                    ],
+                    rollbackWorkflow: []
+                })
+
+                // Check if error occured or not
+                if(result.context.rollback) {
+                    console.error(result.workflow)
+                    const errorJob = result.workflow.find(job => job.status  == "ERROR")
+                    if(errorJob && errorJob.errorMessage) {
+                        throw new Error("ERROR: " + errorJob.errorMessage)
+                    } else {
+                        throw new Error("ERROR: An unknown error occured")
                     }
-                ],
-                rollbackWorkflow: []
-            })
-
-            // Check if error occured or not
-            if(result.context.rollback) {
-                console.error(result.workflow)
-                const errorJob = result.workflow.find(job => job.status  == "ERROR")
-                if(errorJob && errorJob.errorMessage) {
-                    throw new Error("ERROR: " + errorJob.errorMessage)
-                } else {
-                    throw new Error("ERROR: An unknown error occured")
                 }
             }
+
         }
         /******************************************
          *  UNINSTALL / DELETE APPLICATION

@@ -1,6 +1,6 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
-const { error, filterQuestions, mergeFlags } = require('../../lib/tools')
+const { error, filterQuestions, mergeFlags } = require('../../../lib/tools')
 
 /**
  * Command

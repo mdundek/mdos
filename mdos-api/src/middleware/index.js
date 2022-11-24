@@ -18,7 +18,7 @@ module.exports = function (app) {
     app.set('kube', new Kube(app))
     app.set('socketManager', new SocketManager(app))
     app.set('schemaValidator', {
-        v1: new SchemaValidator('v1'),
+        v1: new SchemaValidator('v1', app.get("mdos_framework_only")),
     }) 
     app.set('brokerClient', new MDosBrokerClient(`${process.env.RABBIT_USERNAME}:${process.env.RABBIT_PASSWORD}@${process.env.RABBIT_HOST}:${process.env.RABBIT_PORT}`, true))
 

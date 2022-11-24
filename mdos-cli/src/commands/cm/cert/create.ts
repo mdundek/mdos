@@ -193,7 +193,7 @@ export default class Create extends Command {
                 process.exit(1)
             }
 
-            // Selevct target issuer / cluster issuer
+            // Select target issuer / cluster issuer
             const issuerValues = issuerResponse.data.map((issuer: any) => {
                 return {
                     name: `${issuer.metadata.name} (${issuer.kind})`,

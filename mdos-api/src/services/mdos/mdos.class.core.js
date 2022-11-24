@@ -97,11 +97,15 @@ class MdosCore extends CommonCore {
      * @returns
      */
     async enrichValuesForDeployment(valuesYaml) {
-        // Specify registry for init containers
-        valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`
-        valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`
+        if(!this.app.get("mdos_framework_only")) {
+            // Specify registry for init containers
+            valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`
+            valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`
+        } else {
+            valuesYaml.ingressClassName = "istio"
+        }
 
-        // If sync volues, make sure we have a ftpd secret
+        // If sync volumes, make sure we have a ftpd secret
         if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)
         }
@@ -109,7 +113,7 @@ class MdosCore extends CommonCore {
         // Iterate over components and process one by one
         for (const component of valuesYaml.components) {
             // Add registry credentials if necessary
-            if (!component.imagePullSecrets && !component.publicRegistry) {
+            if (!this.app.get("mdos_framework_only") && !component.imagePullSecrets && !component.publicRegistry) {
                 // MDos registry target, append namespace name to image path
                 if (component.image.indexOf('/') == 0) component.image = `${valuesYaml.tenantName}${component.image}`
                 else component.image = `${valuesYaml.tenantName}/${component.image}`
@@ -133,7 +137,7 @@ class MdosCore extends CommonCore {
             }
 
             // Resolve OIDC details
-            if (component.oidc && component.oidc.provider) {
+            if (!this.app.get("mdos_framework_only") && component.oidc && component.oidc.provider) {
                 const oidcProvider = await this.app.get('kube').getOidcProviders()
                 const targetProvider = oidcProvider.find((p) => p.name == component.oidc.provider)
                 if (!targetProvider) {
@@ -160,70 +164,72 @@ class MdosCore extends CommonCore {
                     return i
                 })
 
-                // Set associated gateways
-                const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
-                // console.log(JSON.stringify(hostMatrix, null, 4))
-                let ingressInUseErrors = []
-                let ingressMissingErrors = []
-                component.ingress = component.ingress.map((ingress) => {
-                    let gtwConfigured = false
-                    if(ingress.trafficType == "http") {
-                        const httpGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTP")
-                        const httpsTerminateGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_SIMPLE")
-                        gtwConfigured = httpGatewayFound[ingress.matchHost] || httpsTerminateGatewayFound[ingress.matchHost]
-                    } else {
-                        const httpsPassthroughGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_PASSTHROUGH")
-                        gtwConfigured = httpsPassthroughGatewayFound[ingress.matchHost]
-                    }
-
-                    // If not available for any gateway config, then it means that we have a match
-                    if(gtwConfigured) {
-                        let targetGtws = []
-
-                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
-                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                if(!this.app.get("mdos_framework_only")) {
+                    // Set associated gateways
+                    const hostMatrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(component.ingress.map((ingress) => ingress.matchHost))
+                    // console.log(JSON.stringify(hostMatrix, null, 4))
+                    let ingressInUseErrors = []
+                    let ingressMissingErrors = []
+                    component.ingress = component.ingress.map((ingress) => {
+                        let gtwConfigured = false
+                        if(ingress.trafficType == "http") {
+                            const httpGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTP")
+                            const httpsTerminateGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_SIMPLE")
+                            gtwConfigured = httpGatewayFound[ingress.matchHost] || httpsTerminateGatewayFound[ingress.matchHost]
+                        } else {
+                            const httpsPassthroughGatewayFound = this.app.get("kube").ingressGatewayTargetFound(hostMatrix, "HTTPS_PASSTHROUGH")
+                            gtwConfigured = httpsPassthroughGatewayFound[ingress.matchHost]
                         }
 
-                        if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
-                        } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
-                        } 
+                        // If not available for any gateway config, then it means that we have a match
+                        if(gtwConfigured) {
+                            let targetGtws = []
 
-                        if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
-                        } else if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
-                            targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
-                        }
-                        if(targetGtws.length == 0) {
-                            ingressInUseErrors.push({
+                            if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
+                                targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                            } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTP"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTP"].gtw.metadata.namespace)) {
+                                targetGtws.push(hostMatrix[ingress.matchHost]["HTTP"].gtw)
+                            }
+
+                            if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
+                                targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                            } else if(ingress.trafficType == "http" && hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw.metadata.namespace)) {
+                                targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_SIMPLE"].gtw)
+                            } 
+
+                            if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "EXACT" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
+                                targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                            } else if(ingress.trafficType == "https" && hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].match == "WILDCARD" && [valuesYaml.tenantName, "mdos"].includes(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw.metadata.namespace)) {
+                                targetGtws.push(hostMatrix[ingress.matchHost]["HTTPS_PASSTHROUGH"].gtw)
+                            }
+                            if(targetGtws.length == 0) {
+                                ingressInUseErrors.push({
+                                    type: ingress.trafficType,
+                                    host: ingress.matchHost
+                                })
+                            } else {
+                                ingress.gateways = [...new Set(targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`))]  // filter out duplicates
+                            }
+                        } else {
+                            ingressMissingErrors.push({
                                 type: ingress.trafficType,
                                 host: ingress.matchHost
                             })
-                        } else {
-                            ingress.gateways = [...new Set(targetGtws.map(gtw => `${gtw.metadata.namespace}/${gtw.metadata.name}`))]  // filter out duplicates
                         }
-                    } else {
-                        ingressMissingErrors.push({
-                            type: ingress.trafficType,
-                            host: ingress.matchHost
-                        })
-                    }
-                    return ingress
-                })
-
-                let errorMsgs = []
-                if(ingressInUseErrors.length > 0) {
-                    errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))
-                }
-                if(ingressMissingErrors.length > 0) {
-                    errorMsgs = errorMsgs.concat(ingressMissingErrors.map(error => `No ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}"`))
-                }
+                        return ingress
+                    })
                 
-                if(errorMsgs.length > 0)
-                    throw new Conflict(`ERROR: ${errorMsgs.join("\n")}`)
+                    let errorMsgs = []
+                    if(ingressInUseErrors.length > 0) {
+                        errorMsgs = errorMsgs.concat(ingressInUseErrors.map(error => `Ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}", but the gateway belongs to another namespace`))
+                    }
+                    if(ingressMissingErrors.length > 0) {
+                        errorMsgs = errorMsgs.concat(ingressMissingErrors.map(error => `No ingress gateway found that can handle ${error.type} traffic for domain name "${error.host}"`))
+                    }
+                    
+                    if(errorMsgs.length > 0)
+                        throw new Conflict(`ERROR: ${errorMsgs.join("\n")}`)
+                }
             }
 
             // Set component details for networkPolicy limitet

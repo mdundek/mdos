@@ -44,9 +44,16 @@ exports.Mdos = class Mdos extends MdosCore {
             // Parse values file
             let valuesYaml = YAML.parse(Buffer.from(data.values, 'base64').toString('ascii'))
 
-            // Ensure namespace is ready
-            await this.validateNamespaceForDeployment(valuesYaml)
-
+            if(this.app.get("mdos_framework_only")) {
+                const nsCheck = await this.app.get('kube').hasNamespace(valuesYaml.tenantName)
+                if(!nsCheck) {
+                    throw new Error(`ERROR: Namespace "${valuesYaml.tenantName}" does not exist`)
+                }
+            } else {
+                // Ensure namespace is ready
+                await this.validateNamespaceForDeployment(valuesYaml);
+            }
+            
             // Make sure we have at least one component
             if (!valuesYaml.components || valuesYaml.components.length == 0) {
                 throw new BadRequest('ERROR: Application has no components')

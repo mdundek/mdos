@@ -126,6 +126,24 @@ class KubeBase extends KubeBaseConstants {
      * @return {*}
      * @memberof KubeBase
      */
+     async getImagePullSecrets(namespaceName, secretName) {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
+        if(secretName) {
+            const target = res.data.items.filter(secret => secret.type == "kubernetes.io/dockerconfigjson").find(secret => secret.metadata.name == secretName)
+            return target ? [target] : []
+        } else {
+            return res.data.items.filter(secret => secret.type == "kubernetes.io/dockerconfigjson")
+        }
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @return {*}
+     * @memberof KubeBase
+     */
     async hasSecret(namespaceName, secretName) {
         try {
             await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`, this.k8sAxiosHeader)

@@ -12,9 +12,9 @@ class SchemaValidator {
      * @param {*} version
      * @memberof SchemaValidator
      */
-    constructor(version) {
+    constructor(version, frameworkOnlyMode) {
         if (version.toLowerCase() == 'v1') {
-            this.instance = new SchemaV1()
+            this.instance = new SchemaV1(frameworkOnlyMode)
         } else {
             throw new Error(`ERROR: Schema version unknown: ${version}`)
         }

@@ -33,6 +33,9 @@ export default class Component extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Component)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), 'mdos.yaml')
         if (!fs.existsSync(appYamlPath)) {
@@ -126,6 +129,73 @@ export default class Component extends Command {
             }
         }
 
+        // Framework mode has no private registry, so let's investigate a bit further
+        let publicRegResponses = null
+        let responsePullSecret = null
+        let registryResponse = null
+        if(this.getConfig('FRAMEWORK_MODE')) {
+            // Ask if image will be available on a public registry
+            publicRegResponses = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'publicRegistry',
+                    default: true,
+                    message: 'Is the component image accessible publicly?',
+                },
+            ])
+
+            if(!publicRegResponses.publicRegistry) {
+                registryResponse = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'registry',
+                        message: 'Enter the URL of your private registry:',
+                        validate: (value: string) => {
+                            if (value.trim().length == 0) return 'Mandatory field'
+                            return true
+                        },
+                    },
+                ])
+            }
+
+            // Ask if imagePullSecret is needed
+            const pullSecretRegResponses = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'imagePullSecretNeeded',
+                    default: false,
+                    message: 'Does your target registry require authentication to pull images?',
+                },
+            ])
+            if(pullSecretRegResponses.imagePullSecretNeeded) {
+                // Collect imagepull secrets
+                let pullSecretResponse: { data: any[] }
+                try {
+                    pullSecretResponse = await this.api(`kube?target=image-pull-secrets&namespace=${appYaml.tenantName}`, 'get')
+                } catch (err) {
+                    this.showError(err)
+                    process.exit(1)
+                }
+                if (pullSecretResponse.data.length == 0) {
+                    error('There are no Image-pull Secrets available in this namespace. Did you create a registry secret in this namespace first?')
+                    process.exit(1)
+                }
+
+                responsePullSecret = await inquirer.prompt({
+                    type: 'list',
+                    name: 'pullSecretName',
+                    message: 'What TLS secret holds your certificate and key data for this domain?',
+                    choices: pullSecretResponse.data.map((secret: any) => {
+                        return {
+                            name: secret.metadata.name,
+                            value: secret.metadata.name,
+                        }
+                    }),
+                })
+
+            }
+        }
+
         // Create default Dockerfile
         try {
             fs.mkdirSync(mdosAppCompDir, { recursive: true })
@@ -144,6 +214,10 @@ export default class Component extends Command {
             uuid: `${nanoid()}-${nanoid()}`,
             tag: '0.0.1',
         }
+
+        if(this.getConfig('FRAMEWORK_MODE') && publicRegResponses.publicRegistry) compJson.publicRegistry = true
+        if(this.getConfig('FRAMEWORK_MODE') && registryResponse)                  compJson.registry = registryResponse.registry
+        if(this.getConfig('FRAMEWORK_MODE') && responsePullSecret)                compJson.imagePullSecrets = [{name: responsePullSecret.pullSecretName}]
 
         if (npResponse.networkPolicy != 'none') {
             compJson.networkPolicy = {

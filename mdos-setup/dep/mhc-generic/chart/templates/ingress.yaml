@@ -1,5 +1,6 @@
-{{- if not .Values.ingressClassName }}
+{{- if .Values.ingressClassName }}
 {{- $appName := .Values.appName -}}
+{{- $ingressClassName := .Values.ingressClassName -}}
 
 {{- range .Values.components }}
   {{- $appComponentName := lower .name -}}
@@ -27,8 +28,8 @@
         {{- end }}
       {{- end }}
 ---
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
   labels:
@@ -37,48 +38,28 @@ metadata:
     compUuid: {{ $uuid }}
     tenantName: {{ $.Values.tenantName }}
 spec:
-      {{- if .gateways }}
-  gateways:
-        {{- range .gateways }}
-    - {{ . }}
-        {{- end }}
-      {{- else }}
-  gateways:
-    - mdos/https-gateway
-      {{- end }}
-  hosts:  
-    - {{ .matchHost }}
-      {{- if eq .trafficType "http" }}
-  http:
-    - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
-
-        {{- if .subPath }}
-      match:
-        - uri:
-            prefix: {{ .subPath }}
-          {{- if not .noRewrite }}
-      rewrite:
-        uri: /
-          {{- end }}
-        {{- end }}
-      route:
-      - destination:
-          port:
-            number: {{ .targetPort }}
-          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}
-
-      {{- else if or (eq .trafficType "https") (eq .trafficType "tls") }}
+  ingressClassName: {{ $ingressClassName }}
+      {{- if or (eq .trafficType "HTTPS_SIMPLE") (eq .trafficType "tls") }}
   tls:
-    - match:
-        - sniHosts: 
-          - {{ .matchHost }}
-      route:
-      - destination:
-          port:
-            number: {{ .targetPort }}
-          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}
+    - hosts:
+      - {{ .matchHost }}
+      secretName: {{ .tlsSecretName }}
       {{- end }}
-
+  rules:
+    - host: {{ .matchHost }}
+      http:
+        paths:
+      {{- if .subPath }}
+          - path: {{ .subPath }}
+      {{- else }}
+          - path: /
+      {{- end }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}
+                port:
+                  number: {{ .targetPort }}
     {{- end }}
   {{- end }}
 {{- end }}

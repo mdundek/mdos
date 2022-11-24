@@ -319,6 +319,41 @@ export default abstract class extends Command {
     }
 
     /**
+     * collectNamespace
+     * @param flags 
+     * @param question 
+     * @returns 
+     */
+    async collectNamespace(flags: any, question: string) {
+        const nsResponse = await this.api('kube?target=namespaces', 'get')
+        if (nsResponse.data.length == 0) {
+            error('There are no namespaces available')
+            process.exit(1)
+        }
+        if (flags.clientId) {
+            const targetNs = nsResponse.data.find((o: { name: string }) => o.name == flags.namespace)
+            if (!targetNs) {
+                error('Could not find namespace: ' + flags.namespace)
+                process.exit(1)
+            }
+            return targetNs
+        } else {
+            const nsQResponse = await inquirer.prompt([
+                {
+                    name: 'namespace',
+                    message: question,
+                    type: 'list',
+                    choices: nsResponse.data.map((o: { name: string }) => {
+                        return { name: `Namespace: ${o.name}`, value: o }
+                    }),
+                },
+            ])
+
+            return nsQResponse.namespace
+        }
+    }
+
+    /**
      * showError
      *
      * @param error

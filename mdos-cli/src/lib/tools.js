@@ -155,7 +155,7 @@ const extractErrorCode = (error, exclude) => {
  * @param {*} error
  * @return {*} 
  */
-const extractErrorMessage = (error) => {
+const extractErrorMessage = (error, all) => {
     if (typeof error === 'string' || error instanceof String) {
         return error
     }
@@ -171,7 +171,9 @@ const extractErrorMessage = (error) => {
     }
     
     if (errorMsg.length > 0) {
-        const mainErrMessage = errorMsg.filter(msg => msg.indexOf("ERROR: ") == 0).map(msg => msg.substring(7))
+        let mainErrMessage
+        if(!all) mainErrMessage = errorMsg.filter(msg => msg.indexOf("ERROR: ") == 0).map(msg => msg.substring(7))
+        else mainErrMessage = errorMsg.map(msg => msg)
         return mainErrMessage.length > 0 ? mainErrMessage.join('\n') : "An unknown server error occured"
     } else {
         return 'An unknown error occured!'
@@ -294,6 +296,79 @@ const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, r
     }
 }
 
+/**
+ * Build and push a component docker image
+ *
+ * @param {*} regCreds
+ * @param {*} targetRegistry
+ * @param {*} appComp
+ * @param {*} root
+ */
+ const buildPushComponentFmMode = async (targetRegistry, regCreds, appComp, root) => {
+    // PreBuild scripts?
+    if (appComp.preBuildCmd) {
+        try {
+            for (let cmdLine of appComp.preBuildCmd) {
+                CliUx.ux.action.start(`Executing pre-build command: ${cmdLine}`)
+                await terminalCommand(`${cmdLine}`, false, `${root}/${appComp.name}`)
+                CliUx.ux.action.stop()
+            }
+        } catch (err) {
+            CliUx.ux.action.stop('error')
+            context(extractErrorMessage(err), true)
+            process.exit(1)
+        }
+    }
+
+    const targetImg = `${targetRegistry ? targetRegistry + '/' : ''}${appComp.image}:${appComp.tag}`
+    try {
+        CliUx.ux.action.start(`Building application image ${targetImg}`)
+        await terminalCommand(`DOCKER_BUILDKIT=1 docker build -t ${targetImg} ${root}/${appComp.name}`)
+        CliUx.ux.action.stop()
+    } catch (err) {
+        CliUx.ux.action.stop('error')
+        error('Could not build application:', false, true)
+        context(extractErrorMessage(err), true)
+        process.exit(1)
+    }
+
+    // If mdos registry, login first
+    if (targetRegistry && regCreds) {
+        try {
+            if (os.platform() === 'linux') {
+                await terminalCommand(
+                    `echo "${regCreds.password}" | docker login ${targetRegistry} --username ${regCreds.username} --password-stdin`
+                )
+            } else if (os.platform() === 'darwin') {
+                await terminalCommand(
+                    `echo "${regCreds.password}" | docker login ${targetRegistry} --username ${regCreds.username} --password-stdin`
+                )
+            } else if (os.platform() === 'win32') {
+                await terminalCommand(
+                    `echo | set /p="${regCreds.password}" | docker login ${targetRegistry} --username ${regCreds.username} --password-stdin`
+                )
+            } else {
+                error('Unsupported platform')
+                process.exit(1)
+            }
+        } catch (err) {
+            error('Could not login to the registry: ' + targetRegistry, false, true)
+            process.exit(1)
+        }
+    }
+    // Now deploy
+    CliUx.ux.action.start(`Pushing application image ${targetImg}`)
+
+    try {
+        await terminalCommand(`docker push ${targetImg}`)
+        CliUx.ux.action.stop()
+    } catch (err) {
+        CliUx.ux.action.stop('error')
+        error('Could not push image to registry:', false, true)
+        context(extractErrorMessage(err, true), true)
+        process.exit(1)
+    }
+}
 
 /**
  * Logout from mdos registry
@@ -382,6 +457,7 @@ module.exports = {
     lftp,
     isDockerInstalled,
     buildPushComponent,
+    buildPushComponentFmMode,
     getConsoleLineHandel,
     dockerLogout,
     computeApplicationTree,

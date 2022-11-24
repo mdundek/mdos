@@ -43,6 +43,7 @@ export default class List extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
+        let nsQueryUrl
         if(!this.getConfig('FRAMEWORK_MODE')) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
@@ -52,15 +53,31 @@ export default class List extends Command {
                 this.showError(error)
                 process.exit(1)
             }
+            nsQueryUrl = 'kube?target=namespaces&realm=mdos&includeKcClients=true'
+        } else {
+            nsQueryUrl = 'kube?target=namespaces'
         }
 
         // We need a valid admin authentication token, get this first
         try {
-            const response = await this.api('kube?target=namespaces&realm=mdos&includeKcClients=true', 'get')
+            const response = await this.api(nsQueryUrl, 'get')
 
             console.log()
             CliUx.ux.table(
                 response.data,
+                this.getConfig('FRAMEWORK_MODE') ? {
+                    namespace: {
+                        header: 'NAMESPACE',
+                        minWidth: 15,
+                        get: (row) => row.name,
+                    },
+                    status: {
+                        header: 'STATUS',
+                        minWidth: 10,
+                        get: (row) => row.status,
+                    }
+                }
+                :
                 {
                     namespace: {
                         header: 'NAMESPACE',

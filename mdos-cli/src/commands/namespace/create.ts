@@ -80,8 +80,9 @@ export default class Create extends Command {
         let q = filterQuestions(Create.questions, 'client', flags)
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
-        if (nsResponse.data.find((ns: { name: string }) => ns.name == (flags.namespace || responses.namespace))) {
-            error('Namespace already exists')
+        const existingNs = nsResponse.data.find((ns: { name: string }) => ns.name == (flags.namespace || responses.namespace))
+        if (existingNs) {
+            error(`Namespace already exists${existingNs.status == 'Terminating' ? ' (Terminating)':''}`)
             process.exit(1)
         }
 
