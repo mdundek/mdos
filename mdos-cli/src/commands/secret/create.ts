@@ -127,7 +127,7 @@ export default class Create extends Command {
                 {
                     name: 'password',
                     message: 'Enter your registry password:',
-                    type: 'input',
+                    type: 'password',
                     validate: (value: string) => {
                         if (value.trim().length == 0) return 'Mandatory field'
                         return true
