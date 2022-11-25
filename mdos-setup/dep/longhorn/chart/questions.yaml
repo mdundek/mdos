@@ -17,7 +17,7 @@ questions:
     label: Longhorn Manager Image Repository
     group: "Longhorn Images Settings"
   - variable: image.longhorn.manager.tag
-    default: master-head
+    default: v1.3.2
     description: "Specify Longhorn Manager Image Tag"
     type: string
     label: Longhorn Manager Image Tag
@@ -29,7 +29,7 @@ questions:
     label: Longhorn Engine Image Repository
     group: "Longhorn Images Settings"
   - variable: image.longhorn.engine.tag
-    default: master-head
+    default: v1.3.2
     description: "Specify Longhorn Engine Image Tag"
     type: string
     label: Longhorn Engine Image Tag
@@ -41,7 +41,7 @@ questions:
     label: Longhorn UI Image Repository
     group: "Longhorn Images Settings"
   - variable: image.longhorn.ui.tag
-    default: master-head
+    default: v1.3.2
     description: "Specify Longhorn UI Image Tag"
     type: string
     label: Longhorn UI Image Tag
@@ -53,7 +53,7 @@ questions:
     label: Longhorn Instance Manager Image Repository
     group: "Longhorn Images Settings"
   - variable: image.longhorn.instanceManager.tag
-    default: v1_20220920
+    default: v1_20221003
     description: "Specify Longhorn Instance Manager Image Tag"
     type: string
     label: Longhorn Instance Manager Image Tag
@@ -65,7 +65,7 @@ questions:
     label: Longhorn Share Manager Image Repository
     group: "Longhorn Images Settings"
   - variable: image.longhorn.shareManager.tag
-    default: v1_20220914
+    default: v1_20221003
     description: "Specify Longhorn Share Manager Image Tag"
     type: string
     label: Longhorn Share Manager Image Tag
@@ -77,7 +77,7 @@ questions:
     label: Longhorn Backing Image Manager Image Repository
     group: "Longhorn Images Settings"
   - variable: image.longhorn.backingImageManager.tag
-    default: v3_20220808
+    default: v3_20221003
     description: "Specify Longhorn Backing Image Manager Image Tag"
     type: string
     label: Longhorn Backing Image Manager Image Tag
@@ -125,7 +125,7 @@ questions:
     label: Longhorn CSI Driver Resizer Image Repository
     group: "Longhorn CSI Driver Images"
   - variable: image.csi.resizer.tag
-    default: v1.3.0
+    default: v1.2.0
     description: "Specify CSI Driver Resizer image tag. Leave blank to autodetect."
     type: string
     label: Longhorn CSI Driver Resizer Image Tag
@@ -137,7 +137,7 @@ questions:
     label: Longhorn CSI Driver Snapshotter Image Repository
     group: "Longhorn CSI Driver Images"
   - variable: image.csi.snapshotter.tag
-    default: v5.0.1
+    default: v3.0.3
     description: "Specify CSI Driver Snapshotter image tag. Leave blank to autodetect."
     type: string
     label: Longhorn CSI Driver Snapshotter Image Tag
@@ -340,20 +340,6 @@ Disabling **Backupstore Poll Interval** also means to disable failed backup auto
     type: int
     min: 0
     default: 1440
-  - variable: defaultSettings.recurringSuccessfulJobsHistoryLimit
-    label: Cronjob Successful Jobs History Limit
-    description: "This setting specifies how many successful backup or snapshot job histories should be retained. History will not be retained if the value is 0.",
-    group: "Longhorn Default Settings"
-    type: int
-    min: 0
-    default: 1
-  - variable: defaultSettings.recurringFailedJobsHistoryLimit
-    label: Cronjob Failed Jobs History Limit
-    description: "This setting specifies how many failed backup or snapshot job histories should be retained. History will not be retained if the value is 0."
-    group: "Longhorn Default Settings"
-    type: int
-    min: 0
-    default: 1
   - variable: defaultSettings.autoSalvage
     label: Automatic salvage
     description: "If enabled, volumes will be automatically salvaged when all the replicas become faulty e.g. due to network disconnection. Longhorn will try to figure out which replica(s) are usable, then use them for the volume. By default true."
@@ -549,14 +535,6 @@ WARNING:
   group: "Longhorn Default Settings"
   type: string
   default:
-- variable: defaultSettings.deletingConfirmationFlag
-  label: Deleting Confirmation Flag
-  description: "This flag is designed to prevent Longhorn from being accidentally uninstalled which will lead to data lost.
-	Set this flag to **true** to allow Longhorn uninstallation. 
-	If this flag **false**, Longhorn uninstallation job will fail. "
-  group: "Longhorn Default Settings"
-  type: boolean
-  default: "false"
 - variable: persistence.defaultClass
   default: "true"
   description: "Set as default StorageClass for Longhorn"
@@ -603,20 +581,6 @@ WARNING:
     description: 'Recurring job selector list for Longhorn StorageClass. Please be careful of quotes of input. e.g., [{"name":"backup", "isGroup":true}]'
     label: Storage Class Recurring Job Selector List
     group: "Longhorn Storage Class Settings"
-    type: string
-    default:
-- variable: defaultSettings.defaultNodeSelector.enable
-  description: "Enable recurring Node selector for Longhorn StorageClass"
-  group: "Longhorn Storage Class Settings"
-  label: Enable Storage Class Node Selector
-  type: boolean
-  default: false
-  show_subquestion_if: true
-  subquestions:
-  - variable: defaultSettings.defaultNodeSelector.selector
-    label: Storage Class Node Selector
-    description: 'We use NodeSelector when we want to bind PVC via StorageClass into desired mountpoint on the nodes tagged whith its value'
-    group: "Longhorn Default Settings"
     type: string
     default:
 - variable: persistence.backingImage.enable
