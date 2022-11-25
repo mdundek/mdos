@@ -203,9 +203,9 @@ export default class Create extends Command {
             try {
 
                 const dockerAuthObj: any = {
-                    auth: {}
+                    auths: {}
                 }
-                dockerAuthObj.auth[agregatedResponses.registry] = {
+                dockerAuthObj.auths[agregatedResponses.registry] = {
                     "username": agregatedResponses.username,
                     "password": agregatedResponses.password,
                     "auth": Buffer.from(`${agregatedResponses.username}:${agregatedResponses.password}`, 'utf-8').toString('base64')
