@@ -61,6 +61,16 @@ exports.Kube = class Kube extends KubeCore {
                 return certificates
         }
         /******************************************
+         *  LOOKUP ALL SECRETS
+         ******************************************/
+         else if (params.query.target == 'secrets') {
+            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+                throw new NotFound('ERROR: Namespace does not exist')
+            }
+            let secrets = await this.app.get('kube').getAllSecrets(params.query.namespace ? params.query.namespace : "")
+            return secrets
+        }
+        /******************************************
          *  LOOKUP TLS SECRETS
          ******************************************/
         else if (params.query.target == 'tls-secrets') {
@@ -164,6 +174,26 @@ exports.Kube = class Kube extends KubeCore {
                 await this.app.get('kube').replaceSecret(data.namespace, data.name, data.data)
             } else {
                 await this.app.get('kube').createSecret(data.namespace, data.name, data.data)
+            }
+        } 
+        /******************************************
+         *  CREATE / UPDATE TLS SECRET
+         ******************************************/
+         if (data.type == 'tls-secret') {
+            if (await this.app.get('kube').hasSecret(data.namespace, data.name)) {
+                await this.app.get('kube').replaceTlsSecret(data.namespace, data.name, data.data)
+            } else {
+                await this.app.get('kube').createTlsSecret(data.namespace, data.name, data.data)
+            }
+        } 
+        /******************************************
+         *  CREATE / UPDATE DOCKER SECRET
+         ******************************************/
+         if (data.type == 'docker-secret') {
+            if (await this.app.get('kube').hasSecret(data.namespace, data.name)) {
+                await this.app.get('kube').replaceDockerSecret(data.namespace, data.name, data.data)
+            } else {
+                await this.app.get('kube').createDockerSecret(data.namespace, data.name, data.data)
             }
         } 
         /******************************************

@@ -104,6 +104,23 @@ class KubeBase extends KubeBaseConstants {
      *
      *
      * @param {*} namespaceName
+     * @return {*}
+     * @memberof KubeBase
+     */
+     async getAllSecrets(namespaceName) {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
+        for(let i=0; i<res.data.items.length; i++){
+            for (let param of Object.keys(res.data.items[i].data)) {
+                res.data.items[i].data[param] = Buffer.from(res.data.items[i].data[param], 'base64').toString('utf-8')
+            }
+        }
+        return res.data.items
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
      * @param {*} secretName
      * @return {*}
      * @memberof KubeBase
@@ -202,6 +219,114 @@ class KubeBase extends KubeBaseConstants {
                     name: secretName,
                 },
                 type: 'Opaque',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+     async createTlsSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.post(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/tls',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+    async replaceTlsSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.put(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/tls',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+     async createDockerSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.post(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/dockerconfigjson',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+    async replaceDockerSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.put(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/dockerconfigjson',
             },
             this.k8sAxiosHeader
         )

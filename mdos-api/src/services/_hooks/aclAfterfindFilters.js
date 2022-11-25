@@ -191,6 +191,20 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
 }
 
 /**
+ * secretFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const secretFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+    context.result = context.result.filter((secret) => jwtToken.resource_access[secret.metadata.namespace])
+    return context
+}
+
+/**
  * certificatesFilterHook
  * @param {*} context 
  * @param {*} jwtToken 
@@ -282,6 +296,8 @@ module.exports = function () {
             return await certManagerClusterIssuersFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'tls-secrets') {
             return await tlsSecretFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'secrets') {
+            return await secretFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'certificates') {
             return await certificatesFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'shared-volumes') {
