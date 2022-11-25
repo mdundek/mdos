@@ -165,6 +165,10 @@ export default class Deploy extends Command {
                     // Extract registry credentials
                     const regCreds = Buffer.from(pullSecret.data['.dockerconfigjson'], 'base64').toString('utf-8');
                     const regAuth = JSON.parse(regCreds).auths
+                    if(!regAuth){
+                        error(`Invalid docker registry secret: ${appComp.imagePullSecrets[0].name}`)
+                        process.exit(1)
+                    }
                     const hostCreds = targetRegistry ? (regAuth[targetRegistry] || regAuth[Object.keys(regAuth)[0]]) : regAuth[Object.keys(regAuth)[0]]
 
                     await buildPushComponentFmMode(targetRegistry, hostCreds, appComp, appRootDir)
