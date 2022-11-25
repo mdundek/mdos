@@ -767,8 +767,8 @@ EOF
 install_longhorn() {
     $kubectl create namespace longhorn-system &>> $LOG_FILE
     if [ "$PSYSTEM" == "DNF" ]; then
-        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.2.1/deploy/prerequisite/longhorn-iscsi-installation.yaml &>> $LOG_FILE
-        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.2.1/deploy/prerequisite/longhorn-nfs-installation.yaml &>> $LOG_FILE
+        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.2/deploy/prerequisite/longhorn-iscsi-installation.yaml &>> $LOG_FILE
+        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.2/deploy/prerequisite/longhorn-nfs-installation.yaml &>> $LOG_FILE
     fi
     cp $_DIR/dep/longhorn/chart/values.yaml $_DIR/dep/longhorn/chart/values_backup.yaml
 
