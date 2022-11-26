@@ -90,7 +90,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "longhorn"
+  storageClassName: "local-path"
   resources:
     requests:
       storage: 1Gi
@@ -108,7 +108,7 @@ data:
   GEN_HELM_PATH_PATH: "/usr/src/dep/mhc-generic"
   RUN_TARGET: "pod"
   API_MODE: "FRAMEWORK"
-  SQLITE_FILE_PATH: "http://mdos-broker-http:3039"
+  BROKER_CLIENT: "http://mdos-broker-http:3039"
 ---
 apiVersion: v1
 kind: Service
@@ -197,11 +197,11 @@ spec:
                 configMapKeyRef:
                   name: mdos-api-configs
                   key: API_MODE
-            - name: SQLITE_FILE_PATH
+            - name: BROKER_CLIENT
               valueFrom:
                 configMapKeyRef:
                   name: mdos-api-configs
-                  key: SQLITE_FILE_PATH
+                  key: BROKER_CLIENT
           ports:
           - name: http-3030
             containerPort: 3030

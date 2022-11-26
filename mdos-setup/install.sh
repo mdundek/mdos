@@ -1486,24 +1486,23 @@ install_mdos() {
     K3S_REG_DOMAIN="registry.$DOMAIN"
 
     if [ ! -z $NO_DNS ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].hostAliases[0].ip = "'$LOCAL_IP'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
     else
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq eval 'del(.components[0].hostAliases)')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq eval 'del(.components[1].hostAliases)')
     fi
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.registry = "'$K3S_REG_DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].configs[0].entries[0].value = "'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].volumes[0].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 

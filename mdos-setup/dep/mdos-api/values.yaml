@@ -4,6 +4,21 @@ appName: mdos
 uuid: KG75-7D58-mdos
 forceUpdate: true
 components:
+  - name: broker
+    uuid: KG75-7D58-broker
+    image: mdos-broker
+    tag: latest
+    imagePullSecrets:
+      - name: regcred
+    imagePullPolicy: Always
+    services:
+      - name: http
+        ports:
+          - name: http-3039
+            port: 3039
+    volumes:
+      - name: db-volume
+        mountPath: /usr/src/db/mdos_broker.sqlite
   - name: api
     uuid: KG75-7D58-api
     image: mdos-api
@@ -44,6 +59,8 @@ components:
             value: "30999"
           - key: API_MODE
             value: "FULL"
+          - key: BROKER_CLIENT
+            value: http://mdos-broker-http:3039
 
     secrets:
       - name: creds
@@ -81,9 +98,6 @@ components:
             key: password
         
     volumes:
-      - name: mhc-generic-chart
-        mountPath: /usr/src/dep/mhc-generic
-        hostPath: <path to setup folder>/dep/mhc-generic/chart
       - name: istiod-helm-volume
         mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
         hostPath: <path to setup folder>/dep/istio_helm/istio-control/istio-discovery
