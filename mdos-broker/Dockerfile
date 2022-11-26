@@ -1,23 +1,5 @@
 FROM node:16-alpine
 
-COPY helm /usr/bin
-RUN chmod a+x /usr/bin/helm
-
-COPY kubectl /usr/bin
-RUN chmod a+x /usr/bin/kubectl
-
-RUN helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
-RUN helm repo update
-
-RUN apk add curl wget openssl
-RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc
-RUN chmod +x mc
-RUN mv mc /usr/bin
-
-RUN mkdir -p /home/node/app/tmp
-
-COPY mhc-generic /usr/src/dep/mhc-generic
-
 # Create app directory
 WORKDIR /usr/src/app
 
@@ -33,8 +15,5 @@ RUN npm install
 # Bundle app source
 COPY . .
 
-RUN rm -rf helm
-RUN rm -rf .env
-
-EXPOSE 3030
+EXPOSE 3039
 CMD [ "node", "." ]
