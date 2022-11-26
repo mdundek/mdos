@@ -3,10 +3,10 @@ const Keycloak = require('./keycloak.js')
 const SocketManager = require('./socket')
 const SchemaValidator = require('./schemaValidator/index')
 const FtpServer = require('./ftpServer.js')
-const MDosBrokerClient = require('./rb-broker/brokerClient')
 const SubscriptionManager = require('./subscriptionManager')
 const IstioGateways = require('./gateways')
 const Certificates = require('./certificates')
+const BrokerClient = require('./brokerClient')
 
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
@@ -20,7 +20,7 @@ module.exports = function (app) {
     app.set('schemaValidator', {
         v1: new SchemaValidator('v1', app.get("mdos_framework_only")),
     }) 
-    app.set('brokerClient', new MDosBrokerClient(`${process.env.RABBIT_USERNAME}:${process.env.RABBIT_PASSWORD}@${process.env.RABBIT_HOST}:${process.env.RABBIT_PORT}`, true))
+    app.set('brokerClient', new BrokerClient(process.env.BROKER_CLIENT))
 
     const subscriptionManager = new SubscriptionManager(app)
     subscriptionManager.start().then(() => {})

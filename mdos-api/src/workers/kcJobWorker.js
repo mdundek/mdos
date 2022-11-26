@@ -1,5 +1,5 @@
 const WorkerBase = require('./workerBase')
-const { CHANNEL } = require('../middleware/rb-broker/constant');
+const { CHANNEL } = require('../middleware/brokerChannels');
 const KCCore = require('../services/keycloak/keycloak.class.core')
 const KubeCore = require('../services/kube/kube.class.core')
 

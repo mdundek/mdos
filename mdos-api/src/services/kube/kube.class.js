@@ -2,12 +2,11 @@ const { NotFound, BadRequest, Forbidden } = require('@feathersjs/errors')
 const nanoid_1 = require('nanoid')
 const nanoid = (0, nanoid_1.customAlphabet)('1234567890abcdefghijklmnopqrstuvwxyz', 10)
 const KubeCore = require('./kube.class.core')
-const { CHANNEL } = require('../../middleware/rb-broker/constant');
+const { CHANNEL } = require('../../middleware/brokerChannels')
 const YAML = require('yaml')
 
 /* eslint-disable no-unused-vars */
 exports.Kube = class Kube extends KubeCore {
-
     /**
      * Creates an instance of Kube.
      * @param {*} options
@@ -24,7 +23,7 @@ exports.Kube = class Kube extends KubeCore {
      *
      * @param {*} params
      * @param {*} context
-     * @return {*} 
+     * @return {*}
      */
     async find(params, context) {
         /******************************************
@@ -33,127 +32,113 @@ exports.Kube = class Kube extends KubeCore {
         if (params.query.target == 'namespaces') {
             const nsListEnriched = await this.getEnrichedNamespaces(params.query.realm, params.query.includeKcClients)
             return nsListEnriched
-        }
+        } else if (params.query.target == 'gateways') {
         /******************************************
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
-        else if (params.query.target == 'gateways') {
-            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+            if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
-            let gateways = await this.app.get('kube').getIstioGateways(params.query.namespace && params.query.namespace != "*" ? params.query.namespace : "", params.query.name ? params.query.name : false)
-            if(params.query.host)
-                return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
-            else
-                return gateways
-        }
+            let gateways = await this.app
+                .get('kube')
+                .getIstioGateways(params.query.namespace && params.query.namespace != '*' ? params.query.namespace : '', params.query.name ? params.query.name : false)
+            if (params.query.host) return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
+            else return gateways
+        } else if (params.query.target == 'certificates') {
         /******************************************
          *  LOOKUP CERTIFICATES
          ******************************************/
-        else if (params.query.target == 'certificates') {
-            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+            if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
-            let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
-            if(params.query.hosts)
-                return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
-            else
-                return certificates
-        }
+            let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
+            if (params.query.hosts) return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
+            else return certificates
+        } else if (params.query.target == 'secrets') {
         /******************************************
          *  LOOKUP ALL SECRETS
          ******************************************/
-         else if (params.query.target == 'secrets') {
-            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+            if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
-            let secrets = await this.app.get('kube').getAllSecrets(params.query.namespace ? params.query.namespace : "")
+            let secrets = await this.app.get('kube').getAllSecrets(params.query.namespace ? params.query.namespace : '')
             return secrets
-        }
+        } else if (params.query.target == 'tls-secrets') {
         /******************************************
          *  LOOKUP TLS SECRETS
          ******************************************/
-        else if (params.query.target == 'tls-secrets') {
-            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+            if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
-            let secrets = await this.app.get('kube').getTlsSecrets(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            let secrets = await this.app.get('kube').getTlsSecrets(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
             return secrets
-        }
+        } else if (params.query.target == 'image-pull-secrets') {
         /******************************************
          *  LOOKUP IMAGE PULL SECRETS
          ******************************************/
-         else if (params.query.target == 'image-pull-secrets') {
-            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+            if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
-            let secrets = await this.app.get('kube').getImagePullSecrets(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            let secrets = await this.app.get('kube').getImagePullSecrets(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
             return secrets
-        }
+        } else if (params.query.target == 'cm-issuers') {
         /******************************************
          *  LOOKUP CERT-MANAGER ISSUERS
          ******************************************/
-        else if (params.query.target == 'cm-issuers') {
-            if (params.query.namespace &&!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
+            if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
-            let issuers = await this.app.get('kube').getCertManagerIssuers(params.query.namespace ? params.query.namespace : "", params.query.name ? params.query.name : false)
+            let issuers = await this.app.get('kube').getCertManagerIssuers(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
             return issuers
-        }
-        else if (params.query.target == 'cm-cluster-issuers') {
+        } else if (params.query.target == 'cm-cluster-issuers') {
             let issuers = await this.app.get('kube').getCertManagerClusterIssuers(params.query.name ? params.query.name : false)
             return issuers
-        }
+        } else if (params.query.target == 'applications') {
         /******************************************
          *  LOOKUP NAMESPACE APPLICATIONS
          ******************************************/
-        else if (params.query.target == 'applications') {
             // Make sure namespace exists
-            if (params.query.clientId != "*" && !(await this.app.get('kube').hasNamespace(params.query.clientId))) {
+            if (params.query.clientId != '*' && !(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             let nsApps = await this.getMdosApplications(params.query.clientId)
             return nsApps
-        } 
+        } else if (params.query.target == 'kubeconfig') {
         /******************************************
-        *  GENERATE USER KUBECTL CERTIFICATE
-        ******************************************/
-        else if (params.query.target == 'kubeconfig') {
+         *  GENERATE USER KUBECTL CERTIFICATE
+         ******************************************/
             // Get JWT token
-            let access_token = params.headers.authorization.split(" ")[1]
+            let access_token = params.headers.authorization.split(' ')[1]
             if (access_token.slice(-1) === ';') {
-                access_token = access_token.substring(0, access_token.length-1)
+                access_token = access_token.substring(0, access_token.length - 1)
             }
             const jwtToken = await this.app.get('keycloak').userTokenInstrospect('mdos', access_token, true)
-            if(!jwtToken.active) {
+            if (!jwtToken.active) {
                 throw new Forbidden('ERROR: Authentication session timeout')
             }
             const certData = await this.app.get('kube').generateUserKubectlCertificates(jwtToken.email)
             return certData
-        } 
+        } else if (params.query.target == 'volumes') {
         /******************************************
          *  LOOKUP PVCs
          ******************************************/
-         else if (params.query.target == 'volumes') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             let nsPvcs = await this.app.get('kube').getPvcs(params.query.namespace, null)
             return nsPvcs
-        } 
+        } else if (params.query.target == 'shared-volumes') {
         /******************************************
          *  LOOKUP READ-WRITE-MANY PVCs
          ******************************************/
-         else if (params.query.target == 'shared-volumes') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             let nsRwmPvcs = await this.app.get('kube').getWriteManyPvcs(params.query.namespace, params.query.name ? params.query.name : null)
             return nsRwmPvcs
-        } 
-        else {
+        } else {
             throw new BadRequest('ERROR: Malformed API request')
         }
     }
@@ -163,7 +148,7 @@ exports.Kube = class Kube extends KubeCore {
      *
      * @param {*} data
      * @param {*} params
-     * @return {*} 
+     * @return {*}
      */
     async create(data, params) {
         /******************************************
@@ -175,49 +160,47 @@ exports.Kube = class Kube extends KubeCore {
             } else {
                 await this.app.get('kube').createSecret(data.namespace, data.name, data.data)
             }
-        } 
+        }
         /******************************************
          *  CREATE / UPDATE TLS SECRET
          ******************************************/
-         if (data.type == 'tls-secret') {
+        if (data.type == 'tls-secret') {
             if (await this.app.get('kube').hasSecret(data.namespace, data.name)) {
                 await this.app.get('kube').replaceTlsSecret(data.namespace, data.name, data.data)
             } else {
                 await this.app.get('kube').createTlsSecret(data.namespace, data.name, data.data)
             }
-        } 
+        }
         /******************************************
          *  CREATE / UPDATE DOCKER SECRET
          ******************************************/
-         if (data.type == 'docker-secret') {
+        if (data.type == 'docker-secret') {
             if (await this.app.get('kube').hasSecret(data.namespace, data.name)) {
                 await this.app.get('kube').replaceDockerSecret(data.namespace, data.name, data.data)
             } else {
                 await this.app.get('kube').createDockerSecret(data.namespace, data.name, data.data)
             }
-        } 
+        } else if (data.type == 'shared-volume') {
         /******************************************
-        *  CREATE READ-WRITE-MANY PVC
-        ******************************************/
-        else if (data.type == 'shared-volume') {
+         *  CREATE READ-WRITE-MANY PVC
+         ******************************************/
             const existingPvc = await this.app.get('kube').getPvcs(data.namespace, data.name)
             if (existingPvc.length > 0) {
-                throw new BadRequest("ERROR: There is already a Volume with this name")
+                throw new BadRequest('ERROR: There is already a Volume with this name')
             } else {
                 await this.app.get('kube').createWriteManyPvc(data.namespace, data.name, data.size)
             }
-       } 
+        } else if (data.type == 'cm-issuer' || data.type == 'cm-cluster-issuer') {
         /******************************************
          *  CREATE CERT MANAGER ISSUER
          ******************************************/
-        else if (data.type == 'cm-issuer' || data.type == 'cm-cluster-issuer') {
-            let yamlBlockArray = data.issuerYaml.split("---")
+            let yamlBlockArray = data.issuerYaml.split('---')
             let issuerBlock = null
             try {
                 // Parse blocks and identify issuer
-                for(let i=0; i<yamlBlockArray.length; i++) {
+                for (let i = 0; i < yamlBlockArray.length; i++) {
                     yamlBlockArray[i] = YAML.parse(yamlBlockArray[i])
-                    if(yamlBlockArray[i].kind && (yamlBlockArray[i].kind == "Issuer" || yamlBlockArray[i].kind == "ClusterIssuer") && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
+                    if (yamlBlockArray[i].kind && (yamlBlockArray[i].kind == 'Issuer' || yamlBlockArray[i].kind == 'ClusterIssuer') && yamlBlockArray[i].metadata && yamlBlockArray[i].metadata.name) {
                         issuerBlock = yamlBlockArray[i]
                     }
                 }
@@ -227,33 +210,44 @@ exports.Kube = class Kube extends KubeCore {
             }
 
             // No Issuer kind found
-            if(!issuerBlock) {
+            if (!issuerBlock) {
                 throw new BadRequest('ERROR: The provided yaml file does not seem to be of kind "Issuer".')
             }
 
             // Make sure Issuer is what request is about
-            if(issuerBlock.kind.toLowerCase() == "issuer" && data.type == 'cm-cluster-issuer') {
+            if (issuerBlock.kind.toLowerCase() == 'issuer' && data.type == 'cm-cluster-issuer') {
                 throw new BadRequest('ERROR: Wrong Issuer Kind.')
             }
 
             /**
-             * Rollback function 
+             * Rollback function
              */
             const rollbackDeployment = async () => {
-                for(let i=0; i<yamlBlockArray.length; i++) {
-                    if(yamlBlockArray[i].kind) {
-                        if(yamlBlockArray[i].kind == "Issuer") {
+                for (let i = 0; i < yamlBlockArray.length; i++) {
+                    if (yamlBlockArray[i].kind) {
+                        if (yamlBlockArray[i].kind == 'Issuer') {
                             try {
-                                await this.app.get("kube").kubectlDelete(data.namespace, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {console.log(_e)}
-                        } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
+                                await this.app.get('kube').kubectlDelete(data.namespace, YAML.stringify(yamlBlockArray[i]))
+                            } catch (_e) {
+                                console.log(_e)
+                            }
+                        } else if (yamlBlockArray[i].kind == 'ClusterIssuer') {
                             try {
-                                await this.app.get("kube").kubectlDelete(null, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {console.log(_e)}
+                                await this.app.get('kube').kubectlDelete(null, YAML.stringify(yamlBlockArray[i]))
+                            } catch (_e) {
+                                console.log(_e)
+                            }
                         } else {
                             try {
-                                await this.app.get("kube").kubectlDelete(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace ? data.namespace : null, YAML.stringify(yamlBlockArray[i]))
-                            } catch (_e) {console.log(_e)}
+                                await this.app
+                                    .get('kube')
+                                    .kubectlDelete(
+                                        yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == 'cert-manager' ? 'cert-manager' : data.namespace ? data.namespace : null,
+                                        YAML.stringify(yamlBlockArray[i])
+                                    )
+                            } catch (_e) {
+                                console.log(_e)
+                            }
                         }
                     }
                 }
@@ -261,14 +255,19 @@ exports.Kube = class Kube extends KubeCore {
 
             // Deploy
             try {
-                for(let i=0; i<yamlBlockArray.length; i++) {
-                    if(yamlBlockArray[i].kind) {
-                        if(yamlBlockArray[i].kind == "Issuer") {
-                            await this.app.get("kube").kubectlApply(data.namespace, YAML.stringify(yamlBlockArray[i]))
-                        } else if (yamlBlockArray[i].kind == "ClusterIssuer") {
-                            await this.app.get("kube").kubectlApply(null, YAML.stringify(yamlBlockArray[i]))
+                for (let i = 0; i < yamlBlockArray.length; i++) {
+                    if (yamlBlockArray[i].kind) {
+                        if (yamlBlockArray[i].kind == 'Issuer') {
+                            await this.app.get('kube').kubectlApply(data.namespace, YAML.stringify(yamlBlockArray[i]))
+                        } else if (yamlBlockArray[i].kind == 'ClusterIssuer') {
+                            await this.app.get('kube').kubectlApply(null, YAML.stringify(yamlBlockArray[i]))
                         } else {
-                            await this.app.get("kube").kubectlApply(yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == "cert-manager" ? "cert-manager" : data.namespace ? data.namespace : null, YAML.stringify(yamlBlockArray[i]))
+                            await this.app
+                                .get('kube')
+                                .kubectlApply(
+                                    yamlBlockArray[i].metadata.namespace && yamlBlockArray[i].metadata.namespace == 'cert-manager' ? 'cert-manager' : data.namespace ? data.namespace : null,
+                                    YAML.stringify(yamlBlockArray[i])
+                                )
                         }
                     }
                 }
@@ -283,25 +282,25 @@ exports.Kube = class Kube extends KubeCore {
             let attempts = 0
             let ready = false
             try {
-                while(true) {
+                while (true) {
                     let issuerDetails
-                    if(issuerBlock.kind == "ClusterIssuer") {
+                    if (issuerBlock.kind == 'ClusterIssuer') {
                         issuerDetails = await this.app.get('kube').getCertManagerClusterIssuers(issuerBlock.metadata.name)
                     } else {
                         issuerDetails = await this.app.get('kube').getCertManagerIssuers(data.namespace, issuerBlock.metadata.name)
                     }
 
-                    if(issuerDetails.length == 1 && issuerDetails[0].status) {
-                        if(issuerDetails[0].status.conditions.find(condition => condition.status == "True" && condition.type == "Ready")) {
+                    if (issuerDetails.length == 1 && issuerDetails[0].status) {
+                        if (issuerDetails[0].status.conditions.find((condition) => condition.status == 'True' && condition.type == 'Ready')) {
                             ready = true
                             break
                         }
                     }
-                    if(attempts == 10) break
+                    if (attempts == 10) break
                     attempts++
-                    await new Promise(r => setTimeout(r, 1000));
+                    await new Promise((r) => setTimeout(r, 1000))
                 }
-                if(!ready) {
+                if (!ready) {
                     // Rollback
                     await rollbackDeployment()
                     throw new BadRequest('ERROR: Issuer does not seem to become ready')
@@ -312,86 +311,90 @@ exports.Kube = class Kube extends KubeCore {
                 await rollbackDeployment()
                 throw error
             }
-        } 
+        } else if (data.type == 'cm-certificate') {
         /******************************************
          *  CREATE CERT MANAGER CERTIFICATE
          ******************************************/
-        else if (data.type == 'cm-certificate') {
             // Create certificate
             await this.app.get('kube').createCertManagerCertificate(data.namespace, data.name, data.hosts, data.issuerName, data.isClusterIssuer)
             return data
-        }
+        } else if (data.type == 'ingress-gateway') {
         /******************************************
          *  CREATE INGRESS GATEWAY
          ******************************************/
-         else if (data.type == 'ingress-gateway') {
             // Check if namespace gateway exists (name: mdos-ns-gateway).
-            const nsGateway = await this.app.get('kube').getIstioGateways(data.namespace, "mdos-ns-gateway")
+            const nsGateway = await this.app.get('kube').getIstioGateways(data.namespace, 'mdos-ns-gateway')
 
             // New gateway
-            if(nsGateway.length == 0) {
-                if(data.trafficType == "HTTPS_SIMPLE") {
-                    await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
-                        hosts: data.hosts,
-                        port: {
-                            name: `https-${nanoid(10)}`,
-                            number: 443,
-                            protocol: "HTTPS"
+            if (nsGateway.length == 0) {
+                if (data.trafficType == 'HTTPS_SIMPLE') {
+                    await this.app.get('kube').createIstioGateway(data.namespace, 'mdos-ns-gateway', [
+                        {
+                            hosts: data.hosts,
+                            port: {
+                                name: `https-${nanoid(10)}`,
+                                number: 443,
+                                protocol: 'HTTPS',
+                            },
+                            tls: {
+                                credentialName: data.tlsSecretName,
+                                mode: 'SIMPLE',
+                            },
                         },
-                        tls: {
-                            credentialName: data.tlsSecretName,
-                            mode: "SIMPLE"
-                        }
-                    }])
-                } else if(data.trafficType == "HTTPS_PASSTHROUGH") {
-                    await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
-                        hosts: data.hosts,
-                        port: {
-                            name: `https-${nanoid(10)}`,
-                            number: 443,
-                            protocol: "HTTPS"
+                    ])
+                } else if (data.trafficType == 'HTTPS_PASSTHROUGH') {
+                    await this.app.get('kube').createIstioGateway(data.namespace, 'mdos-ns-gateway', [
+                        {
+                            hosts: data.hosts,
+                            port: {
+                                name: `https-${nanoid(10)}`,
+                                number: 443,
+                                protocol: 'HTTPS',
+                            },
+                            tls: {
+                                mode: 'PASSTHROUGH',
+                            },
                         },
-                        tls: {
-                            mode: "PASSTHROUGH"
-                        }
-                    }])
+                    ])
                 } else {
-                    await this.app.get('kube').createIstioGateway(data.namespace, "mdos-ns-gateway", [{
-                        hosts: data.hosts,
-                        port: {
-                            name: `http-${nanoid(10)}`,
-                            number: 80,
-                            protocol: "HTTP"
-                        }
-                    }])
+                    await this.app.get('kube').createIstioGateway(data.namespace, 'mdos-ns-gateway', [
+                        {
+                            hosts: data.hosts,
+                            port: {
+                                name: `http-${nanoid(10)}`,
+                                number: 80,
+                                protocol: 'HTTP',
+                            },
+                        },
+                    ])
                 }
-            } 
+            }
             // Existing gateway
             else {
-                if(data.trafficType == "HTTPS_SIMPLE") {
+                if (data.trafficType == 'HTTPS_SIMPLE') {
                     nsGateway[0].spec.servers.push({
                         hosts: data.hosts,
                         port: {
                             name: `https-${nanoid(10)}`,
                             number: 443,
-                            protocol: "HTTPS"
+                            protocol: 'HTTPS',
                         },
                         tls: {
                             credentialName: data.tlsSecretName,
-                            mode: "SIMPLE"
-                        }
+                            mode: 'SIMPLE',
+                        },
                     })
-                } else if(data.trafficType == "HTTPS_PASSTHROUGH") {
+                } else if (data.trafficType == 'HTTPS_PASSTHROUGH') {
                     nsGateway[0].spec.servers.push({
                         hosts: data.hosts,
                         port: {
                             name: `https-${nanoid(10)}`,
                             number: 443,
-                            protocol: "HTTPS"
+                            protocol: 'HTTPS',
                         },
                         tls: {
-                            mode: "PASSTHROUGH"
-                        }
+                            mode: 'PASSTHROUGH',
+                        },
                     })
                 } else {
                     nsGateway[0].spec.servers.push({
@@ -399,33 +402,32 @@ exports.Kube = class Kube extends KubeCore {
                         port: {
                             name: `http-${nanoid(10)}`,
                             number: 80,
-                            protocol: "HTTP"
-                        }
+                            protocol: 'HTTP',
+                        },
                     })
                 }
-                
-                await this.app.get('kube').updateIstioGateway(data.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
+
+                await this.app.get('kube').updateIstioGateway(data.namespace, 'mdos-ns-gateway', nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
             }
-        }
+        } else if (data.type == 'tenantNamespace') {
         /******************************************
          *  CREATE NEW TENANT NAMESPACE
          ******************************************/
-        else if (data.type == 'tenantNamespace') {
             // MDos framework only mode
-            if(this.app.get("mdos_framework_only")) {
-                if(!data.namespace || data.namespace.trim().length == 0) throw new Error('ERROR: Missing namespace name')
+            if (this.app.get('mdos_framework_only')) {
+                if (!data.namespace || data.namespace.trim().length == 0) throw new Error('ERROR: Missing namespace name')
 
                 const nsCheck = await this.app.get('kube').hasNamespace(data.namespace)
-                if(nsCheck) {
+                if (nsCheck) {
                     throw new Error('ERROR: Namespace already exists')
                 }
                 // Create namespace
                 await this.app.get('kube').createNamespace({
                     name: data.namespace,
                     skipSidecar: true,
-                    skipRBAC: true
+                    skipRBAC: true,
                 })
-            } 
+            }
             // MDos full mode
             else {
                 // Make sure keycloak is deployed
@@ -449,85 +451,84 @@ exports.Kube = class Kube extends KubeCore {
                         registryPass: saPass,
                         kcSaUser: saUser,
                         kcSaPass: saPass,
-                        rollback: false
+                        rollback: false,
                     },
                     workflow: [
                         {
                             topic: CHANNEL.JOB_K3S_CREATE_NAMESPACE,
-                            status: "PENDING",
-                            milestone: 1
+                            status: 'PENDING',
+                            milestone: 1,
                         },
                         {
                             topic: CHANNEL.JOB_KC_CREATE_CLIENT,
-                            status: "PENDING",
-                            milestone: 2
+                            status: 'PENDING',
+                            milestone: 2,
                         },
                         {
                             topic: CHANNEL.JOB_KC_CREATE_CLIENT_ROLES,
-                            status: "PENDING"
+                            status: 'PENDING',
                         },
                         {
                             topic: CHANNEL.JOB_FTPD_CREATE_CREDENTIALS,
-                            status: "PENDING",
-                            milestone: 3
+                            status: 'PENDING',
+                            milestone: 3,
                         },
                         {
                             topic: CHANNEL.JOB_KC_CREATE_CLIENT_SA,
-                            status: "PENDING",
-                            milestone: 4
+                            status: 'PENDING',
+                            milestone: 4,
                         },
                         {
                             topic: CHANNEL.JOB_K3S_CREATE_REG_SECRET,
-                            status: "PENDING"
+                            status: 'PENDING',
                         },
                         {
                             topic: CHANNEL.JOB_K3S_APPLY_USR_ROLE_BINDINGS,
-                            status: "PENDING"
-                        }
+                            status: 'PENDING',
+                        },
                     ],
                     rollbackWorkflow: [
                         {
                             topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
-                            status: "PENDING",
-                            milestone: 4
+                            status: 'PENDING',
+                            milestone: 4,
                         },
                         {
                             topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
-                            status: "PENDING",
-                            milestone: 3
+                            status: 'PENDING',
+                            milestone: 3,
                         },
                         {
                             topic: CHANNEL.JOB_KC_DELETE_CLIENT,
-                            status: "PENDING",
-                            milestone: 2
+                            status: 'PENDING',
+                            milestone: 2,
                         },
                         {
                             topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
-                            status: "PENDING",
-                            milestone: 1
-                        }
-                    ]
+                            status: 'PENDING',
+                            milestone: 1,
+                        },
+                    ],
                 })
 
                 // Check if error occured or not
-                if(result.context.rollback) {
-                    const errorJob = result.workflow.find(job => job.status  == "ERROR")
-                    if(errorJob && errorJob.errorMessage) {
-                        throw new Error("ERROR: " + errorJob.errorMessage)
+                if (result.context.rollback) {
+                    const errorJob = result.workflow.find((job) => job.status == 'ERROR')
+                    if (errorJob && errorJob.errorMessage) {
+                        throw new Error('ERROR: ' + errorJob.errorMessage)
                     } else {
-                        throw new Error("ERROR: An unknown error occured")
+                        throw new Error('ERROR: An unknown error occured')
                     }
                 }
             }
-        }
+        } else if (data.type == 'validate-ingress-gtw-hosts') {
         /******************************************
          *  VALIDATE GATEWAY AVAILABLE HOSTS
          ******************************************/
-        else if (data.type == 'validate-ingress-gtw-hosts') {
-            const matrix = await this.app.get("kube").generateIngressGatewayDomainMatrix(data.hosts)
+            const matrix = await this.app.get('kube').generateIngressGatewayDomainMatrix(data.hosts)
             return {
                 matrix: matrix,
-                available: this.app.get("kube").ingressGatewayTargetAvailable(matrix, data.trafficType)
+                available: this.app.get('kube').ingressGatewayTargetAvailable(matrix, data.trafficType),
             }
         }
         // ****************************************
@@ -542,7 +543,7 @@ exports.Kube = class Kube extends KubeCore {
      *
      * @param {*} id
      * @param {*} params
-     * @return {*} 
+     * @return {*}
      */
     async remove(id, params) {
         /******************************************
@@ -550,17 +551,17 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
         if (params.query.target == 'tenantNamespace') {
             // MDos framework only mode
-            if(this.app.get("mdos_framework_only")) {
-                if(!id || id.trim().length == 0) throw new Error('ERROR: Missing namespace name')
+            if (this.app.get('mdos_framework_only')) {
+                if (!id || id.trim().length == 0) throw new Error('ERROR: Missing namespace name')
 
                 // Make sure namespace exists
                 if (!(await this.app.get('kube').hasNamespace(id))) {
-                    throw new Error("ERROR: Namespace not found")
+                    throw new Error('ERROR: Namespace not found')
                 }
 
                 // Delete namespace
                 await this.app.get('kube').deleteNamespace(id)
-            } 
+            }
             // MDos full mode
             else {
                 // Make sure keycloak is deployed
@@ -571,7 +572,7 @@ exports.Kube = class Kube extends KubeCore {
 
                 // Make sure namespace exists
                 if (!(await this.app.get('kube').hasNamespace(id.toLowerCase()))) {
-                    throw new Error("ERROR: Namespace not found")
+                    throw new Error('ERROR: Namespace not found')
                 }
 
                 // Kick off event driven workflow
@@ -579,114 +580,107 @@ exports.Kube = class Kube extends KubeCore {
                     context: {
                         namespace: id,
                         realm: params.query.realm,
-                        rollback: false
+                        rollback: false,
                     },
                     workflow: [
                         {
                             topic: CHANNEL.JOB_K3S_DELETE_NAMESPACE,
-                            status: "PENDING",
-                            milestone: 1
+                            status: 'PENDING',
+                            milestone: 1,
                         },
                         {
                             topic: CHANNEL.JOB_KC_DELETE_CLIENT_SA,
-                            status: "PENDING",
-                            milestone: 2
+                            status: 'PENDING',
+                            milestone: 2,
                         },
                         {
                             topic: CHANNEL.JOB_KC_DELETE_CLIENT,
-                            status: "PENDING",
-                            milestone: 3
+                            status: 'PENDING',
+                            milestone: 3,
                         },
                         {
                             topic: CHANNEL.JOB_FTPD_DELETE_CREDENTIALS,
-                            status: "PENDING",
-                            milestone: 4
-                        }
+                            status: 'PENDING',
+                            milestone: 4,
+                        },
                     ],
-                    rollbackWorkflow: []
+                    rollbackWorkflow: [],
                 })
 
                 // Check if error occured or not
-                if(result.context.rollback) {
+                if (result.context.rollback) {
                     console.error(result.workflow)
-                    const errorJob = result.workflow.find(job => job.status  == "ERROR")
-                    if(errorJob && errorJob.errorMessage) {
-                        throw new Error("ERROR: " + errorJob.errorMessage)
+                    const errorJob = result.workflow.find((job) => job.status == 'ERROR')
+                    if (errorJob && errorJob.errorMessage) {
+                        throw new Error('ERROR: ' + errorJob.errorMessage)
                     } else {
-                        throw new Error("ERROR: An unknown error occured")
+                        throw new Error('ERROR: An unknown error occured')
                     }
                 }
             }
-
-        }
+        } else if (params.query.target == 'application') {
         /******************************************
          *  UNINSTALL / DELETE APPLICATION
          ******************************************/
-        else if (params.query.target == 'application') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type)
-        } 
+        } else if (params.query.target == 'shared-volume') {
         /******************************************
          *  DELETE READ-WRITE-MANY PVC
          ******************************************/
-         else if (params.query.target == 'shared-volume') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound('ERROR: Namespace does not exist')
             }
             const existingPvc = await this.app.get('kube').getPvcs(params.query.namespace, id)
             if (existingPvc.length == 0) {
-                throw new BadRequest("ERROR: Volume not found")
+                throw new BadRequest('ERROR: Volume not found')
             } else {
                 await this.app.get('kube').deleteWriteManyPvc(params.query.namespace, id)
             }
-        } 
+        } else if (params.query.target == 'cm-issuer') {
         /******************************************
          *  UNINSTALL / DELETE ISSUER
          ******************************************/
-        else if (params.query.target == 'cm-issuer') {
-            await this.app.get("kube").deleteCertManagerIssuer(params.query.namespace, id)
-        }
-        else if (params.query.target == 'cm-cluster-issuer') {
-            await this.app.get("kube").deleteCertManagerClusterIssuer(id)
-        }
+            await this.app.get('kube').deleteCertManagerIssuer(params.query.namespace, id)
+        } else if (params.query.target == 'cm-cluster-issuer') {
+            await this.app.get('kube').deleteCertManagerClusterIssuer(id)
+        } else if (params.query.target == 'certificate') {
         /******************************************
          *  UNINSTALL / DELETE CERTIFICATE
          ******************************************/
-         else if (params.query.target == 'certificate') {
-            await this.app.get("kube").deleteCertManagerCertificate(params.query.namespace, id)
+            await this.app.get('kube').deleteCertManagerCertificate(params.query.namespace, id)
             const hasSecret = await this.app.get('kube').hasSecret(params.query.namespace, id)
-            if(hasSecret) {
+            if (hasSecret) {
                 await this.app.get('kube').deleteSecret(params.query.namespace, id)
             }
-        }
+        } else if (params.query.target == 'ingress-gateway') {
         /******************************************
          *  UNINSTALL / DELETE CERTIFICATE
          ******************************************/
-        else if (params.query.target == 'ingress-gateway') {
             // Check if namespace gateway exists (name: mdos-ns-gateway).
-            const nsGateway = await this.app.get('kube').getIstioGateways(params.query.namespace, "mdos-ns-gateway")
+            const nsGateway = await this.app.get('kube').getIstioGateways(params.query.namespace, 'mdos-ns-gateway')
 
             // Validation
-            if(nsGateway.length == 0) {
+            if (nsGateway.length == 0) {
                 throw new NotFound('ERROR: Namespace ingress gateway does not exist')
             }
-            const index = Number(id);
-            if (Number.isInteger(index) && index <=0) throw new BadRequest("Number (integer) expected")
-            else if (index <=0 || index > nsGateway[0].spec.servers.length) throw new BadRequest("Index out of range")
+            const index = Number(id)
+            if (Number.isInteger(index) && index <= 0) throw new BadRequest('Number (integer) expected')
+            else if (index <= 0 || index > nsGateway[0].spec.servers.length) throw new BadRequest('Index out of range')
 
             // Filter out config
             nsGateway[0].spec.servers.splice(index - 1, 1)
 
-            if(nsGateway[0].spec.servers.length == 0) {
+            if (nsGateway[0].spec.servers.length == 0) {
                 // Delete gateway
-                await this.app.get('kube').deleteIstioGateway(params.query.namespace, "mdos-ns-gateway")
+                await this.app.get('kube').deleteIstioGateway(params.query.namespace, 'mdos-ns-gateway')
             } else {
                 // Update gateway
-                await this.app.get('kube').updateIstioGateway(params.query.namespace, "mdos-ns-gateway", nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
+                await this.app.get('kube').updateIstioGateway(params.query.namespace, 'mdos-ns-gateway', nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
             }
         }
         // ***************************************

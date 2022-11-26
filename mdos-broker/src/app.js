@@ -10,7 +10,6 @@ const configuration = require('@feathersjs/configuration');
 const express = require('@feathersjs/express');
 const socketio = require('@feathersjs/socketio');
 
-
 const middleware = require('./middleware');
 const services = require('./services');
 const appHooks = require('./app.hooks');
@@ -36,7 +35,94 @@ app.use('/', express.static(app.get('public')));
 
 // Set up Plugins and providers
 app.configure(express.rest());
-app.configure(socketio());
+
+app.configure(
+  socketio({
+      serveClient: false
+  }, function (io) {
+      app.get("brokerServer").init()
+
+      io.on("connection", (socket) => {
+          // On client connect
+          app.get("brokerServer").onConnect(socket).then((socketId) => {
+              app.get("brokerServer").connections[socketId].socket.emit("ready", "") 
+          })
+
+          // On client disconnect
+          socket.on("disconnect", async function (socketId) {
+              await app.get("brokerServer").onDisconnect(socketId)
+          }.bind(this, socket.id));
+
+          // On client socket heartbeat
+          socket.on("heartbeat", async function (socketId) {
+              await app.get("brokerServer").heartbeat(socketId)
+          }.bind(this, socket.id));
+
+          // On topic event subscription
+          socket.on("subscribe", async function (socketId, topic, cb) {
+              try {
+                  await app.get("brokerServer").subscribe(socketId, topic)
+                  cb({
+                      status: "ok"
+                  })
+              } catch (error) {
+                  cb({
+                      status: "ko"
+                  })
+              }
+          }.bind(this, socket.id));
+
+          // On topic event subscription
+          socket.on("publish", async function (topic, data, cb) {
+              try {
+                  await app.service('events').create({"topic":topic,"payload": JSON.stringify(data)})
+                  cb({
+                      status: "ok"
+                  })
+              } catch (error) {
+                  cb({
+                      status: "ko"
+                  })
+              }
+          });
+
+          // On event acknowledge (success processing, discard event)
+          socket.on("ack", async function (socketId, data, cb) {
+              try {
+                  await app.get("brokerServer").ack(socketId, data)
+                  cb({
+                      status: "ok"
+                  })
+              } catch (error) {
+                  cb({
+                      status: "ko"
+                  })
+              }
+          }.bind(this, socket.id));
+
+          // On event reject (error processing, re-queue event)
+          socket.on("nac", async function (socketId, data, cb) {
+              try {
+                  await app.get("brokerServer").nac(socketId, data)
+                  cb({
+                      status: "ok"
+                  })
+              } catch (error) {
+                  cb({
+                      status: "ko"
+                  })
+              }
+          }.bind(this, socket.id));
+      });
+      
+      // Registering Socket.io middleware
+      io.use(function (socket, next) {
+          // Exposing a request property to services and hooks
+          socket.feathers.referrer = socket.request.referrer;
+          next();
+      });
+  })
+);
 
 app.configure(sequelize);
 

@@ -6,9 +6,26 @@ const DataTypes = Sequelize.DataTypes;
 module.exports = function (app) {
   const sequelizeClient = app.get('sequelizeClient');
   const events = sequelizeClient.define('events', {
-    text: {
+    payload: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    topic: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "queued"
+    },
+    heartbeat: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    clientUuid: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   }, {
     hooks: {

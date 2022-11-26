@@ -1,7 +1,7 @@
 const K3SJobWorker = require('../workers/k3sJobWorker');
 const KCJobWorker = require('../workers/kcJobWorker');
 const FTPDJobWorker = require('../workers/ftpdJobWorker');
-const { CHANNEL } = require('./rb-broker/constant');
+const { CHANNEL } = require('./brokerChannels');
 const ErrorUtils = require('../libs/errorUtils');
 const { nanoid } = require('nanoid');
 
@@ -22,8 +22,8 @@ class BrokerSubscriptions {
      */
     async start() {
         // Initial broker connect
-        if(!this.brokerClient.connected)
-            await this.brokerClient.connect();
+        // if(!this.brokerClient.isConnected())
+        //     await this.brokerClient.connect();
         
         // Subscribe now
         await this.brokerClient.waitForConnection();

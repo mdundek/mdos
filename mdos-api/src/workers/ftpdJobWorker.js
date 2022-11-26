@@ -1,5 +1,5 @@
 const WorkerBase = require('./workerBase')
-const { CHANNEL } = require('../middleware/rb-broker/constant');
+const { CHANNEL } = require('../middleware/brokerChannels');
 
 /**
  * FTPDJobWorker
