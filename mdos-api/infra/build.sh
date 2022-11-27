@@ -76,11 +76,13 @@ echo "li14ebe13" | docker login registry.$DOMAIN --username mdundek --password-s
 
 cp infra/dep/helm/helm .
 cp infra/dep/kubectl/kubectl .
+cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
 
 docker build -t registry.$DOMAIN/mdos-api:latest .
 
 rm -rf helm
 rm -rf kubectl
+rm -rf mhc-generic
 
 docker push registry.$DOMAIN/mdos-api:latest
 
