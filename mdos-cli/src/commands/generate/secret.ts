@@ -56,7 +56,7 @@ export default class Secret extends Command {
             {
                 type: 'input',
                 name: 'name',
-                message: 'Enter a name for this secret asset:',
+                message: 'Enter a name for this new secret:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
