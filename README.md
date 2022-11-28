@@ -22,8 +22,6 @@ Managed Kubernetes Clusters such as EKS and Openshift often already come with a 
 > **Limitations**
 > When deploying MDos in framework only mode, you won't get advanced features such as OIDC SSO authentication, Automated certificate management, managed multi-tenancy and RBAC support or a private registry OOTB. This deployment focuses on the application framework only.
 
----
-
 With the MDos framework & CLI, this is what a application deployment looks like for yaml config file just like the one on the left:
 
 ```sh
@@ -36,6 +34,8 @@ This will:
 2. Push it to the target registry
 3. Deploy everything on your Kubernetes cluster
 4. Provide you with feedback of how the deployment is going
+
+---
 
 > **Warning**
 > MDos is in under development at the moment, it should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first.  
