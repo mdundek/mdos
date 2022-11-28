@@ -6,9 +6,9 @@ MDos is a Kubernetes-based application runtime platform, it's aim is to greatly 
 
 ### 1. As a fully managed cluster and it's dependencies
 
-<img align="right" width="700" style="margin-left:50px" src="https://github.com/mdundek/mdos/blob/main/mdos-docs/infra/mkdocs/docs/img/overview.png?raw=true">
+<img align="right" width="500" style="margin-left:50px" src="https://github.com/mdundek/mdos/blob/main/mdos-docs/infra/mkdocs/docs/img/overview.png?raw=true">
 The full instance of MDos is packed with extensions and features that go beyond the basic application deployment needs. It allows you to abstract away concepts such as SSO, certificate management, multi-tenancy on one single cluster along with advanced RBAC features, a private secured registry and more. This is useful if you start from scratch and you are managing your kubernetes cluster yourself versus using a managed Kubernetes cluster such as EKS, GKE, Openshift and so on.  
-
+  
 > **Feature request**
 > At some point, the full MDos platform will be ported to such environments as well, but for now this is not the case. The community will drive this need, so speak up if you think this is necessary rather sooner than later.
 
