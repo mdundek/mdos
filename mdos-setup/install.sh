@@ -1476,6 +1476,11 @@ install_mdos() {
     rm -rf mhc-generic
     failsafe_docker_push registry.$DOMAIN/mdos-api:latest
 
+    # Build mdos-broker image
+    cd ../mdos-broker
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-broker:latest . &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/mdos-broker:latest
+
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-mirror-lftp:latest . &>> $LOG_FILE
