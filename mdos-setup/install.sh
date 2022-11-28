@@ -1683,6 +1683,19 @@ install_ftpd() {
 
     docker compose up -d &>> $LOG_FILE
 
+    # Wait untill up and running
+    sleep 5
+    unset FOUND_RUNNING_FTP_SRV
+    while [ -z $FOUND_RUNNING_FTP_SRV ]; do
+        while read DCOMP_LINE ; do
+            C_STATUS=`echo "$DCOMP_LINE" | awk 'END {print $2}'`
+            if [ "$C_STATUS" == "running(1)" ]; then
+                FOUND_RUNNING_FTP_SRV=1
+            fi
+        done < <(sudo docker compose ls | grep "pure-ftpd" 2>/dev/null)
+        sleep 1
+    done
+
     # Install endpoint to use K3S ingress for this
     cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
