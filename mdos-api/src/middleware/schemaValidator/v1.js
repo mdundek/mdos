@@ -160,6 +160,7 @@ class SchemaV1 {
                                     type: 'string',
                                 },
                             },
+                            doNotBuild: { type: 'boolean' },
                             configs: {
                                 type: 'array',
                                 items: {

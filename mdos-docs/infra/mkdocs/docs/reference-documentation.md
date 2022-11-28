@@ -99,7 +99,8 @@ Among those, you will define your component `name`, `image` name and image `tag`
 
 ### :octicons-codescan-16:{ .section-icon } Registries
 
-Registries are where your MDos will push and pull your application images from. Multiple choices are available here.
+Registries are where your MDos will push and pull your application images to/from. 
+Multiple choices are available here.
 
 #### :material-arrow-right-thin: Use the MDos registry
 
@@ -151,6 +152,24 @@ components:
       - name: my-registry-secret
     ...
 ```
+
+### :octicons-codescan-16:{ .section-icon } Disable image builds on deploy
+
+In some cases, you might not want to build your image when you deploy your applications using the command `mdos application deploy`. This could be the case if you use DevOps pipelines (GitHub Pipelines, Jenkins...) that already take care of building your images for you. In this case, simply add the flag `doNotBuild: true` to your component to disable this behavious for a given component:
+
+```yaml hl_lines="6" linenums="1"
+components:
+  - name: comp-1
+    ...
+    image: my-comp-1-img-name
+    tag: 1.0.0
+    doNotBuild: true
+    ...
+```
+
+!!! note
+
+    As mentioned above, if you use this flag, make sure your images are present in the target registries before deploying.
 
 ---
 

@@ -220,145 +220,54 @@ const lftp = async (sourceDir, appName, creds) => {
 }
 
 /**
- * Build and push a component docker image to the mdos registry
- *
- * @param {*} userInfo
- * @param {*} regCreds
- * @param {*} targetRegistry
- * @param {*} appComp
- * @param {*} root
+ * _dockerLogin
+ * @param {*} creds 
  */
-const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, root, tenantName) => {
-    // PreBuild scripts?
-    if (appComp.preBuildCmd) {
-        try {
-            for (let cmdLine of appComp.preBuildCmd) {
-                CliUx.ux.action.start(`Executing pre-build command: ${cmdLine}`)
-                await terminalCommand(`${cmdLine}`, false, `${root}/${appComp.name}`)
-                CliUx.ux.action.stop()
-            }
-        } catch (err) {
-            CliUx.ux.action.stop('error')
-            context(extractErrorMessage(err), true)
-            process.exit(1)
-        }
-    }
-
-    // Build app image
-    if (!appComp.imagePullSecrets && !appComp.publicRegistry) {
-        // MDos registry target, append namespace name to image path
-        if(appComp.image.indexOf('/') == 0)
-            appComp.image = `${tenantName}${appComp.image}`
-        else
-            appComp.image = `${tenantName}/${appComp.image}`
-    }
-    const targetImg = `${targetRegistry ? targetRegistry + '/' : ''}${appComp.image}:${appComp.tag}`
-    try {
-        CliUx.ux.action.start(`Building application image ${targetImg}`)
-        await terminalCommand(`DOCKER_BUILDKIT=1 docker build -t ${targetImg} ${root}/${appComp.name}`)
-        CliUx.ux.action.stop()
-    } catch (err) {
-        CliUx.ux.action.stop('error')
-        error('Could not build application:', false, true)
-        context(extractErrorMessage(err), true)
+ const _dockerLogin = async(creds) => {
+    if (os.platform() === 'linux') {
+        await terminalCommand(
+            `echo "${creds.password}" | docker login${creds.registry ? " "+creds.registry : ""} --username ${creds.username} --password-stdin`
+        )
+    } else if (os.platform() === 'darwin') {
+        await terminalCommand(
+            `echo "${creds.password}" | docker login${creds.registry ? " "+creds.registry : ""} --username ${creds.username} --password-stdin`
+        )
+    } else if (os.platform() === 'win32') {
+        await terminalCommand(
+            `echo | set /p="${creds.password}" | docker login${creds.registry ? " "+creds.registry : ""} --username ${creds.username} --password-stdin`
+        )
+    } else {
+        error('Unsupported platform')
         process.exit(1)
     }
+}
 
+/**
+ * _prebuildScriptsOnDeploy
+ * @param {*} appComp 
+ * @param {*} root 
+ */
+const _prebuildScriptsOnDeploy = async (appComp, root) => {
     try {
-        // If mdos registry, login first
-        if (targetRegistry && userInfo.registry == targetRegistry) {
-            if (os.platform() === 'linux') {
-                await terminalCommand(
-                    `echo "${regCreds.password}" | docker login ${userInfo.registry} --username ${regCreds.username} --password-stdin`
-                )
-            } else if (os.platform() === 'darwin') {
-                await terminalCommand(
-                    `echo "${regCreds.password}" | docker login ${userInfo.registry} --username ${regCreds.username} --password-stdin`
-                )
-            } else if (os.platform() === 'win32') {
-                await terminalCommand(
-                    `echo | set /p="${regCreds.password}" | docker login ${userInfo.registry} --username ${regCreds.username} --password-stdin`
-                )
-            } else {
-                error('Unsupported platform')
-                process.exit(1)
-            }
+        for (let cmdLine of appComp.preBuildCmd) {
+            CliUx.ux.action.start(`Executing pre-build command: ${cmdLine}`)
+            await terminalCommand(`${cmdLine}`, false, `${root}/${appComp.name}`)
+            CliUx.ux.action.stop()
         }
-        // Now deploy
-        CliUx.ux.action.start(`Pushing application image ${targetImg}`)
-        await terminalCommand(`docker push ${targetImg}`)
-        CliUx.ux.action.stop()
     } catch (err) {
         CliUx.ux.action.stop('error')
-        error('Could not build application:', false, true)
         context(extractErrorMessage(err), true)
         process.exit(1)
     }
 }
 
 /**
- * Build and push a component docker image
- *
- * @param {*} regCreds
- * @param {*} targetRegistry
- * @param {*} appComp
- * @param {*} root
+ * _pushImage
+ * @param {*} targetImg 
  */
- const buildPushComponentFmMode = async (targetRegistry, regCreds, appComp, root) => {
-    // PreBuild scripts?
-    if (appComp.preBuildCmd) {
-        try {
-            for (let cmdLine of appComp.preBuildCmd) {
-                CliUx.ux.action.start(`Executing pre-build command: ${cmdLine}`)
-                await terminalCommand(`${cmdLine}`, false, `${root}/${appComp.name}`)
-                CliUx.ux.action.stop()
-            }
-        } catch (err) {
-            CliUx.ux.action.stop('error')
-            context(extractErrorMessage(err), true)
-            process.exit(1)
-        }
-    }
-
-    const targetImg = `${targetRegistry ? targetRegistry + '/' : ''}${appComp.image}:${appComp.tag}`
-    try {
-        CliUx.ux.action.start(`Building application image ${targetImg}`)
-        await terminalCommand(`DOCKER_BUILDKIT=1 docker build -t ${targetImg} ${root}/${appComp.name}`)
-        CliUx.ux.action.stop()
-    } catch (err) {
-        CliUx.ux.action.stop('error')
-        error('Could not build application:', false, true)
-        context(extractErrorMessage(err), true)
-        process.exit(1)
-    }
-
-    // If mdos registry, login first
-    if (targetRegistry && regCreds) {
-        try {
-            if (os.platform() === 'linux') {
-                await terminalCommand(
-                    `echo "${regCreds.password}" | docker login ${targetRegistry} --username ${regCreds.username} --password-stdin`
-                )
-            } else if (os.platform() === 'darwin') {
-                await terminalCommand(
-                    `echo "${regCreds.password}" | docker login ${targetRegistry} --username ${regCreds.username} --password-stdin`
-                )
-            } else if (os.platform() === 'win32') {
-                await terminalCommand(
-                    `echo | set /p="${regCreds.password}" | docker login ${targetRegistry} --username ${regCreds.username} --password-stdin`
-                )
-            } else {
-                error('Unsupported platform')
-                process.exit(1)
-            }
-        } catch (err) {
-            error('Could not login to the registry: ' + targetRegistry, false, true)
-            process.exit(1)
-        }
-    }
+const _pushImage = async (targetImg) => {
     // Now deploy
     CliUx.ux.action.start(`Pushing application image ${targetImg}`)
-
     try {
         await terminalCommand(`docker push ${targetImg}`)
         CliUx.ux.action.stop()
@@ -368,6 +277,94 @@ const buildPushComponent = async (userInfo, regCreds, targetRegistry, appComp, r
         context(extractErrorMessage(err, true), true)
         process.exit(1)
     }
+}
+
+/**
+ * Build and push a component docker image to the mdos registry
+ *
+ * @param {*} userInfo
+ * @param {*} regCreds
+ * @param {*} appComp
+ * @param {*} root
+ * @param {*} tenantName
+ */
+const buildPushComponent = async (userInfo, regCreds, appComp, root, tenantName) => {
+    // PreBuild scripts if any
+    if (appComp.preBuildCmd) await _prebuildScriptsOnDeploy(appComp, root)
+
+    // Construct registry image name if necessary
+    let targetImg
+    if(!appComp.publicRegistry && regCreds.registry) {
+        if(userInfo.registry == regCreds.registry) {
+            // MDos registry target, append namespace name to image path
+            if(appComp.image.indexOf('/') == 0) appComp.image = `${tenantName}${appComp.image}`
+            else appComp.image = `${tenantName}/${appComp.image}`
+        }
+        targetImg = `${regCreds.registry ? regCreds.registry + '/' : ''}${appComp.image}:${appComp.tag}`
+    } else {
+        targetImg = `${appComp.image}:${appComp.tag}`
+    }
+
+    // Build image
+    try {
+        CliUx.ux.action.start(`Building application image ${targetImg}`)
+        await terminalCommand(`DOCKER_BUILDKIT=1 docker build -t ${targetImg} ${root}/${appComp.name}`)
+        CliUx.ux.action.stop()
+    } catch (err) {
+        CliUx.ux.action.stop('error')
+        error('Could not build application:', false, true)
+        context(extractErrorMessage(err), true)
+        process.exit(1)
+    }
+
+    // Login to registry
+    try {
+        await _dockerLogin(regCreds)
+    } catch (err) {
+        error(`Could not login to registry "${regCreds.registry ? regCreds.registry : "docker.io"}" with username: ${regCreds.username}`, false, true)
+        process.exit(1)
+    }
+
+    // Now push image
+    await _pushImage(targetImg)
+}
+
+/**
+ * Build and push a component docker image
+ *
+ * @param {*} regCreds
+ * @param {*} appComp
+ * @param {*} root
+ */
+ const buildPushComponentFmMode = async (regCreds, appComp, root) => {
+    // PreBuild scripts?
+    if (appComp.preBuildCmd) await _prebuildScriptsOnDeploy(appComp, root)
+
+    // Construct registry image name if necessary
+    const targetImg = `${regCreds.registry ? regCreds.registry + '/' : ''}${appComp.image}:${appComp.tag}`
+   
+    // Build image
+    try {
+        CliUx.ux.action.start(`Building application image ${targetImg}`)
+        await terminalCommand(`DOCKER_BUILDKIT=1 docker build -t ${targetImg} ${root}/${appComp.name}`)
+        CliUx.ux.action.stop()
+    } catch (err) {
+        CliUx.ux.action.stop('error')
+        error('Could not build application:', false, true)
+        context(extractErrorMessage(err), true)
+        process.exit(1)
+    }
+
+    // Login to registry
+    try {
+        await _dockerLogin(regCreds)
+    } catch (err) {
+        error(`Could not login to registry "${regCreds.registry ? regCreds.registry : "docker.io"}" with username: ${regCreds.username}`, false, true)
+        process.exit(1)
+    }
+
+    // Now push image
+    await _pushImage(targetImg)
 }
 
 /**
