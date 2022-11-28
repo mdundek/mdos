@@ -4,16 +4,16 @@ MDos is a Kubernetes-based application runtime platform, it's aim is to greatly 
 
 ## MDos as a fully managed cluster stack or simply as a deployment framework
 
-### 1. As a fully managed cluster and it's dependencies
+### 1. As a fully managed cluster
 
 <img align="right" width="500" style="margin-left:50px" src="https://github.com/mdundek/mdos/blob/main/mdos-docs/infra/mkdocs/docs/img/overview.png?raw=true">
-The full instance of MDos is packed with extensions and features that go beyond the basic application deployment needs. It allows you to abstract away concepts such as SSO, certificate management, multi-tenancy on one single cluster along with advanced RBAC features, a private secured registry and more. This is useful if you start from scratch and you are managing your kubernetes cluster yourself versus using a managed Kubernetes cluster such as EKS, GKE, Openshift and so on.  
+The full instance of MDos is packed with extensions and features that go beyond the basic application deployment needs. It allows you to abstract away concepts such as SSO, certificate management, multi-tenancy on one single cluster along with advanced RBAC features, a private secured registry and more. This is useful if you start from scratch and you are managing your Kubernetes cluster yourself versus using a managed Kubernetes cluster such as EKS, GKE, Openshift and so on.  
 
 ---
 
 ### 2. Or as an application deployment framework only (onto your own cluster)
 
-<img align="left" width="450" style="margin-right:50px;margin-bottom:50px" src="https://github.com/mdundek/mdos/blob/framework_mode/mdos-docs/infra/mkdocs/docs/img/mdosyaml.png?raw=true"> 
+<img align="left" width="450" style="margin-right:50px" src="https://github.com/mdundek/mdos/blob/framework_mode/mdos-docs/infra/mkdocs/docs/img/mdosyaml.png?raw=true"> 
 If you are managing your own cluster, but you would like to leverage the MDos application deployment framework to manage and deploy your applications onto the cluster, then this is the mode for you.  
 One single and easy to understand YAML file for everything you need, no deep kubernetes knowledge needed, no scattered low level kubernetes resource yaml files and no complex resource matching patterns needed.  
 
@@ -21,6 +21,8 @@ Managed Kubernetes Clusters such as EKS and Openshift often already come with a 
 
 > **Limitations**
 > When deploying MDos in framework only mode, you won't get advanced features such as OIDC SSO authentication, Automated certificate management, managed multi-tenancy and RBAC support or a private registry OOTB. This deployment focuses on the application framework only.
+
+---
 
 With the MDos framework & CLI, this is what a application deployment looks like for yaml config file just like the one on the left:
 
@@ -34,12 +36,6 @@ This will:
 2. Push it to the target registry
 3. Deploy everything on your Kubernetes cluster
 4. Provide you with feedback of how the deployment is going
-
-
-
-
-
-
 
 > **Warning**
 > MDos is in under development at the moment, it should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the comunity first.  
