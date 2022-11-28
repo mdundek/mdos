@@ -1610,6 +1610,7 @@ install_ftpd() {
 
     docker compose up -d &>> $LOG_FILE
 
+    # Wait untill up and running
     sleep 5
     unset FOUND_RUNNING_FTP_SRV
     while [ -z $FOUND_RUNNING_FTP_SRV ]; do
