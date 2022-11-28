@@ -64,7 +64,7 @@ export default class Volume extends Command {
             process.exit(1)
         }
 
-        let agregatedResponses: any = {}
+        let aggregatedResponses: any = {}
 
         // Collect base data
         let responses = await inquirer.prompt([
@@ -99,10 +99,10 @@ export default class Volume extends Command {
                 message: 'Do you want to mount this folder directly to a local host path on the cluster node?',
             }
         ])
-        agregatedResponses = { ...agregatedResponses, ...responses }
+        aggregatedResponses = { ...aggregatedResponses, ...responses }
 
         // If use host path
-        if(agregatedResponses.useHostpath) {
+        if(!this.getConfig('FRAMEWORK_MODE') && !aggregatedResponses.useHostpath) {
             responses = await inquirer.prompt([
                 {
                     type: 'confirm',
@@ -115,11 +115,11 @@ export default class Volume extends Command {
                     message: 'Do you want to populate your volume with some static content before the container starts?',
                 }
             ])
-            agregatedResponses = { ...agregatedResponses, ...responses }
+            aggregatedResponses = { ...aggregatedResponses, ...responses }
         }
 
         // If sync volume on deploy?
-        if(agregatedResponses.inject) {
+        if(aggregatedResponses.inject) {
             responses = await inquirer.prompt([
                 {
                     type: 'list',
@@ -137,34 +137,27 @@ export default class Volume extends Command {
                     ],
                 }
             ])
-            agregatedResponses = { ...agregatedResponses, ...responses }
+            aggregatedResponses = { ...aggregatedResponses, ...responses }
         }
 
         // If not hostpath, ask if referencing existing shared volume
-        if(!agregatedResponses.useHostpath) {
+        if(!aggregatedResponses.useHostpath) {
             responses = await inquirer.prompt([
                 {
                     type: 'confirm',
                     name: 'shared',
-                    when: (values: any) => {
-                        return !values.useHostpath
-                    },
                     message: 'Is this volume referencing an existing shared volume?',
                     default: false
                 },
             ])
-            agregatedResponses = { ...agregatedResponses, ...responses }
+            aggregatedResponses = { ...aggregatedResponses, ...responses }
 
             // If not referencing shared volume, collect size
-            if(!agregatedResponses.shared) {
-                
+            if(!aggregatedResponses.shared) {
                 responses = await inquirer.prompt([
                     {
                         type: 'number',
                         name: 'size',
-                        when: (values: any) => {
-                            return !values.useHostpath
-                        },
                         message: 'Size in Gb (ex. 0.2, 1, 100...) to allocate to this volume:',
                         validate: (value: string) => {
                             if (value.trim().length == 0) return 'Mandatory field'
@@ -172,7 +165,7 @@ export default class Volume extends Command {
                         },
                     }
                 ])
-                agregatedResponses = { ...agregatedResponses, ...responses }
+                aggregatedResponses = { ...aggregatedResponses, ...responses }
             } 
             // Yes, shared
             else {
@@ -214,7 +207,7 @@ export default class Volume extends Command {
                         }),
                     }
                 ])
-                agregatedResponses = { ...agregatedResponses, ...responses }
+                aggregatedResponses = { ...aggregatedResponses, ...responses }
             }
         }
 
@@ -232,34 +225,36 @@ export default class Volume extends Command {
         }
 
         const vol: Volume = {
-            name: agregatedResponses.name,
-            mountPath: agregatedResponses.mountpath,
+            name: aggregatedResponses.name,
+            mountPath: aggregatedResponses.mountpath,
         }
 
-        if (agregatedResponses.inject) {
+        if (aggregatedResponses.inject) {
             vol.syncVolume = true
-            vol.trigger = agregatedResponses.syncTrigger
+            vol.trigger = aggregatedResponses.syncTrigger
 
-            try {
-                const volumeDirPath = path.join(volumesPath, agregatedResponses.name)
-                if (fs.existsSync(volumeDirPath)) {
-                    error('This volume already exists')
+            if(!this.getConfig('FRAMEWORK_MODE')) {
+                try {
+                    const volumeDirPath = path.join(volumesPath, aggregatedResponses.name)
+                    if (fs.existsSync(volumeDirPath)) {
+                        error('This volume already exists')
+                        process.exit(1)
+                    }
+
+                    fs.mkdirSync(volumeDirPath, { recursive: true })
+                    fs.writeFileSync(path.join(volumeDirPath, 'README.md'), 'Place your volume static data in this folder\n')
+                } catch (error) {
+                    this.showError(error)
                     process.exit(1)
                 }
-
-                fs.mkdirSync(volumeDirPath, { recursive: true })
-                fs.writeFileSync(path.join(volumeDirPath, 'README.md'), 'Place your volume static data in this folder\n')
-            } catch (error) {
-                this.showError(error)
-                process.exit(1)
             }
         }
 
-        if (agregatedResponses.size) vol.size = `${agregatedResponses.size}Gi`
+        if (aggregatedResponses.size) vol.size = `${aggregatedResponses.size}Gi`
 
-        if (agregatedResponses.useHostpath) vol.hostPath = agregatedResponses.hostpath
+        if (aggregatedResponses.useHostpath) vol.hostPath = aggregatedResponses.hostpath
 
-        if (agregatedResponses.sharedVolumeName) vol.sharedVolumeName = agregatedResponses.sharedVolumeName
+        if (aggregatedResponses.sharedVolumeName) vol.sharedVolumeName = aggregatedResponses.sharedVolumeName
 
         targetCompYaml.volumes.push(vol)
 

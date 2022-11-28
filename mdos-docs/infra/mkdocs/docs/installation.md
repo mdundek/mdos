@@ -5,7 +5,7 @@ hide:
 
 # Installation & setup
 
-## Install the MDos (server) platform
+## Install the MDos managed cluster platform (Kubernetes cluster & extensions)
 
 !!! info
 
@@ -21,7 +21,7 @@ git clone https://github.com/mdundek/mdos.git
 
 ### Before you start
 
-The installation will require that you configure a valid __domain name__ and a certificate for the mdos base platform (for developement purposes you can choose to work with a self-signed certificate and by editing your `/etc/hosts` file. This will prevent certain features to work, such as SSO for instance. It is recommended to have a real domain name and a valid certificate for the full experience).
+The installation will require that you configure a valid __domain name__ and a certificate for the mdos base platform (for development purposes you can choose to work with a self-signed certificate and by editing your `/etc/hosts` file. This will prevent certain features to work, such as SSO for instance. It is recommended to have a real domain name and a valid certificate for the full experience).
 
 If you plan on using `cert-manager` to manage your certificate, then you will have to prepare a `Issuer` yaml file upfront before you go ahead and start the installation script (see bellow for an example using a CloudFlare issuer).
 
@@ -89,11 +89,11 @@ The installation script will give you multiple choices here:
 
 1. You have a valid certificate at hand that you would like to use
 2. You want to set up `cert-manager` to generate and manage your certificate (Let's Encrypt, CloudFlare, Vault, AWS, Google...)
-3. You have no certificate and would like to create a self-signed certificate (only suited for developement purposes)
+3. You have no certificate and would like to create a self-signed certificate (only suited for development purposes)
 
 !!! warning
 
-    For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.  
+    For development purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.  
     For production, you will have to use a fully valid certificate in order to use all of MDos features. 
 
 === "Cert-manager example"
@@ -140,12 +140,12 @@ The installation script will give you multiple choices here:
 
     <img src="/mdos/img/installation/selfsigned.png" alt="selfsigned" width="600"/>
 
-    This example is based on the 3rd option, a self signed certificate. If you want to use `cert-manager` instead (good option for production environement), you will be asked to enter the path to your cert-manager `Issuer` Yaml file to use in order to issue your certificate.
+    This example is based on the 3rd option, a self signed certificate. If you want to use `cert-manager` instead (good option for production environment), you will be asked to enter the path to your cert-manager `Issuer` Yaml file to use in order to issue your certificate.
 
 #### :material-arrow-right-thin: Kubernetes workload storage directory path
 
 When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.  
-MDos uses `Longhorn` from Rancher as a storage class. Longhorn will store your container volume data in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system. Please note that you need to ensure that you have enougth storage capacity on this directory path, it is recommended to mount a separate dedicated disk for this purpose:
+MDos uses `Longhorn` from Rancher as a storage class. Longhorn will store your container volume data in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system. Please note that you need to ensure that you have enough storage capacity on this directory path, it is recommended to mount a separate dedicated disk for this purpose:
 
 <img src="/mdos/img/installation/storage.png" alt="storage" width="600"/>
 
@@ -155,7 +155,7 @@ MDos uses `Longhorn` from Rancher as a storage class. Longhorn will store your c
 
 #### :material-arrow-right-thin: Private registry max size
 
-MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.  
+MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images in house. This is also a must if you intend to run the platform in offline mode.  
 The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).
 
 <img src="/mdos/img/installation/registry.png" alt="registry" width="600"/>
@@ -166,8 +166,8 @@ The registry runs in Kubernetes, it therefore needs to allocate some storage to 
 
 #### :material-arrow-right-thin: FTP sync server for Kubernetes POD data provisionning
 
-When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using `hostPath` mount points instead. This is an antipatern and does not go well with multi-node cluster environements where you can not easiely predict where your pod is going to start.  
-MDos provides you with a means to initialize your application pods with data pre-alocated to it's volumes. This can be very usefull for usecases such as (but not only):
+When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using `hostPath` mount points instead. This is an anti-pattern and does not go well with multi-node cluster environments where you can not easily predict where your pod is going to start.  
+MDos provides you with a means to initialize your application pods with data pre-allocated to it's volumes. This can be very useful for use cases such as (but not only):
 
 * Provision a volume with a already pre-established database schema and data set for initialization purposes (or any other type of initialization data sets)
 * Provision static data such as websites
@@ -195,7 +195,7 @@ To finalyze the setup, do the following:
   4. Enable the boolean value 'Service Accounts Enabled'
   5. Set 'Valid Redirect URIs' value to '*'
   6. Save those changes (button at the bottom of the page)
-  7. In tab 'Roles', Click on button 'edit' for role 'magage realm'.
+  7. In tab 'Roles', Click on button 'edit' for role 'manage realm'.
      Enable 'Composite roles' and add 'admin' realm to associated roles
   8. Go to the 'Service Account Roles' tab and add the role 'admin' to the 'Assigned Roles' box
   9. Click on tab 'Credentials'
@@ -261,11 +261,54 @@ INFO: Done!
 
 ---
 
+## Install the MDos framework only onto your existing Kubernetes cluster
+
+Installing the MDos framework on an existing Kubernetes cluster is straight forward using the MDos CLI.
+
+### Before you start
+
+!!! info "Prerequisite"
+
+    1. A Kubernetes cluster that has a default `StorageClass` and `Ingress` controller configured (check with the commands `kubectl get storageclass` & `kubectl get ingressclass`)
+    2. The `kubectl` CLI needs to be installed
+    3. The `kubectl` default `context` needs to be configured to point to your Kubernetes cluster (look into the command `kubectl config ...` for more details)
+    4. The `mdos` CLI needs to be installed (Please refer to the section [Install the MDos CLI](/mdos/installation/#install-the-mdos-cli) for further information)
+
+### Install the MDos API server
+
+Once those prerequisites are fulfilled, you can go ahead and install the MDos API onto your cluster:
+
+```sh hl_lines="1"
+mdos install-framework
+
+INFO : Target cluster URL: https://192.168.50.179:6443
+
+? Install MDos onto this cluster? Yes
+? What domain name should be used to expose your MDos API server through the Ingress controller: mdos-api.mydomain.com
+? Configure a TLS (HTTPS) certificate for this domain name? No
+
+Installing MDos API server... done
+Waiting for MDos to start... done
+Configure your CLI endpoint... done
+
+SUCCESS : MDos was installed successfully
+```
+
+During the installation, you will be asked to provide a resolvable domain name that will be used to access the MDos API server. To avoid exposing specific `NodePorts` on the cluster and call the MDos API server using a IP address, we use the Clusters default Ingress controller to configure this access. This is why an actual valid domain name is necessary here.
+
+!!! note "Workaround"
+
+    If you do not have the possibility to configure your DNS server for such a domain to point to your Kubernetes cluster, then configure your local `/etc/hosts` file to resolve a domain name of your choosing to the Kubernetes Cluster IP address. 
+  
+That's it, you can now start building & deploying your applications using the MDos CLI.
+
+---
+
 ## Install the MDos CLI
 
 ### Linux & Mac OSX
 
-The standalone install is a simple tarball with a binary. It contains its own node.js binary and autoupdates.
+The standalone install is a simple tarball with a binary. It contains its own node.js binary and auto updates.
 
 To set up the CLI in `/usr/local/lib/mdos` and `/usr/local/bin/mdos`, run the following script. The script requires sudo and **isn’t Windows compatible**.
 
@@ -285,9 +328,7 @@ curl -s https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/insta
 
 ### Windows
 
-!!! warning
-
-    Under construction
+Go to the release page for MDos [here](https://github.com/mdundek/mdos/releases) and download the latest `exe` file for the CLI. Make sure your `exe` file is on your system PATH.
 
 ### Verify Your Installation
 
@@ -300,7 +341,7 @@ mdos-cli/0.0.0 linux-x64 node-v18.9.0
 
 ### Special notes about self-signed certificates without a resolvable DNS name
 
-For developement purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your `hosts` file from wherever you wish to use the CLI from so that it can resolve the various hostnames used by the MDos API platform.
+For development purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your `hosts` file from wherever you wish to use the CLI from so that it can resolve the various hostnames used by the MDos API platform.
 
 !!! note
 

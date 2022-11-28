@@ -5,6 +5,10 @@ hide:
 
 # Advanced Resources
 
+!!! error "Please note"
+
+    Only applicable for `MDos managed cluster` deployments
+
 ## Manage Namespaces, Users, Roles and Permissions
 
 ### Tenant Namespaces

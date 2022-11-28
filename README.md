@@ -11,7 +11,7 @@ The full instance of MDos is packed with extensions and features that go beyond 
 
 ---
 
-### 2. Or as an application deployment framework only (onto your own cluster)
+### 2. And/or as an application deployment framework only (onto your own cluster)
 
 <img align="left" width="450" style="margin-right:50px" src="https://github.com/mdundek/mdos/blob/framework_mode/mdos-docs/infra/mkdocs/docs/img/mdosyaml.png?raw=true"> 
 If you are managing your own cluster, but you would like to leverage the MDos application deployment framework to manage and deploy your applications onto the cluster, then this is the mode for you.  
