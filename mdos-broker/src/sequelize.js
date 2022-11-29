@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 
 module.exports = function (app) {
-  console.log("-->", process.env.SQLITE_FILE_PATH)
+  console.log("-- A CHANGE>", process.env.SQLITE_FILE_PATH)
   const sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: process.env.SQLITE_FILE_PATH,
