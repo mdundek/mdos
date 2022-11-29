@@ -618,6 +618,14 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * getStorageClasses
+     */
+    async getStorageClasses() {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/apis/storage.k8s.io/v1/storageclasses`, this.k8sAxiosHeader)
+        return res.data.items
+    }
+
+    /**
      * createWriteManyPvc
      * 
      * @param {*} namespace 

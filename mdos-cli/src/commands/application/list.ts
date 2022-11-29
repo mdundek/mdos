@@ -45,7 +45,7 @@ export default class List extends Command {
 
             // Get client id & uuid
             try {
-                clientResponse = await this.collectClientId(flags, 'What client do you want to list applications for', true)
+                clientResponse = await this.collectClientId(flags, 'What client do you want to list applications for?', true)
             } catch (err) {
                 this.showError(err)
                 process.exit(1)
@@ -54,7 +54,7 @@ export default class List extends Command {
             clientResponse = {}
             // Get namespace
             try {
-                nsResponse = await this.collectNamespace(flags, 'What namespace do you want to list applications for')
+                nsResponse = await this.collectNamespace(flags, 'What namespace do you want to list applications for?')
             } catch (err) {
                 this.showError(err)
                 process.exit(1)

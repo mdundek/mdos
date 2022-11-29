@@ -419,6 +419,18 @@ const computeApplicationTree = (data, appendNamespace) => {
             for (const component of app.values.components) {
                 const appCompNodeName = `${chalk.blue('Component')}: ${chalk.gray(component.name)}`
                 treeData[appNodeName][appCompNodeName] = {}
+
+                if (component.networkPolicy) {
+                    const netPolName = `${'Network Policy'}: ${chalk.gray(component.networkPolicy.scope)}`
+                    treeData[appNodeName][appCompNodeName][netPolName] = {}
+                }
+                if (component.services) {
+                    treeData[appNodeName][appCompNodeName]['Services:'] = {}
+                    for (const service of component.services) {
+                        let svcString = `(Ports: ${service.ports.map(p => p.port).join(', ')})`
+                        treeData[appNodeName][appCompNodeName]['Services:'][`${service.name}: ${chalk.gray(svcString)}`] = null
+                    }
+                }
                 if (component.ingress && component.ingress.length > 0) {
                     treeData[appNodeName][appCompNodeName]['Ingress:'] = {}
                     for (const ingress of component.ingress) {
@@ -430,6 +442,13 @@ const computeApplicationTree = (data, appendNamespace) => {
                     treeData[appNodeName][appCompNodeName][oidcProviderName] = {}
                     for (const host of component.oidc.hosts) {
                         treeData[appNodeName][appCompNodeName][oidcProviderName][`Host: ${chalk.gray(host)}`] = null
+                    }
+                }
+                if (component.volumes) {
+                    treeData[appNodeName][appCompNodeName]['Volumes:'] = {}
+                    for (const volume of component.volumes) {
+                        let volString = `(Size: ${volume.size}, MountPath: ${volume.mountPath})`
+                        treeData[appNodeName][appCompNodeName]['Volumes:'][`${volume.name}: ${chalk.gray(volString)}`] = null
                     }
                 }
             }

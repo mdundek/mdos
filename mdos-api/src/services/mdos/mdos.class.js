@@ -67,7 +67,7 @@ exports.Mdos = class Mdos extends MdosCore {
             if (validationErrors.length > 0) {
                 throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
             }
-
+            
             // Make sure shared volume references exist
             for(const component of valuesYaml.components) {
                 if(component.volumes) {

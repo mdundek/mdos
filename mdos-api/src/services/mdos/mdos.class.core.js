@@ -105,6 +105,20 @@ class MdosCore extends CommonCore {
             valuesYaml.ingressClassName = "istio"
         }
 
+        // Set default storage class if not set for volumes when deploying in framework only mode
+        if(this.app.get("mdos_framework_only")) {
+            const clusterStorageClasses = await this.app.get('kube').getStorageClasses()
+            let defaultClass = clusterStorageClasses.find(sc => sc.metadata.annotations && sc.metadata.annotations["storageclass.kubernetes.io/is-default-class"])
+            if(!defaultClass) defaultClass = clusterStorageClasses[0]
+            for (const component of valuesYaml.components) {
+                if(component.volumes) {
+                    for (const volume of component.volumes) {
+                        if(!volume.storageClass) volume.storageClass = defaultClass.metadata.name
+                    }
+                }
+            }
+        }
+
         // If sync volumes, make sure we have a ftpd secret
         if (valuesYaml.components.find((component) => (component.volumes ? component.volumes.find((v) => v.syncVolume) : false))) {
             valuesYaml.ftpCredentials = await this.app.get('kube').getSecret('mdos', `ftpd-${valuesYaml.tenantName.toLowerCase()}-creds`)

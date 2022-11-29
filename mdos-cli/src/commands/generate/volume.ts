@@ -71,7 +71,7 @@ export default class Volume extends Command {
             {
                 type: 'input',
                 name: 'name',
-                message: 'Enter a name for this volume folder:',
+                message: 'Enter a name for this volume:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
@@ -93,7 +93,7 @@ export default class Volume extends Command {
                 name: 'useHostpath',
                 default: false,
                 when: (values: any) => {
-                    context('Host path mounts are not suitable for multi-node clusters', false, true)
+                    context('NOTE: Host path mounts are not suitable for multi-node clusters', false, true)
                     return true
                 },
                 message: 'Do you want to mount this folder directly to a local host path on the cluster node?',
@@ -164,9 +164,10 @@ export default class Volume extends Command {
                         name: 'size',
                         message: 'Size in Gb (ex. 0.2, 1, 100...) to allocate to this volume:',
                         validate: (value: string) => {
-                            if (value.trim().length == 0) return 'Mandatory field'
+                            if (!value) return 'Mandatory field'
                             return true
                         },
+                        default: 1
                     },
                 ])
                 aggregatedResponses = { ...aggregatedResponses, ...responses }
