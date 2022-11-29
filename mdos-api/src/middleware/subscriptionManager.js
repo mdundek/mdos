@@ -22,8 +22,8 @@ class BrokerSubscriptions {
      */
     async start() {
         // Initial broker connect
-        if(!this.brokerClient.isConnected())
-            await this.brokerClient.connect();
+        // if(!this.brokerClient.isConnected())
+        //     await this.brokerClient.connect();
         
         // Subscribe now
         await this.brokerClient.waitForConnection();

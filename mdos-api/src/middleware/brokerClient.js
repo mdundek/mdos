@@ -73,15 +73,18 @@ class BrokerClient {
      * @param {*} callback 
      */
     async subscribe(topic, concurrent, callback) {
+        console.log("SUBSCRIBING =>", topic, concurrent)
         if (topic.constructor.name == "Array") {
             for(const t of topic) {
                 if(!this.subscribedTopics[t]) {
+                    console.log("t=>", t)
                     this.subscribedTopics[t] = { callback, concurrent, subscribed: false }
                     await this._topicSubscribeLoop()
                 }
             }
         } else {
             if(!this.subscribedTopics[topic]) {
+                console.log("topic=>", topic)
                 this.subscribedTopics[topic] = { callback, concurrent, subscribed: false }
                 await this._topicSubscribeLoop()
             }
