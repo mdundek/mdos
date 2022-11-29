@@ -320,7 +320,7 @@ export default class Component extends Command {
             tag: '0.0.1',
         }
 
-        if (!this.getConfig('FRAMEWORK_ONLY') && publicRegResponses.publicRegistry) compJson.publicRegistry = true
+        if (!this.getConfig('FRAMEWORK_ONLY') && publicRegResponses && publicRegResponses.publicRegistry) compJson.publicRegistry = true
         if (registryResponse) compJson.registry = registryResponse.registry
         if (targetSecretName) compJson.imagePullSecrets = [{ name: targetSecretName }]
 

@@ -2,7 +2,7 @@ import { Flags } from '@oclif/core'
 import Command from '../../base'
 import { customAlphabet } from 'nanoid'
 const inquirer = require('inquirer')
-const { warn, filterQuestions } = require('../../lib/tools')
+const { success, warn, filterQuestions } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -109,6 +109,7 @@ export default class Application extends Command {
                     path.join(volumesFolder, 'README.md'),
                     '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
                 )
+                success("Application folder and mdos.yaml file created")
             } catch (err) {
                 this.showError(err)
                 process.exit(1)

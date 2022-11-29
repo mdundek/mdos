@@ -95,6 +95,7 @@ export default class Create extends Command {
             })
             CliUx.ux.action.stop()
         } catch (err) {
+            console.log(err)
             CliUx.ux.action.stop('error')
             this.showError(err)
             process.exit(1)

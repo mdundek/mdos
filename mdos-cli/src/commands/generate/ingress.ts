@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { error, warn, context } = require('../../lib/tools')
+const { success, error, warn, context } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -236,6 +236,7 @@ export default class Ingress extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
+            success("mdos.yaml file was updated")
         } catch (err) {
             this.showError(err)
             process.exit(1)

@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { context, error } = require('../../lib/tools')
+const { success, context, error } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -268,6 +268,7 @@ export default class Volume extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
+            success("mdos.yaml file was updated")
         } catch (err) {
             this.showError(err)
             process.exit(1)

@@ -162,7 +162,7 @@ class BrokerSubscriptions {
      */
      workflowCall(topic, manifest) {
         return new Promise((resolve, reject) => {
-            if(!this.brokerClient.connected)
+            if(!this.brokerClient.isConnected())
                 reject(new Error("Broker not connected"))
 
             const jobId = nanoid()
