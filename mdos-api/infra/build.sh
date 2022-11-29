@@ -91,7 +91,16 @@ if [ ! -z $DO_EXPORT ]; then
     docker save mdos-api:latest | gzip > ../mdos-setup/dep/mdos-api/mdos-api.tar.gz
 fi
 
-cd ./infra
+cd ../mdos-broker
+docker build -t registry.$DOMAIN/mdos-broker:latest .
+docker push registry.$DOMAIN/mdos-broker:latest
+
+if [ ! -z $DO_EXPORT ]; then
+    docker tag registry.$DOMAIN/mdos-broker:latest mdos-broker:latest
+    docker save mdos-broker:latest | gzip > ../mdos-setup/dep/mdos-broker/mdos-broker.tar.gz
+fi
+
+cd ../mdos-api/infra
 
 if [ ! -z $DO_DEPLOY ]; then
     OIDC_DISCOVERY=$(curl "https://keycloak.$DOMAIN:30999/realms/mdos/.well-known/openid-configuration")
