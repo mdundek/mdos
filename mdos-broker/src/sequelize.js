@@ -4,7 +4,10 @@ module.exports = function (app) {
   const connectionString = app.get('sqlite');
   const sequelize = new Sequelize(connectionString, {
     dialect: 'sqlite',
-    storage: process.env.SQLITE_FILE_PATH,
+    storage: () => {
+      console.log("-->", process.env.SQLITE_FILE_PATH)
+      return process.env.SQLITE_FILE_PATH
+    },
     logging: false,
     define: {
       freezeTableName: true
