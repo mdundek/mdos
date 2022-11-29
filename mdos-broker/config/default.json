@@ -2,6 +2,5 @@
   "host": "localhost",
   "port": 3039,
   "public": "../public/",
-  "paginate": false,
-  "sqlite": "sqlite://mdos_broker.sqlite"
+  "paginate": false
 }
