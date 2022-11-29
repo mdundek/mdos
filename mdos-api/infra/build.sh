@@ -61,7 +61,7 @@ mdos_deploy_app() {
             regcred \
             --docker-server=registry.$DOMAIN \
             --docker-username=mdundek \
-            --docker-password=li14ebe13 \
+            --docker-password=li14ebe14 \
             -n $I_NS
     fi
 
@@ -72,7 +72,7 @@ mdos_deploy_app() {
 
 cd ..
 
-echo "li14ebe13" | docker login registry.$DOMAIN --username mdundek --password-stdin
+echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-stdin
 
 cp infra/dep/helm/helm .
 cp infra/dep/kubectl/kubectl .
