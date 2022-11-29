@@ -67,12 +67,14 @@ class BrokerClient {
         }
     }
 
+    
     /**
      * subscribe
      * @param {*} topic 
      * @param {*} callback 
+     * @param {*} concurrent 
      */
-    async subscribe(topic, concurrent, callback) {
+    async subscribe(topic, callback, concurrent) {
         console.log("SUBSCRIBING =>", topic, concurrent)
         if (topic.constructor.name == "Array") {
             for(const t of topic) {
