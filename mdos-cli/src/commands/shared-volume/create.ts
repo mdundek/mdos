@@ -35,7 +35,7 @@ export default class Create extends Command {
 
         if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error('This command is only available for MDos managed environements')
+            error('This command is only available for MDos managed cluster deployments')
             process.exit(1)
         }
 
