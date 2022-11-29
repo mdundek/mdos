@@ -188,17 +188,21 @@ class BrokerClient {
      * _topicSubscribeLoop
      */
     async _topicSubscribeLoop() {
+        console.log(1)
         while(true) {
             let allGood = true
             for(const topic of Object.keys(this.subscribedTopics)) {
+                console.log(2, topic, this.socket.connected)
                 if(this.socket.connected) {
                     // Set up incomming topic event handler
+                    console.log(3, this.subscribedTopics[topic].subscribed)
                     if(!this.subscribedTopics[topic].subscribed) {
                         this.socket.on(topic, this.incomming.bind(this, topic))
                     }
                     
                     // Subscribe to specific event
                     try {
+                        console.log(4, topic, this.subscribedTopics[topic].concurrent)
                         await this._subscribe(topic, this.subscribedTopics[topic].concurrent)
                         this.subscribedTopics[topic].subscribed = true
                     } catch (error) {
