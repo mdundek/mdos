@@ -30,6 +30,12 @@ export default class SetKubeconfig extends Command {
         const { flags } = await this.parse(SetKubeconfig)
         const { args } = await this.parse(SetKubeconfig)
 
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Not supported in framework only mode
+            error('This command is only available for MDos managed cluster deployments')
+            process.exit(1)
+        }
+        
         // Make sure kubectl is installed
         let kctlTargetPath = null
         if (process.platform === 'linux' || process.platform === 'darwin') {
