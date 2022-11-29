@@ -18,7 +18,13 @@ components:
             port: 3039
     volumes:
       - name: db-volume
-        mountPath: /usr/src/db/mdos_broker.sqlite
+        mountPath: /usr/src/db
+    configs:
+      - name: configs
+        type: env
+        entries:
+          - key: SQLITE_FILE_PATH
+            value: "/usr/src/db/mdos_broker.sqlite"
   - name: api
     uuid: KG75-7D58-api
     image: mdos-api

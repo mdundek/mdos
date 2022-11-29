@@ -22,8 +22,8 @@ class BrokerSubscriptions {
      */
     async start() {
         // Initial broker connect
-        // if(!this.brokerClient.isConnected())
-        //     await this.brokerClient.connect();
+        if(!this.brokerClient.isConnected())
+            await this.brokerClient.connect();
         
         // Subscribe now
         await this.brokerClient.waitForConnection();
@@ -44,6 +44,7 @@ class BrokerSubscriptions {
             CHANNEL.JOB_K3S_ADD_ISTIO_OIDC_PROVIDER,
             CHANNEL.JOB_K3S_REMOVE_ISTIO_OIDC_PROVIDER,
         ], async (msg) => {
+            console.log("INCOMMING 1=>", msg)
             const worker = new K3SJobWorker(this.app, msg);
             try {
                 await worker.process();
@@ -80,6 +81,7 @@ class BrokerSubscriptions {
             CHANNEL.JOB_KC_DELETE_CLIENT_SA,
             CHANNEL.JOB_KC_CREATE_CLIENT_ROLES
         ], async (msg) => {
+            console.log("INCOMMING 2=>", msg)
             const worker = new KCJobWorker(this.app, msg);
             try {
                 await worker.process();
@@ -113,6 +115,7 @@ class BrokerSubscriptions {
             CHANNEL.JOB_FTPD_CREATE_CREDENTIALS,
             CHANNEL.JOB_FTPD_DELETE_CREDENTIALS
         ], async (msg) => {
+            console.log("INCOMMING 3=>", msg)
             const worker = new FTPDJobWorker(this.app, msg);
             try {
                 await worker.process();
@@ -143,6 +146,7 @@ class BrokerSubscriptions {
          * Events: WORKFLOW DONE
          *****************************************************/
          await this.brokerClient.subscribe(CHANNEL.JOB_DONE, async (msg) => {
+            console.log("INCOMMING 4=>", msg)
             if(this.workflowJobs[msg.context.jobId]) {
                 clearTimeout(this.workflowJobs[msg.context.jobId].timeout)
                 if(this.workflowJobs[msg.context.jobId].rollback)

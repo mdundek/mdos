@@ -198,20 +198,22 @@ exports.Kube = class Kube extends KubeCore {
             } else {
                 await this.app.get('kube').createDockerSecret(data.namespace, data.name, data.data)
             }
-        } else if (data.type == 'shared-volume') {
+        }
         /******************************************
          *  CREATE READ-WRITE-MANY PVC
          ******************************************/
+        else if (data.type == 'shared-volume') {
             const existingPvc = await this.app.get('kube').getPvcs(data.namespace, data.name)
             if (existingPvc.length > 0) {
                 throw new BadRequest('ERROR: There is already a Volume with this name')
             } else {
                 await this.app.get('kube').createWriteManyPvc(data.namespace, data.name, data.size)
             }
-        } else if (data.type == 'cm-issuer' || data.type == 'cm-cluster-issuer') {
+        }
         /******************************************
          *  CREATE CERT MANAGER ISSUER
          ******************************************/
+        else if (data.type == 'cm-issuer' || data.type == 'cm-cluster-issuer') {
             let yamlBlockArray = data.issuerYaml.split('---')
             let issuerBlock = null
             try {
@@ -329,17 +331,19 @@ exports.Kube = class Kube extends KubeCore {
                 await rollbackDeployment()
                 throw error
             }
-        } else if (data.type == 'cm-certificate') {
+        }
         /******************************************
          *  CREATE CERT MANAGER CERTIFICATE
          ******************************************/
+        else if (data.type == 'cm-certificate') {
             // Create certificate
             await this.app.get('kube').createCertManagerCertificate(data.namespace, data.name, data.hosts, data.issuerName, data.isClusterIssuer)
             return data
-        } else if (data.type == 'ingress-gateway') {
+        }
         /******************************************
          *  CREATE INGRESS GATEWAY
          ******************************************/
+        else if (data.type == 'ingress-gateway') {
             // Check if namespace gateway exists (name: mdos-ns-gateway).
             const nsGateway = await this.app.get('kube').getIstioGateways(data.namespace, 'mdos-ns-gateway')
 
@@ -427,10 +431,11 @@ exports.Kube = class Kube extends KubeCore {
 
                 await this.app.get('kube').updateIstioGateway(data.namespace, 'mdos-ns-gateway', nsGateway[0].metadata.resourceVersion, nsGateway[0].spec.servers)
             }
-        } else if (data.type == 'tenantNamespace') {
+        }
         /******************************************
          *  CREATE NEW TENANT NAMESPACE
          ******************************************/
+        else if (data.type == 'tenantNamespace') {
             // MDos framework only mode
             if (this.app.get('mdos_framework_only')) {
                 if (!data.namespace || data.namespace.trim().length == 0) throw new Error('ERROR: Missing namespace name')
@@ -636,19 +641,21 @@ exports.Kube = class Kube extends KubeCore {
                     }
                 }
             }
-        } else if (params.query.target == 'application') {
+        }
         /******************************************
          *  UNINSTALL / DELETE APPLICATION
          ******************************************/
+        else if (params.query.target == 'application') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
                 throw new NotFound(`ERROR: Namespace "${params.query.clientId}" does not exist`)
             }
             await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type)
-        } else if (params.query.target == 'shared-volume') {
+        }
         /******************************************
          *  DELETE READ-WRITE-MANY PVC
          ******************************************/
+        else if (params.query.target == 'shared-volume') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
                 throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
@@ -659,26 +666,30 @@ exports.Kube = class Kube extends KubeCore {
             } else {
                 await this.app.get('kube').deleteWriteManyPvc(params.query.namespace, id)
             }
-        } else if (params.query.target == 'cm-issuer') {
+        }
         /******************************************
          *  UNINSTALL / DELETE ISSUER
          ******************************************/
+        else if (params.query.target == 'cm-issuer') {
             await this.app.get('kube').deleteCertManagerIssuer(params.query.namespace, id)
-        } else if (params.query.target == 'cm-cluster-issuer') {
+        } 
+        else if (params.query.target == 'cm-cluster-issuer') {
             await this.app.get('kube').deleteCertManagerClusterIssuer(id)
-        } else if (params.query.target == 'certificate') {
+        } 
         /******************************************
          *  UNINSTALL / DELETE CERTIFICATE
          ******************************************/
+        else if (params.query.target == 'certificate') {
             await this.app.get('kube').deleteCertManagerCertificate(params.query.namespace, id)
             const hasSecret = await this.app.get('kube').hasSecret(params.query.namespace, id)
             if (hasSecret) {
                 await this.app.get('kube').deleteSecret(params.query.namespace, id)
             }
-        } else if (params.query.target == 'ingress-gateway') {
+        }
         /******************************************
          *  UNINSTALL / DELETE CERTIFICATE
          ******************************************/
+        else if (params.query.target == 'ingress-gateway') {
             // Check if namespace gateway exists (name: mdos-ns-gateway).
             const nsGateway = await this.app.get('kube').getIstioGateways(params.query.namespace, 'mdos-ns-gateway')
 
