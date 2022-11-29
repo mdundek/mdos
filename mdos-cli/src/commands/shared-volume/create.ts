@@ -11,7 +11,7 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * @extends {Command}
  */
 export default class Create extends Command {
-    static aliases = ["volume:create"]
+    static aliases = ['volume:create']
     static description = 'Create a new shared volume'
 
     // ******* FLAGS *******
@@ -33,9 +33,9 @@ export default class Create extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
 
@@ -43,8 +43,8 @@ export default class Create extends Command {
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -90,8 +90,10 @@ export default class Create extends Command {
             message: 'Enter a name for your Shared Volume:',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value)) return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                else if (sharedVolumesResponse.data.find((vol:any) => vol.metadata.name.toLowerCase() == value.trim().toLowerCase())) return 'Volume name already exists'
+                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                else if (sharedVolumesResponse.data.find((vol: any) => vol.metadata.name.toLowerCase() == value.trim().toLowerCase()))
+                    return 'Volume name already exists'
                 return true
             },
         })
@@ -109,7 +111,7 @@ export default class Create extends Command {
             },
         })
         agregatedResponses = { ...agregatedResponses, ...response }
-        
+
         // Create volume
         console.log()
         CliUx.ux.action.start('Creating shared volume')
@@ -119,9 +121,9 @@ export default class Create extends Command {
                 ...mergeFlags(agregatedResponses, flags),
             })
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

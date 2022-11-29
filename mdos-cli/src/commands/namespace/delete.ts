@@ -47,22 +47,22 @@ export default class Delete extends Command {
         this.checkIfDomainSet()
 
         // If MDos full mode
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
-        
+
             // Get existing clients
             let respClients: { data: any[] }
             try {
                 respClients = await this.api(`keycloak?target=clients&realm=mdos`, 'get')
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
 
@@ -118,11 +118,14 @@ export default class Delete extends Command {
             if (confirmed) {
                 CliUx.ux.action.start('Deleting namespace')
                 try {
-                    await this.api(`kube/${clientResponse.namespace}?target=tenantNamespace&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
+                    await this.api(
+                        `kube/${clientResponse.namespace}?target=tenantNamespace&realm=mdos&clientUuid=${clientResponse.clientUuid}`,
+                        'delete'
+                    )
                     CliUx.ux.action.stop()
-                } catch (error) {
+                } catch (err) {
                     CliUx.ux.action.stop('error')
-                    this.showError(error)
+                    this.showError(err)
                     process.exit(1)
                 }
             }
@@ -132,14 +135,14 @@ export default class Delete extends Command {
             let namespaces: { data: any[] }
             try {
                 namespaces = await this.api(`kube?target=namespaces`, 'get')
-                namespaces.data = namespaces.data.filter(ns => ns.status != 'Terminating')
+                namespaces.data = namespaces.data.filter((ns) => ns.status != 'Terminating')
             } catch (err) {
                 this.showError(err)
                 process.exit(1)
             }
 
-            if(namespaces.data.length == 0) {
-                error("There are no namespaces to delete")
+            if (namespaces.data.length == 0) {
+                error('There are no namespaces to delete')
                 process.exit(1)
             }
 
@@ -187,9 +190,9 @@ export default class Delete extends Command {
                 try {
                     await this.api(`kube/${nsResponse.namespace}?target=tenantNamespace`, 'delete')
                     CliUx.ux.action.stop()
-                } catch (error) {
+                } catch (err) {
                     CliUx.ux.action.stop('error')
-                    this.showError(error)
+                    this.showError(err)
                     process.exit(1)
                 }
             }

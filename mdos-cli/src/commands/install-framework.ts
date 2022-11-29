@@ -97,7 +97,7 @@ export default class InstallFramework extends Command {
                 mdosUrl = `https://${this.hostName}`
             }
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('Error')
             error('MDos did not manage to start successfully.')
             process.exit(1)
@@ -109,9 +109,9 @@ export default class InstallFramework extends Command {
             CliUx.ux.action.stop()
             
             success('MDos was installed successfully')
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('Error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }
@@ -205,7 +205,7 @@ export default class InstallFramework extends Command {
     async createMdosSaAndRoleBindings() {
         try {
             await axios.get(`${this.kubeApiUrl}/api/v1/namespaces/mdos/secrets/default`)
-        } catch (error) {
+        } catch (err) {
             await axios.post(`${this.kubeApiUrl}/api/v1/namespaces/mdos/secrets`, {
                 apiVersion: 'v1',
                 kind: 'Secret',
@@ -221,7 +221,7 @@ export default class InstallFramework extends Command {
 
         try {
             await axios.get(`${this.kubeApiUrl}/apis/rbac.authorization.k8s.io/v1/clusterroles/mdos-admin-role`)
-        } catch (error) {
+        } catch (err) {
             await axios.post(`${this.kubeApiUrl}/apis/rbac.authorization.k8s.io/v1/clusterroles`, {
                 apiVersion: 'rbac.authorization.k8s.io/v1',
                 kind: 'ClusterRole',
@@ -244,7 +244,7 @@ export default class InstallFramework extends Command {
 
         try {
             await axios.get(`${this.kubeApiUrl}/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/scds-admin-role-binding`)
-        } catch (error) {
+        } catch (err) {
             await axios.post(`${this.kubeApiUrl}/apis/rbac.authorization.k8s.io/v1/clusterrolebindings`, {
                 apiVersion: 'rbac.authorization.k8s.io/v1',
                 kind: 'ClusterRoleBinding',
@@ -380,7 +380,7 @@ export default class InstallFramework extends Command {
         try {
             await axios.get(`${this.kubeApiUrl}/api/v1/namespaces/mdos/configmaps/mdos-broker-configs`)
             await axios.delete(`${this.kubeApiUrl}/api/v1/namespaces/mdos/configmaps/mdos-broker-configs`)
-        } catch (error) {}
+        } catch (err) {}
         await axios.post(`${this.kubeApiUrl}/api/v1/namespaces/mdos/configmaps`, {
             apiVersion: 'v1',
             kind: 'ConfigMap',
@@ -402,7 +402,7 @@ export default class InstallFramework extends Command {
         try {
             await axios.get(`${this.kubeApiUrl}/api/v1/namespaces/mdos/services/mdos-broker-http`)
             await axios.delete(`${this.kubeApiUrl}/api/v1/namespaces/mdos/services/mdos-broker-http`)
-        } catch (error) {}
+        } catch (err) {}
         await axios.post(`${this.kubeApiUrl}/api/v1/namespaces/mdos/services`, {
             apiVersion: 'v1',
             kind: 'Service',
@@ -436,7 +436,7 @@ export default class InstallFramework extends Command {
         // PersistentVolumeClaim
         try {
             await axios.get(`${this.kubeApiUrl}/api/v1/namespaces/mdos/persistentvolumeclaims/mdos-broker`)
-        } catch (error) {
+        } catch (err) {
             await axios.post(`${this.kubeApiUrl}/api/v1/namespaces/mdos/persistentvolumeclaims`, {
                 apiVersion: 'v1',
                 kind: 'PersistentVolumeClaim',
@@ -465,7 +465,7 @@ export default class InstallFramework extends Command {
         try {
             await axios.get(`${this.kubeApiUrl}/apis/apps/v1/namespaces/mdos/deployments/mdos-broker`)
             await axios.delete(`${this.kubeApiUrl}/apis/apps/v1/namespaces/mdos/deployments/mdos-broker`)
-        } catch (error) {}
+        } catch (err) {}
         await axios.post(`${this.kubeApiUrl}/apis/apps/v1/namespaces/mdos/deployments`, {
             apiVersion: 'apps/v1',
             kind: 'Deployment',
@@ -551,7 +551,7 @@ export default class InstallFramework extends Command {
         try {
             await axios.get(`${this.kubeApiUrl}/api/v1/namespaces/mdos/configmaps/mdos-api-configs`)
             await axios.delete(`${this.kubeApiUrl}/api/v1/namespaces/mdos/configmaps/mdos-api-configs`)
-        } catch (error) {}
+        } catch (err) {}
         await axios.post(`${this.kubeApiUrl}/api/v1/namespaces/mdos/configmaps`, {
             apiVersion: 'v1',
             kind: 'ConfigMap',
@@ -576,7 +576,7 @@ export default class InstallFramework extends Command {
         try {
             await axios.get(`${this.kubeApiUrl}/api/v1/namespaces/mdos/services/mdos-api-http`)
             await axios.delete(`${this.kubeApiUrl}/api/v1/namespaces/mdos/services/mdos-api-http`)
-        } catch (error) {}
+        } catch (err) {}
         await axios.post(`${this.kubeApiUrl}/api/v1/namespaces/mdos/services`, {
             apiVersion: 'v1',
             kind: 'Service',
@@ -611,7 +611,7 @@ export default class InstallFramework extends Command {
         try {
             await axios.get(`${this.kubeApiUrl}/apis/apps/v1/namespaces/mdos/deployments/mdos-api`)
             await axios.delete(`${this.kubeApiUrl}/apis/apps/v1/namespaces/mdos/deployments/mdos-api`)
-        } catch (error) {}
+        } catch (err) {}
         await axios.post(`${this.kubeApiUrl}/apis/apps/v1/namespaces/mdos/deployments`, {
             apiVersion: 'apps/v1',
             kind: 'Deployment',
@@ -705,7 +705,7 @@ export default class InstallFramework extends Command {
         try {
             await axios.get(`${this.kubeApiUrl}/apis/networking.k8s.io/v1/namespaces/mdos/ingresses/mdos-api-http-ingress`)
             await axios.delete(`${this.kubeApiUrl}/apis/networking.k8s.io/v1/namespaces/mdos/ingresses/mdos-api-http-ingress`)
-        } catch (error) {}
+        } catch (err) {}
         let ingressSpec: any
         ingressSpec = {
             ingressClassName: this.ingressClass,
@@ -743,7 +743,7 @@ export default class InstallFramework extends Command {
             try {
                 await axios.get(`${this.kubeApiUrl}/api/v1/namespaces/mdos/secrets/mdos-api/mdos-api-tls`)
                 await axios.delete(`${this.kubeApiUrl}/api/v1/namespaces/mdos/secrets/mdos-api/mdos-api-tls`)
-            } catch (error) {}
+            } catch (err) {}
             await axios.post(`${this.kubeApiUrl}/api/v1/namespaces/mdos/secrets`, {
                 apiVersion: 'v1',
                 data: {
@@ -781,7 +781,7 @@ export default class InstallFramework extends Command {
                 }
                 attempts++
                 await new Promise((r) => setTimeout(r, 2000))
-            } catch (error) {
+            } catch (err) {
                 attempts++
                 await new Promise((r) => setTimeout(r, 2000))
             }

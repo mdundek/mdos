@@ -44,18 +44,18 @@ export default class RemoveRole extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
-        
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -66,8 +66,8 @@ export default class RemoveRole extends Command {
         let allUsers
         try {
             allUsers = await this.api('keycloak?target=users&realm=mdos', 'get')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -87,8 +87,8 @@ export default class RemoveRole extends Command {
         let respClients: { data: any[] }
         try {
             respClients = await this.api(`keycloak?target=clients&realm=mdos&include_mdos=true`, 'get')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -122,8 +122,8 @@ export default class RemoveRole extends Command {
         let respUserClientRoles
         try {
             respUserClientRoles = await this.api(`keycloak?target=user-roles&realm=mdos&username=${targetUser.username}`, 'get')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -177,9 +177,9 @@ export default class RemoveRole extends Command {
                     'delete'
                 )
                 CliUx.ux.action.stop()
-            } catch (error) {
+            } catch (err) {
                 CliUx.ux.action.stop('error')
-                this.showError(error)
+                this.showError(err)
                 process.exit(1)
             }
         }

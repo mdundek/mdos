@@ -15,7 +15,7 @@ const { error, context, warn, filterQuestions, mergeFlags, info } = require('../
  * @extends {Command}
  */
 export default class Create extends Command {
-    static aliases = ["cm:certificate:create", "cm:crt:create"]
+    static aliases = ['cm:certificate:create', 'cm:crt:create']
     static description = 'Create a new Certificate / TLS secret'
 
     // ******* FLAGS *******
@@ -35,20 +35,20 @@ export default class Create extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
-        
+
         let agregatedResponses: any = {}
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -149,8 +149,8 @@ export default class Create extends Command {
             // otherwise, collect it
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
 
@@ -272,9 +272,9 @@ export default class Create extends Command {
                 isClusterIssuer: agregatedResponses.isClusterIssuer,
             })
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

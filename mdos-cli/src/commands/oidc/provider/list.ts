@@ -36,9 +36,9 @@ export default class List extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
 
@@ -46,8 +46,8 @@ export default class List extends Command {
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -69,8 +69,8 @@ export default class List extends Command {
                 }
             )
             console.log()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

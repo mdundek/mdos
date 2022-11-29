@@ -73,18 +73,18 @@ export default class Create extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
-        
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -94,8 +94,8 @@ export default class Create extends Command {
         q = filterQuestions(Create.questions, 'userRepeat', flags)
         let responsesRepeat = q.length > 0 ? await inquirer.prompt(q) : {}
 
-        if(responses.password !== responsesRepeat.passwordRepeat) {
-            error("Passwords do not match")
+        if (responses.password !== responsesRepeat.passwordRepeat) {
+            error('Passwords do not match')
             process.exit(1)
         }
 
@@ -107,15 +107,15 @@ export default class Create extends Command {
             await this.api(`keycloak`, 'post', {
                 type: 'user',
                 realm: 'mdos',
-                ...mergeFlags({...responses, ...responsesEmail}, flags),
+                ...mergeFlags({ ...responses, ...responsesEmail }, flags),
             })
             CliUx.ux.action.stop()
 
             // Now ask if we want to add user roles
             await this.addClientRoles(flags, responses.username)
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }
@@ -143,8 +143,8 @@ export default class Create extends Command {
             let clientResponse
             try {
                 clientResponse = await this.collectClientId(flags, 'Select a target Client ID to add roles from')
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
 
@@ -152,8 +152,8 @@ export default class Create extends Command {
             let respClientRoles
             try {
                 respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, 'get')
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
 
@@ -181,8 +181,8 @@ export default class Create extends Command {
                 let allUsers
                 try {
                     allUsers = await this.api('keycloak?target=users&realm=mdos', 'get')
-                } catch (error) {
-                    this.showError(error)
+                } catch (err) {
+                    this.showError(err)
                     process.exit(1)
                 }
                 const targetUser = allUsers.data.find((u: { username: any }) => u.username == username)
@@ -199,9 +199,9 @@ export default class Create extends Command {
                         userUuid: targetUser.id,
                     })
                     CliUx.ux.action.stop()
-                } catch (error) {
+                } catch (err) {
                     CliUx.ux.action.stop('error')
-                    this.showError(error)
+                    this.showError(err)
                     process.exit(1)
                 }
             }

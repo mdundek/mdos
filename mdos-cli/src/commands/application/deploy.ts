@@ -65,8 +65,8 @@ export default class Deploy extends Command {
             const yamlString = fs.readFileSync(appYamlPath, 'utf8')
             appYaml = YAML.parse(yamlString)
             appYamlBase64 = Buffer.from(yamlString, 'utf-8').toString('base64')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
         // Validate app schema
@@ -76,17 +76,17 @@ export default class Deploy extends Command {
         }
 
         let userCreds = null
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
                 userCreds = await this.validateJwt(false, flags)
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         }
-        
+
         // Validate application schema
         const response = await this.api('schema-validator/v1', 'put', appYaml)
         if (response.data.length > 0) {
@@ -114,9 +114,10 @@ export default class Deploy extends Command {
 
         // Build / bush images
         this.regCredsBuffer = {}
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             for (let appComp of appYaml.components) {
-                if(!appComp.doNotBuild) { // Do not wish to build image
+                if (!appComp.doNotBuild) {
+                    // Do not wish to build image
                     const creds = await this.collectRegistryCreds(flags, appYaml.tenantName, appComp)
                     await buildPushComponentFmMode(creds, appComp, appRootDir)
                 }
@@ -137,7 +138,8 @@ export default class Deploy extends Command {
 
             // Build / push application
             for (let appComp of appYaml.components) {
-                if(!appComp.doNotBuild) { // Do not wish to build image
+                if (!appComp.doNotBuild) {
+                    // Do not wish to build image
                     const creds = await this.collectRegistryCreds(flags, appYaml.tenantName, appComp, userInfo, userCreds)
                     await buildPushComponent(userInfo.data, creds, appComp, appRootDir, appYaml.tenantName)
                 }
@@ -171,7 +173,7 @@ export default class Deploy extends Command {
                 }
             }
         }
-        
+
         if (errorMsg) {
             error(errorMsg)
             process.exit(1)
@@ -217,9 +219,9 @@ export default class Deploy extends Command {
             })
             this.socketManager.unsubscribe()
             success('Application deployed')
-        } catch (error) {
+        } catch (err) {
             if (!spinning) CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             this.showAppLogs(appLogs)
             process.exit(1)
         }
@@ -227,11 +229,11 @@ export default class Deploy extends Command {
 
     /**
      * collectRegistryCreds
-     * @param flags 
-     * @param tenantName 
-     * @param appComp 
-     * @param userInfo 
-     * @returns 
+     * @param flags
+     * @param tenantName
+     * @param appComp
+     * @param userInfo
+     * @returns
      */
     async collectRegistryCreds(flags: any, tenantName: string, appComp: any, userInfo?: any, userCreds?: any) {
         let extractSecret: any
@@ -239,45 +241,44 @@ export default class Deploy extends Command {
         let registry!: any
         registry = null
         // -=-=-=-=-=-=-=-=-= FRAMEWORK MODE =-=-=-=-=-=-=-=-=-
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // If public registry, and we have a imagePullSecret, we use it to login to the registry
-            if(appComp.imagePullSecrets && appComp.imagePullSecrets.length > 0) {
+            if (appComp.imagePullSecrets && appComp.imagePullSecrets.length > 0) {
                 extractSecret = appComp.imagePullSecrets[0].name
-                if(appComp.registry) registry = appComp.registry
+                if (appComp.registry) registry = appComp.registry
             }
             // No secret, collect credentials
             else {
                 if (appComp.registry) {
-                    if(this.regCredsBuffer[appComp.registry]) return this.regCredsBuffer[appComp.registry] // If buffer available, serve that
+                    if (this.regCredsBuffer[appComp.registry]) return this.regCredsBuffer[appComp.registry] // If buffer available, serve that
                     context(`Please provide credentials for the registry "${appComp.registry}" in order to push your images`)
                 } else {
-                    if(this.regCredsBuffer['docker.io']) return this.regCredsBuffer['docker.io'] // If buffer available, serve that
+                    if (this.regCredsBuffer['docker.io']) return this.regCredsBuffer['docker.io'] // If buffer available, serve that
                     context(`Please provide credentials for the public registry in order to push your images`)
                 }
                 // Ask user
                 creds = await this.collectRegistryCredentials(flags)
-                if(appComp.registry)
-                    creds.registry = appComp.registry
+                if (appComp.registry) creds.registry = appComp.registry
                 // Save buffer
                 if (appComp.registry) this.regCredsBuffer[appComp.registry] = creds
                 else this.regCredsBuffer['docker.io'] = creds
                 return creds
             }
-        } 
+        }
         // -=-=-=-=-=-=-=-=-= FULL MDOS MODE =-=-=-=-=-=-=-=-=-
-        else {           
+        else {
             // If not MDos registry, and we have a imagePullSecrets, we use it to login to the registry
-            if((appComp.publicRegistry || appComp.registry) && appComp.imagePullSecrets && appComp.imagePullSecrets.length > 0) {
+            if ((appComp.publicRegistry || appComp.registry) && appComp.imagePullSecrets && appComp.imagePullSecrets.length > 0) {
                 extractSecret = appComp.imagePullSecrets[0].name
-                if(appComp.registry) registry = appComp.registry
+                if (appComp.registry) registry = appComp.registry
             }
             // If not MDos registry, and no credentials, collect credentials
-            else if(appComp.publicRegistry || appComp.registry) {
+            else if (appComp.publicRegistry || appComp.registry) {
                 if (appComp.registry) {
-                    if(this.regCredsBuffer[appComp.registry]) return this.regCredsBuffer[appComp.registry] // If buffer available, serve that
+                    if (this.regCredsBuffer[appComp.registry]) return this.regCredsBuffer[appComp.registry] // If buffer available, serve that
                     context(`Please provide credentials for the registry "${appComp.registry}" in order to push your images`)
                 } else {
-                    if(this.regCredsBuffer['docker.io']) return this.regCredsBuffer['docker.io'] // If buffer available, serve that
+                    if (this.regCredsBuffer['docker.io']) return this.regCredsBuffer['docker.io'] // If buffer available, serve that
                     context(`Please provide credentials for the public registry in order to push your images`)
                 }
                 // Ask user
@@ -289,7 +290,7 @@ export default class Deploy extends Command {
                 if (appComp.registry) this.regCredsBuffer[appComp.registry] = creds
                 else this.regCredsBuffer['docker.io'] = creds
                 return creds
-            } 
+            }
             // MDos registry, collect credentials if not done already
             else {
                 // mdos registry, take user info data
@@ -312,32 +313,32 @@ export default class Deploy extends Command {
             this.showError(err)
             process.exit(1)
         }
-       
+
         const pullSecret = pullSecretResponse.data.find((secret: any) => secret.metadata.name == extractSecret)
-        if(!pullSecret) {
+        if (!pullSecret) {
             error(`ImagePullSecret "${extractSecret}" was not found in your target namespace`)
             process.exit(1)
         }
 
         // Extract registry credentials
-        const regCreds = Buffer.from(pullSecret.data['.dockerconfigjson'], 'base64').toString('utf-8');
+        const regCreds = Buffer.from(pullSecret.data['.dockerconfigjson'], 'base64').toString('utf-8')
         const regAuth = JSON.parse(regCreds).auths
-        if(!regAuth){
+        if (!regAuth) {
             error(`Invalid docker registry secret: ${extractSecret}`)
             process.exit(1)
         }
-        
-        const hostCreds = registry ? (regAuth[registry] || regAuth[Object.keys(regAuth)[0]]) : regAuth[Object.keys(regAuth)[0]]
-        if(registry)
+
+        const hostCreds = registry ? regAuth[registry] || regAuth[Object.keys(regAuth)[0]] : regAuth[Object.keys(regAuth)[0]]
+        if (registry)
             return {
                 username: hostCreds.username,
                 password: hostCreds.password,
-                registry: registry
+                registry: registry,
             }
         else
             return {
                 username: hostCreds.username,
-                password: hostCreds.password
+                password: hostCreds.password,
             }
     }
 

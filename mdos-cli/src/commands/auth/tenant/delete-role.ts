@@ -39,18 +39,18 @@ export default class DeleteRole extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
-        
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -58,8 +58,8 @@ export default class DeleteRole extends Command {
         let respClients: { data: any[] }
         try {
             respClients = await this.api(`keycloak?target=clients&realm=mdos`, 'get')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -96,8 +96,8 @@ export default class DeleteRole extends Command {
                 `keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}&filterProtected=true`,
                 'get'
             )
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
         if (respClientRoles.data.length == 0) {
@@ -151,9 +151,9 @@ export default class DeleteRole extends Command {
                     'delete'
                 )
                 CliUx.ux.action.stop()
-            } catch (error) {
+            } catch (err) {
                 CliUx.ux.action.stop('error')
-                this.showError(error)
+                this.showError(err)
                 process.exit(1)
             }
         }

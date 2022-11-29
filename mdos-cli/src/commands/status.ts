@@ -6,12 +6,12 @@ const { context } = require('../lib/tools')
  * Command
  *
  * @export
- * @class GetConfig
+ * @class Status
  * @extends {Command}
  */
-export default class GetConfig extends Command {
-    static aliases = ['get:config']
-    static description = 'Get configutation parameter(s) for your local CLI environement'
+export default class Status extends Command {
+    static aliases = []
+    static description = 'Get current status of your CLI environment'
 
     // ******* FLAGS *******
     static flags = {}
@@ -21,7 +21,7 @@ export default class GetConfig extends Command {
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
-        const { flags } = await this.parse(GetConfig)
+        const { flags } = await this.parse(Status)
        
         const allConfigs:any = this.getAllConfigs()
         const avKeys: any[] = []

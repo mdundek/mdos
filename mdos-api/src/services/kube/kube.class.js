@@ -32,81 +32,96 @@ exports.Kube = class Kube extends KubeCore {
         if (params.query.target == 'namespaces') {
             const nsListEnriched = await this.getEnrichedNamespaces(params.query.realm, params.query.includeKcClients)
             return nsListEnriched
-        } else if (params.query.target == 'gateways') {
+        }
+        else if (params.query.target == 'namespace') {
+            if(!await this.app.get('kube').hasNamespace(params.query.namespace)) {
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
+            }
+            const nsList = await this.app.get('kube').getNamespaces()
+            return nsList.find(ns => ns.metadata.name == params.query.namespace)
+        }
         /******************************************
          *  LOOKUP INGRESS GATEWAYS
          ******************************************/
+        else if (params.query.target == 'gateways') {
             if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let gateways = await this.app
                 .get('kube')
                 .getIstioGateways(params.query.namespace && params.query.namespace != '*' ? params.query.namespace : '', params.query.name ? params.query.name : false)
             if (params.query.host) return this.app.get('gateways').findMatchingGateways(gateways, params.query.host)
             else return gateways
-        } else if (params.query.target == 'certificates') {
+        }
         /******************************************
          *  LOOKUP CERTIFICATES
          ******************************************/
+        else if (params.query.target == 'certificates') {
             if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let certificates = await this.app.get('kube').getCertManagerCertificates(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
             if (params.query.hosts) return this.app.get('certificates').findMatchingCertificates(certificates, JSON.parse(params.query.hosts))
             else return certificates
-        } else if (params.query.target == 'secrets') {
+        } 
         /******************************************
          *  LOOKUP ALL SECRETS
          ******************************************/
+        else if (params.query.target == 'secrets') {
             if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let secrets = await this.app.get('kube').getAllSecrets(params.query.namespace ? params.query.namespace : '')
             return secrets
-        } else if (params.query.target == 'tls-secrets') {
+        } 
         /******************************************
          *  LOOKUP TLS SECRETS
          ******************************************/
+        else if (params.query.target == 'tls-secrets') {
             if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let secrets = await this.app.get('kube').getTlsSecrets(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
             return secrets
-        } else if (params.query.target == 'image-pull-secrets') {
+        }
         /******************************************
          *  LOOKUP IMAGE PULL SECRETS
          ******************************************/
+        else if (params.query.target == 'image-pull-secrets') {
             if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let secrets = await this.app.get('kube').getImagePullSecrets(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
             return secrets
-        } else if (params.query.target == 'cm-issuers') {
+        }
         /******************************************
          *  LOOKUP CERT-MANAGER ISSUERS
          ******************************************/
+        else if (params.query.target == 'cm-issuers') {
             if (params.query.namespace && !(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let issuers = await this.app.get('kube').getCertManagerIssuers(params.query.namespace ? params.query.namespace : '', params.query.name ? params.query.name : false)
             return issuers
         } else if (params.query.target == 'cm-cluster-issuers') {
             let issuers = await this.app.get('kube').getCertManagerClusterIssuers(params.query.name ? params.query.name : false)
             return issuers
-        } else if (params.query.target == 'applications') {
+        }
         /******************************************
          *  LOOKUP NAMESPACE APPLICATIONS
          ******************************************/
+        else if (params.query.target == 'applications') {
             // Make sure namespace exists
             if (params.query.clientId != '*' && !(await this.app.get('kube').hasNamespace(params.query.clientId))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.clientId}" does not exist`)
             }
             let nsApps = await this.getMdosApplications(params.query.clientId)
             return nsApps
-        } else if (params.query.target == 'kubeconfig') {
+        }
         /******************************************
          *  GENERATE USER KUBECTL CERTIFICATE
          ******************************************/
+        else if (params.query.target == 'kubeconfig') {
             // Get JWT token
             let access_token = params.headers.authorization.split(' ')[1]
             if (access_token.slice(-1) === ';') {
@@ -118,23 +133,25 @@ exports.Kube = class Kube extends KubeCore {
             }
             const certData = await this.app.get('kube').generateUserKubectlCertificates(jwtToken.email)
             return certData
-        } else if (params.query.target == 'volumes') {
+        }
         /******************************************
          *  LOOKUP PVCs
          ******************************************/
-            // Make sure namespace exists
+        else if (params.query.target == 'volumes') {
+        // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let nsPvcs = await this.app.get('kube').getPvcs(params.query.namespace, null)
             return nsPvcs
-        } else if (params.query.target == 'shared-volumes') {
+        }
         /******************************************
          *  LOOKUP READ-WRITE-MANY PVCs
          ******************************************/
+        else if (params.query.target == 'shared-volumes') {
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             let nsRwmPvcs = await this.app.get('kube').getWriteManyPvcs(params.query.namespace, params.query.name ? params.query.name : null)
             return nsRwmPvcs
@@ -614,7 +631,7 @@ exports.Kube = class Kube extends KubeCore {
                     if (errorJob && errorJob.errorMessage) {
                         throw new Error('ERROR: ' + errorJob.errorMessage)
                     } else {
-                        throw new Error('ERROR: An unknown error occured')
+                        throw new Error('ERROR: An unknown error occurred')
                     }
                 }
             }
@@ -624,7 +641,7 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.clientId))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.clientId}" does not exist`)
             }
             await this.deleteApplication(params.query.clientId, id, params.query.isHelm == 'true', params.query.type)
         } else if (params.query.target == 'shared-volume') {
@@ -633,7 +650,7 @@ exports.Kube = class Kube extends KubeCore {
          ******************************************/
             // Make sure namespace exists
             if (!(await this.app.get('kube').hasNamespace(params.query.namespace))) {
-                throw new NotFound('ERROR: Namespace does not exist')
+                throw new NotFound(`ERROR: Namespace "${params.query.namespace}" does not exist`)
             }
             const existingPvc = await this.app.get('kube').getPvcs(params.query.namespace, id)
             if (existingPvc.length == 0) {

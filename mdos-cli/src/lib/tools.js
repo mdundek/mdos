@@ -375,7 +375,7 @@ const buildPushComponent = async (userInfo, regCreds, appComp, root, tenantName)
 const dockerLogout = async (registry) => {
     try {
         await terminalCommand(`docker logout ${registry}`)
-    } catch (error) {}
+    } catch (err) {}
 }
 
 
@@ -388,7 +388,7 @@ const isDockerInstalled = async () => {
     try {
         await terminalCommand(`docker images`)
         return true
-    } catch (error) {
+    } catch (err) {
         return false
     }
 }

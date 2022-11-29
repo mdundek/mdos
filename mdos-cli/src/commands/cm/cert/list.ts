@@ -14,7 +14,7 @@ const { error, filterQuestions, mergeFlags, info } = require('../../../lib/tools
  * @extends {Command}
  */
 export default class List extends Command {
-    static aliases = ["cm:certificate:list", "cm:crt:list"]
+    static aliases = ['cm:certificate:list', 'cm:crt:list']
     static description = 'List your certificates'
 
     // ******* FLAGS *******
@@ -34,20 +34,20 @@ export default class List extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
-        
-        let agregatedResponses:any = {}
+
+        let agregatedResponses: any = {}
 
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -59,8 +59,8 @@ export default class List extends Command {
             this.showError(err)
             process.exit(1)
         }
-        if(nsResponse.data.length == 0) {
-            error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+        if (nsResponse.data.length == 0) {
+            error('No namespaces available. Did you create a new namespace yet (mdos ns create)?')
             process.exit(1)
         }
 
@@ -75,7 +75,7 @@ export default class List extends Command {
                 }),
             },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         // Collect tls secrets
         let tlsSecretResponse: { data: any[] }
@@ -87,7 +87,7 @@ export default class List extends Command {
         }
 
         // Collect Certificates
-        let certificatesResponse:any = []
+        let certificatesResponse: any = []
         try {
             certificatesResponse = await this.api(`kube?target=certificates&namespace=${agregatedResponses.namespace}`, 'get')
         } catch (err) {
@@ -102,23 +102,28 @@ export default class List extends Command {
                 name: {
                     header: 'CERTIFICATE NAME',
                     minWidth: 25,
-                    get: (row:any) => row.metadata.name,
+                    get: (row: any) => row.metadata.name,
                 },
                 issuer: {
                     header: 'ISSUER NAME',
                     minWidth: 25,
-                    get: (row:any) => row.spec.issuerRef.name,
+                    get: (row: any) => row.spec.issuerRef.name,
                 },
                 status: {
                     header: 'STATUS',
                     minWidth: 15,
-                    get: (row:any) => row.status ? (row.status.conditions.find((condition:any) => condition.status == "True" && condition.type == "Ready") ? "Ready" : "Not ready") : "Not ready",
+                    get: (row: any) =>
+                        row.status
+                            ? row.status.conditions.find((condition: any) => condition.status == 'True' && condition.type == 'Ready')
+                                ? 'Ready'
+                                : 'Not ready'
+                            : 'Not ready',
                 },
                 message: {
                     header: 'MESSAGE',
                     minWidth: 10,
-                    get: (row:any) => row.status ? row.status.conditions.find((condition:any) => condition.type == "Ready").message : "",
-                }
+                    get: (row: any) => (row.status ? row.status.conditions.find((condition: any) => condition.type == 'Ready').message : ''),
+                },
             },
             {
                 printLine: this.log.bind(this),
@@ -133,8 +138,8 @@ export default class List extends Command {
                 name: {
                     header: 'TLS SECRET NAME',
                     minWidth: 35,
-                    get: (row:any) => row.metadata.name,
-                }
+                    get: (row: any) => row.metadata.name,
+                },
             },
             {
                 printLine: this.log.bind(this),

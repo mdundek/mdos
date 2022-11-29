@@ -50,7 +50,9 @@ export default class Application extends Command {
                 group: 'application',
                 type: 'input',
                 name: 'tenantName',
-                message: this.getConfig('FRAMEWORK_MODE') ? 'Enter a target namespace name for this application:' : 'Enter a tenant name that this application belongs to:',
+                message: this.getConfig('FRAMEWORK_ONLY')
+                    ? 'Enter a target namespace name for this application:'
+                    : 'Enter a tenant name that this application belongs to:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
@@ -76,8 +78,8 @@ export default class Application extends Command {
         // Create app folder
         try {
             fs.mkdirSync(mdosAppFile, { recursive: true })
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -93,8 +95,8 @@ export default class Application extends Command {
                     components: [],
                 })
             )
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -106,8 +108,8 @@ export default class Application extends Command {
                 path.join(volumesFolder, 'README.md'),
                 '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
             )
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

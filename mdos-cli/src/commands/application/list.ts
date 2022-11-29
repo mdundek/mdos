@@ -32,22 +32,22 @@ export default class List extends Command {
         let clientResponse
         let nsResponse
 
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             nsResponse = {}
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
 
             // Get client id & uuid
             try {
                 clientResponse = await this.collectClientId(flags, 'What client do you want to list applications for', true)
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         } else {
@@ -55,27 +55,36 @@ export default class List extends Command {
             // Get namespace
             try {
                 nsResponse = await this.collectNamespace(flags, 'What namespace do you want to list applications for')
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         }
 
         // List apps
         try {
-            const response = await this.api(`kube?target=applications&clientId=${this.getConfig('FRAMEWORK_MODE') ? nsResponse.name : clientResponse.clientId}`, 'get')
-            const treeData = computeApplicationTree(response.data, this.getConfig('FRAMEWORK_MODE') ? false : clientResponse.clientId == "*")
+            const response = await this.api(
+                `kube?target=applications&clientId=${this.getConfig('FRAMEWORK_ONLY') ? nsResponse.name : clientResponse.clientId}`,
+                'get'
+            )
+            const treeData = computeApplicationTree(response.data, this.getConfig('FRAMEWORK_ONLY') ? false : clientResponse.clientId == '*')
 
             console.log()
 
             if (Object.keys(treeData).length == 0) {
-                context(this.getConfig('FRAMEWORK_MODE') ? 'There are no applications deployed for this namespace' : 'There are no applications deployed, or you do not have sufficient permissions to see them', true, true)
+                context(
+                    this.getConfig('FRAMEWORK_ONLY')
+                        ? 'There are no applications deployed for this namespace'
+                        : 'There are no applications deployed, or you do not have sufficient permissions to see them',
+                    true,
+                    true
+                )
             } else {
                 console.log(treeify.asTree(treeData, true))
             }
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

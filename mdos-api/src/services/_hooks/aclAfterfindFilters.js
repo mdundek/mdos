@@ -104,6 +104,22 @@ const userNamespaceFilterHook = async (context, jwtToken) => {
 }
 
 /**
+ * userSpecificNamespaceFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+const userSpecificNamespaceFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('list-namespaces'))) {
+        return context
+    }
+    // filter out to keep only those who are namespace admin
+    if(!jwtToken.resource_access[context.result.metadata.name])
+        context.result = null
+    return context
+}
+
+/**
  * userApplicationsFilterHook
  * @param {*} context
  * @param {*} jwtToken
@@ -286,6 +302,8 @@ module.exports = function () {
             return await userRoleFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'namespaces') {
             return await userNamespaceFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'namespace') {
+            return await userSpecificNamespaceFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'applications') {
             return await userApplicationsFilterHook(context, jwtToken)
         } else if (context.path == 'oidc-provider' && !context.params.query.target) {

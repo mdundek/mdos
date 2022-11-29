@@ -48,11 +48,11 @@ export default class Volume extends Command {
         }
 
         // Load mdos yaml file
-        let appYaml: { tenantName: string, components: any[] }
+        let appYaml: { tenantName: string; components: any[] }
         try {
             appYaml = YAML.parse(fs.readFileSync(appYamlPath, 'utf8'))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -97,29 +97,33 @@ export default class Volume extends Command {
                     return true
                 },
                 message: 'Do you want to mount this folder directly to a local host path on the cluster node?',
-            }
+            },
         ])
         aggregatedResponses = { ...aggregatedResponses, ...responses }
 
         // If use host path
-        if(!this.getConfig('FRAMEWORK_MODE') && !aggregatedResponses.useHostpath) {
+        if (!this.getConfig('FRAMEWORK_ONLY') && !aggregatedResponses.useHostpath) {
             responses = await inquirer.prompt([
                 {
                     type: 'confirm',
                     name: 'inject',
                     default: false,
                     when: (values: any) => {
-                        context('You can let MDos mirror data that is inside your local volume folder in this project directory structure with the target component POD volume during deployments.', false, true)
+                        context(
+                            'You can let MDos mirror data that is inside your local volume folder in this project directory structure with the target component POD volume during deployments.',
+                            false,
+                            true
+                        )
                         return true
                     },
                     message: 'Do you want to populate your volume with some static content before the container starts?',
-                }
+                },
             ])
             aggregatedResponses = { ...aggregatedResponses, ...responses }
         }
 
         // If sync volume on deploy?
-        if(aggregatedResponses.inject) {
+        if (aggregatedResponses.inject) {
             responses = await inquirer.prompt([
                 {
                     type: 'list',
@@ -128,32 +132,32 @@ export default class Volume extends Command {
                     choices: [
                         {
                             name: 'Synchronize only when the volume inside the POD is empty (on first deploy)',
-                            value: "initial"
+                            value: 'initial',
                         },
                         {
                             name: 'Synchronize the volume with my local volume data every time I deploy this application',
-                            value: 'always'
+                            value: 'always',
                         },
                     ],
-                }
+                },
             ])
             aggregatedResponses = { ...aggregatedResponses, ...responses }
         }
 
         // If not hostpath, ask if referencing existing shared volume
-        if(!aggregatedResponses.useHostpath) {
+        if (!aggregatedResponses.useHostpath) {
             responses = await inquirer.prompt([
                 {
                     type: 'confirm',
                     name: 'shared',
                     message: 'Is this volume referencing an existing shared volume?',
-                    default: false
+                    default: false,
                 },
             ])
             aggregatedResponses = { ...aggregatedResponses, ...responses }
 
             // If not referencing shared volume, collect size
-            if(!aggregatedResponses.shared) {
+            if (!aggregatedResponses.shared) {
                 responses = await inquirer.prompt([
                     {
                         type: 'number',
@@ -163,19 +167,19 @@ export default class Volume extends Command {
                             if (value.trim().length == 0) return 'Mandatory field'
                             return true
                         },
-                    }
+                    },
                 ])
                 aggregatedResponses = { ...aggregatedResponses, ...responses }
-            } 
+            }
             // Yes, shared
             else {
-                if(!this.getConfig('FRAMEWORK_MODE')) {
+                if (!this.getConfig('FRAMEWORK_ONLY')) {
                     // Make sure we have a valid oauth2 cookie token
                     // otherwise, collect it
                     try {
                         await this.validateJwt()
-                    } catch (error) {
-                        this.showError(error)
+                    } catch (err) {
+                        this.showError(err)
                         process.exit(1)
                     }
                 }
@@ -189,7 +193,7 @@ export default class Volume extends Command {
                     process.exit(1)
                 }
 
-                if(volResponse.data.length == 0) {
+                if (volResponse.data.length == 0) {
                     error(`No Shared Volumes found for namespace ${appYaml.tenantName}`)
                     process.exit(1)
                 }
@@ -199,13 +203,13 @@ export default class Volume extends Command {
                         type: 'list',
                         name: 'sharedVolumeName',
                         message: 'Select the Shared Volume to mount:',
-                        choices: volResponse.data.map((vol:any) => {
+                        choices: volResponse.data.map((vol: any) => {
                             return {
                                 name: `${vol.metadata.name} (Size: ${vol.spec.resources.requests.storage})`,
-                                value: vol.metadata.name
+                                value: vol.metadata.name,
                             }
                         }),
-                    }
+                    },
                 ])
                 aggregatedResponses = { ...aggregatedResponses, ...responses }
             }
@@ -215,12 +219,12 @@ export default class Volume extends Command {
         if (!targetCompYaml.volumes) targetCompYaml.volumes = []
 
         type Volume = {
-            syncVolume?: boolean,
-            trigger?: string,
+            syncVolume?: boolean
+            trigger?: string
             name?: string
             mountPath: string
             hostPath?: string
-            sharedVolumeName?: string,
+            sharedVolumeName?: string
             size?: string
         }
 
@@ -233,7 +237,7 @@ export default class Volume extends Command {
             vol.syncVolume = true
             vol.trigger = aggregatedResponses.syncTrigger
 
-            if(!this.getConfig('FRAMEWORK_MODE')) {
+            if (!this.getConfig('FRAMEWORK_ONLY')) {
                 try {
                     const volumeDirPath = path.join(volumesPath, aggregatedResponses.name)
                     if (fs.existsSync(volumeDirPath)) {
@@ -243,8 +247,8 @@ export default class Volume extends Command {
 
                     fs.mkdirSync(volumeDirPath, { recursive: true })
                     fs.writeFileSync(path.join(volumeDirPath, 'README.md'), 'Place your volume static data in this folder\n')
-                } catch (error) {
-                    this.showError(error)
+                } catch (err) {
+                    this.showError(err)
                     process.exit(1)
                 }
             }
@@ -263,8 +267,8 @@ export default class Volume extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

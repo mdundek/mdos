@@ -31,8 +31,8 @@ export default class Logout extends Command {
 
                 await this.logout()
                 info('Logged out')
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         } else {

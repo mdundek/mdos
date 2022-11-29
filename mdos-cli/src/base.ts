@@ -1,5 +1,5 @@
 // src/base.ts
-import { Command, Config } from '@oclif/core'
+import { Command, Config, CliUx } from '@oclif/core'
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
@@ -9,6 +9,7 @@ const axios = require('axios').default
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage, getConsoleLineHandel } = require('./lib/tools')
 const SocketManager = require('./lib/socket.js')
 const pjson = require('../package.json')
+const chalk = require('chalk')
 
 type AxiosConfig = {
     timeout: number
@@ -49,7 +50,7 @@ export default abstract class extends Command {
                 JSON.stringify(
                     {
                         MDOS_API_URI: '',
-                        ACCESS_TOKEN: '',
+                        FRAMEWORK_ONLY: '',
                     },
                     null,
                     4
@@ -102,11 +103,11 @@ export default abstract class extends Command {
 
     /**
      * setApiEndpoint
-     * @param value 
+     * @param value
      */
     async setApiEndpoint(value: any) {
         const apiMode = await axios.get(`${value}/mdos/api-mode`)
-        this.configData.FRAMEWORK_MODE = apiMode.data.mdos_framework_only
+        this.configData.FRAMEWORK_ONLY = apiMode.data.mdos_framework_only
         this.configData.MDOS_API_URI = value
         fs.writeFileSync(this.configPath, JSON.stringify(this.configData, null, 4))
     }
@@ -128,7 +129,7 @@ export default abstract class extends Command {
         }
 
         // Set oauth2 cookie if necessary
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             axiosConfig.headers = {
                 mdos_version: pjson.version,
             }
@@ -138,7 +139,7 @@ export default abstract class extends Command {
                 mdos_version: pjson.version,
             }
         }
-        
+
         axiosConfig.timeout = 1000 * 60 * 10
 
         if (method.toLowerCase() == 'post') {
@@ -290,10 +291,10 @@ export default abstract class extends Command {
             }
             clientResponses = { clientId: targetClient.clientId, clientUuid: targetClient.id }
         } else {
-            if(includeAll) {
+            if (includeAll) {
                 clientResponse.data.push({
-                    clientId: "-all available to me-",
-                    id: "*"
+                    clientId: '-all available to me-',
+                    id: '*',
                 })
             }
 
@@ -307,22 +308,21 @@ export default abstract class extends Command {
                     }),
                 },
             ])
-            if(clientResponses.clientUuid == "*") {
-                clientResponses.clientId = "*"
+            if (clientResponses.clientUuid == '*') {
+                clientResponses.clientId = '*'
             } else {
                 const targetClient = clientResponse.data.find((o: { id: any }) => o.id == clientResponses.clientUuid)
                 clientResponses.clientId = targetClient.clientId
             }
-            
         }
         return clientResponses
     }
 
     /**
      * collectNamespace
-     * @param flags 
-     * @param question 
-     * @returns 
+     * @param flags
+     * @param question
+     * @returns
      */
     async collectNamespace(flags: any, question: string) {
         const nsResponse = await this.api('kube?target=namespaces', 'get')
@@ -377,5 +377,34 @@ export default abstract class extends Command {
             return true
         }
         return false
+    }
+
+    /**
+     * showBusy
+     * @param text 
+     * @param skipLine 
+     */
+    showBusy(text:string, skipLine?:boolean) {
+        if(skipLine) console.log()
+        CliUx.ux.action.start(text)
+    }
+
+    /**
+     * showBusyDone
+     */
+    showBusyDone() {
+        CliUx.ux.action.stop()
+    }
+
+    /**
+     * showBusyError
+     * @param msg 
+     * @param err 
+     * @param exit 
+     */
+    showBusyError(msg?:any, err?:any, exit?:boolean) {
+        CliUx.ux.action.stop(chalk.red(msg ? msg : 'error'))
+        if(err) this.showError(err)
+        if(exit) process.exit(1)
     }
 }

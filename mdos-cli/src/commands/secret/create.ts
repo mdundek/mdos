@@ -34,13 +34,13 @@ export default class Create extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         }
@@ -72,12 +72,17 @@ export default class Create extends Command {
                 name: 'type',
                 message: 'What type of secret do you wish to create:',
                 type: 'list',
-                choices: [{
-                    name: "Docker Config", value: "kubernetes.io/dockerconfigjson"
-                }, {
-                    name: "TLS (Certificate)", value: "kubernetes.io/tls"
-                }],
-            }
+                choices: [
+                    {
+                        name: 'Docker Config',
+                        value: 'kubernetes.io/dockerconfigjson',
+                    },
+                    {
+                        name: 'TLS (Certificate)',
+                        value: 'kubernetes.io/tls',
+                    },
+                ],
+            },
         ])
         agregatedResponses = { ...agregatedResponses, ...responses }
 
@@ -88,7 +93,7 @@ export default class Create extends Command {
             this.showError(err)
             process.exit(1)
         }
-        
+
         responses = await inquirer.prompt([
             {
                 name: 'name',
@@ -96,7 +101,8 @@ export default class Create extends Command {
                 type: 'input',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if(nsSecrets.data.find((s:any) => s.metadata.name.toLowerCase() == value.trim().toLowerCase())) return "Secret name already exists"
+                    else if (nsSecrets.data.find((s: any) => s.metadata.name.toLowerCase() == value.trim().toLowerCase()))
+                        return 'Secret name already exists'
                     return true
                 },
             },
@@ -104,7 +110,7 @@ export default class Create extends Command {
         agregatedResponses = { ...agregatedResponses, ...responses }
 
         // docker config secret
-        if(agregatedResponses.type == "kubernetes.io/dockerconfigjson") {
+        if (agregatedResponses.type == 'kubernetes.io/dockerconfigjson') {
             responses = await inquirer.prompt([
                 {
                     name: 'registry',
@@ -137,7 +143,7 @@ export default class Create extends Command {
             agregatedResponses = { ...agregatedResponses, ...responses }
         }
         // TLS secret
-        else if(agregatedResponses.type == "kubernetes.io/tls") {
+        else if (agregatedResponses.type == 'kubernetes.io/tls') {
             responses = await inquirer.prompt([
                 {
                     name: 'crt',
@@ -145,9 +151,9 @@ export default class Create extends Command {
                     type: 'input',
                     validate: (value: string) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if(!fs.existsSync(value)) return 'File not found'
+                        else if (!fs.existsSync(value)) return 'File not found'
                         return true
-                    }
+                    },
                 },
                 {
                     name: 'key',
@@ -155,10 +161,10 @@ export default class Create extends Command {
                     type: 'input',
                     validate: (value: string) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if(!fs.existsSync(value)) return 'File not found'
+                        else if (!fs.existsSync(value)) return 'File not found'
                         return true
-                    }
-                }
+                    },
+                },
             ])
 
             responses.crt = fs.readFileSync(responses.crt, 'utf8')
@@ -167,19 +173,19 @@ export default class Create extends Command {
             agregatedResponses = { ...agregatedResponses, ...responses }
         }
 
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         }
 
         console.log()
-        if(agregatedResponses.type == 'kubernetes.io/tls') {
+        if (agregatedResponses.type == 'kubernetes.io/tls') {
             CliUx.ux.action.start('Creating TLS secret')
             try {
                 await this.api(`kube`, 'post', {
@@ -187,28 +193,26 @@ export default class Create extends Command {
                     namespace: agregatedResponses.namespace,
                     name: agregatedResponses.name,
                     data: {
-                        "tls.crt": agregatedResponses.crt,
-                        "tls.key": agregatedResponses.key,
-                    }
+                        'tls.crt': agregatedResponses.crt,
+                        'tls.key': agregatedResponses.key,
+                    },
                 })
                 CliUx.ux.action.stop()
-            } catch (error) {
+            } catch (err) {
                 CliUx.ux.action.stop('error')
-                this.showError(error)
+                this.showError(err)
                 process.exit(1)
             }
-        }
-        else if(agregatedResponses.type == 'kubernetes.io/dockerconfigjson') {
+        } else if (agregatedResponses.type == 'kubernetes.io/dockerconfigjson') {
             CliUx.ux.action.start('Creating Docker secret')
             try {
-
                 const dockerAuthObj: any = {
-                    auths: {}
+                    auths: {},
                 }
                 dockerAuthObj.auths[agregatedResponses.registry] = {
-                    "username": agregatedResponses.username,
-                    "password": agregatedResponses.password,
-                    "auth": Buffer.from(`${agregatedResponses.username}:${agregatedResponses.password}`, 'utf-8').toString('base64')
+                    username: agregatedResponses.username,
+                    password: agregatedResponses.password,
+                    auth: Buffer.from(`${agregatedResponses.username}:${agregatedResponses.password}`, 'utf-8').toString('base64'),
                 }
 
                 await this.api(`kube`, 'post', {
@@ -216,13 +220,13 @@ export default class Create extends Command {
                     namespace: agregatedResponses.namespace,
                     name: agregatedResponses.name,
                     data: {
-                        ".dockerconfigjson": JSON.stringify(dockerAuthObj)
-                    }
+                        '.dockerconfigjson': JSON.stringify(dockerAuthObj),
+                    },
                 })
                 CliUx.ux.action.stop()
-            } catch (error) {
+            } catch (err) {
                 CliUx.ux.action.stop('error')
-                this.showError(error)
+                this.showError(err)
                 process.exit(1)
             }
         }

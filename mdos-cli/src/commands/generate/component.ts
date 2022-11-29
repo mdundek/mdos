@@ -1,8 +1,9 @@
-import { Flags } from '@oclif/core'
+import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
 import { customAlphabet } from 'nanoid'
+import { YAMLSeq } from 'yaml'
 const inquirer = require('inquirer')
-const { error, warn } = require('../../lib/tools')
+const { error, warn, extractErrorCode } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -50,8 +51,8 @@ export default class Component extends Command {
         let appYaml
         try {
             appYaml = YAML.parse(fs.readFileSync(appYamlPath, 'utf8'))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -133,7 +134,7 @@ export default class Component extends Command {
         let publicRegResponses = null
         let responsePullSecret = null
         let registryResponse = null
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Ask if image will be available on a public registry
             publicRegResponses = await inquirer.prompt([
                 {
@@ -144,7 +145,7 @@ export default class Component extends Command {
                 },
             ])
 
-            if(!publicRegResponses.publicRegistry) {
+            if (!publicRegResponses.publicRegistry) {
                 registryResponse = await inquirer.prompt([
                     {
                         type: 'input',
@@ -167,14 +168,67 @@ export default class Component extends Command {
                     message: 'Does your target registry require authentication to pull images?',
                 },
             ])
-            if(pullSecretRegResponses.imagePullSecretNeeded) {
+            if (pullSecretRegResponses.imagePullSecretNeeded) {
+                
+                    
+                // Lookup secrets in namespace
+                // Secrets exist?
+                    // If yes, ask user to choose, or select "new secret"
+                    // If not exist, of user asked for new secret, collect username / password, then create secret
+                        
+                // Does namespace exists?
+                let createNamespace = false
+                try {
+                    await this.api(`kube?target=namespace&namespace=${appYaml.tenantName}`, 'get')
+                } catch (err) {
+                    if(extractErrorCode(err) != 404) {
+                        error('Could not access MDos API server to lookup existing docker secrets')
+                        process.exit(1)
+                    } else {
+                        createNamespace = true
+                    }
+                }
+
+                // If no, create namespace
+                if(createNamespace) {
+                    this.showBusy('Creating namespace')
+                    try {
+                        await this.api(`kube`, 'post', {
+                            type: 'tenantNamespace',
+                            realm: 'mdos',
+                            namespace: appYaml.tenantName,
+                        })
+                        CliUx.ux.action.stop()
+                    } catch (err) {
+                        this.showBusyError(null, err)
+                        process.exit(1)
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
                 // Collect imagepull secrets
                 let pullSecretResponse: { data: any[] }
+                
                 try {
+                    this.showBusy(`Looking up existing Docker secrets`, true)
                     pullSecretResponse = await this.api(`kube?target=image-pull-secrets&namespace=${appYaml.tenantName}`, 'get')
+                    this.showBusyDone()
                 } catch (err) {
-                    this.showError(err)
-                    process.exit(1)
+                    if(extractErrorCode(err) != 404) {
+                        this.showBusyError(null, err)
+                        process.exit(1)
+                    } else {
+                        createNamespace = true
+                    }
                 }
                 if (pullSecretResponse.data.length == 0) {
                     error('There are no Image-pull Secrets available in this namespace. Did you create a registry secret in this namespace first?')
@@ -192,7 +246,6 @@ export default class Component extends Command {
                         }
                     }),
                 })
-
             }
         }
 
@@ -200,8 +253,8 @@ export default class Component extends Command {
         try {
             fs.mkdirSync(mdosAppCompDir, { recursive: true })
             fs.writeFileSync(path.join(mdosAppCompDir, 'Dockerfile'), '# Populate your dockerfile for this component here\n')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -215,9 +268,9 @@ export default class Component extends Command {
             tag: '0.0.1',
         }
 
-        if(this.getConfig('FRAMEWORK_MODE') && publicRegResponses.publicRegistry) compJson.publicRegistry = true
-        if(this.getConfig('FRAMEWORK_MODE') && registryResponse)                  compJson.registry = registryResponse.registry
-        if(this.getConfig('FRAMEWORK_MODE') && responsePullSecret)                compJson.imagePullSecrets = [{name: responsePullSecret.pullSecretName}]
+        if (this.getConfig('FRAMEWORK_ONLY') && publicRegResponses.publicRegistry) compJson.publicRegistry = true
+        if (this.getConfig('FRAMEWORK_ONLY') && registryResponse) compJson.registry = registryResponse.registry
+        if (this.getConfig('FRAMEWORK_ONLY') && responsePullSecret) compJson.imagePullSecrets = [{ name: responsePullSecret.pullSecretName }]
 
         if (npResponse.networkPolicy != 'none') {
             compJson.networkPolicy = {
@@ -233,8 +286,8 @@ export default class Component extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             try {
                 fs.rmdirSync(mdosAppCompDir, { recursive: true, force: true })
             } catch (_e) {}

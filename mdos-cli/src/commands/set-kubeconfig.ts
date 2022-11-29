@@ -1,8 +1,8 @@
 import { Flags } from '@oclif/core'
 import Command from '../base'
-const path = require("path")
-const os = require("os")
-const fs = require("fs")
+const path = require('path')
+const os = require('os')
+const fs = require('fs')
 const { error, success } = require('../lib/tools')
 const { terminalCommand } = require('../lib/terminal')
 
@@ -19,7 +19,7 @@ export default class SetKubeconfig extends Command {
 
     // ******* FLAGS *******
     static flags = {}
-    
+
     // ******* ARGS *******
     static args = []
 
@@ -31,41 +31,41 @@ export default class SetKubeconfig extends Command {
         const { args } = await this.parse(SetKubeconfig)
 
         // Make sure kubectl is installed
-        let kctlTargetPath = null;
-        if(process.platform === "linux" || process.platform === "darwin") {
-            let kc = await terminalCommand("command -v kubectl");
-            if (kc.length == 0 || !kc.find((o: string | string[]) => o.indexOf("/kubectl") != -1)) {
+        let kctlTargetPath = null
+        if (process.platform === 'linux' || process.platform === 'darwin') {
+            let kc = await terminalCommand('command -v kubectl')
+            if (kc.length == 0 || !kc.find((o: string | string[]) => o.indexOf('/kubectl') != -1)) {
                 error('You need to install the "kubectl" CLI first (https://kubernetes.io/docs/tasks/tools/).')
-                process.exit(1);
+                process.exit(1)
             } else {
-                kctlTargetPath = kc.find((o: string | string[]) => o.indexOf("/kubectl"));
+                kctlTargetPath = kc.find((o: string | string[]) => o.indexOf('/kubectl'))
             }
-        } else if(process.platform === "win32") {
-            let kc = await terminalCommand("WHERE kubectl");
-            if (kc.length == 0 || !kc.find((o: string | string[]) => o.indexOf("\kubectl.exe") != -1)) {
+        } else if (process.platform === 'win32') {
+            let kc = await terminalCommand('WHERE kubectl')
+            if (kc.length == 0 || !kc.find((o: string | string[]) => o.indexOf('kubectl.exe') != -1)) {
                 error('You need to install the "kubectl" CLI first (https://kubernetes.io/docs/tasks/tools/).')
-                process.exit(1);
+                process.exit(1)
             } else {
-                kctlTargetPath = kc.find((o: string | string[]) => o.indexOf("\kubectl.exe"));
+                kctlTargetPath = kc.find((o: string | string[]) => o.indexOf('kubectl.exe'))
             }
         } else {
             error(`${process.platform} is not supported yet for this command`)
-            process.exit(1);
+            process.exit(1)
         }
 
-        let kubeCfgDir = path.join(require('os').homedir(), ".kube");
-        let dotkubeExists = fs.existsSync(kubeCfgDir);
-        if (!dotkubeExists) {  
-            fs.mkdirSync(kubeCfgDir);
+        let kubeCfgDir = path.join(require('os').homedir(), '.kube')
+        let dotkubeExists = fs.existsSync(kubeCfgDir)
+        if (!dotkubeExists) {
+            fs.mkdirSync(kubeCfgDir)
         }
-                            
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         }
@@ -80,29 +80,33 @@ export default class SetKubeconfig extends Command {
         }
 
         // Time to put it all together
-        let certFolder = path.join(kubeCfgDir, `mdos-certificates`);
-        if (!fs.existsSync(certFolder)){
-            fs.mkdirSync(certFolder);
-        }
-        
-        let userKeyPath = path.join(certFolder, nsResponse.data.user + ".key");
-        let userCrtPath = path.join(certFolder, nsResponse.data.user + ".crt");
-       
-        if (fs.existsSync(userKeyPath)){
-            fs.unlinkSync(userKeyPath);
-        }
-        if (fs.existsSync(userCrtPath)){
-            fs.unlinkSync(userCrtPath);
+        let certFolder = path.join(kubeCfgDir, `mdos-certificates`)
+        if (!fs.existsSync(certFolder)) {
+            fs.mkdirSync(certFolder)
         }
 
-        fs.writeFileSync(userKeyPath, nsResponse.data.key, "utf-8");
-        fs.writeFileSync(userCrtPath, nsResponse.data.crt, "utf-8");
+        let userKeyPath = path.join(certFolder, nsResponse.data.user + '.key')
+        let userCrtPath = path.join(certFolder, nsResponse.data.user + '.crt')
 
-        await terminalCommand(`cd ${kubeCfgDir} && ${kctlTargetPath} config --kubeconfig=config set-cluster mdos --server=https://${nsResponse.data.host} --insecure-skip-tls-verify=true`);
-        await terminalCommand(`${kctlTargetPath} config set-credentials ${nsResponse.data.user} --client-certificate=${userCrtPath} --client-key=${userKeyPath} --embed-certs=true`);
-        await terminalCommand(`${kctlTargetPath} config set-context ${nsResponse.data.user}_mdos --cluster=mdos --user=${nsResponse.data.user}`);
-        await terminalCommand(`${kctlTargetPath} config use-context ${nsResponse.data.user}_mdos`);
+        if (fs.existsSync(userKeyPath)) {
+            fs.unlinkSync(userKeyPath)
+        }
+        if (fs.existsSync(userCrtPath)) {
+            fs.unlinkSync(userCrtPath)
+        }
 
-        success("Kubectl certificate and context updated")
+        fs.writeFileSync(userKeyPath, nsResponse.data.key, 'utf-8')
+        fs.writeFileSync(userCrtPath, nsResponse.data.crt, 'utf-8')
+
+        await terminalCommand(
+            `cd ${kubeCfgDir} && ${kctlTargetPath} config --kubeconfig=config set-cluster mdos --server=https://${nsResponse.data.host} --insecure-skip-tls-verify=true`
+        )
+        await terminalCommand(
+            `${kctlTargetPath} config set-credentials ${nsResponse.data.user} --client-certificate=${userCrtPath} --client-key=${userKeyPath} --embed-certs=true`
+        )
+        await terminalCommand(`${kctlTargetPath} config set-context ${nsResponse.data.user}_mdos --cluster=mdos --user=${nsResponse.data.user}`)
+        await terminalCommand(`${kctlTargetPath} config use-context ${nsResponse.data.user}_mdos`)
+
+        success('Kubectl certificate and context updated')
     }
 }

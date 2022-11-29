@@ -44,13 +44,13 @@ export default class List extends Command {
         this.checkIfDomainSet()
 
         let nsQueryUrl
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
             nsQueryUrl = 'kube?target=namespaces&realm=mdos&includeKcClients=true'
@@ -65,42 +65,42 @@ export default class List extends Command {
             console.log()
             CliUx.ux.table(
                 response.data,
-                this.getConfig('FRAMEWORK_MODE') ? {
-                    namespace: {
-                        header: 'NAMESPACE',
-                        minWidth: 15,
-                        get: (row) => row.name,
-                    },
-                    status: {
-                        header: 'STATUS',
-                        minWidth: 10,
-                        get: (row) => row.status,
-                    }
-                }
-                :
-                {
-                    namespace: {
-                        header: 'NAMESPACE',
-                        minWidth: 15,
-                        get: (row) => row.name,
-                    },
-                    status: {
-                        header: 'STATUS',
-                        minWidth: 10,
-                        get: (row) => row.status,
-                    },
-                    kcClient: {
-                        header: 'HAS KC CLIENT',
-                        get: (row) => (row.kcClient ? 'Yes' : 'No'),
-                    },
-                },
+                this.getConfig('FRAMEWORK_ONLY')
+                    ? {
+                          namespace: {
+                              header: 'NAMESPACE',
+                              minWidth: 15,
+                              get: (row) => row.name,
+                          },
+                          status: {
+                              header: 'STATUS',
+                              minWidth: 10,
+                              get: (row) => row.status,
+                          },
+                      }
+                    : {
+                          namespace: {
+                              header: 'NAMESPACE',
+                              minWidth: 15,
+                              get: (row) => row.name,
+                          },
+                          status: {
+                              header: 'STATUS',
+                              minWidth: 10,
+                              get: (row) => row.status,
+                          },
+                          kcClient: {
+                              header: 'HAS KC CLIENT',
+                              get: (row) => (row.kcClient ? 'Yes' : 'No'),
+                          },
+                      },
                 {
                     printLine: this.log.bind(this),
                 }
             )
             console.log()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

@@ -46,8 +46,8 @@ export default class Ingress extends Command {
         let appYaml: any
         try {
             appYaml = YAML.parse(fs.readFileSync(appYamlPath, 'utf8'))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -71,13 +71,13 @@ export default class Ingress extends Command {
             matchHost: string
             targetPort: number
             trafficType: string
-            subPath?: string,
+            subPath?: string
             tlsSecretName?: string
         }
 
         // Update ingress
         if (!targetCompYaml.ingress) targetCompYaml.ingress = []
-        
+
         let responses = await inquirer.prompt([
             {
                 type: 'input',
@@ -131,8 +131,8 @@ export default class Ingress extends Command {
                 message: 'What type of traffic will this ingress use?',
                 when: (values: any) => {
                     // If in framework mode, do not show this question
-                    if(this.getConfig('FRAMEWORK_MODE')) return false
-                    
+                    if (this.getConfig('FRAMEWORK_ONLY')) return false
+
                     context(
                         'NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
                         false,
@@ -140,7 +140,7 @@ export default class Ingress extends Command {
                     )
                     context(
                         'If your application requires that a dedicated certificate is available inside your POD (versus terminating the TLS connection on the gateway), then specify HTTPS here.',
-                        true, 
+                        true,
                         false
                     )
                     return true
@@ -153,11 +153,11 @@ export default class Ingress extends Command {
                         name: 'https',
                     },
                 ],
-            }
+            },
         ])
 
         // If in Framework mode, we need to ask about TLS certificates
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Gateway type
             const responseFrameworkMode = await inquirer.prompt({
                 type: 'list',
@@ -216,7 +216,7 @@ export default class Ingress extends Command {
             }
             if (responses.trafficType == 'HTTPS_SIMPLE') ing.tlsSecretName = responses.tlsSecretName
             if (responses.subPath) ing.subPath = responses.subPath
-    
+
             targetCompYaml.ingress.push(ing)
         } else {
             const ing: Ingress = {
@@ -225,9 +225,9 @@ export default class Ingress extends Command {
                 targetPort: responses.port,
                 trafficType: responses.type,
             }
-    
+
             if (responses.subPath) ing.subPath = responses.subPath
-    
+
             targetCompYaml.ingress.push(ing)
         }
 
@@ -236,8 +236,8 @@ export default class Ingress extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

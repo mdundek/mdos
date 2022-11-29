@@ -37,8 +37,8 @@ export default class ApiEndpoint extends Command {
             try {
                 await this.setApiEndpoint(`${args.uri}${flags.dev ? ":3030":""}`)
                 success("Done")
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         }

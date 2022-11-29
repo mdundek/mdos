@@ -11,7 +11,7 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * @extends {Command}
  */
 export default class List extends Command {
-    static aliases = ["volume:list"]
+    static aliases = ['volume:list']
     static description = 'List existing Shared Volumes'
 
     // ******* FLAGS *******
@@ -28,14 +28,14 @@ export default class List extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(List)
 
-        let agregatedResponses:any = {}
+        let agregatedResponses: any = {}
 
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(this.getConfig('FRAMEWORK_MODE')) {
+        if (this.getConfig('FRAMEWORK_ONLY')) {
             // Not supported in framework only mode
-            error("This command is only available for MDos managed environements")
+            error('This command is only available for MDos managed environements')
             process.exit(1)
         }
 
@@ -43,8 +43,8 @@ export default class List extends Command {
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -56,8 +56,8 @@ export default class List extends Command {
             this.showError(err)
             process.exit(1)
         }
-        if(nsResponse.data.length == 0) {
-            error("No namespaces available. Did you create a new namespace yet (mdos ns create)?")
+        if (nsResponse.data.length == 0) {
+            error('No namespaces available. Did you create a new namespace yet (mdos ns create)?')
             process.exit(1)
         }
 
@@ -72,7 +72,7 @@ export default class List extends Command {
                 }),
             },
         ])
-        agregatedResponses = {...agregatedResponses, ...response}
+        agregatedResponses = { ...agregatedResponses, ...response }
 
         // Get namespace shared volumes
         let volResponse
@@ -83,8 +83,8 @@ export default class List extends Command {
             process.exit(1)
         }
 
-        if(volResponse.data.length == 0) {
-            error("No Shared Volumes found for this namespace")
+        if (volResponse.data.length == 0) {
+            error('No Shared Volumes found for this namespace')
             process.exit(1)
         }
 
@@ -95,12 +95,12 @@ export default class List extends Command {
                 name: {
                     header: 'NAME',
                     minWidth: 25,
-                    get: (row:any) => row.metadata.name,
+                    get: (row: any) => row.metadata.name,
                 },
                 size: {
                     header: 'SIZE',
-                    get: (row:any) => row.spec.resources.requests.storage,
-                }
+                    get: (row: any) => row.spec.resources.requests.storage,
+                },
             },
             {
                 printLine: this.log.bind(this),

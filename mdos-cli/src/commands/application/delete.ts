@@ -29,13 +29,13 @@ export default class Delete extends Command {
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
 
-        if(!this.getConfig('FRAMEWORK_MODE')) {
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
             // Make sure we have a valid oauth2 cookie token
             // otherwise, collect it
             try {
                 await this.validateJwt()
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
         }
@@ -44,8 +44,8 @@ export default class Delete extends Command {
         let clientResponse
         try {
             clientResponse = await this.collectClientId(flags, 'What client do you want to delete an applications for?')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -53,8 +53,8 @@ export default class Delete extends Command {
         let appResponses
         try {
             appResponses = await this.api(`kube?target=applications&clientId=${clientResponse.clientId}`, 'get')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
         if (appResponses.data.length == 0) {
@@ -84,9 +84,9 @@ export default class Delete extends Command {
                 'delete'
             )
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

@@ -22,8 +22,8 @@ const terminalCommand = async (command, jsonResponse, cwdPath) => {
                     reject(new Error(stderr && stderr.trim().length > 0 ? stderr : 'An error occured'))
                 }
             })
-        } catch (error) {
-            reject(error)
+        } catch (err) {
+            reject(err)
         }
     })
 }
