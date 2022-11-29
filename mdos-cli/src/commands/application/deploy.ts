@@ -69,6 +69,10 @@ export default class Deploy extends Command {
             this.showError(err)
             process.exit(1)
         }
+
+        // Make sure app manifest is compatible
+        this.checkMDosManifestCompatible(appYaml)
+
         // Validate app schema
         if (!appYaml.schemaVersion || typeof appYaml.schemaVersion != 'string') {
             error('Missing schema version in your manifest (expected property: schemaVersion)')

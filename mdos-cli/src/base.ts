@@ -168,6 +168,25 @@ export default abstract class extends Command {
     }
 
     /**
+     * checkMDosManifestCompatible
+     * @param appYaml 
+     */
+    checkMDosManifestCompatible(appYaml: any) {
+        let FRAMEWORK_ONLY = this.getConfig('FRAMEWORK_ONLY')
+        if (FRAMEWORK_ONLY == undefined || FRAMEWORK_ONLY == null) {
+            error("Please set your mdos domain name using the command 'mdos configure api-endpoint http ://mdos-api.<your domain here>'")
+            process.exit(1)
+        }
+        if(FRAMEWORK_ONLY && (!appYaml.schemaVersion || !appYaml.schemaVersion.endsWith('-framework'))) {
+            error("This application does not have the proper schemaVersion for the target MDos platform")
+            process.exit(1)
+        } else if(!FRAMEWORK_ONLY && (!appYaml.schemaVersion || appYaml.schemaVersion.endsWith('-framework'))) {
+            error("This application does not have the proper schemaVersion for the target MDos platform")
+            process.exit(1)
+        }
+    }
+
+    /**
      * validateJwt
      */
     async validateJwt(skipAuthMsg?: boolean, flags?: any) {
