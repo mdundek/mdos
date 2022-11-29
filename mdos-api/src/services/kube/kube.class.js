@@ -156,6 +156,7 @@ exports.Kube = class Kube extends KubeCore {
             let nsRwmPvcs = await this.app.get('kube').getWriteManyPvcs(params.query.namespace, params.query.name ? params.query.name : null)
             return nsRwmPvcs
         } else {
+            console.error("Malformed URI request. Parameters: ", params.query)
             throw new BadRequest('ERROR: Malformed API request')
         }
     }

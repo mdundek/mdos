@@ -15,7 +15,7 @@ const YAML = require('yaml')
  */
 export default class Ingress extends Command {
     static aliases = ['add:ingress', 'ingress:add', 'ingress:generate']
-    static description = 'Configure ingress rules to allow external acces to your component ports using hostnames'
+    static description = 'Configure ingress rules to allow external access to your component ports using hostnames'
 
     // ******* FLAGS *******
     static flags = {
@@ -86,7 +86,7 @@ export default class Ingress extends Command {
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                        return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
                     return true
                 },
             },
@@ -134,7 +134,7 @@ export default class Ingress extends Command {
                     if (this.getConfig('FRAMEWORK_ONLY')) return false
 
                     context(
-                        'NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
+                        'NOTE: Make sure you have configured your namespace specific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
                         false,
                         true
                     )

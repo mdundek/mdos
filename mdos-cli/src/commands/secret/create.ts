@@ -29,7 +29,7 @@ export default class Create extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Create)
 
-        let agregatedResponses: any = {}
+        let aggregatedResponses: any = {}
 
         // Make sure the API domain has been configured
         this.checkIfDomainSet()
@@ -84,11 +84,11 @@ export default class Create extends Command {
                 ],
             },
         ])
-        agregatedResponses = { ...agregatedResponses, ...responses }
+        aggregatedResponses = { ...aggregatedResponses, ...responses }
 
         let nsSecrets: { data: any[] }
         try {
-            nsSecrets = await this.api(`kube?target=secrets&namespace=${agregatedResponses.namespace}`, 'get')
+            nsSecrets = await this.api(`kube?target=secrets&namespace=${aggregatedResponses.namespace}`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)
@@ -107,10 +107,10 @@ export default class Create extends Command {
                 },
             },
         ])
-        agregatedResponses = { ...agregatedResponses, ...responses }
+        aggregatedResponses = { ...aggregatedResponses, ...responses }
 
         // docker config secret
-        if (agregatedResponses.type == 'kubernetes.io/dockerconfigjson') {
+        if (aggregatedResponses.type == 'kubernetes.io/dockerconfigjson') {
             responses = await inquirer.prompt([
                 {
                     name: 'registry',
@@ -140,10 +140,10 @@ export default class Create extends Command {
                     },
                 },
             ])
-            agregatedResponses = { ...agregatedResponses, ...responses }
+            aggregatedResponses = { ...aggregatedResponses, ...responses }
         }
         // TLS secret
-        else if (agregatedResponses.type == 'kubernetes.io/tls') {
+        else if (aggregatedResponses.type == 'kubernetes.io/tls') {
             responses = await inquirer.prompt([
                 {
                     name: 'crt',
@@ -170,7 +170,7 @@ export default class Create extends Command {
             responses.crt = fs.readFileSync(responses.crt, 'utf8')
             responses.key = fs.readFileSync(responses.key, 'utf8')
 
-            agregatedResponses = { ...agregatedResponses, ...responses }
+            aggregatedResponses = { ...aggregatedResponses, ...responses }
         }
 
         if (!this.getConfig('FRAMEWORK_ONLY')) {
@@ -185,16 +185,16 @@ export default class Create extends Command {
         }
 
         console.log()
-        if (agregatedResponses.type == 'kubernetes.io/tls') {
+        if (aggregatedResponses.type == 'kubernetes.io/tls') {
             CliUx.ux.action.start('Creating TLS secret')
             try {
                 await this.api(`kube`, 'post', {
                     type: 'tls-secret',
-                    namespace: agregatedResponses.namespace,
-                    name: agregatedResponses.name,
+                    namespace: aggregatedResponses.namespace,
+                    name: aggregatedResponses.name,
                     data: {
-                        'tls.crt': agregatedResponses.crt,
-                        'tls.key': agregatedResponses.key,
+                        'tls.crt': aggregatedResponses.crt,
+                        'tls.key': aggregatedResponses.key,
                     },
                 })
                 CliUx.ux.action.stop()
@@ -203,22 +203,22 @@ export default class Create extends Command {
                 this.showError(err)
                 process.exit(1)
             }
-        } else if (agregatedResponses.type == 'kubernetes.io/dockerconfigjson') {
+        } else if (aggregatedResponses.type == 'kubernetes.io/dockerconfigjson') {
             CliUx.ux.action.start('Creating Docker secret')
             try {
                 const dockerAuthObj: any = {
                     auths: {},
                 }
-                dockerAuthObj.auths[agregatedResponses.registry] = {
-                    username: agregatedResponses.username,
-                    password: agregatedResponses.password,
-                    auth: Buffer.from(`${agregatedResponses.username}:${agregatedResponses.password}`, 'utf-8').toString('base64'),
+                dockerAuthObj.auths[aggregatedResponses.registry] = {
+                    username: aggregatedResponses.username,
+                    password: aggregatedResponses.password,
+                    auth: Buffer.from(`${aggregatedResponses.username}:${aggregatedResponses.password}`, 'utf-8').toString('base64'),
                 }
 
                 await this.api(`kube`, 'post', {
                     type: 'docker-secret',
-                    namespace: agregatedResponses.namespace,
-                    name: agregatedResponses.name,
+                    namespace: aggregatedResponses.namespace,
+                    name: aggregatedResponses.name,
                     data: {
                         '.dockerconfigjson': JSON.stringify(dockerAuthObj),
                     },

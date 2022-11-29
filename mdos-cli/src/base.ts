@@ -402,9 +402,8 @@ export default abstract class extends Command {
      * @param err 
      * @param exit 
      */
-    showBusyError(msg?:any, err?:any, exit?:boolean) {
+    showBusyError(msg?:any, err?:any) {
         CliUx.ux.action.stop(chalk.red(msg ? msg : 'error'))
         if(err) this.showError(err)
-        if(exit) process.exit(1)
     }
 }

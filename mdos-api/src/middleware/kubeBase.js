@@ -1278,7 +1278,7 @@ class KubeBase extends KubeBaseConstants {
     async _getAppPodLogs(namespace, appName, podResponse) {
         const podLogs = {}
         if (podResponse.status.phase != 'Pending') {
-            const initContainerNames = podResponse.spec.initContainers.map((c) => c.name).filter((n) => n != 'istio-init')
+            const initContainerNames = podResponse.spec.initContainers ? podResponse.spec.initContainers.map((c) => c.name).filter((n) => n != 'istio-init') : []
             const containerNames = podResponse.spec.containers.map((c) => c.name).filter((n) => n != 'istio-proxy')
 
             for (let icname of initContainerNames) {

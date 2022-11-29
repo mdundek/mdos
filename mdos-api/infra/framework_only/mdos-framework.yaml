@@ -162,26 +162,6 @@ spec:
           image: "mdundek/mdos-api:latest"
           imagePullPolicy: Always
           env:
-            - name: RABBIT_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq-cluster-default-user
-                  key: port
-            - name: RABBIT_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq-cluster-default-user
-                  key: host
-            - name: RABBIT_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq-cluster-default-user
-                  key: username
-            - name: RABBIT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq-cluster-default-user
-                  key: password
             - name: GEN_HELM_PATH_PATH
               valueFrom:
                 configMapKeyRef:

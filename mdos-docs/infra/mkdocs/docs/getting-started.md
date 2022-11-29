@@ -350,10 +350,10 @@ FROM node:16
 WORKDIR /usr/src/app
 
 # Bundle app source
-COPY ./server.js .
+COPY ./index.js .
 
 EXPOSE 8080
-CMD [ "node", "server.js" ]
+CMD [ "node", "index.js" ]
 ```
 
 Ok, we have an application ready to use now. Next, we need to tell our `mdos` application that we want to expose port `8080`, and set up an ingress config to expose it outside of the cluster using the hostname `hello-world.mydomain.com`.

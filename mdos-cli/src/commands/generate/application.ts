@@ -88,7 +88,7 @@ export default class Application extends Command {
             fs.writeFileSync(
                 path.join(mdosAppFile, 'mdos.yaml'),
                 YAML.stringify({
-                    schemaVersion: 'v1',
+                    schemaVersion: this.getConfig('FRAMEWORK_ONLY') ? 'v1-framework' : 'v1',
                     tenantName: flags.tenantName ? flags.tenantName : responses.tenantName,
                     appName: flags.applicationName ? flags.applicationName : responses.applicationName,
                     uuid: `${nanoid()}-${nanoid()}`,
@@ -100,17 +100,19 @@ export default class Application extends Command {
             process.exit(1)
         }
 
-        // Create app volumes folder
-        const volumesFolder = path.join(mdosAppFile, 'volumes')
-        try {
-            fs.mkdirSync(volumesFolder, { recursive: true })
-            fs.writeFileSync(
-                path.join(volumesFolder, 'README.md'),
-                '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
-            )
-        } catch (err) {
-            this.showError(err)
-            process.exit(1)
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
+            // Create app volumes folder
+            const volumesFolder = path.join(mdosAppFile, 'volumes')
+            try {
+                fs.mkdirSync(volumesFolder, { recursive: true })
+                fs.writeFileSync(
+                    path.join(volumesFolder, 'README.md'),
+                    '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
+                )
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
         }
     }
 }

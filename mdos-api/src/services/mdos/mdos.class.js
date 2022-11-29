@@ -63,7 +63,7 @@ exports.Mdos = class Mdos extends MdosCore {
             if (!valuesYaml.schemaVersion || typeof valuesYaml.schemaVersion != 'string') {
                 throw new BadRequest('ERROR: Missing schema version in your manifest (expected property: schemaVersion)')
             }
-            const validationErrors = this.app.get('schemaValidator')[valuesYaml.schemaVersion].instance.validate(valuesYaml)
+            const validationErrors = this.app.get('schemaValidator')[valuesYaml.schemaVersion.indexOf('-') == -1 ? valuesYaml.schemaVersion : valuesYaml.schemaVersion.substring(0, valuesYaml.schemaVersion.indexOf('-'))].instance.validate(valuesYaml)
             if (validationErrors.length > 0) {
                 throw new BadRequest(validationErrors.map((e) => e.stack).join('\n'))
             }

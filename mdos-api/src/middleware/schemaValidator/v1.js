@@ -20,7 +20,7 @@ class SchemaV1 {
             id: '/MdosApplication',
             type: 'object',
             properties: {
-                schemaVersion: { type: 'string', enum: ['v1'] },
+                schemaVersion: { type: 'string', enum: ['v1', 'v1-framework'] },
                 tenantName: {
                     type: 'string',
                     pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
@@ -50,6 +50,7 @@ class SchemaV1 {
                             tag: { type: 'string' },
                             registry: { type: 'string' },
                             publicRegistry: { type: 'boolean' },
+                            imagePullPolicy: { type: 'string', enum: ['Always', 'IfNotPresent', 'Never'] },
                             imagePullSecrets: {
                                 type: 'array',
                                 items: {

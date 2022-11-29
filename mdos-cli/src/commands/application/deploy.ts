@@ -20,7 +20,7 @@ export default class Deploy extends Command {
 
     // ******* FLAGS *******
     static flags = {
-        username: Flags.string({ char: 'u', description: 'Mdos username' }),
+        username: Flags.string({ char: 'u', description: 'MDos username' }),
         password: Flags.string({ char: 'p', description: 'MDos password' }),
     }
     // *********************
@@ -549,7 +549,6 @@ export default class Deploy extends Command {
     showAppLogs(logs: any) {
         const logKeys = Object.keys(logs)
         if (logs && logKeys.length > 0) {
-            console.log()
             console.log(chalk.yellow.dim('Application logs:'))
             logKeys.forEach((containerRefString, index) => {
                 if (index > 0) {
@@ -560,7 +559,7 @@ export default class Deploy extends Command {
                 const containerRefArray = containerRefString.split('::')
                 console.log(chalk.cyan('Component:'), containerRefArray[1])
                 console.log(chalk.cyan('Container:'), containerRefArray[2])
-                console.log(chalk.cyan('Logs:     '), chalk.grey(logs[containerRefString].split('\n').join('\n           ')))
+                console.log(chalk.cyan('Logs:     '), logs[containerRefString].trim().length == 0 ? 'n/a' : chalk.grey(logs[containerRefString].split('\n').join('\n           ')))
                 console.log()
             })
         }

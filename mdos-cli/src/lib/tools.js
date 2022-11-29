@@ -174,9 +174,9 @@ const extractErrorMessage = (error, all) => {
         let mainErrMessage
         if(!all) mainErrMessage = errorMsg.filter(msg => msg.indexOf("ERROR: ") == 0).map(msg => msg.substring(7))
         else mainErrMessage = errorMsg.map(msg => msg)
-        return mainErrMessage.length > 0 ? mainErrMessage.join('\n') : "An unknown server error occured"
+        return mainErrMessage.length > 0 ? mainErrMessage.join('\n') : "An unknown server error occurred"
     } else {
-        return 'An unknown error occured!'
+        return 'An unknown error occurred!'
     }
 }
 
@@ -313,7 +313,7 @@ const buildPushComponent = async (userInfo, regCreds, appComp, root, tenantName)
     } catch (err) {
         CliUx.ux.action.stop('error')
         error('Could not build application:', false, true)
-        context(extractErrorMessage(err), true)
+        context(extractErrorMessage(err, true), true, true)
         process.exit(1)
     }
 
@@ -351,7 +351,7 @@ const buildPushComponent = async (userInfo, regCreds, appComp, root, tenantName)
     } catch (err) {
         CliUx.ux.action.stop('error')
         error('Could not build application:', false, true)
-        context(extractErrorMessage(err), true)
+        context(extractErrorMessage(err, true), true, true)
         process.exit(1)
     }
 

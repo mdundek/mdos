@@ -18,6 +18,10 @@ rm -rf kubectl
 rm -rf mhc-generic
 
 docker push mdundek/mdos-api:latest
+if [ $? != 0 ]; then
+    echo "Could not push image to registry"
+    exit 1
+fi
 
 cd $_DIR
 kubectl apply -f mdos-framework.yaml -n mdos
