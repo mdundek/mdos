@@ -7,7 +7,8 @@ const errors = require('@feathersjs/errors')
  */
 module.exports = function () {
     return async (context) => {
-        console.log(context)
+        // If request is to get API mode, we allow it
+        if(context.method == 'get' && context.path == 'mdos' && context.id == 'api-mode') return context
         // Is auth disabled?
         if (process.env.NO_ADMIN_AUTH == 'true' || context.app.get("mdos_framework_only")) return context
         if (context.params.provider != 'rest')
