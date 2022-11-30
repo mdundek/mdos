@@ -25,7 +25,7 @@ fi
 
 cd ..
 
-echo "li14ebe13" | docker login registry.$DOMAIN --username mdundek --password-stdin
+echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-stdin
 
 docker build -t registry.$DOMAIN/mdos-broker:latest .
 docker push registry.$DOMAIN/mdos-broker:latest
