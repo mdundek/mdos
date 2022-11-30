@@ -19,7 +19,6 @@ class BrokerServerBase {
      * @param {*} socketId 
      */
     async _resetHeartbeatTimeout(socketId) {
-        console.log("Incoming heartbeat")
         if(this.connections[socketId]) {
             console.log("Heartbeat check timeout clear:", socketId)
             if(this.connections[socketId].heartbeatTimeout) {

@@ -54,7 +54,7 @@ app.configure(
           }.bind(this, socket.id));
 
           // On client socket heartbeat
-          socket.on("heartbeat", async function (socketId) {
+          socket.on("brokerHeartbeat", async function (socketId) {
               await app.get("brokerServer").heartbeat(socketId)
           }.bind(this, socket.id));
 
