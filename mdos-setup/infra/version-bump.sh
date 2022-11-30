@@ -31,9 +31,9 @@ elif [ "$REPO_NAME" != "cli" ] && [ "$REPO_NAME" != "api" ] && [ "$REPO_NAME" !=
   error 'Invalid repo name '$REPO_NAME'. Needs to be "cli", "api" or "broker"'
   exit 1
 else
-  if [ "$REPO_NAME" != "cli" ]; then
+  if [ "$REPO_NAME" == "cli" ]; then
     REPO_NAME=mdos-cli
-  elif [ "$REPO_NAME" != "broker" ]; then
+  elif [ "$REPO_NAME" == "broker" ]; then
     REPO_NAME=mdos-broker
   else
     REPO_NAME=mdos-api
@@ -108,7 +108,7 @@ if [ -z $FORCE ]; then
   fi
   echo ""
 else
-  echo "Upgrading $REPO_NAME from version $CURRENT_APP_VERSION to version $NEW_APP_VERSION"
+  info "Upgrading $REPO_NAME from version $CURRENT_APP_VERSION to version $NEW_APP_VERSION"
 fi
 
 (
