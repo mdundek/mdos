@@ -59,13 +59,6 @@ export default class Ingress extends Command {
             process.exit(1)
         }
 
-        if (!targetCompYaml.services || targetCompYaml.services.length == 0) {
-            warn('You have not declared any usable services for your application component')
-            process.exit(1)
-        }
-
-        const allPortsArray = targetCompYaml.services.map((s: { ports: any }) => s.ports).flat()
-
         type Ingress = {
             name: string
             matchHost: string
@@ -78,7 +71,8 @@ export default class Ingress extends Command {
         // Update ingress
         if (!targetCompYaml.ingress) targetCompYaml.ingress = []
 
-        let responses = await inquirer.prompt([
+        let allResponses:any = {}
+        let responsesBase = await inquirer.prompt([
             {
                 type: 'input',
                 name: 'name',
@@ -116,15 +110,89 @@ export default class Ingress extends Command {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
                 },
-            },
-            {
-                type: 'list',
-                name: 'port',
-                message: 'What service target port should this traffic be redirected to?',
-                choices: allPortsArray.map((p: { port: any }) => {
-                    return { name: p.port }
-                }),
-            },
+            }
+        ])
+        allResponses = {...responsesBase}
+
+        // Select target service port
+        let createNewService = false
+        if(targetCompYaml.services && targetCompYaml.services.length > 0) {
+            const allPortsArray = targetCompYaml.services.map((s: { ports: any }) => s.ports).flat()
+            const servicePortSelect = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'port',
+                    message: 'What service target port should this traffic be redirected to?',
+                    choices: [...allPortsArray.map((p: { port: any }) => {
+                        return { name: p.port, value: p.port }
+                    }), ...[new inquirer.Separator(), {name: "Declare a different port for this ingress", value: "__NEW__"}]]
+                }
+            ])
+            if(servicePortSelect.port == "__NEW__") createNewService = true
+            else allResponses.port = servicePortSelect.port
+        } else {
+            context("There are no services declared for this component. You need to create a service for this ingress.")
+            createNewService = true
+        }
+
+        // Need a new service for this ingress
+        if(createNewService) {
+            let port
+            let svcname: any
+            let serviceResponses = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'port',
+                    message: 'Specify a port number on which your application needs to be accessible on for your ingress:',
+                    validate: (value: string) => {
+                        if (value.trim().length < 2) return 'Invalid port'
+                        if (this.isPositiveInteger(value)) {
+                            return targetCompYaml.ports && targetCompYaml.ports.find((p: { port: number }) => p.port == parseInt(value))
+                                ? 'Port already declared'
+                                : true
+                        } else {
+                            return 'Invalid port'
+                        }
+                    },
+                },
+                {
+                    type: 'input',
+                    name: 'name',
+                    message: 'Enter a name for the new service:',
+                    validate: (value: string) => {
+                        if (value.trim().length == 0) return 'Mandatory field'
+                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                            return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
+                        return true
+                    },
+                }
+            ])
+            port = parseInt(serviceResponses.port)
+            svcname = serviceResponses.name
+
+            // Update ports
+            if (!targetCompYaml.services) targetCompYaml.services = []
+
+            const existingsvc = targetCompYaml.services.find((s: { name: any }) => s.name == svcname)
+            if (existingsvc) {
+                existingsvc.ports.push({
+                    port: port,
+                })
+            } else {
+                targetCompYaml.services.push({
+                    name: svcname,
+                    ports: [
+                        {
+                            port: port,
+                        },
+                    ],
+                })
+            }
+            allResponses.port = port
+        }
+
+        // Now wrap up the remaining questions
+        let responsesFinalize = await inquirer.prompt([
             {
                 type: 'list',
                 name: 'type',
@@ -135,6 +203,11 @@ export default class Ingress extends Command {
 
                     context(
                         'NOTE: Make sure you have configured your namespace specific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).',
+                        false,
+                        true
+                    )
+                    context(
+                        'For further details, refer to the documentation available here: https://mdundek.github.io/mdos/advanced-resources/#managing-your-domain-specific-ingress-gateways.',
                         false,
                         true
                     )
@@ -155,6 +228,7 @@ export default class Ingress extends Command {
                 ],
             },
         ])
+        allResponses = {...allResponses, responsesFinalize}
 
         // If in Framework mode, we need to ask about TLS certificates
         if (this.getConfig('FRAMEWORK_ONLY')) {
@@ -178,9 +252,9 @@ export default class Ingress extends Command {
                     },
                 ],
             })
-            responses.trafficType = responseFrameworkMode.trafficType
+            allResponses.trafficType = responseFrameworkMode.trafficType
 
-            if (responses.trafficType == 'HTTPS_SIMPLE') {
+            if (allResponses.trafficType == 'HTTPS_SIMPLE') {
                 // Collect tls secrets
                 let tlsSecretResponse: { data: any[] }
                 try {
@@ -205,28 +279,28 @@ export default class Ingress extends Command {
                         }
                     }),
                 })
-                responses = { ...responses, ...responseTlsSecret }
+                allResponses = { ...allResponses, ...responseTlsSecret }
             }
 
             const ing: Ingress = {
-                name: responses.name,
-                matchHost: responses.host,
-                targetPort: responses.port,
-                trafficType: responses.trafficType,
+                name: allResponses.name,
+                matchHost: allResponses.host,
+                targetPort: allResponses.port,
+                trafficType: allResponses.trafficType,
             }
-            if (responses.trafficType == 'HTTPS_SIMPLE') ing.tlsSecretName = responses.tlsSecretName
-            if (responses.subPath) ing.subPath = responses.subPath
+            if (allResponses.trafficType == 'HTTPS_SIMPLE') ing.tlsSecretName = allResponses.tlsSecretName
+            if (allResponses.subPath) ing.subPath = allResponses.subPath
 
             targetCompYaml.ingress.push(ing)
         } else {
             const ing: Ingress = {
-                name: responses.name,
-                matchHost: responses.host,
-                targetPort: responses.port,
-                trafficType: responses.type,
+                name: allResponses.name,
+                matchHost: allResponses.host,
+                targetPort: allResponses.port,
+                trafficType: allResponses.type,
             }
 
-            if (responses.subPath) ing.subPath = responses.subPath
+            if (allResponses.subPath) ing.subPath = allResponses.subPath
 
             targetCompYaml.ingress.push(ing)
         }

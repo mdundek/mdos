@@ -310,10 +310,14 @@ export default abstract class extends Command {
             }
             clientResponses = { clientId: targetClient.clientId, clientUuid: targetClient.id }
         } else {
+            const optionListItems = clientResponse.data.map((o: { clientId: any; id: any }) => {
+                return { name: `Namespace: ${o.clientId}`, value: o.id }
+            })
             if (includeAll) {
-                clientResponse.data.push({
-                    clientId: '-all available to me-',
-                    id: '*',
+                optionListItems.push(new inquirer.Separator())
+                optionListItems.push({
+                    name: 'All namespaces available to me',
+                    value: '*',
                 })
             }
 
@@ -322,9 +326,7 @@ export default abstract class extends Command {
                     name: 'clientUuid',
                     message: question,
                     type: 'list',
-                    choices: clientResponse.data.map((o: { clientId: any; id: any }) => {
-                        return { name: `Namespace: ${o.clientId}`, value: o.id }
-                    }),
+                    choices: optionListItems,
                 },
             ])
             if (clientResponses.clientUuid == '*') {

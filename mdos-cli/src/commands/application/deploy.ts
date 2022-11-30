@@ -136,10 +136,12 @@ export default class Deploy extends Command {
                 process.exit(1)
             }
 
-            // Sync volumes
-            let volSourcePath = path.join(appRootDir, 'volumes')
-            await lftp(volSourcePath, appYaml.appName, userInfo.data.lftpCreds)
-
+            // Sync volumes if necessary
+            if(appYaml.components.find((c:any) => c.volumes ? c.volumes.find((v:any) => v.syncVolume) : false)) {
+                let volSourcePath = path.join(appRootDir, 'volumes')
+                await lftp(volSourcePath, appYaml.appName, userInfo.data.lftpCreds)
+            }
+            
             // Build / push application
             for (let appComp of appYaml.components) {
                 if (!appComp.doNotBuild) {
@@ -298,9 +300,16 @@ export default class Deploy extends Command {
             // MDos registry, collect credentials if not done already
             else {
                 // mdos registry, take user info data
+                if(userCreds)
+                    this.regCreds = {
+                        username: userCreds.username,
+                        password: userCreds.password,
+                        registry: userInfo.data.registry
+                    }
                 if (!this.regCreds) {
                     context('To push your images to the mdos registry, you need to provide your mdos username and password first')
                     const regCreds = userCreds ? userCreds : await this.collectRegistryCredentials(flags)
+                    console.log()
                     regCreds.registry = userInfo.data.registry
                     return regCreds
                 } else {
