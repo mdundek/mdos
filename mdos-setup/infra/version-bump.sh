@@ -27,8 +27,8 @@ done
 if [ -z $REPO_NAME ]; then
   error 'Missing param --repo [cli/api]'
   exit 1
-elif [ "$REPO_NAME" != "cli" ] && [ "$REPO_NAME" != "api" ]; then
-  error 'Invalid repo name '$REPO_NAME'. Needs to be "cli" or "api"'
+elif [ "$REPO_NAME" != "cli" ] && [ "$REPO_NAME" != "api" ] && [ "$REPO_NAME" != "broker" ]; then
+  error 'Invalid repo name '$REPO_NAME'. Needs to be "cli", "api" or "broker"'
   exit 1
 else
   if [ "$REPO_NAME" != "cli" ]; then
