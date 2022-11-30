@@ -118,8 +118,8 @@ if [ ! -z $DO_DEPLOY ]; then
     rm -rf ./target_values.yaml
 
     POD_NAME=$(kubectl get pods -n mdos | grep "mdos-api" | grep "Running" | cut -d' ' -f 1)
-    BROKER_POD_NAME=$(kubectl get pods -n mdos | grep "mdos-broker" | grep "Running" | cut -d' ' -f 1)
-    kubectl logs $BROKER_POD_NAME -n mdos --follow
+    # BROKER_POD_NAME=$(kubectl get pods -n mdos | grep "mdos-broker" | grep "Running" | cut -d' ' -f 1)
+    kubectl logs $POD_NAME -n mdos --follow
 fi
 
 if [ ! -z $DO_RESTART ]; then

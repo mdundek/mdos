@@ -13,7 +13,6 @@ class BrokerSubscriptions {
     constructor(app) {
         this.app = app;
         this.brokerClient = app.get("brokerClient");
-
         this.workflowJobs = {}
     }
     

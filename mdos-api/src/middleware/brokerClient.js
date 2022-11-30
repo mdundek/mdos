@@ -67,7 +67,6 @@ class BrokerClient {
         }
     }
 
-    
     /**
      * subscribe
      * @param {*} topic 

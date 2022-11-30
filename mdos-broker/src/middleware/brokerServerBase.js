@@ -20,15 +20,11 @@ class BrokerServerBase {
      */
     async _resetHeartbeatTimeout(socketId) {
         if(this.connections[socketId]) {
-            console.log("Heartbeat check timeout clear:", socketId)
             if(this.connections[socketId].heartbeatTimeout) {
-                console.log("Clearing heartbeat timeout:", socketId)
                 clearTimeout(this.connections[socketId].heartbeatTimeout)
             }
-
             this.connections[socketId].heartbeatTimeout = setTimeout(async function(_socketId) {
                 try {
-                    console.log("Timeout triggered because no heartbeats for 20 sec:", _socketId)
                     await this._clearConnectionPendingEvents(_socketId)
                     await this._resetHeartbeatTimeout(_socketId)
                     await this._scheduleFireEventLoop()
