@@ -199,12 +199,7 @@ config:
 
         // Deploy oauth2-proxy instance for new provider
         if (!(await this.hasNamespace('oauth2-proxy'))) await this.createNamespace({ name: 'oauth2-proxy' })
-        try {
-            await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.2.7')
-        } catch (error) {
-            console.log("ERROR =>", error)
-            throw error
-        }
+        await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.2.7')
     }
 
     /**
