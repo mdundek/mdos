@@ -29,6 +29,8 @@ const KubeCore = require('../services/kube/kube.class.core')
             this.currentPendingJob = this.msg.rollbackWorkflow.find(job => job.status == "PENDING")
         }
 
+        console.log("INCOMING =>", this.currentPendingJob.topic)
+
         // Process job
         switch(this.currentPendingJob.topic) {
             case CHANNEL.JOB_K3S_CREATE_NAMESPACE:
@@ -59,7 +61,6 @@ const KubeCore = require('../services/kube/kube.class.core')
                 await this.uninstallOauthProvider();
                 break;
             case CHANNEL.JOB_K3S_ADD_ISTIO_OIDC_PROVIDER:
-                console.log("INCOMMING OIDC")
                 await this.addIstioOidcProvider();
                 break;
             case CHANNEL.JOB_K3S_REMOVE_ISTIO_OIDC_PROVIDER:
