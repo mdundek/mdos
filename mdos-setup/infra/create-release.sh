@@ -300,25 +300,25 @@ build_push_docker_hub() {
     bump_version_on_main_merge_to_release $_PATH $_CHART_PATH
 
     # Create release images and push to docker hub
-    build_push_docker_hub
+    # build_push_docker_hub
 
-    # Create new tag for version and publish to release
-    tag_and_publish_to_release
+    # # Create new tag for version and publish to release
+    # tag_and_publish_to_release
 
-    # Generate assets and publish all as new  release
-    gen_and_publish_release_and_assets
+    # # Generate assets and publish all as new  release
+    # gen_and_publish_release_and_assets
 
-    # Commit and push README file due to version bump
-    git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
-    if [ ! -z $GEN_CLI_BIN ]; then
-        git add mdos-cli/README.md > /dev/null 2>&1
-    fi
+    # # Commit and push README file due to version bump
+    # git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
+    # if [ ! -z $GEN_CLI_BIN ]; then
+    #     git add mdos-cli/README.md > /dev/null 2>&1
+    # fi
 
-    git checkout release > /dev/null 2>&1
-    git merge main --commit > /dev/null 2>&1
-    git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
-    git merge release --commit > /dev/null 2>&1
-    git push > /dev/null 2>&1
+    # git checkout release > /dev/null 2>&1
+    # git merge main --commit > /dev/null 2>&1
+    # git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
+    # git merge release --commit > /dev/null 2>&1
+    # git push > /dev/null 2>&1
 
     info "Release created for tag $CURRENT_APP_VERSION: $RELEASE_URL"
 )
