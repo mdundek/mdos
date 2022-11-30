@@ -37,6 +37,11 @@ This will:
 
 ---
 
+## Installation & Documentation
+
+The project documentation is hosted separately, you can access it [here](https://mdundek.github.io/mdos/)  
+Instructions on how to install the platform are also described there, please refer to [this](https://mdundek.github.io/mdos/installation/) page for more details.  
+
 > **Warning**
 > MDos is in under development at the moment, it should not be used in production yet. Before investing more sweat and tears into this, I want to make sure that there is interest from the community first.  
 > 
@@ -131,8 +136,3 @@ Therefore, build your applications using higher-level artifacts that will transl
 
 * Register Cert-Manager Issuers onto your cluster or namespace
 * Generate and manage certificates/secrets from your Issuers
-
-## Installation & Documentation
-
-The project documentation is hosted separately, you can access it [here](https://mdundek.github.io/mdos/)  
-Instructions on how to install the platform are also described there, please refer to [this](https://mdundek.github.io/mdos/installation/) page for more details.
