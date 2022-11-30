@@ -1,6 +1,6 @@
 {
     "name": "mdos-cli",
-    "version": "3.0.0",
+    "version": "1.6.2",
     "description": "mdos cli tool",
     "author": "Michael Dundek",
     "bin": {

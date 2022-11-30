@@ -25,7 +25,7 @@ while [ "$1" != "" ]; do
 done
 
 if [ -z $REPO_NAME ]; then
-  error 'Missing param --repo [cli/api]'
+  error 'Missing param --repo [cli/api/broker]'
   exit 1
 elif [ "$REPO_NAME" != "cli" ] && [ "$REPO_NAME" != "api" ] && [ "$REPO_NAME" != "broker" ]; then
   error 'Invalid repo name '$REPO_NAME'. Needs to be "cli", "api" or "broker"'
@@ -107,6 +107,8 @@ if [ -z $FORCE ]; then
     exit 0
   fi
   echo ""
+else
+  echo "Upgrading $REPO_NAME from version $CURRENT_APP_VERSION to version $NEW_APP_VERSION"
 fi
 
 (
@@ -187,6 +189,7 @@ fi
   else
       sed -i '/"version":/c\    "version": "'"$NEW_APP_VERSION"'",' $REPO_DIR/$REPO_NAME/package.json
   fi
+
   if [ "$REPO_NAME" == "mdos-cli" ]; then
     # Update auto install scripts for CLI
     if [ "$DISTRO" == "darwin" ]; then
