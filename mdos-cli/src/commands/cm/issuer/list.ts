@@ -89,19 +89,7 @@ export default class List extends Command {
                                 ? 'Ready'
                                 : 'Not ready'
                             : 'Not ready',
-                },
-                // message: {
-                //     header: 'MESSAGE',
-                //     minWidth: 10,
-                //     get: (row:any) => {
-                //         if(row.status) {
-                //             const condition = row.status.conditions.find((condition:any) => condition.type == "Ready")
-                //             return condition.message ? condition.message : ""
-                //         } else {
-                //             return "Pending"
-                //         }
-                //     },
-                // }
+                }
             },
             {
                 printLine: this.log.bind(this),

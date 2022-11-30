@@ -48,36 +48,19 @@ export default class List extends Command {
             process.exit(1)
         }
 
-        // Collect namespaces
-        let nsResponse
+        // Get client id & uuid
+        let clientResponse
         try {
-            nsResponse = await this.api(`kube?target=namespaces`, 'get')
+            clientResponse = await this.collectClientId(flags, 'Select namespace for which you wish to list Shared Volumes for:', true)
         } catch (err) {
             this.showError(err)
             process.exit(1)
         }
-        if (nsResponse.data.length == 0) {
-            error('No namespaces available. Did you create a new namespace yet (mdos ns create)?')
-            process.exit(1)
-        }
-
-        // Select target namespace
-        let response = await inquirer.prompt([
-            {
-                name: 'namespace',
-                message: 'Select namespace for which you wish to list Shared Volumes for:',
-                type: 'list',
-                choices: nsResponse.data.map((o: { name: any }) => {
-                    return { name: o.name }
-                }),
-            },
-        ])
-        agregatedResponses = { ...agregatedResponses, ...response }
-
+        
         // Get namespace shared volumes
         let volResponse
         try {
-            volResponse = await this.api(`kube?target=shared-volumes&namespace=${response.namespace}`, 'get')
+            volResponse = await this.api(`kube?target=shared-volumes&namespace=${clientResponse.clientId}`, 'get')
         } catch (err) {
             this.showError(err)
             process.exit(1)

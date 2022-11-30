@@ -1,5 +1,4 @@
 const errors = require('@feathersjs/errors')
-const jwt_decode = require('jwt-decode')
 
 /**
  * userFilterHook
@@ -202,7 +201,7 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
-    context.result = context.result.filter((secret) => jwtToken.resource_access[secret.metadata.namespace])
+    context.result = context.result.filter((secret) => !["longhorn-system", "mdos-registry", "keycloak", "istio-system", "kube-system"].includes(secret.metadata.namespace) && jwtToken.resource_access[secret.metadata.namespace])
     return context
 }
 
