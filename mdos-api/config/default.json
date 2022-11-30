@@ -12,5 +12,6 @@
     "authStrategies": [
       "keycloak"
     ]
-  }
+  },
+  "sqlite": "sqlite://api.sqlite"
 }

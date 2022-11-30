@@ -35,12 +35,21 @@ export default class CreateRole extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(CreateRole)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Not supported in framework only mode
+            error('This command is only available for MDos managed cluster deployments')
+            process.exit(1)
+        }
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -48,8 +57,8 @@ export default class CreateRole extends Command {
         let clientResponse
         try {
             clientResponse = await this.collectClientId(flags, 'Select a Client ID to create a Role for:')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -57,8 +66,8 @@ export default class CreateRole extends Command {
         let respClientRoles: { data: any[] }
         try {
             respClientRoles = await this.api(`keycloak?target=client-roles&realm=mdos&clientId=${clientResponse.clientId}`, 'get')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -109,9 +118,9 @@ export default class CreateRole extends Command {
                 ),
             })
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

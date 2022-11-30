@@ -1,10 +1,9 @@
 const { Unavailable } = require('@feathersjs/errors')
 const OidcProviderCore = require('./oidc-provider.class.core')
-const { CHANNEL } = require('../../middleware/rb-broker/constant');
+const { CHANNEL } = require('../../middleware/brokerChannels')
 
 /* eslint-disable no-unused-vars */
 exports.OidcProvider = class OidcProvider extends OidcProviderCore {
-
     /**
      * Creates an instance of OidcProvider.
      * @param {*} options
@@ -21,7 +20,7 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
      *
      * @param {*} params
      * @param {*} context
-     * @return {*} 
+     * @return {*}
      */
     async find(params, context) {
         const oidcProviders = await this.app.get('kube').getOidcProviders()
@@ -33,7 +32,7 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
      *
      * @param {*} body
      * @param {*} params
-     * @return {*} 
+     * @return {*}
      */
     async create(body, params) {
         if (body.type == 'keycloak') {
@@ -49,87 +48,86 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
             // Kick off event driven workflow
             const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY, {
                 context: {
-                    oidcTarget: "keycloak",
+                    oidcTarget: 'keycloak',
                     realm: body.realm,
                     providerName: body.data.name,
                     kcClientId: body.data.clientId,
-                    rollback: false
+                    rollback: false,
                 },
                 workflow: [
                     {
                         topic: CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY,
-                        status: "PENDING",
-                        milestone: 1
+                        status: 'PENDING',
+                        milestone: 1,
                     },
                     {
                         topic: CHANNEL.JOB_K3S_ADD_ISTIO_OIDC_PROVIDER,
-                        status: "PENDING",
-                        milestone: 2
-                    }
+                        status: 'PENDING',
+                        milestone: 2,
+                    },
                 ],
                 rollbackWorkflow: [
                     {
                         topic: CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY,
-                        status: "PENDING",
-                        milestone: 1
-                    }
-                ]
+                        status: 'PENDING',
+                        milestone: 1,
+                    },
+                ],
             })
 
             // Check if error occured or not
-            if(result.context.rollback) {
+            if (result.context.rollback) {
                 console.error(result.workflow)
-                const errorJob = result.workflow.find(job => job.status  == "ERROR")
-                if(errorJob && errorJob.errorMessage) {
-                    throw new Error("ERROR: " + errorJob.errorMessage)
+                const errorJob = result.workflow.find((job) => job.status == 'ERROR')
+                if (errorJob && errorJob.errorMessage) {
+                    throw new Error('ERROR: ' + errorJob.errorMessage)
                 } else {
-                    throw new Error("ERROR: An unknown error occured")
+                    throw new Error('ERROR: An unknown error occured')
                 }
             }
-        }
-        else if (body.type == 'google') {
+        } else if (body.type == 'google') {
             // Make sure OIDC provider does not already exist
             await this.ensureProviderNotDeclared(body.data.name)
 
             // Kick off event driven workflow
             const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY, {
                 context: {
-                    oidcTarget: "google",
+                    oidcTarget: 'google',
                     providerName: body.data.name,
                     googleClientId: body.data.googleClientId,
                     googleClientSecret: body.data.googleClientSecret,
                     redirectUris: body.data.redirectUris,
-                    rollback: false
+                    rollback: false,
                 },
                 workflow: [
                     {
                         topic: CHANNEL.JOB_K3S_INSTALL_OAUTH_PROXY,
-                        status: "PENDING",
-                        milestone: 1
+                        status: 'PENDING',
+                        milestone: 1,
                     },
                     {
                         topic: CHANNEL.JOB_K3S_ADD_ISTIO_OIDC_PROVIDER,
-                        status: "PENDING",
-                        milestone: 2
-                    }
+                        status: 'PENDING',
+                        milestone: 2,
+                    },
                 ],
                 rollbackWorkflow: [
                     {
                         topic: CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY,
-                        status: "PENDING",
-                        milestone: 1
-                    }
-                ]
+                        status: 'PENDING',
+                        milestone: 1,
+                    },
+                ],
             })
 
             // Check if error occured or not
-            if(result.context.rollback) {
+            if (result.context.rollback) {
                 console.error(result.workflow)
-                const errorJob = result.workflow.find(job => job.status  == "ERROR")
-                if(errorJob && errorJob.errorMessage) {
-                    throw new Error("ERROR: " + errorJob.errorMessage)
+                const errorJob = result.workflow.find((job) => job.status == 'ERROR')
+                if (errorJob && errorJob.errorMessage) {
+                    throw new Error('ERROR: ' + errorJob.errorMessage)
                 } else {
-                    throw new Error("ERROR: An unknown error occured")
+                    throw new Error('ERROR: An unknown error occured')
                 }
             }
         } else {
@@ -143,7 +141,7 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
      *
      * @param {*} id
      * @param {*} params
-     * @return {*} 
+     * @return {*}
      */
     async remove(id, params) {
         await this.oidcProviderCheck(id)
@@ -152,31 +150,31 @@ exports.OidcProvider = class OidcProvider extends OidcProviderCore {
         const result = await this.app.get('subscriptionManager').workflowCall(CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY, {
             context: {
                 providerName: id,
-                rollback: false
+                rollback: false,
             },
             workflow: [
                 {
                     topic: CHANNEL.JOB_K3S_UNINSTALL_OAUTH_PROXY,
-                    status: "PENDING",
-                    milestone: 1
+                    status: 'PENDING',
+                    milestone: 1,
                 },
                 {
                     topic: CHANNEL.JOB_K3S_REMOVE_ISTIO_OIDC_PROVIDER,
-                    status: "PENDING",
-                    milestone: 2
-                }
+                    status: 'PENDING',
+                    milestone: 2,
+                },
             ],
-            rollbackWorkflow: []
+            rollbackWorkflow: [],
         })
 
         // Check if error occured or not
-        if(result.context.rollback) {
+        if (result.context.rollback) {
             console.error(result.workflow)
-            const errorJob = result.workflow.find(job => job.status  == "ERROR")
-            if(errorJob && errorJob.errorMessage) {
-                throw new Error("ERROR: " + errorJob.errorMessage)
+            const errorJob = result.workflow.find((job) => job.status == 'ERROR')
+            if (errorJob && errorJob.errorMessage) {
+                throw new Error('ERROR: ' + errorJob.errorMessage)
             } else {
-                throw new Error("ERROR: An unknown error occured")
+                throw new Error('ERROR: An unknown error occured')
             }
         }
 

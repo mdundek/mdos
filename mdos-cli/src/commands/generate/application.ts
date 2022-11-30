@@ -2,7 +2,7 @@ import { Flags } from '@oclif/core'
 import Command from '../../base'
 import { customAlphabet } from 'nanoid'
 const inquirer = require('inquirer')
-const { warn, filterQuestions } = require('../../lib/tools')
+const { success, warn, filterQuestions } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -25,48 +25,47 @@ export default class Application extends Command {
         tenantName: Flags.string({ char: 't', description: 'A tenant name that this application belongs to' }),
         applicationName: Flags.string({ char: 'n', description: 'An application name' }),
     }
-    // *********************
-
-    // ***** QUESTIONS *****
-    static questions = [
-        {
-            group: 'application',
-            type: 'input',
-            name: 'applicationName',
-            message: 'Enter a application name:',
-            validate: (value: string) => {
-                if (value.trim().length == 0) return 'Mandatory field'
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                if (fs.existsSync(path.join(process.cwd(), value))) {
-                    return 'A folder with this name already exists in this directory'
-                }
-                return true
-            },
-        },
-        {
-            group: 'application',
-            type: 'input',
-            name: 'tenantName',
-            message: 'Enter a tenant name that this application belongs to:',
-            validate: (value: string) => {
-                if (value.trim().length == 0) return 'Mandatory field'
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                    return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
-                return true
-            },
-        },
-    ]
-    // *********************
 
     // *********************
     // ******* MAIN ********
     // *********************
     public async run(): Promise<void> {
+        const questions = [
+            {
+                group: 'application',
+                type: 'input',
+                name: 'applicationName',
+                message: 'Enter a application name:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    if (fs.existsSync(path.join(process.cwd(), value))) {
+                        return 'A folder with this name already exists in this directory'
+                    }
+                    return true
+                },
+            },
+            {
+                group: 'application',
+                type: 'input',
+                name: 'tenantName',
+                message: this.getConfig('FRAMEWORK_ONLY')
+                    ? 'Enter a target namespace name for this application:'
+                    : 'Enter a tenant name that this application belongs to:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                    return true
+                },
+            },
+        ]
+
         const { flags } = await this.parse(Application)
 
         // Collect info
-        let q = filterQuestions(Application.questions, 'application', flags)
+        let q = filterQuestions(questions, 'application', flags)
         let responses = q.length > 0 ? await inquirer.prompt(q) : {}
 
         // Make sure app folder does not exist yet
@@ -79,8 +78,8 @@ export default class Application extends Command {
         // Create app folder
         try {
             fs.mkdirSync(mdosAppFile, { recursive: true })
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -89,29 +88,32 @@ export default class Application extends Command {
             fs.writeFileSync(
                 path.join(mdosAppFile, 'mdos.yaml'),
                 YAML.stringify({
-                    schemaVersion: 'v1',
+                    schemaVersion: this.getConfig('FRAMEWORK_ONLY') ? 'v1-framework' : 'v1',
                     tenantName: flags.tenantName ? flags.tenantName : responses.tenantName,
                     appName: flags.applicationName ? flags.applicationName : responses.applicationName,
                     uuid: `${nanoid()}-${nanoid()}`,
                     components: [],
                 })
             )
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
-        // Create app volumes folder
-        const volumesFolder = path.join(mdosAppFile, 'volumes')
-        try {
-            fs.mkdirSync(volumesFolder, { recursive: true })
-            fs.writeFileSync(
-                path.join(volumesFolder, 'README.md'),
-                '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
-            )
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
+            // Create app volumes folder
+            const volumesFolder = path.join(mdosAppFile, 'volumes')
+            try {
+                fs.mkdirSync(volumesFolder, { recursive: true })
+                fs.writeFileSync(
+                    path.join(volumesFolder, 'README.md'),
+                    '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
+                )
+                success("Application folder and mdos.yaml file created")
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
         }
     }
 }

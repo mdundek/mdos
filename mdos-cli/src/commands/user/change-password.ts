@@ -28,12 +28,21 @@ export default class ChangePassword extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(ChangePassword)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Not supported in framework only mode
+            error('This command is only available for MDos managed cluster deployments')
+            process.exit(1)
+        }
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -51,11 +60,11 @@ export default class ChangePassword extends Command {
                 name: 'passwordConfirm',
                 message: 'Confirm password:',
                 validate: (value: { trim: () => { (): any; new (): any; length: number } }) => (value.trim().length == 0 ? `Mandatory field` : true),
-            }
+            },
         ])
 
-        if(response.password !== response.passwordConfirm) {
-            error("Passwords do not match")
+        if (response.password !== response.passwordConfirm) {
+            error('Passwords do not match')
             process.exit(1)
         }
 
@@ -66,12 +75,12 @@ export default class ChangePassword extends Command {
                 type: 'change-password',
                 realm: 'mdos',
                 username: userToken.username,
-                password: response.password
+                password: response.password,
             })
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

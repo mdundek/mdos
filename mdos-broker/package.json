@@ -1,0 +1,64 @@
+{
+  "name": "mdos-broker",
+  "description": "MDos event broker",
+  "version": "1.6.0",
+  "homepage": "",
+  "private": true,
+  "main": "src",
+  "keywords": [
+    "feathers"
+  ],
+  "author": {
+    "name": "",
+    "email": ""
+  },
+  "contributors": [],
+  "bugs": {},
+  "directories": {
+    "lib": "src",
+    "test": "test/",
+    "config": "config/"
+  },
+  "engines": {
+    "node": "^18.0.0",
+    "npm": ">= 3.0.0"
+  },
+  "scripts": {
+    "test": "npm run lint && npm run jest",
+    "lint": "eslint src/. test/. --config .eslintrc.json --fix",
+    "dev": "nodemon src/",
+    "start": "node src/",
+    "jest": "jest --forceExit"
+  },
+  "standard": {
+    "env": [
+      "jest"
+    ],
+    "ignore": []
+  },
+  "dependencies": {
+    "@feathersjs/configuration": "^4.5.15",
+    "@feathersjs/errors": "^4.5.15",
+    "@feathersjs/express": "^4.5.15",
+    "@feathersjs/feathers": "^4.5.15",
+    "@feathersjs/socketio": "^4.5.15",
+    "@feathersjs/transport-commons": "^4.5.15",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "feathers-sequelize": "^6.4.0",
+    "helmet": "^5.1.1",
+    "nanoid": "^3.3.4",
+    "sequelize": "^6.25.8",
+    "serve-favicon": "^2.5.0",
+    "socket.io-client": "^2.5.0",
+    "sqlite3": "^5.1.2",
+    "winston": "^3.8.2"
+  },
+  "devDependencies": {
+    "axios": "^1.2.0",
+    "eslint": "^8.28.0",
+    "jest": "^29.3.1",
+    "nodemon": "^2.0.20"
+  }
+}

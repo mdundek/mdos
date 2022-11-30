@@ -1,3 +1,4 @@
+{{- if not .Values.ingressClassName }}
 {{- $appName := .Values.appName -}}
 
 {{- range .Values.components }}
@@ -46,7 +47,7 @@ spec:
     - mdos/https-gateway
       {{- end }}
   hosts:  
-    - {{ .matchHost | quote -}}
+    - {{ .matchHost }}
       {{- if eq .trafficType "http" }}
   http:
     - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
@@ -64,7 +65,7 @@ spec:
       - destination:
           port:
             number: {{ .targetPort }}
-          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}.{{ $.Release.Namespace }}.svc.cluster.local
+          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}
 
       {{- else if or (eq .trafficType "https") (eq .trafficType "tls") }}
   tls:
@@ -75,9 +76,10 @@ spec:
       - destination:
           port:
             number: {{ .targetPort }}
-          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}.{{ $.Release.Namespace }}.svc.cluster.local
+          host: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}
       {{- end }}
 
     {{- end }}
   {{- end }}
+{{- end }}
 {{- end }}

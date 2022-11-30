@@ -12,7 +12,7 @@ const { error, context, filterQuestions, mergeFlags, info } = require('../../lib
  * @extends {Command}
  */
 export default class Delete extends Command {
-    static aliases = ["volume:remove"]
+    static aliases = ['volume:remove']
     static description = 'Delete an existing Shared Volume'
 
     // ******* FLAGS *******
@@ -31,12 +31,21 @@ export default class Delete extends Command {
 
         let agregatedResponses: any = {}
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Not supported in framework only mode
+            error('This command is only available for MDos managed cluster deployments')
+            process.exit(1)
+        }
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -67,7 +76,7 @@ export default class Delete extends Command {
         agregatedResponses = { ...agregatedResponses, ...response }
 
         // Get namespace shared volumes
-        let volResponse:any
+        let volResponse: any
         try {
             volResponse = await this.api(`kube?target=shared-volumes&namespace=${agregatedResponses.namespace}`, 'get')
         } catch (err) {
@@ -75,8 +84,8 @@ export default class Delete extends Command {
             process.exit(1)
         }
 
-        if(volResponse.data.length == 0) {
-            error("No Shared Volumes found for this namespace")
+        if (volResponse.data.length == 0) {
+            error('No Shared Volumes found for this namespace')
             process.exit(1)
         }
 
@@ -93,12 +102,12 @@ export default class Delete extends Command {
                 name: {
                     header: 'NAME',
                     minWidth: 25,
-                    get: (row:any) => row.metadata.name,
+                    get: (row: any) => row.metadata.name,
                 },
                 size: {
                     header: 'SIZE',
-                    get: (row:any) => row.spec.resources.requests.storage,
-                }
+                    get: (row: any) => row.spec.resources.requests.storage,
+                },
             },
             {
                 printLine: this.log.bind(this),
@@ -126,11 +135,16 @@ export default class Delete extends Command {
         // Delete shared volume block
         CliUx.ux.action.start('Deleting Shared Volume')
         try {
-            await this.api(`kube/${volResponse.data[parseInt(agregatedResponses.sharedVolumeIndex)-1].metadata.name}?target=shared-volume&namespace=${agregatedResponses.namespace}`, 'delete')
+            await this.api(
+                `kube/${volResponse.data[parseInt(agregatedResponses.sharedVolumeIndex) - 1].metadata.name}?target=shared-volume&namespace=${
+                    agregatedResponses.namespace
+                }`,
+                'delete'
+            )
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

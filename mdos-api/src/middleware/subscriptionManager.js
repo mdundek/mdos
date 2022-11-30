@@ -1,7 +1,7 @@
 const K3SJobWorker = require('../workers/k3sJobWorker');
 const KCJobWorker = require('../workers/kcJobWorker');
 const FTPDJobWorker = require('../workers/ftpdJobWorker');
-const { CHANNEL } = require('./rb-broker/constant');
+const { CHANNEL } = require('./brokerChannels');
 const ErrorUtils = require('../libs/errorUtils');
 const { nanoid } = require('nanoid');
 
@@ -13,7 +13,6 @@ class BrokerSubscriptions {
     constructor(app) {
         this.app = app;
         this.brokerClient = app.get("brokerClient");
-
         this.workflowJobs = {}
     }
     
@@ -21,10 +20,6 @@ class BrokerSubscriptions {
      *  HandleEvent method to consume Job event dispatcher and manage K3S namespace
      */
     async start() {
-        // Initial broker connect
-        if(!this.brokerClient.connected)
-            await this.brokerClient.connect();
-        
         // Subscribe now
         await this.brokerClient.waitForConnection();
 
@@ -142,7 +137,7 @@ class BrokerSubscriptions {
         /*****************************************************
          * Events: WORKFLOW DONE
          *****************************************************/
-         await this.brokerClient.subscribe(CHANNEL.JOB_DONE, async (msg) => {
+        await this.brokerClient.subscribe(CHANNEL.JOB_DONE, async (msg) => {
             if(this.workflowJobs[msg.context.jobId]) {
                 clearTimeout(this.workflowJobs[msg.context.jobId].timeout)
                 if(this.workflowJobs[msg.context.jobId].rollback)
@@ -162,7 +157,7 @@ class BrokerSubscriptions {
      */
      workflowCall(topic, manifest) {
         return new Promise((resolve, reject) => {
-            if(!this.brokerClient.connected)
+            if(!this.brokerClient.isConnected())
                 reject(new Error("Broker not connected"))
 
             const jobId = nanoid()

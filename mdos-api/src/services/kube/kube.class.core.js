@@ -69,7 +69,6 @@ class KubeCore extends CommonCore {
                 }
             }
         }
-
         return apps
     }
 
@@ -158,8 +157,6 @@ class KubeCore extends CommonCore {
         return nsCreated
     }
 
-    
-
     /**
      * createKeycloakSaForNamespace
      * @param {*} realm
@@ -174,8 +171,6 @@ class KubeCore extends CommonCore {
         const roleObj = await this.app.get('keycloak').getClientRole(realm, clientId, 'registry-pull')
         await this.app.get('keycloak').createClientRoleBindingForUser(realm, clientUuid, saUsersObj.id, roleObj.id, 'registry-pull')
     }
-
-    
 }
 
 module.exports = KubeCore

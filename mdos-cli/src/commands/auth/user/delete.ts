@@ -39,12 +39,21 @@ export default class Delete extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Delete)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Not supported in framework only mode
+            error('This command is only available for MDos managed cluster deployments')
+            process.exit(1)
+        }
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -54,8 +63,8 @@ export default class Delete extends Command {
         let allUsers
         try {
             allUsers = await this.api('keycloak?target=users&realm=mdos', 'get')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -86,9 +95,9 @@ export default class Delete extends Command {
             try {
                 await this.api(`keycloak/${targetUser.id}?target=users&realm=mdos`, 'delete')
                 CliUx.ux.action.stop()
-            } catch (error) {
+            } catch (err) {
                 CliUx.ux.action.stop('error')
-                this.showError(error)
+                this.showError(err)
                 process.exit(1)
             }
         }

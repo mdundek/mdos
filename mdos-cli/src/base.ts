@@ -1,5 +1,5 @@
 // src/base.ts
-import { Command, Config } from '@oclif/core'
+import { Command, Config, CliUx } from '@oclif/core'
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
@@ -9,6 +9,7 @@ const axios = require('axios').default
 const { info, error, warn, filterQuestions, extractErrorCode, extractErrorMessage, getConsoleLineHandel } = require('./lib/tools')
 const SocketManager = require('./lib/socket.js')
 const pjson = require('../package.json')
+const chalk = require('chalk')
 
 type AxiosConfig = {
     timeout: number
@@ -49,7 +50,7 @@ export default abstract class extends Command {
                 JSON.stringify(
                     {
                         MDOS_API_URI: '',
-                        ACCESS_TOKEN: '',
+                        FRAMEWORK_ONLY: '',
                     },
                     null,
                     4
@@ -95,9 +96,28 @@ export default abstract class extends Command {
      * @param key
      * @param value
      */
-    setConfig(key: any, value: any) {
+    async setConfig(key: any, value: any) {
         this.configData[key] = value
         fs.writeFileSync(this.configPath, JSON.stringify(this.configData, null, 4))
+    }
+
+    /**
+     * setApiEndpoint
+     * @param value
+     */
+    async setApiEndpoint(value: any) {
+        const apiMode = await axios.get(`${value}/mdos/api-mode`)
+        this.configData.FRAMEWORK_ONLY = apiMode.data.mdos_framework_only
+        this.configData.MDOS_API_URI = value
+        fs.writeFileSync(this.configPath, JSON.stringify(this.configData, null, 4))
+    }
+
+    /**
+     * getCliVersion
+     * @returns 
+     */
+    getCliVersion() {
+        return pjson.version
     }
 
     /**
@@ -111,16 +131,23 @@ export default abstract class extends Command {
     async api(endpoint: string, method: string, body?: any, skipTokenInjection?: boolean) {
         const API_URI = this.checkIfDomainSet()
 
-        // Set oauth2 cookie if necessary
         const axiosConfig: AxiosConfig = {
             timeout: 0,
             httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         }
 
-        axiosConfig.headers = {
-            Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}`,
-            mdos_version: pjson.version,
+        // Set oauth2 cookie if necessary
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            axiosConfig.headers = {
+                mdos_version: pjson.version,
+            }
+        } else {
+            axiosConfig.headers = {
+                Authorization: `Bearer ${this.getConfig('ACCESS_TOKEN')}`,
+                mdos_version: pjson.version,
+            }
         }
+
         axiosConfig.timeout = 1000 * 60 * 10
 
         if (method.toLowerCase() == 'post') {
@@ -142,10 +169,29 @@ export default abstract class extends Command {
     checkIfDomainSet() {
         let API_URI = this.getConfig('MDOS_API_URI')
         if (!API_URI) {
-            error("Please set your mdos domain name using the command 'mdos configure api-endpoint https://mdos-api.<your domain here>'")
+            error("Please set your mdos domain name using the command 'mdos configure api-endpoint http ://mdos-api.<your domain here>'")
             process.exit(1)
         }
         return API_URI
+    }
+
+    /**
+     * checkMDosManifestCompatible
+     * @param appYaml 
+     */
+    checkMDosManifestCompatible(appYaml: any) {
+        let FRAMEWORK_ONLY = this.getConfig('FRAMEWORK_ONLY')
+        if (FRAMEWORK_ONLY == undefined || FRAMEWORK_ONLY == null) {
+            error("Please set your mdos domain name using the command 'mdos configure api-endpoint http ://mdos-api.<your domain here>'")
+            process.exit(1)
+        }
+        if(FRAMEWORK_ONLY && (!appYaml.schemaVersion || !appYaml.schemaVersion.endsWith('-framework'))) {
+            error("This application does not have the proper schemaVersion for the target MDos platform")
+            process.exit(1)
+        } else if(!FRAMEWORK_ONLY && (!appYaml.schemaVersion || appYaml.schemaVersion.endsWith('-framework'))) {
+            error("This application does not have the proper schemaVersion for the target MDos platform")
+            process.exit(1)
+        }
     }
 
     /**
@@ -174,7 +220,6 @@ export default abstract class extends Command {
 
         if (!token || token.length == 0) {
             if (!skipAuthMsg) warn('Authentication required')
-
             const responses = await inquirer.prompt(
                 [
                     {
@@ -273,10 +318,14 @@ export default abstract class extends Command {
             }
             clientResponses = { clientId: targetClient.clientId, clientUuid: targetClient.id }
         } else {
-            if(includeAll) {
-                clientResponse.data.push({
-                    clientId: "-all available to me-",
-                    id: "*"
+            const optionListItems = clientResponse.data.map((o: { clientId: any; id: any }) => {
+                return { name: `Namespace: ${o.clientId}`, value: o.id }
+            })
+            if (includeAll) {
+                optionListItems.push(new inquirer.Separator())
+                optionListItems.push({
+                    name: 'All namespaces available to me',
+                    value: '*',
                 })
             }
 
@@ -285,20 +334,52 @@ export default abstract class extends Command {
                     name: 'clientUuid',
                     message: question,
                     type: 'list',
-                    choices: clientResponse.data.map((o: { clientId: any; id: any }) => {
-                        return { name: `Namespace: ${o.clientId}`, value: o.id }
-                    }),
+                    choices: optionListItems,
                 },
             ])
-            if(clientResponses.clientUuid == "*") {
-                clientResponses.clientId = "*"
+            if (clientResponses.clientUuid == '*') {
+                clientResponses.clientId = '*'
             } else {
                 const targetClient = clientResponse.data.find((o: { id: any }) => o.id == clientResponses.clientUuid)
                 clientResponses.clientId = targetClient.clientId
             }
-            
         }
         return clientResponses
+    }
+
+    /**
+     * collectNamespace
+     * @param flags
+     * @param question
+     * @returns
+     */
+    async collectNamespace(flags: any, question: string) {
+        const nsResponse = await this.api('kube?target=namespaces', 'get')
+        if (nsResponse.data.length == 0) {
+            error('There are no namespaces available')
+            process.exit(1)
+        }
+        if (flags.clientId) {
+            const targetNs = nsResponse.data.find((o: { name: string }) => o.name == flags.namespace)
+            if (!targetNs) {
+                error('Could not find namespace: ' + flags.namespace)
+                process.exit(1)
+            }
+            return targetNs
+        } else {
+            const nsQResponse = await inquirer.prompt([
+                {
+                    name: 'namespace',
+                    message: question,
+                    type: 'list',
+                    choices: nsResponse.data.map((o: { name: string }) => {
+                        return { name: `Namespace: ${o.name}`, value: o }
+                    }),
+                },
+            ])
+
+            return nsQResponse.namespace
+        }
     }
 
     /**
@@ -325,5 +406,33 @@ export default abstract class extends Command {
             return true
         }
         return false
+    }
+
+    /**
+     * showBusy
+     * @param text 
+     * @param skipLine 
+     */
+    showBusy(text:string, skipLine?:boolean) {
+        if(skipLine) console.log()
+        CliUx.ux.action.start(text)
+    }
+
+    /**
+     * showBusyDone
+     */
+    showBusyDone() {
+        CliUx.ux.action.stop()
+    }
+
+    /**
+     * showBusyError
+     * @param msg 
+     * @param err 
+     * @param exit 
+     */
+    showBusyError(msg?:any, err?:any) {
+        CliUx.ux.action.stop(chalk.red(msg ? msg : 'error'))
+        if(err) this.showError(err)
     }
 }

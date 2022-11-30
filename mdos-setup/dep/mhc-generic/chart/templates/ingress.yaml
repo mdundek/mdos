@@ -1,0 +1,66 @@
+{{- if .Values.ingressClassName }}
+{{- $appName := .Values.appName -}}
+{{- $ingressClassName := .Values.ingressClassName -}}
+
+{{- range .Values.components }}
+  {{- $appComponentName := lower .name -}}
+  {{- $uuid := .uuid -}}
+  {{- if .ingress }}
+    {{- $services := .services }}
+    {{- range .ingress }}
+
+      {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GET TARGET SERVICE NAME =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+      {{- $tgPort := .targetPort }}
+      {{- $svcName := "" }}
+      {{- range $services }}
+        {{- $tmpName := .name }}
+        {{- range .ports }}
+          {{- if .svcPort }}
+            {{ if eq .svcPort $tgPort }}
+              {{- $svcName = $tmpName -}}
+            {{- end }}
+          {{- else }}
+            {{ if eq .port $tgPort }}
+              {{- $svcName = $tmpName -}}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}
+  labels:
+    app: {{ $appComponentName }}
+    appUuid: {{ $.Values.uuid }}
+    compUuid: {{ $uuid }}
+    tenantName: {{ $.Values.tenantName }}
+spec:
+  ingressClassName: {{ $ingressClassName }}
+      {{- if or (eq .trafficType "HTTPS_SIMPLE") (eq .trafficType "tls") }}
+  tls:
+    - hosts:
+      - {{ .matchHost }}
+      secretName: {{ .tlsSecretName }}
+      {{- end }}
+  rules:
+    - host: {{ .matchHost }}
+      http:
+        paths:
+      {{- if .subPath }}
+          - path: {{ .subPath }}
+      {{- else }}
+          - path: /
+      {{- end }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $appName }}-{{ $appComponentName }}-{{ $svcName }}
+                port:
+                  number: {{ .targetPort }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

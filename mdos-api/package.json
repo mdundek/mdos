@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Mdos API server",
-    "version": "1.6.0",
+  "version": "1.6.0",
   "homepage": "",
   "private": true,
   "main": "src",
@@ -61,6 +61,8 @@
     "nanoid": "^3.3.4",
     "serve-favicon": "^2.5.0",
     "shelljs": "^0.8.5",
+    "socket.io-client": "^2.5.0",
+    "sqlite3": "^5.1.2",
     "winston": "^3.8.1",
     "yaml": "^2.1.1"
   },

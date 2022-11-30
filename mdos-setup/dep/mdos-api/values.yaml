@@ -4,6 +4,27 @@ appName: mdos
 uuid: KG75-7D58-mdos
 forceUpdate: true
 components:
+  - name: broker
+    uuid: KG75-7D58-broker
+    image: mdos-broker
+    tag: latest
+    imagePullSecrets:
+      - name: regcred
+    imagePullPolicy: Always
+    services:
+      - name: http
+        ports:
+          - name: http-3039
+            port: 3039
+    volumes:
+      - name: db-volume
+        mountPath: /usr/src/db
+    configs:
+      - name: configs
+        type: env
+        entries:
+          - key: SQLITE_FILE_PATH
+            value: "/usr/src/db/mdos_broker.sqlite"
   - name: api
     uuid: KG75-7D58-api
     image: mdos-api
@@ -31,7 +52,7 @@ components:
           - key: GEN_HELM_PATH_PATH
             value: "/usr/src/dep/mhc-generic"
           - key: ISTIO_CHART_PATH
-            value: "/usr/src/dep/istio_helm/istio-control/istio-discovery"
+            value: "/usr/src/dep/istio-discovery"
           - key: RUN_TARGET
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
@@ -42,6 +63,10 @@ components:
             value: "/usr/src/dep/k3s/client-ca.key"
           - key: KC_PORT
             value: "30999"
+          - key: API_MODE
+            value: "FULL"
+          - key: BROKER_CLIENT
+            value: http://mdos-broker-http:3039
 
     secrets:
       - name: creds
@@ -65,26 +90,6 @@ components:
             value: |-
               -----BEGIN EC PRIVATE KEY-----
               -----END EC PRIVATE KEY-----
-      - name: rabbitmq-creds
-        type: env
-        ref: rabbitmq-cluster-default-user
-        entries:
-          - name: RABBIT_PORT
-            key: port
-          - name: RABBIT_HOST
-            key: host
-          - name: RABBIT_USERNAME
-            key: username
-          - name: RABBIT_PASSWORD
-            key: password
-        
-    volumes:
-      - name: mhc-generic-chart
-        mountPath: /usr/src/dep/mhc-generic
-        hostPath: <path to setup folder>/dep/mhc-generic/chart
-      - name: istiod-helm-volume
-        mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
-        hostPath: <path to setup folder>/dep/istio_helm/istio-control/istio-discovery
 
     hostAliases:
       - ip: ""

@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import Command from '../../base'
 const inquirer = require('inquirer')
-const { error } = require('../../lib/tools')
+const { success, error } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -54,8 +54,8 @@ export default class Config extends Command {
         let appYaml: { components: any[] }
         try {
             appYaml = YAML.parse(fs.readFileSync(appYamlPath, 'utf8'))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -177,8 +177,9 @@ export default class Config extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-        } catch (error) {
-            this.showError(error)
+            success("mdos.yaml file was updated")
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

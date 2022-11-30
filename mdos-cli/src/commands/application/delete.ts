@@ -26,30 +26,48 @@ export default class Delete extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Delete)
 
-        // Make sure we have a valid oauth2 cookie token
-        // otherwise, collect it
-        try {
-            await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
+            // Make sure we have a valid oauth2 cookie token
+            // otherwise, collect it
+            try {
+                await this.validateJwt()
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
         }
 
-        // Get client id & uuid
         let clientResponse
-        try {
-            clientResponse = await this.collectClientId(flags, 'What client do you want to delete an applications for?')
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
+        let nsResponse
+
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
+            // Get client id & uuid
+            try {
+                clientResponse = await this.collectClientId(flags, 'What client do you want to delete an applications from?')
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
+        } else {
+            clientResponse = {}
+            // Get namespace
+            try {
+                nsResponse = await this.collectNamespace(flags, 'What namespace do you want to delete an application from?')
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
         }
 
         // Get namespace applications
         let appResponses
         try {
-            appResponses = await this.api(`kube?target=applications&clientId=${clientResponse.clientId}`, 'get')
-        } catch (error) {
-            this.showError(error)
+            appResponses = await this.api(`kube?target=applications&clientId=${this.getConfig('FRAMEWORK_ONLY') ? nsResponse.name : clientResponse.clientId}`, 'get')
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
         if (appResponses.data.length == 0) {
@@ -73,15 +91,15 @@ export default class Delete extends Command {
         CliUx.ux.action.start('Deleting application')
         try {
             await this.api(
-                `kube/${appToDelResponse.app.name}?target=application&clientId=${clientResponse.clientId}&isHelm=${
+                `kube/${appToDelResponse.app.name}?target=application&clientId=${this.getConfig('FRAMEWORK_ONLY') ? nsResponse.name : clientResponse.clientId}&isHelm=${
                     appToDelResponse.app.isHelm
                 }&type=${appToDelResponse.app.isHelm ? 'na' : appToDelResponse.app.type}`,
                 'delete'
             )
             CliUx.ux.action.stop()
-        } catch (error) {
+        } catch (err) {
             CliUx.ux.action.stop('error')
-            this.showError(error)
+            this.showError(err)
             process.exit(1)
         }
     }

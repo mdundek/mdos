@@ -16,6 +16,9 @@ RUN mv mc /usr/bin
 
 RUN mkdir -p /home/node/app/tmp
 
+COPY mhc-generic /usr/src/dep/mhc-generic
+COPY istio-discovery /usr/src/dep/istio-discovery
+
 # Create app directory
 WORKDIR /usr/src/app
 
