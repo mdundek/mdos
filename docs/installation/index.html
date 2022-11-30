@@ -361,11 +361,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-the-mdos-server-platform" class="md-nav__link">
-    Install the MDos (server) platform
+  <a href="#install-the-mdos-managed-cluster-platform-kubernetes-cluster-extensions" class="md-nav__link">
+    Install the MDos managed cluster platform (Kubernetes cluster &amp; extensions)
   </a>
   
-    <nav class="md-nav" aria-label="Install the MDos (server) platform">
+    <nav class="md-nav" aria-label="Install the MDos managed cluster platform (Kubernetes cluster &amp; extensions)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -433,6 +433,33 @@
           <li class="md-nav__item">
   <a href="#worker-nodes" class="md-nav__link">
     Worker nodes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-the-mdos-framework-only-onto-your-existing-kubernetes-cluster" class="md-nav__link">
+    Install the MDos framework only onto your existing Kubernetes cluster
+  </a>
+  
+    <nav class="md-nav" aria-label="Install the MDos framework only onto your existing Kubernetes cluster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-you-start_1" class="md-nav__link">
+    Before you start
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-the-mdos-api-server" class="md-nav__link">
+    Install the MDos API server
   </a>
   
 </li>
@@ -585,11 +612,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-the-mdos-server-platform" class="md-nav__link">
-    Install the MDos (server) platform
+  <a href="#install-the-mdos-managed-cluster-platform-kubernetes-cluster-extensions" class="md-nav__link">
+    Install the MDos managed cluster platform (Kubernetes cluster &amp; extensions)
   </a>
   
-    <nav class="md-nav" aria-label="Install the MDos (server) platform">
+    <nav class="md-nav" aria-label="Install the MDos managed cluster platform (Kubernetes cluster &amp; extensions)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -657,6 +684,33 @@
           <li class="md-nav__item">
   <a href="#worker-nodes" class="md-nav__link">
     Worker nodes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-the-mdos-framework-only-onto-your-existing-kubernetes-cluster" class="md-nav__link">
+    Install the MDos framework only onto your existing Kubernetes cluster
+  </a>
+  
+    <nav class="md-nav" aria-label="Install the MDos framework only onto your existing Kubernetes cluster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-you-start_1" class="md-nav__link">
+    Before you start
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-the-mdos-api-server" class="md-nav__link">
+    Install the MDos API server
   </a>
   
 </li>
@@ -748,7 +802,7 @@
 
 
 <h1 id="installation-setup">Installation &amp; setup</h1>
-<h2 id="install-the-mdos-server-platform">Install the MDos (server) platform</h2>
+<h2 id="install-the-mdos-managed-cluster-platform-kubernetes-cluster-extensions">Install the MDos managed cluster platform (Kubernetes cluster &amp; extensions)</h2>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>At the moment, the MDos platform has been tested on <code>Ubuntu &gt;= 20.04</code> and <code>Debian &gt;= buster</code>. I am currently working on porting the platform to <code>CentOS</code> as well, but it is not ready yet.<br />
@@ -756,10 +810,10 @@ Other versions for those 2 distributions might work, but I have not tested them.
 The MDos CLI is available for <code>MacOS</code>, <code>linux</code> and <code>Windows</code></p>
 </div>
 <p>First, clone this repo on your target machine:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone https://github.com/mdundek/mdos.git
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone -b v1.6.0 https://github.com/mdundek/mdos.git
 </code></pre></div>
 <h3 id="before-you-start">Before you start</h3>
-<p>The installation will require that you configure a valid <strong>domain name</strong> and a certificate for the mdos base platform (for developement purposes you can choose to work with a self-signed certificate and by editing your <code>/etc/hosts</code> file. This will prevent certain features to work, such as SSO for instance. It is recommended to have a real domain name and a valid certificate for the full experience).</p>
+<p>The installation will require that you configure a valid <strong>domain name</strong> and a certificate for the mdos base platform (for development purposes you can choose to work with a self-signed certificate and by editing your <code>/etc/hosts</code> file. This will prevent certain features to work, such as SSO for instance. It is recommended to have a real domain name and a valid certificate for the full experience).</p>
 <p>If you plan on using <code>cert-manager</code> to manage your certificate, then you will have to prepare a <code>Issuer</code> yaml file upfront before you go ahead and start the installation script (see bellow for an example using a CloudFlare issuer).</p>
 <div class="admonition warning">
 <p class="admonition-title">LoadBalancers &amp; Ports</p>
@@ -905,11 +959,11 @@ The installation script will give you multiple choices here:</p>
 <ol>
 <li>You have a valid certificate at hand that you would like to use</li>
 <li>You want to set up <code>cert-manager</code> to generate and manage your certificate (Let's Encrypt, CloudFlare, Vault, AWS, Google...)</li>
-<li>You have no certificate and would like to create a self-signed certificate (only suited for developement purposes)</li>
+<li>You have no certificate and would like to create a self-signed certificate (only suited for development purposes)</li>
 </ol>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>For developement purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.<br />
+<p>For development purposes, you can have the platform generate a self signed certificate for you, but SSO / OIDC functionality will not work with a self-signed certificate.<br />
 For production, you will have to use a fully valid certificate in order to use all of MDos features. </p>
 </div>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Cert-manager example</label><label for="__tabbed_1_2">Self-signed certificate example</label></div>
@@ -951,20 +1005,20 @@ For production, you will have to use a fully valid certificate in order to use a
 </div>
 <div class="tabbed-block">
 <p><img src="/mdos/img/installation/selfsigned.png" alt="selfsigned" width="600"/></p>
-<p>This example is based on the 3rd option, a self signed certificate. If you want to use <code>cert-manager</code> instead (good option for production environement), you will be asked to enter the path to your cert-manager <code>Issuer</code> Yaml file to use in order to issue your certificate.</p>
+<p>This example is based on the 3rd option, a self signed certificate. If you want to use <code>cert-manager</code> instead (good option for production environment), you will be asked to enter the path to your cert-manager <code>Issuer</code> Yaml file to use in order to issue your certificate.</p>
 </div>
 </div>
 </div>
 <h4 id="kubernetes-workload-storage-directory-path"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Kubernetes workload storage directory path</h4>
 <p>When you deploy applications onto your Kubernetes cluster, chances are that your applications will require to use permanent / persisted storage. Containers by default do not persist data beyond a container restart, You will therefore have to persist your container data on Kubernetes managed storage.<br />
-MDos uses <code>Longhorn</code> from Rancher as a storage class. Longhorn will store your container volume data in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system. Please note that you need to ensure that you have enougth storage capacity on this directory path, it is recommended to mount a separate dedicated disk for this purpose:</p>
+MDos uses <code>Longhorn</code> from Rancher as a storage class. Longhorn will store your container volume data in a dedicated directory on each Cluster Node. This is your chance to customize this directory path in case you want to store this data on an external hard drive that you mounted onto your host system. Please note that you need to ensure that you have enough storage capacity on this directory path, it is recommended to mount a separate dedicated disk for this purpose:</p>
 <p><img src="/mdos/img/installation/storage.png" alt="storage" width="600"/></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Longhorn is a <code>block storage</code> provider, it replicates your data over multiple disks / partitions. Longhorn does work with only one disk, which is it's default setup configuration, but it is highly recommended that you configure at least 2, idealy 3 disks for optimal data redundancy. To configure those disk, on the same machine or on different machines, use the longhorn UI accessible under the URL <code>https://longhorn.&lt;ROOT-DOMAIN&gt;</code>   </p>
+<p>Longhorn is a <code>block storage</code> provider, it replicates your data over multiple disks / partitions. Longhorn does work with only one disk, which is it's default setup configuration, but it is highly recommended that you configure at least 2, ideally 3 disks for optimal data redundancy. To configure those disk, on the same machine or on different machines, use the longhorn UI accessible under the URL <code>https://longhorn.&lt;ROOT-DOMAIN&gt;</code>   </p>
 </div>
 <h4 id="private-registry-max-size"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Private registry max size</h4>
-<p>MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images inhouse. This is also a must if you intend to run the platform in offline mode.<br />
+<p>MDos comes with a private registry where you can store your images on. The Kubernetes cluster is configured to use this registry if that's what you want to do in order to keep your images in house. This is also a must if you intend to run the platform in offline mode.<br />
 The registry runs in Kubernetes, it therefore needs to allocate some storage to it so that it can persist it's data on your disk. Here you need to specify how much space you wish to allocate to this registry (in Gigabytes).</p>
 <p><img src="/mdos/img/installation/registry.png" alt="registry" width="600"/></p>
 <div class="admonition note">
@@ -972,8 +1026,8 @@ The registry runs in Kubernetes, it therefore needs to allocate some storage to 
 <p>Please note that this storage capacity will be located on your main Kubernetes storage path specified above</p>
 </div>
 <h4 id="ftp-sync-server-for-kubernetes-pod-data-provisionning"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> FTP sync server for Kubernetes POD data provisionning</h4>
-<p>When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using <code>hostPath</code> mount points instead. This is an antipatern and does not go well with multi-node cluster environements where you can not easiely predict where your pod is going to start.<br />
-MDos provides you with a means to initialize your application pods with data pre-alocated to it's volumes. This can be very usefull for usecases such as (but not only):</p>
+<p>When running applications in kubernetes using CSI storage plugins, you usually end up with a blank volume once your pod starts for the first time. This is usually a pain point for many developers who end up using <code>hostPath</code> mount points instead. This is an anti-pattern and does not go well with multi-node cluster environments where you can not easily predict where your pod is going to start.<br />
+MDos provides you with a means to initialize your application pods with data pre-allocated to it's volumes. This can be very useful for use cases such as (but not only):</p>
 <ul>
 <li>Provision a volume with a already pre-established database schema and data set for initialization purposes (or any other type of initialization data sets)</li>
 <li>Provision static data such as websites</li>
@@ -987,7 +1041,7 @@ Again, this is your chance to customize this directory path in case you want to 
 <p>After a few minutes (can take up to 10 minutes, depending on your internet speed), you will be asked to set up Keycloak and provide a secret token to the installation script. <br />
 This token is necessary so that mdos can administer everything it needs on Keycloak.<br />
 The script provides you with detailed instructions on how to do so, simply follow them and enter the secret <code>token</code> from the Keycloak website.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>To finalyze the setup, do the following:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>To finalize the setup, do the following:
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  1. Open a browser and go to:
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>     https://keycloak.mydomain.com/admin/master/console/#/realms/master/clients
@@ -996,7 +1050,7 @@ The script provides you with detailed instructions on how to do so, simply follo
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  4. Enable the boolean value &#39;Service Accounts Enabled&#39;
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  5. Set &#39;Valid Redirect URIs&#39; value to &#39;*&#39;
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  6. Save those changes (button at the bottom of the page)
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  7. In tab &#39;Roles&#39;, Click on button &#39;edit&#39; for role &#39;magage realm&#39;.
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  7. In tab &#39;Roles&#39;, Click on button &#39;edit&#39; for role &#39;manage realm&#39;.
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>     Enable &#39;Composite roles&#39; and add &#39;admin&#39; realm to associated roles
 <a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>  8. Go to the &#39;Service Account Roles&#39; tab and add the role &#39;admin&#39; to the &#39;Assigned Roles&#39; box
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  9. Click on tab &#39;Credentials&#39;
@@ -1095,38 +1149,70 @@ The script provides you with detailed instructions on how to do so, simply follo
 </table>
 </div>
 <hr />
+<h2 id="install-the-mdos-framework-only-onto-your-existing-kubernetes-cluster">Install the MDos framework only onto your existing Kubernetes cluster</h2>
+<p>Installing the MDos framework on an existing Kubernetes cluster is straight forward using the MDos CLI.</p>
+<h3 id="before-you-start_1">Before you start</h3>
+<div class="admonition info">
+<p class="admonition-title">Prerequisite</p>
+<ol>
+<li>A Kubernetes cluster that has a default <code>StorageClass</code> and <code>Ingress</code> controller configured (check with the commands <code>kubectl get storageclass</code> &amp; <code>kubectl get ingressclass</code>)</li>
+<li>The <code>kubectl</code> CLI needs to be installed</li>
+<li>The <code>kubectl</code> default <code>context</code> needs to be configured to point to your Kubernetes cluster (look into the command <code>kubectl config ...</code> for more details)</li>
+<li>The <code>mdos</code> CLI needs to be installed (Please refer to the section <a href="/mdos/installation/#install-the-mdos-cli">Install the MDos CLI</a> for further information)</li>
+</ol>
+</div>
+<h3 id="install-the-mdos-api-server">Install the MDos API server</h3>
+<p>Once those prerequisites are fulfilled, you can go ahead and install the MDos API onto your cluster:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="hll">mdos install-framework
+</span><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>INFO : Target cluster URL: https://192.168.50.179:6443
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>? Install MDos onto this cluster? Yes
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>? What domain name should be used to expose your MDos API server through the Ingress controller: mdos-api.mydomain.com
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>? Configure a TLS <span class="o">(</span>HTTPS<span class="o">)</span> certificate <span class="k">for</span> this domain name? No
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>Installing MDos API server... <span class="k">done</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>Waiting <span class="k">for</span> MDos to start... <span class="k">done</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>Configure your CLI endpoint... <span class="k">done</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>SUCCESS : MDos was installed successfully
+</code></pre></div>
+<p>During the installation, you will be asked to provide a resolvable domain name that will be used to access the MDos API server. To avoid exposing specific <code>NodePorts</code> on the cluster and call the MDos API server using a IP address, we use the Clusters default Ingress controller to configure this access. This is why an actual valid domain name is necessary here.</p>
+<div class="admonition note">
+<p class="admonition-title">Workaround</p>
+<p>If you do not have the possibility to configure your DNS server for such a domain to point to your Kubernetes cluster, then configure your local <code>/etc/hosts</code> file to resolve a domain name of your choosing to the Kubernetes Cluster IP address. </p>
+</div>
+<p>That's it, you can now start building &amp; deploying your applications using the MDos CLI.</p>
+<hr />
 <h2 id="install-the-mdos-cli">Install the MDos CLI</h2>
 <h3 id="linux-mac-osx">Linux &amp; Mac OSX</h3>
-<p>The standalone install is a simple tarball with a binary. It contains its own node.js binary and autoupdates.</p>
+<p>The standalone install is a simple tarball with a binary. It contains its own node.js binary and auto updates.</p>
 <p>To set up the CLI in <code>/usr/local/lib/mdos</code> and <code>/usr/local/bin/mdos</code>, run the following script. The script requires sudo and <strong>isn’t Windows compatible</strong>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Install latest version</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>curl -s https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh <span class="p">|</span> sudo bash
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Install latest version</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>curl -s https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh <span class="p">|</span> sudo bash
 </code></pre></div>
 <p>To install a specific version of the CLI, do:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># NOTE: the version in this example might be outdated. This example is simply to </span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># showcase how you can install a specific version of the CLI in case your mdos server</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># installation is on an older version</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>curl -s https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh <span class="p">|</span> sudo bash -s -- v1.2.0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># NOTE: the version in this example might be outdated. This example is simply to </span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># showcase how you can install a specific version of the CLI in case your mdos server</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># installation is on an older version</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>curl -s https://raw.githubusercontent.com/mdundek/mdos/main/mdos-cli/infra/install-linux-mac.sh <span class="p">|</span> sudo bash -s -- v1.2.0
 </code></pre></div>
 <h3 id="windows">Windows</h3>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Under construction</p>
-</div>
+<p>Go to the release page for MDos <a href="https://github.com/mdundek/mdos/releases">here</a> and download the latest <code>exe</code> file for the CLI. Make sure your <code>exe</code> file is on your system PATH.</p>
 <h3 id="verify-your-installation">Verify Your Installation</h3>
 <p>To verify your CLI installation, use the mdos --version command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>mdos --version
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>mdos-cli/0.0.0 linux-x64 node-v18.9.0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>mdos --version
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>mdos-cli/0.0.0 linux-x64 node-v18.9.0
 </code></pre></div>
 <h3 id="special-notes-about-self-signed-certificates-without-a-resolvable-dns-name">Special notes about self-signed certificates without a resolvable DNS name</h3>
-<p>For developement purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your <code>hosts</code> file from wherever you wish to use the CLI from so that it can resolve the various hostnames used by the MDos API platform.</p>
+<p>For development purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your <code>hosts</code> file from wherever you wish to use the CLI from so that it can resolve the various hostname used by the MDos API platform.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Please replace <code>XXX.XXX.XXX.XXX</code> with the MDos Platform server IP address, and <code>mydomain.com</code> with the actual domain used when you deployed the MDos platform. </p>
 </div>
 <h4 id="linux-mac-osx_1"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Linux &amp; Mac OSX</h4>
 <p>Open your <code>/etc/hosts</code> file (root user) and add the following entries to it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com registry-auth.mydomain.com mdos-api.mydomain.com mdos-ftp.mydomain.com mdos-ftp-api.mydomain.com longhorn.mydomain.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com registry-auth.mydomain.com mdos-api.mydomain.com mdos-ftp.mydomain.com mdos-ftp-api.mydomain.com longhorn.mydomain.com
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1134,13 +1220,13 @@ The script provides you with detailed instructions on how to do so, simply follo
 </div>
 <h4 id="windows_1"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Windows</h4>
 <p>Open your <code>c:\Windows\System32\Drivers\etc\hosts</code> file (root user) and add the following entries to it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>XXX.XXX.XXX.XXX registry-auth.mydomain.com
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>XXX.XXX.XXX.XXX mdos-api.mydomain.com
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>XXX.XXX.XXX.XXX mdos-ftp.mydomain.com
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>XXX.XXX.XXX.XXX mdos-ftp-api.mydomain.com
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>XXX.XXX.XXX.XXX longhorn.mydomain.com
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>XXX.XXX.XXX.XXX grafana.mydomain.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>XXX.XXX.XXX.XXX registry.mydomain.com
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>XXX.XXX.XXX.XXX registry-auth.mydomain.com
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>XXX.XXX.XXX.XXX mdos-api.mydomain.com
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>XXX.XXX.XXX.XXX mdos-ftp.mydomain.com
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>XXX.XXX.XXX.XXX mdos-ftp-api.mydomain.com
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>XXX.XXX.XXX.XXX longhorn.mydomain.com
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>XXX.XXX.XXX.XXX grafana.mydomain.com
 </code></pre></div>
 <!-- ## Extra
 

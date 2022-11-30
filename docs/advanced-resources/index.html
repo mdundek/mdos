@@ -772,6 +772,10 @@
 
 
 <h1 id="advanced-resources">Advanced Resources</h1>
+<div class="admonition error">
+<p class="admonition-title">Please note</p>
+<p>Only applicable for <code>MDos managed cluster</code> deployments</p>
+</div>
 <h2 id="manage-namespaces-users-roles-and-permissions">Manage Namespaces, Users, Roles and Permissions</h2>
 <h3 id="tenant-namespaces">Tenant Namespaces</h3>
 <p><img align="right" alt="auth deploy" src="/mdos/img/keycloak/flow_overview.png" style="width:450px" />
@@ -909,7 +913,7 @@ MDos comes with a system client called <code>mdos</code> that is used to assign 
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>❯ Mdos admin client role
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  Tenant client role
 </code></pre></div>
-<p>Here you have the choice between assigning roles from the Keycloak <code>mdos</code> client or from one of your own <code>tenant</code> spacific client. Let's choose to add a <code>mdos</code> client role to this ne user.</p>
+<p>Here you have the choice between assigning roles from the Keycloak <code>mdos</code> client or from one of your own <code>tenant</code> specific client. Let's choose to add a <code>mdos</code> client role to this ne user.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>? Do you want to add a role from the Mdos admin client or from a tenant client? Mdos admin client role
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>? Select a role to add from this client: <span class="o">(</span>Use arrow keys<span class="o">)</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>❯ create-roles
@@ -920,7 +924,7 @@ MDos comes with a system client called <code>mdos</code> that is used to assign 
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  cm-cluster-issuer
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  delete-users
 </code></pre></div>
-<p>Once you have choosen what role to assign to your user, enter that <code>username</code> to attach the role to:</p>
+<p>Once you have chosen what role to assign to your user, enter that <code>username</code> to attach the role to:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>? Select a role to add from this client: create-namespace
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>? What username <span class="k">do</span> you wish to add this client role to: my-user-one
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Add role to user... <span class="k">done</span>
@@ -940,7 +944,7 @@ MDos comes with a system client called <code>mdos</code> that is used to assign 
 <p>Just like we added a <code>mdos</code> client specific role to our new user, you can now assign this new namespace scoped role <code>edit-recipe</code> to your users as well. For more information on how to use those custom roles, see the chapter (more on this in the section <a href="/mdos/advanced-resources/#securing-applications-using-oidc-providers">Securing applications using OIDC providers</a>.</p>
 <hr />
 <h2 id="securing-applications-using-oidc-providers">Securing applications using OIDC providers</h2>
-<p>You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variaty of OIDC providers such as Keycloak, Google, GitHub and others.</p>
+<p>You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variety of OIDC providers such as Keycloak, Google, GitHub and others.</p>
 <p><img alt="OIDC" src="/mdos/img/oidc.png" /></p>
 <h3 id="secure-your-application-using-mdos-keycloak-oidc">Secure your application using MDos Keycloak OIDC</h3>
 <p>While you can use various OIDC providers to protect your applications using OIDC authentication, using the integrated Keycloak deployment for your user authentication needs will allow you to also manage your application specific RBAC setup by defining roles and assigning them to your users. MDos uses the open-source solution <a href="https://github.com/oauth2-proxy/oauth2-proxy">oauth2-proxy</a> to abstract away the complexity of implementing OAuth2 authentication workflows for your applications.</p>
@@ -990,7 +994,7 @@ Once this user hits your application, the user is already authenticated and we a
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>In the near future, it will be possible to specify global access to an application based on user roles directly from within your <code>mdos.yaml</code> configuration file. This will not allow you to do fine grained access control to specific users on specific parts of your application like the example we are showing you here, but il will allow you to restrict <strong>global</strong> access to applications based on their user roles without having to implement anything on your side. This new feature is currently under developement.</p>
+<p>In the near future, it will be possible to specify global access to an application based on user roles directly from within your <code>mdos.yaml</code> configuration file. This will not allow you to do fine grained access control to specific users on specific parts of your application like the example we are showing you here, but il will allow you to restrict <strong>global</strong> access to applications based on their user roles without having to implement anything on your side. This new feature is currently under development.</p>
 </div>
 <h4 id="secure-your-application-using-third-party-oidc-providers">Secure your application using third party OIDC providers</h4>
 <p>You can also leverage public OIDC providers for your authentication needs such as Google, Github and others. To do so, you will have to configure your external auth provider in order to get your access key, necessary to configure the <code>oauth2-proxy</code> instance dedicated for this external OIDC provider.<br />
@@ -1005,7 +1009,7 @@ For more information of how to configure your Google account for instance can be
 </div>
 <hr />
 <h2 id="managing-your-issuers-tls-certificates-using-cert-manager">Managing your Issuers &amp; TLS Certificates using Cert-Manager</h2>
-<p>Cert-manager is a great extention for Kubernetes, allowing you to generate and manage your domain specific TLS certificates automatically. That said, you still need to understand how to configure it for your needs.<br />
+<p>Cert-manager is a great extension for Kubernetes, allowing you to generate and manage your domain specific TLS certificates automatically. That said, you still need to understand how to configure it for your needs.<br />
 The first thing you need is a certificate <code>issuer</code>. Those are used to interact with your Certificate authority and your DNS provider in order to configure the necessary challenges required to obtain your certificates.  </p>
 <h3 id="certificate-issuers">Certificate Issuers</h3>
 <p>Let's say you purchased the domain name <code>mdos-is-awesome.com</code>. You now need a valid certificate so that you can use your domain name to access your applications. The type of <code>issuer</code> you will have to create depends on the DNS provider you use to manage your newly purchased domain name. Here are a few examples of DNS providers that <code>cert-manager</code> supports directly:</p>
@@ -1080,7 +1084,7 @@ The issuer references a Certificate authority, in this case we use <code>Let's E
 On line 21 we specify the DNS solver that is managing our domain name(s). This part will need to be configured to point to the <code>Secret</code> we create in the first block, the one that holds our CloudFlare API Key, and our CloudFlare account email address (line 22).  </p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Depending on your specific requirements in terms of domain DNS manager and certificate autority, this <code>yaml</code> file will have to be adapted to suit your needs. Again, further details of how you can configure those can be found <a href="https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers">here</a> </p>
+<p>Depending on your specific requirements in terms of domain DNS manager and certificate authority, this <code>yaml</code> file will have to be adapted to suit your needs. Again, further details of how you can configure those can be found <a href="https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers">here</a> </p>
 </div>
 <p>You are now ready to deploy this <code>Issuer</code> onto your cluster using the MDos CLI:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="hll">mdos cm issuer create
@@ -1144,7 +1148,7 @@ Let's list the available certificates on our cluster:</p>
 <hr />
 <h2 id="managing-your-domain-specific-ingress-gateways">Managing your Domain specific Ingress-Gateways</h2>
 <p><img align="right" alt="Clients and roles" src="/mdos/img/gateway.png" style="width:500px" />
-Ingress gateways are used to instruct Kubernetes on how and what domain names to expose outside of the kubernetes cluster. Is is a cloud native <code>reverse-proxy</code> so to speak that listens for traffic on specific ports and for specific domains. You can configure your certificates on those gateways if you wish to terminate the TLS connection before thraffic reaches your application for certain domains, or let the traffic pass through as-is to your target applications, allowing you to terminate the TLS connection in your application directly.  </p>
+Ingress gateways are used to instruct Kubernetes on how and what domain names to expose outside of the kubernetes cluster. Is is a cloud native <code>reverse-proxy</code> so to speak that listens for traffic on specific ports and for specific domains. You can configure your certificates on those gateways if you wish to terminate the TLS connection before traffic reaches your application for certain domains, or let the traffic pass through as-is to your target applications, allowing you to terminate the TLS connection in your application directly.  </p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>When you create a new <code>Ingress Gateway</code> for a specific tenant namespace, it will do nothing on it's own until you deploy an application that configures a <code>ingress</code> rule for it. In other words, if you define an <code>ingress</code> config on one of your application components, then you first need to configure your <code>Ingress gateway</code> to allow this traffic type for your domain. More on this in the next section.</p>
@@ -1181,7 +1185,7 @@ You can list your gateway configurations using the MDos CLI:</p>
 <a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a> HTTPS, terminate TLS     mdos-is-awesome.com mdos-is-awesome-crt
 </code></pre></div>
 <h3 id="configure-an-ingress-rule-for-your-application-that-uses-this-gateway-config">Configure an ingress rule for your application that uses this gateway config</h3>
-<p>Now that we have our ingress gateway configured to allow incommin traffic for our new domain <code>mdos-is-awesome.com</code> on port 443 that terminates the TLS connection on the gateway for us, we can configure this domain name as an ingress in our <code>mdos.yaml</code> application metadata file. We recommend to use the MDos CLI to do this, but you can also do this manually by editing the <code>mdos.yaml</code> file.<br />
+<p>Now that we have our ingress gateway configured to allow incoming traffic for our new domain <code>mdos-is-awesome.com</code> on port 443 that terminates the TLS connection on the gateway for us, we can configure this domain name as an ingress in our <code>mdos.yaml</code> application metadata file. We recommend to use the MDos CLI to do this, but you can also do this manually by editing the <code>mdos.yaml</code> file.<br />
 Let's use the CLI here to configure our ingress. Position your terminal inside your application <code>component</code> directory, and execute the command:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="hll">mdos generate ingress
 </span><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
@@ -1190,7 +1194,7 @@ Let's use the CLI here to configure our ingress. Position your terminal inside y
 <a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>? Do you want to match a subpath for this host (fan-out)? No
 <a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>? What target port should this traffic be redirected to? 80
 <a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>NOTE: Make sure you have configured your namespace spacific &quot;Ingress Gateway&quot; to handle this domain name and traffic type (HTTP and/or HTTPS).
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>NOTE: Make sure you have configured your namespace specific &quot;Ingress Gateway&quot; to handle this domain name and traffic type (HTTP and/or HTTPS).
 <a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>If your application requires that a dedicated certificate is available inside your POD (versus terminating the TLS connection on the gateway), then specify HTTPS here.
 <a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>
 <a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>? What type of traffic will this ingress redirect to? http
@@ -1255,7 +1259,7 @@ Let's use the CLI here to configure our ingress. Position your terminal inside y
 <hr />
 <h2 id="populate-static-volume-data-for-your-applications">Populate static volume data for your applications</h2>
 <p><img align="right" alt="Volume sync" src="/mdos/img/volume-sync.png" style="width:600px" />
-Every new volume that is created for your application is completely empty at first! This is how Kubernetees deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema &amp; dataset, a static website that serves as a base for my application etc. Often, an empty volume is what you want in a persisted volme, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!  </p>
+Every new volume that is created for your application is completely empty at first! This is how Kubernetes deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema &amp; dataset, a static website that serves as a base for my application etc. Often, an empty volume is what you want in a persisted volume, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!  </p>
 <p>MDos provides an efficient way for dealing with those use-cases. An MDos application project can have volumes declared that contain data you wish to pre-load onto your PODs before your application starts on the cluster. You will simply have to add the flag <code>syncVolume: true</code> to the declared volume inside your application component in your <code>mdos.yaml</code> file, and mdos will automatically sync this volume data to your pod volume before it starts your application component (see <a href="/mdos/reference-documentation/#pre-populate-volumes">Pre-populate volumes</a> in the reference documentation for an example configuration for your <code>mdos.yaml</code> file).  </p>
 <p>Let's have a look at the above example to see in details what actually happens here:</p>
 <table>
@@ -1290,7 +1294,7 @@ Every new volume that is created for your application is completely empty at fir
 </table>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>All this happens automatically with the command <code>mdos application deploy</code>, you do not need to worry about these steps, nevertheless it is usefull for you to understant what is actually happening under the hood.</p>
+<p>All this happens automatically with the command <code>mdos application deploy</code>, you do not need to worry about these steps, nevertheless it is useful for you to understand what is actually happening under the hood.</p>
 </div>
 
 
