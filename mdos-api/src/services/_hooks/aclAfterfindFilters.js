@@ -206,8 +206,6 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
         "kube-system"
     ].includes(secret.metadata.namespace))
 
-    console.log(context.result)
-
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
