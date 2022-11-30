@@ -98,7 +98,7 @@ Those can be split into 5 families:
 ### 1. Application specific resource configurations
 
 Using the MDos CLI and a unified `mdos.yaml` application descriptor file, you can build complex Kubernetes deployment scenarios without any knowledge of Kubernetes resource definition types such as `Deployments`, `StatefulSets`, `Pods`, `Services`, `PV & PVCs`, `VirtualServices`, `Secrets`, `ConfigMaps`, `NetworkPolicies` ... (just to name a few)  
-Therefore, build your applications using higher level artefacts that will translate to lower level Kubernetes resource definitions based on Kubernetes best practices.  
+Therefore, build your applications using higher level artefact that will translate to lower level Kubernetes resource definitions based on Kubernetes best practices.  
 
 * Scaffold a new `application` workspace
 * Scaffold a application `component` inside your mdos `application`
@@ -125,7 +125,7 @@ Therefore, build your applications using higher level artefacts that will transl
 
 * A tenant will get a Kubernetes namespace as well as a dedicated Keycloak client (for user management)
 * You can create users on the platform and link them to one or more tenants
-* Manage user permissions (RBAC) specifcally for each tenant namespace / keycloak client 
+* Manage user permissions (RBAC) specifically for each tenant namespace / keycloak client 
 * Kubernetes namespaces let you take advantage of network and resource segregation mechanisms for each tenant
 
 ### 5. OIDC / OAuth2 authentication & Application RBAC

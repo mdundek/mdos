@@ -26,7 +26,7 @@ Before we can start using the mdos CLI, we need to tell it what MDos API server 
 
 !!! info "Self signed certificates and domain names"
 
-    If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostnames are configured on your local machine `hosts` file before you prosceed.  
+    If you installed the platform using a self-signed certificate without any valid domain names configured, then you will have to ensure that all required platform hostname are configured on your local machine `hosts` file before you proceed.  
     In Linux and Mac OSX, your can configure those in your `/etc/hosts` file. In Windows, this file is located under `c:\Windows\System32\Drivers\etc\hosts`.  
     For more information, please refer to the chapter [Special notes about self-signed certificates without a resolvable DNS name](/mdos/installation/#special-notes-about-self-signed-certificates-without-a-resolvable-dns-name)
 
@@ -211,7 +211,7 @@ components:
 
 !!! info
 
-    All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.  
+    All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefact for you.  
     To learn more about everything that you can configure for your deployments in this yaml file, please check out the [MDos application reference documentation](/reference-documentation)
 
 ### Deploy your `hello-world` application on the cluster
@@ -416,7 +416,7 @@ components:
 
 !!! info "Note"
 
-    All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefacts for you.  
+    All application configuration features will live inside this `yaml` file, even for the most advanced use-cases and config needs, everything will be here. No need to get dirty with low level kubernetes assets to make it all happen, the platform will translate it all into the proper artefact for you.  
     To learn more about everything that you can configure for your deployments in this yaml file, please check out the [MDos application reference documentation](/reference-documentation)
 
 ### Deploy your `hello-world` application on the cluster

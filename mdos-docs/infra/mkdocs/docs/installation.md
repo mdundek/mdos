@@ -151,7 +151,7 @@ MDos uses `Longhorn` from Rancher as a storage class. Longhorn will store your c
 
 !!! note
 
-    Longhorn is a `block storage` provider, it replicates your data over multiple disks / partitions. Longhorn does work with only one disk, which is it's default setup configuration, but it is highly recommended that you configure at least 2, idealy 3 disks for optimal data redundancy. To configure those disk, on the same machine or on different machines, use the longhorn UI accessible under the URL `https://longhorn.<ROOT-DOMAIN>`   
+    Longhorn is a `block storage` provider, it replicates your data over multiple disks / partitions. Longhorn does work with only one disk, which is it's default setup configuration, but it is highly recommended that you configure at least 2, ideally 3 disks for optimal data redundancy. To configure those disk, on the same machine or on different machines, use the longhorn UI accessible under the URL `https://longhorn.<ROOT-DOMAIN>`   
 
 #### :material-arrow-right-thin: Private registry max size
 
@@ -186,7 +186,7 @@ This token is necessary so that mdos can administer everything it needs on Keycl
 The script provides you with detailed instructions on how to do so, simply follow them and enter the secret `token` from the Keycloak website.
 
 ```
-To finalyze the setup, do the following:
+To finalize the setup, do the following:
 
   1. Open a browser and go to:
      https://keycloak.mydomain.com/admin/master/console/#/realms/master/clients
@@ -341,7 +341,7 @@ mdos-cli/0.0.0 linux-x64 node-v18.9.0
 
 ### Special notes about self-signed certificates without a resolvable DNS name
 
-For development purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your `hosts` file from wherever you wish to use the CLI from so that it can resolve the various hostnames used by the MDos API platform.
+For development purposes, you can use self-signed certificates without a publicly available DNS name. That said, you will have to configure your `hosts` file from wherever you wish to use the CLI from so that it can resolve the various hostname used by the MDos API platform.
 
 !!! note
 
