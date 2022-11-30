@@ -20,10 +20,6 @@ class BrokerSubscriptions {
      *  HandleEvent method to consume Job event dispatcher and manage K3S namespace
      */
     async start() {
-        // Initial broker connect
-        // if(!this.brokerClient.isConnected())
-        //     await this.brokerClient.connect();
-        
         // Subscribe now
         await this.brokerClient.waitForConnection();
 
