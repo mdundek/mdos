@@ -19,12 +19,17 @@ class BrokerServerBase {
      * @param {*} socketId 
      */
     async _resetHeartbeatTimeout(socketId) {
+        console.log("Incoming heartbeat")
         if(this.connections[socketId]) {
-            if(this.connections[socketId].heartbeatTimeout)
+            console.log("Heartbeat check timeout clear:", socketId)
+            if(this.connections[socketId].heartbeatTimeout) {
+                console.log("Clearing heartbeat timeout:", socketId)
                 clearTimeout(this.connections[socketId].heartbeatTimeout)
+            }
 
             this.connections[socketId].heartbeatTimeout = setTimeout(async function(_socketId) {
                 try {
+                    console.log("Timeout triggered because no heartbeats for 20 sec:", _socketId)
                     await this._clearConnectionPendingEvents(_socketId)
                     await this._resetHeartbeatTimeout(_socketId)
                     await this._scheduleFireEventLoop()
@@ -61,7 +66,7 @@ class BrokerServerBase {
     /**
      * Set all events that this connection is currently processing back to "pending" state
      * This usually happens when a socket connection is closed, or if there has not been a
-     * heartbeat from the client for over 20 seconds (crash). We expect a hearbeat from each
+     * heartbeat from the client for over 20 seconds (crash). We expect a heartbeat from each
      * client every 5 seconds.
      * 
      * @param {*} socketId 

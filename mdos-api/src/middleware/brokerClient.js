@@ -31,7 +31,6 @@ class BrokerClient {
             // Start server heartbeat interval to indicate that client is still up and running
             this.brokerHeartbeatInterval = setInterval(async () => {
                 if(this.socket.connected) {
-                    console.log("HEARTBEAT")
                     this.socket.emit('brokerHeartbeat', {clientUuid: this.clientUuid})
                 }
             }, 5000)
