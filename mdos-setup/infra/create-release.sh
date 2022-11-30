@@ -110,7 +110,7 @@ tag_and_publish_to_release() {
         return_to_branch
         exit 1
     }
-    CURRENT_APP_VERSION=$(cat ./mdos-api/package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
+    CURRENT_APP_VERSION=$(cat $REPO_DIR/mdos-api/package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
     info "Tagging current commit with version v$CURRENT_APP_VERSION..."
     git checkout release > /dev/null 2>&1
     tag $CURRENT_APP_VERSION || on_error "Could not tag commit for repo ${c_warn}$REPO_DIR${c_reset}"
