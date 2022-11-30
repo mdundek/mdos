@@ -202,7 +202,7 @@ config:
         try {
             await this.helmInstall('oauth2-proxy', name, oauthData, 'oauth2-proxy/oauth2-proxy', '6.2.7')
         } catch (error) {
-            console.log(error)
+            console.log("ERROR =>", error)
             throw error
         }
     }
