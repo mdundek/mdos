@@ -6,7 +6,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/1.6.0 darwin-x64 node-v18.9.0
+mdos-cli/2.0.0 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -127,8 +127,6 @@ USAGE
 * [`mdos generate service`](#mdos-generate-service)
 * [`mdos generate storage`](#mdos-generate-storage)
 * [`mdos generate volume`](#mdos-generate-volume)
-* [`mdos get-config`](#mdos-get-config)
-* [`mdos get config`](#mdos-get-config-1)
 * [`mdos help [COMMAND]`](#mdos-help-command)
 * [`mdos ingress-gateway add`](#mdos-ingress-gateway-add)
 * [`mdos ingress-gateway create`](#mdos-ingress-gateway-create)
@@ -136,6 +134,7 @@ USAGE
 * [`mdos ingress-gateway remove`](#mdos-ingress-gateway-remove)
 * [`mdos ingress add`](#mdos-ingress-add)
 * [`mdos ingress generate`](#mdos-ingress-generate)
+* [`mdos install-framework`](#mdos-install-framework)
 * [`mdos kc client add-role`](#mdos-kc-client-add-role)
 * [`mdos kc client add role`](#mdos-kc-client-add-role-1)
 * [`mdos kc client create role`](#mdos-kc-client-create-role)
@@ -194,6 +193,7 @@ USAGE
 * [`mdos remove namespace`](#mdos-remove-namespace)
 * [`mdos remove ns`](#mdos-remove-ns)
 * [`mdos secret add`](#mdos-secret-add)
+* [`mdos secret create`](#mdos-secret-create)
 * [`mdos secret generate`](#mdos-secret-generate)
 * [`mdos service add`](#mdos-service-add)
 * [`mdos service generate`](#mdos-service-generate)
@@ -216,6 +216,7 @@ USAGE
 * [`mdos sso provider show`](#mdos-sso-provider-show)
 * [`mdos sso providers list`](#mdos-sso-providers-list)
 * [`mdos sso providers show`](#mdos-sso-providers-show)
+* [`mdos status`](#mdos-status)
 * [`mdos storage add`](#mdos-storage-add)
 * [`mdos storage generate`](#mdos-storage-generate)
 * [`mdos user add`](#mdos-user-add)
@@ -386,7 +387,7 @@ ALIASES
 
 ## `mdos add ingress`
 
-Configure ingress rules to allow external acces to your component ports using hostnames
+Configure ingress rules to allow external access to your component ports using hostnames
 
 ```
 USAGE
@@ -399,7 +400,7 @@ FLAGS
   -t, --type=<value>      Traffic type (http, https, tcp/udp)
 
 DESCRIPTION
-  Configure ingress rules to allow external acces to your component ports using hostnames
+  Configure ingress rules to allow external access to your component ports using hostnames
 
 ALIASES
   $ mdos add ingress
@@ -608,7 +609,7 @@ USAGE
 
 FLAGS
   -p, --password=<value>  MDos password
-  -u, --username=<value>  Mdos username
+  -u, --username=<value>  MDos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -715,7 +716,7 @@ USAGE
 
 FLAGS
   -p, --password=<value>  MDos password
-  -u, --username=<value>  Mdos username
+  -u, --username=<value>  MDos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -803,7 +804,7 @@ USAGE
 
 FLAGS
   -p, --password=<value>  MDos password
-  -u, --username=<value>  Mdos username
+  -u, --username=<value>  MDos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -2246,7 +2247,7 @@ USAGE
 
 FLAGS
   -p, --password=<value>  MDos password
-  -u, --username=<value>  Mdos username
+  -u, --username=<value>  MDos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -2269,7 +2270,7 @@ USAGE
 
 FLAGS
   -p, --password=<value>  MDos password
-  -u, --username=<value>  Mdos username
+  -u, --username=<value>  MDos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -2292,7 +2293,7 @@ USAGE
 
 FLAGS
   -p, --password=<value>  MDos password
-  -u, --username=<value>  Mdos username
+  -u, --username=<value>  MDos username
 
 DESCRIPTION
   Deploy an application from the current directory
@@ -2677,7 +2678,7 @@ ALIASES
 
 ## `mdos generate ingress`
 
-Configure ingress rules to allow external acces to your component ports using hostnames
+Configure ingress rules to allow external access to your component ports using hostnames
 
 ```
 USAGE
@@ -2690,7 +2691,7 @@ FLAGS
   -t, --type=<value>      Traffic type (http, https, tcp/udp)
 
 DESCRIPTION
-  Configure ingress rules to allow external acces to your component ports using hostnames
+  Configure ingress rules to allow external access to your component ports using hostnames
 
 ALIASES
   $ mdos add ingress
@@ -2811,38 +2812,6 @@ ALIASES
   $ mdos storage generate
 ```
 
-## `mdos get-config`
-
-Get configutation parameter(s) for your local CLI environement
-
-```
-USAGE
-  $ mdos get-config
-
-DESCRIPTION
-  Get configutation parameter(s) for your local CLI environement
-
-ALIASES
-  $ mdos get config
-```
-
-_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/get-config.ts)_
-
-## `mdos get config`
-
-Get configutation parameter(s) for your local CLI environement
-
-```
-USAGE
-  $ mdos get config
-
-DESCRIPTION
-  Get configutation parameter(s) for your local CLI environement
-
-ALIASES
-  $ mdos get config
-```
-
 ## `mdos help [COMMAND]`
 
 Display help for mdos.
@@ -2929,7 +2898,7 @@ ALIASES
 
 ## `mdos ingress add`
 
-Configure ingress rules to allow external acces to your component ports using hostnames
+Configure ingress rules to allow external access to your component ports using hostnames
 
 ```
 USAGE
@@ -2942,7 +2911,7 @@ FLAGS
   -t, --type=<value>      Traffic type (http, https, tcp/udp)
 
 DESCRIPTION
-  Configure ingress rules to allow external acces to your component ports using hostnames
+  Configure ingress rules to allow external access to your component ports using hostnames
 
 ALIASES
   $ mdos add ingress
@@ -2952,7 +2921,7 @@ ALIASES
 
 ## `mdos ingress generate`
 
-Configure ingress rules to allow external acces to your component ports using hostnames
+Configure ingress rules to allow external access to your component ports using hostnames
 
 ```
 USAGE
@@ -2965,13 +2934,27 @@ FLAGS
   -t, --type=<value>      Traffic type (http, https, tcp/udp)
 
 DESCRIPTION
-  Configure ingress rules to allow external acces to your component ports using hostnames
+  Configure ingress rules to allow external access to your component ports using hostnames
 
 ALIASES
   $ mdos add ingress
   $ mdos ingress add
   $ mdos ingress generate
 ```
+
+## `mdos install-framework`
+
+Install MDos framework to your kubernetes cluster
+
+```
+USAGE
+  $ mdos install-framework
+
+DESCRIPTION
+  Install MDos framework to your kubernetes cluster
+```
+
+_See code: [dist/commands/install-framework.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.0/dist/commands/install-framework.ts)_
 
 ## `mdos kc client add-role`
 
@@ -3629,7 +3612,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.0/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3643,7 +3626,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.0/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -4390,6 +4373,18 @@ ALIASES
   $ mdos secret generate
 ```
 
+## `mdos secret create`
+
+Create a secret
+
+```
+USAGE
+  $ mdos secret create
+
+DESCRIPTION
+  Create a secret
+```
+
 ## `mdos secret generate`
 
 Add a secrets to you components for sensitive environement variables and secret config files
@@ -4461,7 +4456,7 @@ DESCRIPTION
   Retrieve user kubeconfig file and set up
 ```
 
-_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/set-kubeconfig.ts)_
+_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.0/dist/commands/set-kubeconfig.ts)_
 
 ## `mdos shared-volume create`
 
@@ -4847,6 +4842,20 @@ ALIASES
   $ mdos sso providers list
   $ mdos sso providers show
 ```
+
+## `mdos status`
+
+Get current status of your CLI environment
+
+```
+USAGE
+  $ mdos status
+
+DESCRIPTION
+  Get current status of your CLI environment
+```
+
+_See code: [dist/commands/status.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.0/dist/commands/status.ts)_
 
 ## `mdos storage add`
 
