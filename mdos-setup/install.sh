@@ -1357,6 +1357,15 @@ install_keycloak() {
         createMdosRole "oidc-remove"
         createMdosRole "cm-cluster-issuer"
 
+        # Update serviceaccount token lifespan to 1 hour
+        gen_api_token
+        curl -s -k --request PUT \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            --data-raw '{"accessTokenLifespan":3600}'
+
         # Create secret with credentials
         cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
