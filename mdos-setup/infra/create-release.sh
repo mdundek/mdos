@@ -219,6 +219,21 @@ build_push_docker_hub() {
         fi
     done
 
+    # Cert manager replica image
+    cd $REPO_DIR/mdos-setup/dep/images/cert-job-manager
+    DOCKER_BUILDKIT=1 docker build -t mdundek/cert-manager-replicate-bot:latest .
+    docker push mdundek/cert-manager-replicate-bot:latest
+
+    # LFTP Mirror image
+    cd $REPO_DIR/mdos-setup/dep/images/docker-mirror-lftp
+    DOCKER_BUILDKIT=1 docker build -t mdundek/mdos-mirror-lftp:latest .
+    docker push mdundek/mdos-mirror-lftp:latest
+
+    # LFTP Server image
+    cd $REPO_DIR/mdos-ftp
+    DOCKER_BUILDKIT=1 docker build -t mdundek/mdos-ftp-bot .
+    docker push mdundek/mdos-ftp-bot
+
     cd $REPO_DIR
     git checkout release > /dev/null 2>&1
 
@@ -231,10 +246,8 @@ build_push_docker_hub() {
     cp infra/dep/kubectl/kubectl .
     cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
     cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
-
-    docker build -t mdos-api:$CURRENT_APP_VERSION .
-    docker push mdos-api:$CURRENT_APP_VERSION
-
+    docker build -t mdundek/mdos-api:$CURRENT_APP_VERSION .
+    docker push mdundek/mdos-api:$CURRENT_APP_VERSION
     rm -rf helm
     rm -rf kubectl
     rm -rf mhc-generic
@@ -242,10 +255,9 @@ build_push_docker_hub() {
 
     # MDos Broker
     cd $REPO_DIR/mdos-broker
-
-    docker build -t mdos-broker:$CURRENT_APP_VERSION .
-    docker push mdos-broker:$CURRENT_APP_VERSION
-
+    docker build -t mdundek/mdos-broker:$CURRENT_APP_VERSION .
+    docker push mdundek/mdos-broker:$CURRENT_APP_VERSION
+    
     git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
 }
 

@@ -6,9 +6,10 @@ forceUpdate: true
 components:
   - name: broker
     uuid: KG75-7D58-broker
-    image: mdundek/mdos-broker
+    image: mdos-broker
     tag: latest
-    publicRegistry: true
+    imagePullSecrets:
+      - name: regcred
     imagePullPolicy: Always
     services:
       - name: http
@@ -26,9 +27,10 @@ components:
             value: "/usr/src/db/mdos_broker.sqlite"
   - name: api
     uuid: KG75-7D58-api
-    image: mdundek/mdos-api
+    image: mdos-api
     tag: latest
-    publicRegistry: true
+    imagePullSecrets:
+      - name: regcred
     imagePullPolicy: Always
     services:
       - name: http

@@ -16,8 +16,6 @@ source ./lib/components.sh
 source ./lib/helpers.sh
 source ./lib/mdos_lib.sh
 
-MDOS_VERSION=latest
-
 clear
 echo '
   __  __ ___   ___  ___   ___ _  _ ___ _____ _   _    _    
@@ -61,6 +59,9 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+# Get current version
+MDOS_VERSION=$(cat ../mdos-api/package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
 
 # ############################################
 # ################# VARIABLES ################
@@ -1482,9 +1483,7 @@ install_mdos() {
     cp infra/dep/kubectl/kubectl .
     cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
     cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
-
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:$MDOS_VERSION . &>> $LOG_FILE
-
     rm -rf helm
     rm -rf kubectl
     rm -rf mhc-generic

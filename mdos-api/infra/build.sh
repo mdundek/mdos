@@ -74,32 +74,32 @@ cd ..
 
 echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-stdin
 
+CURRENT_APP_VERSION=$(cat ./package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
+
 cp infra/dep/helm/helm .
 cp infra/dep/kubectl/kubectl .
 cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
 cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
-
-docker build -t registry.$DOMAIN/mdos-api:latest .
-
+docker build -t registry.$DOMAIN/mdos-api:$CURRENT_APP_VERSION .
 rm -rf helm
 rm -rf kubectl
 rm -rf mhc-generic
 rm -rf istio-discovery
 
-docker push registry.$DOMAIN/mdos-api:latest
+docker push registry.$DOMAIN/mdos-api:$CURRENT_APP_VERSION
 
 if [ ! -z $DO_EXPORT ]; then
-    docker tag registry.$DOMAIN/mdos-api:latest mdos-api:latest
-    docker save mdos-api:latest | gzip > ../mdos-setup/dep/mdos-api/mdos-api.tar.gz
+    docker tag registry.$DOMAIN/mdos-api:$CURRENT_APP_VERSION mdos-api:$CURRENT_APP_VERSION
+    docker save mdos-api:$CURRENT_APP_VERSION | gzip > ../mdos-setup/dep/mdos-api/mdos-api.tar.gz
 fi
 
 cd ../mdos-broker
-docker build -t registry.$DOMAIN/mdos-broker:latest .
-docker push registry.$DOMAIN/mdos-broker:latest
+docker build -t registry.$DOMAIN/mdos-broker:$CURRENT_APP_VERSION .
+docker push registry.$DOMAIN/mdos-broker:$CURRENT_APP_VERSION
 
 if [ ! -z $DO_EXPORT ]; then
-    docker tag registry.$DOMAIN/mdos-broker:latest mdos-broker:latest
-    docker save mdos-broker:latest | gzip > ../mdos-setup/dep/mdos-broker/mdos-broker.tar.gz
+    docker tag registry.$DOMAIN/mdos-broker:$CURRENT_APP_VERSION mdos-broker:$CURRENT_APP_VERSION
+    docker save mdos-broker:$CURRENT_APP_VERSION | gzip > ../mdos-setup/dep/mdos-broker/mdos-broker.tar.gz
 fi
 
 cd ../mdos-api/infra
@@ -115,6 +115,12 @@ if [ ! -z $DO_DEPLOY ]; then
     cat ./values.yaml > ./target_values.yaml
 
     sed -i "s|<DOMAIN>|$DOMAIN|g" ./target_values.yaml
+
+    # update target version for images 
+    MDOS_VALUES="$(cat ./target_values.yaml)"
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[0].tag = "'$CURRENT_APP_VERSION'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | yq '.components[1].tag = "'$CURRENT_APP_VERSION'"')
+    printf "$MDOS_VALUES\n" > ./target_values.yaml
 
     mdos_deploy_app
     rm -rf ./target_values.yaml
