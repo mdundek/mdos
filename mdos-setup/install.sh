@@ -1479,10 +1479,15 @@ install_mdos() {
     cp infra/dep/helm/helm .
     cp infra/dep/kubectl/kubectl .
     cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
+    cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
+
     DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
+
     rm -rf helm
     rm -rf kubectl
     rm -rf mhc-generic
+    rm -rf istio-discovery
+
     failsafe_docker_push registry.$DOMAIN/mdos-api:latest
 
     # Build mdos-broker image
@@ -1515,7 +1520,6 @@ install_mdos() {
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].volumes[0].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')

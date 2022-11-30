@@ -77,12 +77,14 @@ echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-s
 cp infra/dep/helm/helm .
 cp infra/dep/kubectl/kubectl .
 cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
+cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
 
 docker build -t registry.$DOMAIN/mdos-api:latest .
 
 rm -rf helm
 rm -rf kubectl
 rm -rf mhc-generic
+rm -rf istio-discovery
 
 docker push registry.$DOMAIN/mdos-api:latest
 

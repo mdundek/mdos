@@ -868,9 +868,7 @@ class KubeBase extends KubeBaseConstants {
     async helmInstall(namespace, chartName, values, chart, version) {
         try {
             fs.writeFileSync('./values.yaml', YAML.stringify(values))
-            console.log("HELM START")
             await terminalCommand(`${this.HELM_BASE_CMD} upgrade --install -n ${namespace} ${version ? `--version ${version}` : ''} --values ./values.yaml  ${chartName} ${chart} --atomic`)
-            console.log("HELM DONE")
         } finally {
             if (fs.existsSync('./values.yaml')) {
                 fs.rmSync('./values.yaml', { force: true })

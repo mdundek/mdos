@@ -53,7 +53,7 @@ components:
           - key: GEN_HELM_PATH_PATH
             value: "/usr/src/dep/mhc-generic"
           - key: ISTIO_CHART_PATH
-            value: "/usr/src/dep/istio_helm/istio-control/istio-discovery"
+            value: "/usr/src/dep/istio-discovery"
           - key: RUN_TARGET
             value: "pod"
           - key: FTP_SERVER_MAIN_PORT
@@ -102,11 +102,6 @@ components:
               AwEHoUQDQgAEyr9/tyR0WYR2GeoEgIUvg2dyqisvM9zpcd4Ix/Qi5Pol2FSCxLMQ
               vl9kAlcTISs1S4GRN0w6ceUHtqXJIvwL5g==
               -----END EC PRIVATE KEY-----
-        
-    volumes:
-      - name: istiod-helm-volume
-        mountPath: /usr/src/dep/istio_helm/istio-control/istio-discovery
-        hostPath: /home/mdundek/mdos/mdos-setup/dep/istio_helm/istio-control/istio-discovery
           
     oidc:
       issuer: https://keycloak.<DOMAIN>:30999/realms/mdos
