@@ -16,6 +16,8 @@ source ./lib/components.sh
 source ./lib/helpers.sh
 source ./lib/mdos_lib.sh
 
+MDOS_VERSION=latest
+
 clear
 echo '
   __  __ ___   ___  ___   ___ _  _ ___ _____ _   _    _    
@@ -1481,19 +1483,19 @@ install_mdos() {
     cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
     cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
 
-    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:$MDOS_VERSION . &>> $LOG_FILE
 
     rm -rf helm
     rm -rf kubectl
     rm -rf mhc-generic
     rm -rf istio-discovery
 
-    failsafe_docker_push registry.$DOMAIN/mdos-api:latest
+    failsafe_docker_push registry.$DOMAIN/mdos-api:$MDOS_VERSION
 
     # Build mdos-broker image
     cd ../mdos-broker
-    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-broker:latest . &>> $LOG_FILE
-    failsafe_docker_push registry.$DOMAIN/mdos-broker:latest
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-broker:$MDOS_VERSION . &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/mdos-broker:$MDOS_VERSION
 
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
@@ -1514,6 +1516,8 @@ install_mdos() {
     fi
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.registry = "'$K3S_REG_DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].tag = "'$MDOS_VERSION'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].tag = "'$MDOS_VERSION'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].configs[0].entries[0].value = "'$DOMAIN'"')
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')

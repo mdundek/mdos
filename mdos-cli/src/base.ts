@@ -113,6 +113,14 @@ export default abstract class extends Command {
     }
 
     /**
+     * getCliVersion
+     * @returns 
+     */
+    getCliVersion() {
+        return pjson.version
+    }
+
+    /**
      * api
      *
      * @param endpoint

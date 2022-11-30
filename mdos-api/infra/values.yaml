@@ -8,8 +8,7 @@ components:
     uuid: KG75-7D58-broker
     image: mdos-broker
     tag: latest
-    imagePullSecrets:
-      - name: regcred
+    publicRegistry: true
     imagePullPolicy: Always
     services:
       - name: http
@@ -29,8 +28,7 @@ components:
     uuid: KG75-7D58-api
     image: mdos-api
     tag: latest
-    imagePullSecrets:
-      - name: regcred
+    publicRegistry: true
     imagePullPolicy: Always
     services:
       - name: http

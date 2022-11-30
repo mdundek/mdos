@@ -6,7 +6,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/1.5.6 darwin-x64 node-v18.9.0
+mdos-cli/1.6.0 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -2826,7 +2826,7 @@ ALIASES
   $ mdos get config
 ```
 
-_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.6/dist/commands/get-config.ts)_
+_See code: [dist/commands/get-config.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/get-config.ts)_
 
 ## `mdos get config`
 
@@ -3629,7 +3629,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.6/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3643,7 +3643,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.6/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -4461,7 +4461,7 @@ DESCRIPTION
   Retrieve user kubeconfig file and set up
 ```
 
-_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.5.6/dist/commands/set-kubeconfig.ts)_
+_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v1.6.0/dist/commands/set-kubeconfig.ts)_
 
 ## `mdos shared-volume create`
 

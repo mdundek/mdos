@@ -72,9 +72,10 @@ bump_version_on_main_merge_to_release() {
     bump_and_merge() {
         (
             ./mdos-setup/infra/version-bump.sh --repo api --type $1 --force && \
+            ./mdos-setup/infra/version-bump.sh --repo broker --type $1 --force && \
             ./mdos-setup/infra/version-bump.sh --repo cli --type $1 --force && \
-                git checkout release > /dev/null 2>&1 && \
-                git merge --no-ff main > /dev/null 2>&1
+            git checkout release > /dev/null 2>&1 && \
+            git merge --no-ff main > /dev/null 2>&1
             git push origin release > /dev/null 2>&1
         ) || ( exit 1 )
     }
@@ -118,7 +119,7 @@ tag_and_publish_to_release() {
 }
 
 gen_and_publish_release_and_assets() {
-        # Now we create the release for this tag
+    # Now we create the release for this tag
     # Create release with releasenotes
     generate_release_files() {
         # Package files
@@ -128,7 +129,6 @@ gen_and_publish_release_and_assets() {
 
         npm run package
         
-
         # Rename files
         cd ./dist
         for f in ./*.tar.*; do
@@ -204,6 +204,51 @@ gen_and_publish_release_and_assets() {
     fi
 }
 
+build_push_docker_hub() {
+    # Login to docker hub
+    unset DOCKERHUB_LOGIN
+    while [ -z $DOCKERHUB_LOGIN ]; do 
+        user_input DOCKERHUB_USER "Please enter Dockerhub username:"
+        user_input DOCKERHUB_PASS "Please enter Dockerhub password:"
+
+        echo "$DOCKERHUB_PASS" | docker login --username $DOCKERHUB_USER --password-stdin
+        if [ $? == 0 ]; then
+            DOCKERHUB_LOGIN=1
+        else
+            error "Wrong credentials"
+        fi
+    done
+
+    cd $REPO_DIR
+    git checkout release > /dev/null 2>&1
+
+    # MDos API
+    cd $REPO_DIR/mdos-api
+
+    CURRENT_APP_VERSION=$(cat ./package.json | grep '"version":' | head -1 | cut -d ":" -f2 | cut -d'"' -f 2)
+
+    cp infra/dep/helm/helm .
+    cp infra/dep/kubectl/kubectl .
+    cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
+    cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
+
+    docker build -t mdos-api:$CURRENT_APP_VERSION .
+    docker push mdos-api:$CURRENT_APP_VERSION
+
+    rm -rf helm
+    rm -rf kubectl
+    rm -rf mhc-generic
+    rm -rf istio-discovery
+
+    # MDos Broker
+    cd $REPO_DIR/mdos-broker
+
+    docker build -t mdos-broker:$CURRENT_APP_VERSION .
+    docker push mdos-broker:$CURRENT_APP_VERSION
+
+    git checkout $REPO_BRANCH_MDOS > /dev/null 2>&1
+}
+
 (
     set -Ee
 
@@ -235,12 +280,15 @@ gen_and_publish_release_and_assets() {
     # Make sure we are on main branch
     git checkout main > /dev/null 2>&1
 
-    # Collect new amm version
+    # Collect new app version
     collect_new_version
 
     # Update version and merge with release branch
     info "Processing Repo..."
     bump_version_on_main_merge_to_release $_PATH $_CHART_PATH
+
+    # Create release images and push to docker hub
+    build_push_docker_hub
 
     # Create new tag for version and publish to release
     tag_and_publish_to_release

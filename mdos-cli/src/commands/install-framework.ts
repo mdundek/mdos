@@ -502,7 +502,7 @@ export default class InstallFramework extends Command {
                         containers: [
                             {
                                 name: 'mdos-broker',
-                                image: 'mdundek/mdos-broker:latest',
+                                image: 'mdundek/mdos-broker:' + this.getCliVersion(),
                                 imagePullPolicy: 'Always',
                                 env: [
                                     {
@@ -648,7 +648,7 @@ export default class InstallFramework extends Command {
                         containers: [
                             {
                                 name: 'mdos-api',
-                                image: 'mdundek/mdos-api:latest',
+                                image: 'mdundek/mdos-api:' + this.getCliVersion(),
                                 imagePullPolicy: 'Always',
                                 env: [
                                     {

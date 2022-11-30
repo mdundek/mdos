@@ -33,6 +33,8 @@ elif [ "$REPO_NAME" != "cli" ] && [ "$REPO_NAME" != "api" ]; then
 else
   if [ "$REPO_NAME" != "cli" ]; then
     REPO_NAME=mdos-cli
+  elif [ "$REPO_NAME" != "broker" ]; then
+    REPO_NAME=mdos-broker
   else
     REPO_NAME=mdos-api
   fi
@@ -100,7 +102,7 @@ NEW_APP_VERSION="${major}.${minor}.${build}"
 # ######## MAKE SURE WE WANT TO PROSCEED #########
 # ################################################
 if [ -z $FORCE ]; then
-  yes_no DO_CONTINUE "MDos CLI: old version is $CURRENT_APP_VERSION, will bump up to version $NEW_APP_VERSION. Do you want to prosceed?"
+  yes_no DO_CONTINUE "$REPO_NAME: old version is $CURRENT_APP_VERSION, will bump up to version $NEW_APP_VERSION. Do you want to prosceed?"
   if [ "$DO_CONTINUE" == "no" ]; then
     exit 0
   fi
