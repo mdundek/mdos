@@ -25,22 +25,22 @@ image:
   longhorn:
     engine:
       repository: longhornio/longhorn-engine
-      tag: master-head
+      tag: v1.3.2
     manager:
       repository: longhornio/longhorn-manager
-      tag: master-head
+      tag: v1.3.2
     ui:
       repository: longhornio/longhorn-ui
-      tag: master-head
+      tag: v1.3.2
     instanceManager:
       repository: longhornio/longhorn-instance-manager
-      tag: v1_20220920
+      tag: v1_20221003
     shareManager:
       repository: longhornio/longhorn-share-manager
-      tag: v1_20220914
+      tag: v1_20221003
     backingImageManager:
       repository: longhornio/backing-image-manager
-      tag: v3_20220808
+      tag: v3_20221003
   csi:
     attacher:
       repository: longhornio/csi-attacher
@@ -53,10 +53,10 @@ image:
       tag: v2.5.0
     resizer:
       repository: longhornio/csi-resizer
-      tag: v1.3.0
+      tag: v1.2.0
     snapshotter:
       repository: longhornio/csi-snapshotter
-      tag: v5.0.1
+      tag: v3.0.3
   pullPolicy: IfNotPresent
 
 service:
@@ -85,9 +85,6 @@ persistence:
     dataSourceType: ~
     dataSourceParameters: ~
     expectedChecksum: ~
-  defaultNodeSelector:
-    enable: false # disable by default
-    selector: []
 
 csi:
   kubeletRootDir: ~
@@ -112,8 +109,6 @@ defaultSettings:
   defaultLonghornStaticStorageClass: ~
   backupstorePollInterval: ~
   failedBackupTTL: ~
-  recurringSuccessfulJobsHistoryLimit: ~
-  recurringFailedJobsHistoryLimit: ~
   taintToleration: ~
   systemManagedComponentsNodeSelector: ~
   priorityClass: ~
@@ -139,7 +134,6 @@ defaultSettings:
   kubernetesClusterAutoscalerEnabled: ~
   orphanAutoDeletion: ~
   storageNetwork: ~
-  deletingConfirmationFlag: ~
 privateRegistry:
   createSecret: ~
   registryUrl: ~
@@ -250,9 +244,8 @@ ingress:
   #   key:
   #   certificate:
 
-#  For Kubernetes < v1.25, if your cluster enables Pod Security Policy admission controller,
-#  set this to `true` to ship longhorn-psp which allow privileged Longhorn pods to start
-enablePSP: false
+# Configure a pod security policy in the Longhorn namespace to allow privileged pods
+enablePSP: true
 
 ## Specify override namespace, specifically this is useful for using longhorn as sub-chart
 ## and its release namespace is not the `longhorn-system`

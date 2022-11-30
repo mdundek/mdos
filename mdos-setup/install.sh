@@ -60,6 +60,9 @@ while [ "$1" != "" ]; do
     shift
 done
 
+# Get current version
+MDOS_VERSION=$(cat ../mdos-api/package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
+
 # ############################################
 # ################# VARIABLES ################
 # ############################################
@@ -767,8 +770,8 @@ EOF
 install_longhorn() {
     $kubectl create namespace longhorn-system &>> $LOG_FILE
     if [ "$PSYSTEM" == "DNF" ]; then
-        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.2.1/deploy/prerequisite/longhorn-iscsi-installation.yaml &>> $LOG_FILE
-        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.2.1/deploy/prerequisite/longhorn-nfs-installation.yaml &>> $LOG_FILE
+        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.2/deploy/prerequisite/longhorn-iscsi-installation.yaml &>> $LOG_FILE
+        $kubectl apply -n longhorn-system -f https://raw.githubusercontent.com/longhorn/longhorn/v1.3.2/deploy/prerequisite/longhorn-nfs-installation.yaml &>> $LOG_FILE
     fi
     cp $_DIR/dep/longhorn/chart/values.yaml $_DIR/dep/longhorn/chart/values_backup.yaml
 
@@ -1357,6 +1360,15 @@ install_keycloak() {
         createMdosRole "oidc-remove"
         createMdosRole "cm-cluster-issuer"
 
+        # Update serviceaccount token lifespan to 1 hour
+        gen_api_token
+        curl -s -k --request PUT \
+            https://keycloak.$DOMAIN:30999/admin/realms/$REALM \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -H "Authorization: Bearer $KC_TOKEN" \
+            --data-raw '{"accessTokenLifespan":3600}'
+
         # Create secret with credentials
         cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
 apiVersion: v1
@@ -1469,10 +1481,20 @@ install_mdos() {
     cd ../mdos-api
     cp infra/dep/helm/helm .
     cp infra/dep/kubectl/kubectl .
-    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:latest . &>> $LOG_FILE
+    cp -R ../mdos-setup/dep/mhc-generic/chart ./mhc-generic
+    cp -R ../mdos-setup/dep/istio_helm/istio-control/istio-discovery ./istio-discovery
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-api:$MDOS_VERSION . &>> $LOG_FILE
     rm -rf helm
     rm -rf kubectl
-    failsafe_docker_push registry.$DOMAIN/mdos-api:latest
+    rm -rf mhc-generic
+    rm -rf istio-discovery
+
+    failsafe_docker_push registry.$DOMAIN/mdos-api:$MDOS_VERSION
+
+    # Build mdos-broker image
+    cd ../mdos-broker
+    DOCKER_BUILDKIT=1 docker build -t registry.$DOMAIN/mdos-broker:$MDOS_VERSION . &>> $LOG_FILE
+    failsafe_docker_push registry.$DOMAIN/mdos-broker:$MDOS_VERSION
 
     # Build lftp image
     cd ../mdos-setup/dep/images/docker-mirror-lftp
@@ -1486,109 +1508,30 @@ install_mdos() {
     K3S_REG_DOMAIN="registry.$DOMAIN"
 
     if [ ! -z $NO_DNS ]; then
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].ip = "'$LOCAL_IP'"')
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].hostAliases[0].ip = "'$LOCAL_IP'"')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].hostAliases[0].hostNames[0] = "mdos-ftp-api.'$DOMAIN'"')
     else
-        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq eval 'del(.components[0].hostAliases)')
+        MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq eval 'del(.components[1].hostAliases)')
     fi
 
     MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.registry = "'$K3S_REG_DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].configs[0].entries[0].value = "'$DOMAIN'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].volumes[0].hostPath = "'$_DIR'/dep/mhc-generic/chart"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].volumes[1].hostPath = "'$_DIR'/dep/istio_helm/istio-control/istio-discovery"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
-    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[0].tag = "'$MDOS_VERSION'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].tag = "'$MDOS_VERSION'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].ingress[0].matchHost = "mdos-api.'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].configs[0].entries[0].value = "'$DOMAIN'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[0].entries[0].value = "'$KEYCLOAK_USER'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[0].entries[1].value = "'$KEYCLOAK_PASS'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[1].entries[0].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.crt)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].secrets[1].entries[1].value = "'"$(< /var/lib/rancher/k3s/server/tls/client-ca.key)"'"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.issuer = "https://keycloak.'$DOMAIN':30999/realms/mdos"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.jwksUri = "https://keycloak.'$DOMAIN':30999/realms/mdos/protocol/openid-connect/certs"')
+    MDOS_VALUES=$(echo "$MDOS_VALUES" | /usr/local/bin/yq '.components[1].oidc.hosts[0] = "mdos-api.'$DOMAIN'"')
     
     printf "$MDOS_VALUES\n" > ./target_values.yaml
 
     mdos_deploy_app "true" "false"
 
     rm -rf ./target_values.yaml
-}
-
-# ############################################
-# ############# INSTALL RABBITMQ #############
-# ############################################
-install_rabbitmq() {
-    $helm repo add bitnami https://charts.bitnami.com/bitnami &>> $LOG_FILE
-    $helm install rabbit-operator bitnami/rabbitmq-cluster-operator --namespace rabbitmq --create-namespace --atomic &>> $LOG_FILE
-
-    # Wait untill available
-    unset LOOP_BREAK
-    while [ -z $LOOP_BREAK ]; do
-        DEP_STATUS=$($kubectl get deploy rabbit-operator-rabbitmq-cluster-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
-        if [ "$DEP_STATUS" == "1" ]; then
-            DEP_STATUS=$($kubectl get deploy rabbit-operator-rabbitmq-messaging-topology-operator --namespace rabbitmq -o json | jq -r '.status.availableReplicas')
-            if [ "$DEP_STATUS" == "1" ]; then
-                LOOP_BREAK=1
-            else
-                sleep 2
-            fi
-        else
-            sleep 2
-        fi
-    done 
-
-    # Instantiate cluster
-    cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
-apiVersion: rabbitmq.com/v1beta1
-kind: RabbitmqCluster
-metadata:
-  name: rabbitmq-cluster
-  namespace: rabbitmq
-spec:
-  replicas: 1
-  override:
-    statefulSet:
-      spec:
-        podManagementPolicy: OrderedReady
-  service:
-    type: NodePort
-  persistence:
-    storageClassName: longhorn
-    storage: ${RABBIT_MQ_VOLUME_SIZE}Gi
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-            - key: app.kubernetes.io/name
-              operator: In
-              values:
-              - rabbitmq-cluster
-        topologyKey: kubernetes.io/hostname
-  rabbitmq:
-    additionalPlugins:
-    - rabbitmq_federation
-    additionalConfig: |
-      disk_free_limit.absolute = 500MB
-      vm_memory_high_watermark.relative = 0.6
-EOF
-
-    # Wait for pod rabbitmq-cluster-server-0
-    unset LOOP_BREAK
-    while [ -z $LOOP_BREAK ]; do
-        DEP_STATUS=$($kubectl get pod rabbitmq-cluster-server-0 --namespace rabbitmq -o json 2> $LOG_FILE | jq -r '.status.phase')
-        if [ "$DEP_STATUS" == "Running" ]; then
-            LOOP_BREAK=1
-        else
-            sleep 2
-        fi
-    done 
-
-    # Copy credentials secret over to mdos namespace
-    SECRET_YAML=$($kubectl get secret rabbitmq-cluster-default-user -n rabbitmq -o yaml | grep -v '^\s*namespace:\s' | grep -v '^\s*creationTimestamp:\s' | grep -v '^\s*resourceVersion:\s' | grep -v '^\s*uid:\s')
-    SECRET_YAML=$(echo "$SECRET_YAML" | /usr/local/bin/yq eval 'del(.metadata.ownerReferences)')
-    SECRET_YAML=$(echo "$SECRET_YAML" | /usr/local/bin/yq eval 'del(.metadata.labels)')
-    cat <<EOF | $kubectl apply -n mdos -f &>> $LOG_FILE -
-$SECRET_YAML
-EOF
 }
 
 # ############################################
@@ -1682,6 +1625,19 @@ install_ftpd() {
     printf "$FTP_DOCKER_COMPOSE_VAL\n" > ./docker-compose.yaml
 
     docker compose up -d &>> $LOG_FILE
+
+    # Wait untill up and running
+    sleep 5
+    unset FOUND_RUNNING_FTP_SRV
+    while [ -z $FOUND_RUNNING_FTP_SRV ]; do
+        while read DCOMP_LINE ; do
+            C_STATUS=`echo "$DCOMP_LINE" | awk 'END {print $2}'`
+            if [ "$C_STATUS" == "running(1)" ]; then
+                FOUND_RUNNING_FTP_SRV=1
+            fi
+        done < <(sudo docker compose ls | grep "pure-ftpd" 2>/dev/null)
+        sleep 1
+    done
 
     # Install endpoint to use K3S ingress for this
     cat <<EOF | $kubectl apply -f &>> $LOG_FILE -
@@ -2184,13 +2140,6 @@ EOF
         info "Protect Longhorn UI..."
         protect_longhorn
         set_env_step_data "INST_STEP_LONGHORN_PROTECT" "1"
-    fi
-
-    # INSTALL RABBITMQ
-    if [ -z $INST_STEP_RABBITMQ ]; then
-        info "Install RabbitMQ..."
-        install_rabbitmq
-        set_env_step_data "INST_STEP_RABBITMQ" "1"
     fi
 
     # INSTALL MDOS

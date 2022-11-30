@@ -27,6 +27,15 @@ export default class Protect extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Protect)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Not supported in framework only mode
+            error('This command is only available for MDos managed cluster deployments')
+            process.exit(1)
+        }
+
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), 'mdos.yaml')
         let componentName: any
@@ -46,8 +55,8 @@ export default class Protect extends Command {
         }
         try {
             appYaml = YAML.parse(fs.readFileSync(appYamlPath, 'utf8'))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -144,8 +153,8 @@ export default class Protect extends Command {
         // Make sure user is connected
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -158,8 +167,8 @@ export default class Protect extends Command {
             let oidcProviders: any
             try {
                 oidcProviders = await this.api(`oidc-provider`, 'get')
-            } catch (error) {
-                this.showError(error)
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
             }
             if (oidcProviders.data.length == 0) {
@@ -201,8 +210,8 @@ export default class Protect extends Command {
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
             info('SSO protection added successfully')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

@@ -1,6 +1,6 @@
 {
     "name": "mdos-cli",
-    "version": "1.6.0",
+    "version": "3.0.0",
     "description": "mdos cli tool",
     "author": "Michael Dundek",
     "bin": {
@@ -33,6 +33,7 @@
         "shelljs": "^0.8.5",
         "socket.io-client": "^2.5.0",
         "treeify": "^1.1.0",
+        "url-exists-deep": "^2.1.4",
         "yaml": "^2.1.1"
     },
     "devDependencies": {

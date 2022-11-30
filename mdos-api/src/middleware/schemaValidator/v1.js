@@ -11,7 +11,8 @@ class SchemaV1 {
      * Creates an instance of SchemaV1.
      * @memberof SchemaV1
      */
-    constructor() {
+    constructor(frameworkOnlyMode) {
+        this.frameworkOnlyMode = frameworkOnlyMode
         this.validator = new Validator()
 
         // Application schema
@@ -19,7 +20,7 @@ class SchemaV1 {
             id: '/MdosApplication',
             type: 'object',
             properties: {
-                schemaVersion: { type: 'string', enum: ['v1'] },
+                schemaVersion: { type: 'string', enum: ['v1', 'v1-framework'] },
                 tenantName: {
                     type: 'string',
                     pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
@@ -49,6 +50,7 @@ class SchemaV1 {
                             tag: { type: 'string' },
                             registry: { type: 'string' },
                             publicRegistry: { type: 'boolean' },
+                            imagePullPolicy: { type: 'string', enum: ['Always', 'IfNotPresent', 'Never'] },
                             imagePullSecrets: {
                                 type: 'array',
                                 items: {
@@ -129,76 +131,6 @@ class SchemaV1 {
                                     additionalProperties: false,
                                 },
                             },
-                            ingress: {
-                                type: 'array',
-                                items: {
-                                    type: 'object',
-                                    properties: {
-                                        name: {
-                                            type: 'string',
-                                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
-                                        },
-                                        matchHost: {
-                                            type: 'string',
-                                            format: 'host-name',
-                                        },
-                                        targetPort: { type: 'integer' },
-                                        trafficType: { type: 'string', enum: ['http', 'https'] },
-                                        subPath: { type: 'string' }
-                                    },
-                                    required: ['name', 'matchHost', 'targetPort'],
-                                    additionalProperties: false,
-                                },
-                            },
-                            volumes: {
-                                type: 'array',
-                                items: {
-                                    type: 'object',
-                                    properties: {
-                                        name: {
-                                            type: 'string',
-                                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
-                                        },
-                                        mountPath: { type: 'string' },
-                                        hostPath: { type: 'string' },
-                                        sharedVolumeName: { type: 'string' },
-                                        syncVolume: { type: 'boolean' },
-                                        trigger: { type: 'string' },
-                                        size: { type: 'string' }
-                                    },
-                                    required: ['name', 'mountPath'],
-                                    additionalProperties: false,
-                                },
-                            },
-                            oidc: {
-                                type: 'object',
-                                properties: {
-                                    provider: {
-                                        type: 'string',
-                                        pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
-                                    },
-                                    hosts: {
-                                        type: 'array',
-                                        items: {
-                                            type: 'string',
-                                        },
-                                    },
-                                    paths: {
-                                        type: 'array',
-                                        items: {
-                                            type: 'string',
-                                        },
-                                    },
-                                    excludePaths: {
-                                        type: 'array',
-                                        items: {
-                                            type: 'string',
-                                        },
-                                    },
-                                },
-                                required: ['provider', 'hosts'],
-                                additionalProperties: false,
-                            },
                             networkPolicy: {
                                 type: 'object',
                                 properties: {
@@ -229,6 +161,7 @@ class SchemaV1 {
                                     type: 'string',
                                 },
                             },
+                            doNotBuild: { type: 'boolean' },
                             configs: {
                                 type: 'array',
                                 items: {
@@ -318,6 +251,126 @@ class SchemaV1 {
             },
             required: ['schemaVersion', 'tenantName', 'appName', 'uuid', 'components'],
             additionalProperties: false,
+        }
+
+
+        // If MDos full mode
+        if(!this.frameworkOnlyMode) {
+            this.applicationSchema.properties.components.items.properties.volumes = {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                        },
+                        mountPath: { type: 'string' },
+                        hostPath: { type: 'string' },
+                        sharedVolumeName: { type: 'string' },
+                        syncVolume: { type: 'boolean' },
+                        trigger: { type: 'string' },
+                        size: { type: 'string' }
+                    },
+                    required: ['name', 'mountPath'],
+                    additionalProperties: false,
+                },
+            };
+            this.applicationSchema.properties.components.items.properties.oidc = {
+                type: 'object',
+                properties: {
+                    provider: {
+                        type: 'string',
+                        pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                    },
+                    hosts: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                    },
+                    paths: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                    },
+                    excludePaths: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                    },
+                },
+                required: ['provider', 'hosts'],
+                additionalProperties: false,
+            };   
+            this.applicationSchema.properties.components.items.properties.ingress = {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                        },
+                        matchHost: {
+                            type: 'string',
+                            format: 'host-name',
+                        },
+                        targetPort: { type: 'integer' },
+                        trafficType: { type: 'string', enum: ['http', 'https'] },
+                        subPath: { type: 'string' },
+                        tlsSecretName: { type: 'string' },
+                    },
+                    required: ['name', 'matchHost', 'targetPort'],
+                    additionalProperties: false,
+                },
+            };
+        } 
+        // If MDos framework only mode
+        else {
+            this.applicationSchema.properties.components.items.properties.volumes = {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                        },
+                        mountPath: { type: 'string' },
+                        hostPath: { type: 'string' },
+                        sharedVolumeName: { type: 'string' },
+                        trigger: { type: 'string' },
+                        size: { type: 'string' }
+                    },
+                    required: ['name', 'mountPath'],
+                    additionalProperties: false,
+                },
+            };
+            this.applicationSchema.properties.components.items.properties.ingress = {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                        },
+                        matchHost: {
+                            type: 'string',
+                            format: 'host-name',
+                        },
+                        targetPort: { type: 'integer' },
+                        trafficType: { type: 'string', enum: ['HTTP', 'HTTPS_SIMPLE', 'HTTPS_PASSTHROUGH'] },
+                        subPath: { type: 'string' },
+                        tlsSecretName: { type: 'string' },
+                    },
+                    required: ['name', 'matchHost', 'targetPort'],
+                    additionalProperties: false,
+                },
+            };
         }
     }
 
@@ -518,7 +571,7 @@ class SchemaV1 {
                                 stack: "'syncVolume' property is not compatible when using hostpaths",
                             })
                         }
-                        if (volume.syncVolume) {
+                        if (!this.frameworkOnlyMode && volume.syncVolume) {
                             if(!volume.trigger || !["initial", "always"].includes(volume.trigger)) {
                                 errors.push({
                                     message: "'syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",

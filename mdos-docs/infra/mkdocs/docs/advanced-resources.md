@@ -5,6 +5,10 @@ hide:
 
 # Advanced Resources
 
+!!! error "Please note"
+
+    Only applicable for `MDos managed cluster` deployments
+
 ## Manage Namespaces, Users, Roles and Permissions
 
 ### Tenant Namespaces
@@ -75,7 +79,7 @@ mdos auth user add-role
   Tenant client role
 ```
 
-Here you have the choice between assigning roles from the Keycloak `mdos` client or from one of your own `tenant` spacific client. Let's choose to add a `mdos` client role to this ne user.
+Here you have the choice between assigning roles from the Keycloak `mdos` client or from one of your own `tenant` specific client. Let's choose to add a `mdos` client role to this ne user.
 
 ```sh
 ? Do you want to add a role from the Mdos admin client or from a tenant client? Mdos admin client role
@@ -89,7 +93,7 @@ Here you have the choice between assigning roles from the Keycloak `mdos` client
   delete-users
 ```
 
-Once you have choosen what role to assign to your user, enter that `username` to attach the role to:
+Once you have chosen what role to assign to your user, enter that `username` to attach the role to:
 
 ```sh
 ? Select a role to add from this client: create-namespace
@@ -118,7 +122,7 @@ Just like we added a `mdos` client specific role to our new user, you can now as
 
 ## Securing applications using OIDC providers
 
-You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variaty of OIDC providers such as Keycloak, Google, GitHub and others.
+You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variety of OIDC providers such as Keycloak, Google, GitHub and others.
 
 ![OIDC](/mdos/img/oidc.png)
 
@@ -184,7 +188,7 @@ resource_access.<CLIENT_NAMESPACE>.roles['role-1', 'role-2', ...]
 
 !!! tip
 
-    In the near future, it will be possible to specify global access to an application based on user roles directly from within your `mdos.yaml` configuration file. This will not allow you to do fine grained access control to specific users on specific parts of your application like the example we are showing you here, but il will allow you to restrict __global__ access to applications based on their user roles without having to implement anything on your side. This new feature is currently under developement.
+    In the near future, it will be possible to specify global access to an application based on user roles directly from within your `mdos.yaml` configuration file. This will not allow you to do fine grained access control to specific users on specific parts of your application like the example we are showing you here, but il will allow you to restrict __global__ access to applications based on their user roles without having to implement anything on your side. This new feature is currently under development.
 
 #### Secure your application using third party OIDC providers
 
@@ -207,7 +211,7 @@ and follow the directions.
 
 ## Managing your Issuers & TLS Certificates using Cert-Manager
 
-Cert-manager is a great extention for Kubernetes, allowing you to generate and manage your domain specific TLS certificates automatically. That said, you still need to understand how to configure it for your needs.  
+Cert-manager is a great extension for Kubernetes, allowing you to generate and manage your domain specific TLS certificates automatically. That said, you still need to understand how to configure it for your needs.  
 The first thing you need is a certificate `issuer`. Those are used to interact with your Certificate authority and your DNS provider in order to configure the necessary challenges required to obtain your certificates.  
 
 ### Certificate Issuers
@@ -266,7 +270,7 @@ On line 21 we specify the DNS solver that is managing our domain name(s). This p
 
 !!! note
 
-    Depending on your specific requirements in terms of domain DNS manager and certificate autority, this `yaml` file will have to be adapted to suit your needs. Again, further details of how you can configure those can be found [here](https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers) 
+    Depending on your specific requirements in terms of domain DNS manager and certificate authority, this `yaml` file will have to be adapted to suit your needs. Again, further details of how you can configure those can be found [here](https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers) 
 
 You are now ready to deploy this `Issuer` onto your cluster using the MDos CLI:
 
@@ -340,7 +344,7 @@ That's it, you can now move on to use this new secret in your `Ingress-gateways`
 ## Managing your Domain specific Ingress-Gateways
 
 ![Clients and roles](/mdos/img/gateway.png){: style="width:500px" align=right }
-Ingress gateways are used to instruct Kubernetes on how and what domain names to expose outside of the kubernetes cluster. Is is a cloud native `reverse-proxy` so to speak that listens for traffic on specific ports and for specific domains. You can configure your certificates on those gateways if you wish to terminate the TLS connection before thraffic reaches your application for certain domains, or let the traffic pass through as-is to your target applications, allowing you to terminate the TLS connection in your application directly.  
+Ingress gateways are used to instruct Kubernetes on how and what domain names to expose outside of the kubernetes cluster. Is is a cloud native `reverse-proxy` so to speak that listens for traffic on specific ports and for specific domains. You can configure your certificates on those gateways if you wish to terminate the TLS connection before traffic reaches your application for certain domains, or let the traffic pass through as-is to your target applications, allowing you to terminate the TLS connection in your application directly.  
 
 !!! warning
 
@@ -389,7 +393,7 @@ mdos ingress-gateway list
 
 ### Configure an ingress rule for your application that uses this gateway config
 
-Now that we have our ingress gateway configured to allow incommin traffic for our new domain `mdos-is-awesome.com` on port 443 that terminates the TLS connection on the gateway for us, we can configure this domain name as an ingress in our `mdos.yaml` application metadata file. We recommend to use the MDos CLI to do this, but you can also do this manually by editing the `mdos.yaml` file.  
+Now that we have our ingress gateway configured to allow incoming traffic for our new domain `mdos-is-awesome.com` on port 443 that terminates the TLS connection on the gateway for us, we can configure this domain name as an ingress in our `mdos.yaml` application metadata file. We recommend to use the MDos CLI to do this, but you can also do this manually by editing the `mdos.yaml` file.  
 Let's use the CLI here to configure our ingress. Position your terminal inside your application `component` directory, and execute the command:
 
 ``` hl_lines="1"
@@ -400,7 +404,7 @@ mdos generate ingress
 ? Do you want to match a subpath for this host (fan-out)? No
 ? What target port should this traffic be redirected to? 80
 
-NOTE: Make sure you have configured your namespace spacific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).
+NOTE: Make sure you have configured your namespace specific "Ingress Gateway" to handle this domain name and traffic type (HTTP and/or HTTPS).
 If your application requires that a dedicated certificate is available inside your POD (versus terminating the TLS connection on the gateway), then specify HTTPS here.
 
 ? What type of traffic will this ingress redirect to? http
@@ -452,7 +456,7 @@ This will mount the files `tls.crt` and `tls.key` inside the folder `/etc/x509/h
 ## Populate static volume data for your applications
 
 ![Volume sync](/mdos/img/volume-sync.png){: style="width:600px" align=right }
-Every new volume that is created for your application is completely empty at first! This is how Kubernetees deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema & dataset, a static website that serves as a base for my application etc. Often, an empty volume is what you want in a persisted volme, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!  
+Every new volume that is created for your application is completely empty at first! This is how Kubernetes deals with volumes (also known as Persisted Volumes in the Kubernetes world)? So what if I have some data that I would like to put into this volume that my application depends on? Initial database schema & dataset, a static website that serves as a base for my application etc. Often, an empty volume is what you want in a persisted volume, but sometimes your volumes need data to be present at application startup. So what usually happens is that you have to complexify your app with all sorts of init mechanisms that detect an empty volume, and populate it before you can actually start using it. Bringing data to PVCs is difficult!  
 
 MDos provides an efficient way for dealing with those use-cases. An MDos application project can have volumes declared that contain data you wish to pre-load onto your PODs before your application starts on the cluster. You will simply have to add the flag `syncVolume: true` to the declared volume inside your application component in your `mdos.yaml` file, and mdos will automatically sync this volume data to your pod volume before it starts your application component (see [Pre-populate volumes](/mdos/reference-documentation/#pre-populate-volumes) in the reference documentation for an example configuration for your `mdos.yaml` file).  
 
@@ -468,4 +472,4 @@ Let's have a look at the above example to see in details what actually happens h
 
 !!! note
 
-    All this happens automatically with the command `mdos application deploy`, you do not need to worry about these steps, nevertheless it is usefull for you to understant what is actually happening under the hood.
+    All this happens automatically with the command `mdos application deploy`, you do not need to worry about these steps, nevertheless it is useful for you to understand what is actually happening under the hood.

@@ -43,82 +43,158 @@ export default class Delete extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Delete)
 
-        // Make sure we have a valid oauth2 cookie token
-        // otherwise, collect it
-        try {
-            await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
-        }
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
 
-        // Get existing clients
-        let respClients: { data: any[] }
-        try {
-            respClients = await this.api(`keycloak?target=clients&realm=mdos`, 'get')
-        } catch (error) {
-            this.showError(error)
-            process.exit(1)
-        }
-
-        if (respClients.data.length == 0) {
-            error('No namespaces found')
-            process.exit(1)
-        }
-
-        // Collect target client
-        let clientResponse: { clientUuid: any; clientId: any; namespace: string }
-        if (flags.namespace) {
-            const targetClient = respClients.data.find((c) => c.clientId == flags.namespace)
-            if (!targetClient) {
-                error('Keycloak client not found for this namespace')
-                process.exit(1)
-            }
-            clientResponse = {
-                clientUuid: targetClient.id,
-                clientId: flags.namespace,
-                namespace: flags.namespace,
-            }
-        } else {
-            clientResponse = await inquirer.prompt([
-                {
-                    name: 'clientId',
-                    message: 'Select a namespace to delete:',
-                    type: 'list',
-                    choices: respClients.data.map((o) => {
-                        return { name: o.clientId, value: o.clientId }
-                    }),
-                },
-            ])
-            clientResponse.clientUuid = respClients.data.find((c) => c.clientId == clientResponse.clientId).id
-            clientResponse.namespace = clientResponse.clientId
-        }
-
-        // Confirm?
-        let confirmed = false
-        if (flags.force) {
-            confirmed = true
-        } else {
-            const confirmResponse = await inquirer.prompt([
-                {
-                    name: 'confirm',
-                    message: 'You are about to delete a Namespace from your cluster. Do you wish to prosceed?',
-                    type: 'confirm',
-                    default: false,
-                },
-            ])
-            confirmed = confirmResponse.confirm
-        }
-
-        if (confirmed) {
-            CliUx.ux.action.start('Deleting namespace')
+        // If MDos full mode
+        if (!this.getConfig('FRAMEWORK_ONLY')) {
+            // Make sure we have a valid oauth2 cookie token
+            // otherwise, collect it
             try {
-                await this.api(`kube/${clientResponse.namespace}?target=tenantNamespace&realm=mdos&clientUuid=${clientResponse.clientUuid}`, 'delete')
-                CliUx.ux.action.stop()
-            } catch (error) {
-                CliUx.ux.action.stop('error')
-                this.showError(error)
+                await this.validateJwt()
+            } catch (err) {
+                this.showError(err)
                 process.exit(1)
+            }
+
+            // Get existing clients
+            let respClients: { data: any[] }
+            try {
+                respClients = await this.api(`keycloak?target=clients&realm=mdos`, 'get')
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
+
+            if (respClients.data.length == 0) {
+                error('No namespaces found')
+                process.exit(1)
+            }
+
+            // Collect target client
+            let clientResponse: { clientUuid: any; clientId: any; namespace: string }
+            if (flags.namespace) {
+                const targetClient = respClients.data.find((c) => c.clientId == flags.namespace)
+                if (!targetClient) {
+                    error('Keycloak client not found for this namespace')
+                    process.exit(1)
+                }
+                clientResponse = {
+                    clientUuid: targetClient.id,
+                    clientId: flags.namespace,
+                    namespace: flags.namespace,
+                }
+            } else {
+                clientResponse = await inquirer.prompt([
+                    {
+                        name: 'clientId',
+                        message: 'Select a namespace to delete:',
+                        type: 'list',
+                        choices: respClients.data.map((o) => {
+                            return { name: o.clientId, value: o.clientId }
+                        }),
+                    },
+                ])
+                clientResponse.clientUuid = respClients.data.find((c) => c.clientId == clientResponse.clientId).id
+                clientResponse.namespace = clientResponse.clientId
+            }
+
+            // Confirm?
+            let confirmed = false
+            if (flags.force) {
+                confirmed = true
+            } else {
+                const confirmResponse = await inquirer.prompt([
+                    {
+                        name: 'confirm',
+                        message: 'You are about to delete a Namespace from your cluster. Do you wish to prosceed?',
+                        type: 'confirm',
+                        default: false,
+                    },
+                ])
+                confirmed = confirmResponse.confirm
+            }
+
+            if (confirmed) {
+                CliUx.ux.action.start('Deleting namespace')
+                try {
+                    await this.api(
+                        `kube/${clientResponse.namespace}?target=tenantNamespace&realm=mdos&clientUuid=${clientResponse.clientUuid}`,
+                        'delete'
+                    )
+                    CliUx.ux.action.stop()
+                } catch (err) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(err)
+                    process.exit(1)
+                }
+            }
+        }
+        // If MDos Framework mode
+        else {
+            let namespaces: { data: any[] }
+            try {
+                namespaces = await this.api(`kube?target=namespaces`, 'get')
+                namespaces.data = namespaces.data.filter((ns) => ns.status != 'Terminating')
+            } catch (err) {
+                this.showError(err)
+                process.exit(1)
+            }
+
+            if (namespaces.data.length == 0) {
+                error('There are no namespaces to delete')
+                process.exit(1)
+            }
+
+            let nsResponse: { namespace: string }
+            if (flags.namespace) {
+                const targetNamespace = namespaces.data.find((c) => c.name == flags.namespace)
+                if (!targetNamespace) {
+                    error('Namespace not found')
+                    process.exit(1)
+                }
+                nsResponse = {
+                    namespace: flags.namespace,
+                }
+            } else {
+                nsResponse = await inquirer.prompt([
+                    {
+                        name: 'namespace',
+                        message: 'Select a namespace to delete:',
+                        type: 'list',
+                        choices: namespaces.data.map((o) => {
+                            return { name: o.name, value: o.name }
+                        }),
+                    },
+                ])
+            }
+
+            // Confirm?
+            let confirmed = false
+            if (flags.force) {
+                confirmed = true
+            } else {
+                const confirmResponse = await inquirer.prompt([
+                    {
+                        name: 'confirm',
+                        message: 'You are about to delete a Namespace from your cluster. Do you wish to prosceed?',
+                        type: 'confirm',
+                        default: false,
+                    },
+                ])
+                confirmed = confirmResponse.confirm
+            }
+
+            if (confirmed) {
+                CliUx.ux.action.start('Deleting namespace')
+                try {
+                    await this.api(`kube/${nsResponse.namespace}?target=tenantNamespace`, 'delete')
+                    CliUx.ux.action.stop()
+                } catch (err) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(err)
+                    process.exit(1)
+                }
             }
         }
     }

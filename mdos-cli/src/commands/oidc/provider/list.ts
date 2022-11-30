@@ -1,5 +1,6 @@
 import { Flags, CliUx } from '@oclif/core'
 import Command from '../../../base'
+const { error, filterQuestions, mergeFlags } = require('../../../lib/tools')
 
 /**
  * Command
@@ -32,12 +33,21 @@ export default class List extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(List)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Not supported in framework only mode
+            error('This command is only available for MDos managed cluster deployments')
+            process.exit(1)
+        }
+
         // Make sure we have a valid oauth2 cookie token
         // otherwise, collect it
         try {
             await this.validateJwt()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -59,8 +69,8 @@ export default class List extends Command {
                 }
             )
             console.log()
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
     }

@@ -1,8 +1,9 @@
-import { Flags } from '@oclif/core'
+import { Flags, CliUx } from '@oclif/core'
 import Command from '../../base'
 import { customAlphabet } from 'nanoid'
+import { YAMLSeq } from 'yaml'
 const inquirer = require('inquirer')
-const { error, warn } = require('../../lib/tools')
+const { error, warn, context, success, extractErrorCode } = require('../../lib/tools')
 const fs = require('fs')
 const path = require('path')
 const YAML = require('yaml')
@@ -33,6 +34,9 @@ export default class Component extends Command {
     public async run(): Promise<void> {
         const { flags } = await this.parse(Component)
 
+        // Make sure the API domain has been configured
+        this.checkIfDomainSet()
+
         // Detect mdos project yaml file
         let appYamlPath = path.join(process.cwd(), 'mdos.yaml')
         if (!fs.existsSync(appYamlPath)) {
@@ -47,8 +51,8 @@ export default class Component extends Command {
         let appYaml
         try {
             appYaml = YAML.parse(fs.readFileSync(appYamlPath, 'utf8'))
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -126,12 +130,183 @@ export default class Component extends Command {
             }
         }
 
+        // Framework mode has no private registry, so let's investigate a bit further
+        let publicRegResponses = null
+        let targetSecretName = null
+        let registryResponse = null
+        if (this.getConfig('FRAMEWORK_ONLY')) {
+            // Ask if image will be available on a public registry
+            publicRegResponses = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'publicRegistry',
+                    default: true,
+                    message: 'Is the component image accessible publicly?',
+                },
+            ])
+
+            if (!publicRegResponses.publicRegistry) {
+                registryResponse = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'registry',
+                        message: 'Enter the domain name of your private registry:',
+                        validate: (value: string) => {
+                            if (value.trim().length == 0) return 'Mandatory field'
+                            return true
+                        },
+                    },
+                ])
+            }
+
+            // Ask if imagePullSecret is needed
+            const pullSecretRegResponses = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'imagePullSecretNeeded',
+                    default: false,
+                    message: 'Does your target registry require authentication to pull images?',
+                },
+            ])
+            if (pullSecretRegResponses.imagePullSecretNeeded) {
+                // Does namespace exists?
+                let createNamespace = false
+                try {
+                    await this.api(`kube?target=namespace&namespace=${appYaml.tenantName}`, 'get')
+                } catch (err) {
+                    if(extractErrorCode(err) != 404) {
+                        error('Could not access MDos API server to lookup existing docker secrets')
+                        process.exit(1)
+                    } else {
+                        createNamespace = true
+                    }
+                }
+
+                // If no, create namespace
+                if(createNamespace) {
+                    this.showBusy('Creating namespace', true)
+                    try {
+                        await this.api(`kube`, 'post', {
+                            type: 'tenantNamespace',
+                            realm: 'mdos',
+                            namespace: appYaml.tenantName,
+                        })
+                        this.showBusyDone()
+                    } catch (err) {
+                        this.showBusyError(null, err)
+                        process.exit(1)
+                    }
+                }
+
+                // Collect imagePullSecrets
+                let pullSecretResponse: { data: any[] }
+                
+                try {
+                    this.showBusy(`Looking up existing Docker secrets`, true)
+                    pullSecretResponse = await this.api(`kube?target=image-pull-secrets&namespace=${appYaml.tenantName}`, 'get')
+                    this.showBusyDone()
+                } catch (err) {
+                    this.showBusyError(null, err)
+                    process.exit(1)
+                }
+
+                // Do we need to create a new secret?
+                let createNewSecret = false
+                
+                if (pullSecretResponse.data.length == 0) {
+                    createNewSecret = true
+                    context('There are no existing Docker Secrets available in this namespace. Need to create one now.')
+                    // process.exit(1)
+                } else {
+                    const responseTlsSecret = await inquirer.prompt({
+                        type: 'list',
+                        name: 'tlsSecretName',
+                        message: 'What TLS secret holds your certificate and key data for this domain?',
+                        choices: [...pullSecretResponse.data.map((secret: any) => {
+                            return {
+                                name: secret.metadata.name,
+                                value: secret.metadata.name,
+                            }
+                        }), ...[new inquirer.Separator(), {name: "Create a new Docker Secret", value: "__NEW__"}]],
+                    })
+                    if(responseTlsSecret.tlsSecretName == "__NEW__") {
+                        createNewSecret = true
+                    } else {
+                        targetSecretName = responseTlsSecret.tlsSecretName
+                    }
+                }
+
+                // Asked for new secret, collect username / password, then create secret
+                if(createNewSecret) {
+                    const secretResponses = await inquirer.prompt([
+                        {
+                            name: 'name',
+                            message: 'Enter a secret name:',
+                            type: 'input',
+                            validate: (value: string) => {
+                                if (value.trim().length == 0) return 'Mandatory field'
+                                else if (pullSecretResponse.data.find((s: any) => s.metadata.name.toLowerCase() == value.trim().toLowerCase()))
+                                    return 'Secret name already exists'
+                                return true
+                            },
+                        },
+                        {
+                            name: 'username',
+                            message: 'Enter your registry username:',
+                            type: 'input',
+                            validate: (value: string) => {
+                                if (value.trim().length == 0) return 'Mandatory field'
+                                return true
+                            },
+                        },
+                        {
+                            name: 'password',
+                            message: 'Enter your registry password:',
+                            type: 'password',
+                            validate: (value: string) => {
+                                if (value.trim().length == 0) return 'Mandatory field'
+                                return true
+                            },
+                        },
+                    ])
+
+                    // Now create secret
+                    this.showBusy('Creating Docker secret', true)
+                    try {
+                        const dockerAuthObj: any = {
+                            auths: {},
+                        }
+                        dockerAuthObj.auths[registryResponse ? registryResponse.registry : "docker.io"] = {
+                            username: secretResponses.username,
+                            password: secretResponses.password,
+                            auth: Buffer.from(`${secretResponses.username}:${secretResponses.password}`, 'utf-8').toString('base64'),
+                        }
+
+                        await this.api(`kube`, 'post', {
+                            type: 'docker-secret',
+                            namespace: appYaml.tenantName,
+                            name: secretResponses.name,
+                            data: {
+                                '.dockerconfigjson': JSON.stringify(dockerAuthObj),
+                            },
+                        })
+                        this.showBusyDone()
+
+                        targetSecretName = secretResponses.name
+                    } catch (err) {
+                        this.showBusyError(null, err)
+                        process.exit(1)
+                    }
+                }
+            }
+        }
+
         // Create default Dockerfile
         try {
             fs.mkdirSync(mdosAppCompDir, { recursive: true })
             fs.writeFileSync(path.join(mdosAppCompDir, 'Dockerfile'), '# Populate your dockerfile for this component here\n')
-        } catch (error) {
-            this.showError(error)
+        } catch (err) {
+            this.showError(err)
             process.exit(1)
         }
 
@@ -144,6 +319,10 @@ export default class Component extends Command {
             uuid: `${nanoid()}-${nanoid()}`,
             tag: '0.0.1',
         }
+
+        if (!this.getConfig('FRAMEWORK_ONLY') && publicRegResponses && publicRegResponses.publicRegistry) compJson.publicRegistry = true
+        if (registryResponse) compJson.registry = registryResponse.registry
+        if (targetSecretName) compJson.imagePullSecrets = [{ name: targetSecretName }]
 
         if (npResponse.networkPolicy != 'none') {
             compJson.networkPolicy = {
@@ -159,8 +338,9 @@ export default class Component extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-        } catch (error) {
-            this.showError(error)
+            success("mdos.yaml file was updated")
+        } catch (err) {
+            this.showError(err)
             try {
                 fs.rmdirSync(mdosAppCompDir, { recursive: true, force: true })
             } catch (_e) {}

@@ -104,6 +104,23 @@ class KubeBase extends KubeBaseConstants {
      *
      *
      * @param {*} namespaceName
+     * @return {*}
+     * @memberof KubeBase
+     */
+     async getAllSecrets(namespaceName) {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
+        for(let i=0; i<res.data.items.length; i++){
+            for (let param of Object.keys(res.data.items[i].data)) {
+                res.data.items[i].data[param] = Buffer.from(res.data.items[i].data[param], 'base64').toString('utf-8')
+            }
+        }
+        return res.data.items
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
      * @param {*} secretName
      * @return {*}
      * @memberof KubeBase
@@ -115,6 +132,24 @@ class KubeBase extends KubeBaseConstants {
             return target ? [target] : []
         } else {
             return res.data.items.filter(secret => secret.type == "kubernetes.io/tls")
+        }
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @return {*}
+     * @memberof KubeBase
+     */
+     async getImagePullSecrets(namespaceName, secretName) {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`, this.k8sAxiosHeader)
+        if(secretName) {
+            const target = res.data.items.filter(secret => secret.type == "kubernetes.io/dockerconfigjson").find(secret => secret.metadata.name == secretName)
+            return target ? [target] : []
+        } else {
+            return res.data.items.filter(secret => secret.type == "kubernetes.io/dockerconfigjson")
         }
     }
 
@@ -184,6 +219,114 @@ class KubeBase extends KubeBaseConstants {
                     name: secretName,
                 },
                 type: 'Opaque',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+     async createTlsSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.post(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/tls',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+    async replaceTlsSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.put(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/tls',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+     async createDockerSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.post(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/dockerconfigjson',
+            },
+            this.k8sAxiosHeader
+        )
+    }
+
+    /**
+     *
+     *
+     * @param {*} namespaceName
+     * @param {*} secretName
+     * @param {*} data
+     * @memberof KubeBase
+     */
+    async replaceDockerSecret(namespaceName, secretName, data) {
+        for (let param of Object.keys(data)) {
+            data[param] = Buffer.from(data[param], 'utf-8').toString('base64')
+        }
+        await axios.put(
+            `https://${this.K3S_API_SERVER}/api/v1/namespaces/${namespaceName}/secrets/${secretName}`,
+            {
+                apiVersion: 'v1',
+                data: data,
+                kind: 'Secret',
+                metadata: {
+                    name: secretName,
+                },
+                type: 'kubernetes.io/dockerconfigjson',
             },
             this.k8sAxiosHeader
         )
@@ -475,6 +618,14 @@ class KubeBase extends KubeBaseConstants {
     }
 
     /**
+     * getStorageClasses
+     */
+    async getStorageClasses() {
+        const res = await axios.get(`https://${this.K3S_API_SERVER}/apis/storage.k8s.io/v1/storageclasses`, this.k8sAxiosHeader)
+        return res.data.items
+    }
+
+    /**
      * createWriteManyPvc
      * 
      * @param {*} namespace 
@@ -648,8 +799,10 @@ class KubeBase extends KubeBaseConstants {
         await axios.post(`https://${this.K3S_API_SERVER}/api/v1/namespaces`, nsJson, this.k8sAxiosHeader)
 
         // Create Roles for admin & non admin user profiles in namespace
-        await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSAdminRoles(namespaceName), this.k8sAxiosHeader)
-        await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSUserRoles(namespaceName), this.k8sAxiosHeader)
+        if (!data.skipRBAC) {
+            await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSAdminRoles(namespaceName), this.k8sAxiosHeader)
+            await axios.post(`https://${this.K3S_API_SERVER}/apis/rbac.authorization.k8s.io/v1/namespaces/${namespaceName}/roles`, this.buildTmplNSUserRoles(namespaceName), this.k8sAxiosHeader)
+        }
     }
 
     /**
@@ -1133,7 +1286,7 @@ class KubeBase extends KubeBaseConstants {
     async _getAppPodLogs(namespace, appName, podResponse) {
         const podLogs = {}
         if (podResponse.status.phase != 'Pending') {
-            const initContainerNames = podResponse.spec.initContainers.map((c) => c.name).filter((n) => n != 'istio-init')
+            const initContainerNames = podResponse.spec.initContainers ? podResponse.spec.initContainers.map((c) => c.name).filter((n) => n != 'istio-init') : []
             const containerNames = podResponse.spec.containers.map((c) => c.name).filter((n) => n != 'istio-proxy')
 
             for (let icname of initContainerNames) {

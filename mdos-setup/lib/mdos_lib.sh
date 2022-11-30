@@ -23,8 +23,8 @@ docker_internet_check() {
         fi
     fi
 
-    docker pull curlimages/curl:7.86.0 &>> $LOG_FILE
-    DCON=$(docker run --rm curlimages/curl:7.86.0 -sI https://oauth2-proxy.github.io/manifests/index.yaml)
+    docker pull curlimages/curl:latest &>> $LOG_FILE
+    DCON=$(docker run --rm curlimages/curl:latest -sI https://oauth2-proxy.github.io/manifests/index.yaml)
     DCON=$(echo "$DCON" | grep "HTTP/2 200")
     if [ "$DCON" == "" ]; then
         error "Your docker daemon does not seem to have internet connectivity."
@@ -34,12 +34,12 @@ docker_internet_check() {
 
 kube_internet_check() {
     local  __resultvar=$1
-    docker pull curlimages/curl:7.86.0
+    docker pull curlimages/curl:latest
     set +Ee
     unset CTEST_DONE
     ATTEMPTS=0
     while [ -z $CTEST_DONE ]; do
-        KCON=$($kubectl run mycurlpod --rm --image=curlimages/curl:7.86.0 --stdin --tty -- /bin/sh -c "sleep 3 && curl -Is https://oauth2-proxy.github.io/manifests/index.yaml")
+        KCON=$($kubectl run mycurlpod --rm --image=curlimages/curl:latest --stdin --tty -- /bin/sh -c "sleep 3 && curl -Is https://oauth2-proxy.github.io/manifests/index.yaml")
         KCON=$(echo "$KCON" | grep "HTTP/2 200")
         if [ "$KCON" != "" ]; then
             eval $__resultvar="0"

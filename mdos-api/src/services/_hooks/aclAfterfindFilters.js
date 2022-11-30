@@ -1,5 +1,4 @@
 const errors = require('@feathersjs/errors')
-const jwt_decode = require('jwt-decode')
 
 /**
  * userFilterHook
@@ -104,6 +103,22 @@ const userNamespaceFilterHook = async (context, jwtToken) => {
 }
 
 /**
+ * userSpecificNamespaceFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+const userSpecificNamespaceFilterHook = async (context, jwtToken) => {
+    if (jwtToken.resource_access.mdos && (jwtToken.resource_access.mdos.roles.includes('admin') || jwtToken.resource_access.mdos.roles.includes('list-namespaces'))) {
+        return context
+    }
+    // filter out to keep only those who are namespace admin
+    if(!jwtToken.resource_access[context.result.metadata.name])
+        context.result = null
+    return context
+}
+
+/**
  * userApplicationsFilterHook
  * @param {*} context
  * @param {*} jwtToken
@@ -183,6 +198,28 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
  * @returns 
  */
  const tlsSecretFilterHook = async (context, jwtToken) => {
+    context.result = context.result.filter((secret) => ![
+        "longhorn-system", 
+        "mdos-registry", 
+        "keycloak", 
+        "istio-system", 
+        "kube-system"
+    ].includes(secret.metadata.namespace))
+
+    if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
+        return context
+    }
+    context.result = context.result.filter((secret) => jwtToken.resource_access[secret.metadata.namespace])
+    return context
+}
+
+/**
+ * secretFilterHook
+ * @param {*} context 
+ * @param {*} jwtToken 
+ * @returns 
+ */
+ const secretFilterHook = async (context, jwtToken) => {
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
@@ -240,7 +277,7 @@ const gatewaysFilterHook = async (context, jwtToken) => {
 module.exports = function () {
     return async (context) => {
         // Is auth disabled?
-        if (process.env.NO_ADMIN_AUTH == 'true') return context
+        if (process.env.NO_ADMIN_AUTH == 'true' || context.app.get("mdos_framework_only")) return context
         if (context.params.provider != 'rest')
             // Internal calls don't need authentication
             return context
@@ -272,6 +309,8 @@ module.exports = function () {
             return await userRoleFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'namespaces') {
             return await userNamespaceFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'namespace') {
+            return await userSpecificNamespaceFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'applications') {
             return await userApplicationsFilterHook(context, jwtToken)
         } else if (context.path == 'oidc-provider' && !context.params.query.target) {
@@ -282,6 +321,8 @@ module.exports = function () {
             return await certManagerClusterIssuersFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'tls-secrets') {
             return await tlsSecretFilterHook(context, jwtToken)
+        } else if (context.path == 'kube' && context.params.query.target == 'secrets') {
+            return await secretFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'certificates') {
             return await certificatesFilterHook(context, jwtToken)
         } else if (context.path == 'kube' && context.params.query.target == 'shared-volumes') {

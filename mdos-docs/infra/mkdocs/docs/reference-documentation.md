@@ -14,30 +14,49 @@ Every application component can have one or more volumes attached to it for stor
 This architecture allows you to compose complex applications to suit your needs.
 
 A MDos application project layout is composed of one or more folders, each one representing an application component.  
-At the root of the application folder is a `mdos.yaml` file that holds all runtime configuration parameters for the application and it's components:
+At the root of the application folder is a `mdos.Please Noteyaml` file that holds all runtime configuration parameters for the application and it's components:
 
-``` title="Project structure"
-my-application/
-├── backend
-│   └── Dockerfile
-│   └── <your application code files>...
-├── frontend
-│   └── Dockerfile
-│   └── <your application code files>...
-├── volumes
-│   └── static-website
-│       └── index.html
-│       └── ...
-└── mdos.yaml
-```
+=== "MDos managed cluster"
 
-In this example we have an application named `my-application`, that is composed of two distinct application components: `backend` & `frontend`.  
-Each component has it's own Dockerfile.  
-At the `application` level, there is also a `volumes` folder where you can store application component volume files to be used within your application, and a `mdos.yaml` config file that holds all runtime configuration parameters. As an example, here the `volumes` folder has a subfolder called `static-website` that is used by the `frontend` application so serve it's website data.
+    ``` title="Project structure"
+    my-application/
+    ├── backend
+    │   └── Dockerfile
+    │   └── <your application code files>...
+    ├── frontend
+    │   └── Dockerfile
+    │   └── <your application code files>...
+    ├── volumes
+    │   └── static-website
+    │       └── index.html
+    │       └── ...
+    └── mdos.yaml
+    ```
 
-!!! note
+    In this example we have an application named `my-application`, that is composed of two distinct application components: `backend` & `frontend`.  
+    Each component has it's own Dockerfile.  
+    At the `application` level, there is also a `volumes` folder where you can store application component volume files to be used within your application, and a `mdos.yaml` config file that holds all runtime configuration parameters. As an example, here the `volumes` folder has a subfolder called `static-website` that is used by the `frontend` application so serve it's website data.
 
-    Volumes are managed on the `application` level rather than on the `component` level in case you wish to share volumes amongst components.
+    !!! note
+
+        Volumes are managed on the `application` level rather than on the `component` level in case you wish to share volumes amongst components.
+
+=== "MDos framework only"
+
+    ``` title="Project structure"
+    my-application/
+    ├── backend
+    │   └── Dockerfile
+    │   └── <your application code files>...
+    ├── frontend
+    │   └── Dockerfile
+    │   └── <your application code files>...
+    └── mdos.yaml
+    ```
+
+    In this example we have an application named `my-application`, that is composed of two distinct application components: `backend` & `frontend`.  
+    Each component has it's own Dockerfile.  
+    At the `application` level, there is also a `mdos.yaml` config file that holds all runtime configuration parameters.
 
 ---
 
@@ -70,7 +89,7 @@ The `uuid` field is a unique identifier for this application, all dependant reso
 
 ## Application component
 
-Each application component will translate to a specific deployment on the cluster. Just like an application, a `component` hase some base values that need to be set:
+Each application component will translate to a specific deployment on the cluster. Just like an application, a `component` has some base values that need to be set:
 
 ```yaml linenums="1"
 ...
@@ -93,15 +112,20 @@ Among those, you will define your component `name`, `image` name and image `tag`
 
     **mdos generate component**
 
-    When using the MDos CLI to scaffold your application component, then the CLI will ask you to select amonst multiple network isolation options. You can read more about `NetworkPolicy` isolation configurations in the section [here](#networkpolicy)
+    When using the MDos CLI to scaffold your application component, then the CLI will ask you to select amongst multiple network isolation options. You can read more about `NetworkPolicy` isolation configurations in the section [here](#networkpolicy)
 
 ---
 
 ### :octicons-codescan-16:{ .section-icon } Registries
 
-Registries are where your MDos will push and pull your application images from. Multiple choices are available here.
+Registries are where your MDos will push and pull your application images to/from. 
+Multiple choices are available here.
 
 #### :material-arrow-right-thin: Use the MDos registry
+
+!!! error "Please note"
+
+    Only applicable for `MDos managed cluster` deployments
 
 MDos comes with a private integrated Docker registry. If no `registry` parameter is set on your component `yaml` block, then this private internal registry will be used to push / pull the images from. No extra configuration parameters are required if this is the registry you want to use.
 
@@ -140,17 +164,49 @@ components:
 
 The third option is to use a public registry, again with an __optionnal__ `imagePullSecrets` value that should be used to authenticate with the public registry:
 
-```yaml hl_lines="6 7 8" linenums="1"
+=== "MDos managed cluster"
+
+    ```yaml hl_lines="6" linenums="1"
+    components:
+      - name: comp-1
+        ...
+        image: my-comp-1-img-name
+        tag: 1.0.0
+        publicRegistry: true
+        imagePullSecrets: # Optionnal
+          - name: my-registry-secret
+        ...
+    ```
+=== "MDos framework only"
+
+    ```yaml linenums="1"
+    components:
+      - name: comp-1
+        ...
+        image: my-comp-1-img-name
+        tag: 1.0.0
+        imagePullSecrets: # Optionnal
+          - name: my-registry-secret
+        ...
+    ```
+
+### :octicons-codescan-16:{ .section-icon } Disable image builds on deploy
+
+In some cases, you might not want to build your image when you deploy your applications using the command `mdos application deploy`. This could be the case if you use DevOps pipelines (GitHub Pipelines, Jenkins...) that already take care of building your images for you. In this case, simply add the flag `doNotBuild: true` to your component to disable this behavior for a given component:
+
+```yaml hl_lines="6" linenums="1"
 components:
   - name: comp-1
     ...
     image: my-comp-1-img-name
     tag: 1.0.0
-    publicRegistry: true
-    imagePullSecrets: # Optionnal
-      - name: my-registry-secret
+    doNotBuild: true
     ...
 ```
+
+!!! note
+
+    As mentioned above, if you use this flag, make sure your images are present in the target registries before deploying.
 
 ---
 
@@ -171,7 +227,7 @@ components:
     ...
 ```
 
-or along with command aguments:
+or along with command augments:
 
 ```yaml hl_lines="5 6 7" linenums="1"
 ...
@@ -193,7 +249,7 @@ Let's have a look at the various ways to use volumes in MDos.
 
 #### :material-arrow-right-thin: Standard volumes
 
-This is the de-facto volume type, standard volumes are `PersistedVolumes` in Kubernetees, they start out empty (see them as a new partition that get's mounted onto your application environment) so that you can write data to it and ensure this data is persisted even on reboots, crashes...
+This is the de-facto volume type, standard volumes are `PersistedVolumes` in Kubernetes, they start out empty (see them as a new partition that get's mounted onto your application environment) so that you can write data to it and ensure this data is persisted even on reboots, crashes...
 Volumes are defined by a `name`, a `mountPath` that indicates where this volume partition needs to be mounted onto your application POD, and a `size` parameter to indicate what size this volume should have (size of the volume partition to be allocated).
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
@@ -216,13 +272,17 @@ The default `StorageClass` is based on the open source project `Longhorn`, a Blo
 
 #### :material-arrow-right-thin: Shared volumes
 
-Shared volumes are NFS based volumes that can be shared amonst multiple application components. To use them, those volumes need to be created upfront using the following command:
+!!! error "Please note"
+
+    Only applicable for `MDos managed cluster` deployments
+
+Shared volumes are NFS based volumes that can be shared amongst multiple application components. To use them, those volumes need to be created upfront using the following command:
 
 ```sh
 mdos shared-volume create
 ```
 
-Once this volume is created on the clustter, you can reference this volume in your application components:
+Once this volume is created on the cluster, you can reference this volume in your application components:
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
@@ -243,7 +303,11 @@ components:
 
 #### :material-arrow-right-thin: Pre-populate volumes
 
-This MDos feature is designed to facilitate the way you can pre-populate files and folders into your volumes before your application starts up. This is usefull when you wish to pre-load a database with a pre-defined dataset, or to deploy a static website for example.  
+!!! error "Please note"
+
+    Only applicable for `MDos managed cluster` deployments
+
+This MDos feature is designed to facilitate the way you can pre-populate files and folders into your volumes before your application starts up. This is useful when you wish to pre-load a database with a pre-defined dataset, or to deploy a static website for example.  
 Your MDos project contains a `volumes` folder at the root, create a volume folder in there and store your static data in it. Then add the flag `syncVolume: true` to your volume config like this:
 
 ```yaml hl_lines="5 6 7 8 9 10" linenums="1"
@@ -263,7 +327,7 @@ components:
 | **"trigger" possible values** | **Description**                                                                            |
 |-------------------------------|--------------------------------------------------------------------------------------------|
 | initial                       | Synchronize local volume content only if the POD target volume is empty (first deployment) |
-| always                        | Synchronize local volume content everytime this application is deployed                    |
+| always                        | Synchronize local volume content every time this application is deployed                    |
 
 Example volume folder structure in your MDos project folder:
 
@@ -276,7 +340,7 @@ Example volume folder structure in your MDos project folder:
 └── mdos.yaml
 ```
 
-Then, when you deploy your application using the command `mdos application deploy`, this data will be synchronized with your application compopnent volume before it starts.
+Then, when you deploy your application using the command `mdos application deploy`, this data will be synchronized with your application component volume before it starts.
 
 !!! tip "CLI command"
 
@@ -284,7 +348,7 @@ Then, when you deploy your application using the command `mdos application deplo
 
 #### :material-arrow-right-thin: HostPath mounts
 
-HostPath volumees do not use `PersistedVolumes`, they are direct mount points from the host file system with the application container. Those volume types are not recommended, they do not scale and are only recomended for debugging purposes.
+HostPath volumes do not use `PersistedVolumes`, they are direct mount points from the host file system with the application container. Those volume types are not recommended, they do not scale and are only recommended for debugging purposes.
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
 ...
@@ -444,7 +508,7 @@ You can create and mount a Kubernetes `ConfigMaps` as a volume mount point using
 
 #### :material-arrow-right-thin: From existing ConfigMap or Secret
 
-It is also possible to mount `Secrets` or `ConfigMaps` from external references inside your container POD's, rather than creating those objects along with your application deployments. This is usefull if you need to decouple the lifecycle of your `Secrets` or `ConfigMaps` from your actual applications themselves. As an example, imagine a `Secret` that holds your application certificate data that is managed by `Cert-Manager`, those secrets might get updated in any point in time and your application deployment should in no way overwrite this `Secret` data on deployments. In this case, you will simply reference the target secret you wish to mount. Of course, those `Secrets` and/or `ConfigMaps` should exist upfront before you deploy your applications that make use of them. 
+It is also possible to mount `Secrets` or `ConfigMaps` from external references inside your container POD's, rather than creating those objects along with your application deployments. This is useful if you need to decouple the lifecycle of your `Secrets` or `ConfigMaps` from your actual applications themselves. As an example, imagine a `Secret` that holds your application certificate data that is managed by `Cert-Manager`, those secrets might get updated in any point in time and your application deployment should in no way overwrite this `Secret` data on deployments. In this case, you will simply reference the target secret you wish to mount. Of course, those `Secrets` and/or `ConfigMaps` should exist upfront before you deploy your applications that make use of them. 
 
 === "Mount as directory"
 
@@ -491,7 +555,7 @@ Environment variables are a core concept of almost any cloud application. They c
 
 #### :material-arrow-right-thin: Using ConfigMaps or Secrets
 
-If all you need is to set environement variables for your application components, use the following example:
+If all you need is to set environment variables for your application components, use the following example:
 
 === "As Secret"
 
@@ -586,7 +650,7 @@ Of course, those `Secrets` and/or `ConfigMaps` should exist upfront before you d
 
 #### :material-arrow-right-thin: Exposing ports using services
 
-Applications often expose services using a specific port(s). Remember, in Kubernetes, POD IP addresses are ephemeral. They change every time your POD is restarted. To allow applications to talk to your application services, you need a Kubernetes `Service` object to allow your application component to be auto-discoverable by other application components, hense the `Service` in Kubernetes.  
+Applications often expose services using a specific port(s). Remember, in Kubernetes, POD IP addresses are ephemeral. They change every time your POD is restarted. To allow applications to talk to your application services, you need a Kubernetes `Service` object to allow your application component to be auto-discoverable by other application components, hens the `Service` in Kubernetes.  
 To create a service endpoint for your various ports, use the following syntax:
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
@@ -607,30 +671,55 @@ components:
 
 #### :material-arrow-right-thin: Configure Ingress
 
-By default, applications in Kubernetes are only reachable from other components that are also running inside your cluster. To make application component services accessible from outside your clustyer, you will have to add an `ingress` to your application component, this will expose this service endpoint to the outside world using a host / domain name. 
+By default, applications in Kubernetes are only reachable from other components that are also running inside your cluster. To make application component services accessible from outside your cluster, you will have to add an `ingress` to your application component, this will expose this service endpoint to the outside world using a host / domain name. 
 
-```yaml hl_lines="5 6 7 8 9" linenums="1"
-...
-components:
-  - name: comp-1
+=== "MDos managed cluster"
+
+    ```yaml hl_lines="5 6 7 8 9" linenums="1"
     ...
-    ingress:
-      - name: main
-        matchHost: nginx.mydomain.com
-        targetPort: 80
-        trafficType: http
-...
-```
+    components:
+      - name: comp-1
+        ...
+        ingress:
+          - name: main
+            matchHost: nginx.mydomain.com
+            targetPort: 80
+            trafficType: http
+    ...
+    ```
 
-| **"trafficType" possible values** | **Description**                                                                                             |
-|-----------------------------------|-------------------------------------------------------------------------------------------------------------|
-| http                              | The ingress will be configured to route traffic comming from port 80 to the port specified in `targetPort`  |
-| https                             | The ingress will be configured to route traffic comming from port 443 to the port specified in `targetPort` |
+    | **"trafficType" possible values** | **Description**                                                                                             |
+    |-----------------------------------|-------------------------------------------------------------------------------------------------------------|
+    | http                              | The ingress will be configured to route traffic coming from port 80 to the port specified in `targetPort`  |
+    | https                             | The ingress will be configured to route traffic coming from port 443 to the port specified in `targetPort` |
 
-!!! note
+    !!! note
 
-    If your `matchHost` value is a subdomain of your root MDos domain name configured during the platform installation and your traffic type is `https`, then nothing else is needed for ingress to work OOTB.  
-    Now if you would like to use a different host / domain name to respond to your traffic for this component ingress, then you will have to create a `ingress-gateway` object first using the command `mdos ingress-gateway create`. For more details, refer back to the chapter [Managing your Domain specific Ingress-Gateways](/mdos/advanced-resources/#managing-your-domain-specific-ingress-gateways).
+        If your `matchHost` value is a subdomain of your root MDos domain name configured during the platform installation and your traffic type is `https`, then nothing else is needed for ingress to work OOTB.  
+        Now if you would like to use a different host / domain name to respond to your traffic for this component ingress, then you will have to create a `ingress-gateway` object first using the command `mdos ingress-gateway create`. For more details, refer back to the chapter [Managing your Domain specific Ingress-Gateways](/mdos/advanced-resources/#managing-your-domain-specific-ingress-gateways).
+
+=== "MDos framework only"
+
+    ```yaml hl_lines="5 6 7 8 9 10" linenums="1"
+    ...
+    components:
+      - name: comp-1
+        ...
+        ingress:
+          - name: main
+            matchHost: nginx.mydomain.com
+            targetPort: 80
+            trafficType: HTTPS_SIMPLE
+            tlsSecretName: myTlsSecret
+
+    ...
+    ```
+
+    | **"trafficType" possible values** | **Description**                                                                                             |
+    |-----------------------------------|-------------------------------------------------------------------------------------------------------------|
+    | HTTP                              | The ingress will be configured to route traffic coming from port 80 to the port specified in `targetPort`  |
+    | HTTPS_SIMPLE                      | The ingress will be configured to route traffic coming from port 443 and terminate the TLS connection before routing the traffic to the port specified in `targetPort`. If set, a secret reference name holding the TLS certificate details (crt & key) needs to be provided as well |
+    | HTTPS_PASSTHROUGH                 | The ingress will be configured to route traffic coming from port 443 to the port specified in `targetPort` as is, the application will need to listen for incoming HTTPS traffic and terminate the TLS connection there |
 
 !!! tip "CLI command"
 
@@ -670,16 +759,20 @@ Here is a more complex example that uses a `custom` scoped NetworkPolicy (please
 
 ### :octicons-codescan-16:{ .section-icon } OAuth2 OIDC
 
+!!! error "Please note"
+
+    Only applicable for `MDos managed cluster` deployments
+    
 You can protect your applications using OAuth2 OIDC without having to write a single line of code or modify your applications in any way. You have the option of a variaty of OIDC providers such as Keycloak, Google, GitHub and others.
 
-To find out how to configure and add your OIDC providers, please refere to the chapter [Securing applications using OIDC providers](/mdos/advanced-resources/#securing-applications-using-oidc-providers) for more information.
+To find out how to configure and add your OIDC providers, please refer to the chapter [Securing applications using OIDC providers](/mdos/advanced-resources/#securing-applications-using-oidc-providers) for more information.
 
 
 #### :material-arrow-right-thin: Protect your ingress with a OIDC provider
 
 To add OIDC authentication to one of your application configurations, simply specify which OIDC provider you want to enforce, and what hostname that was configured in your ingres section you want to be protected.
 
-There are numerout OOTB providers that you can configure, but the most flexible and customizable is the integrated `Keycloak` OIDC provider. It will allow you to create any role according to your needs, assign them to your users and gain access to those roles from your authenticated user sessions encoded in the JWT token. Simply use those roles within your applications to then determine fine grained ACL rules you wish to enforce.
+There are numerous OOTB providers that you can configure, but the most flexible and customizable is the integrated `Keycloak` OIDC provider. It will allow you to create any role according to your needs, assign them to your users and gain access to those roles from your authenticated user sessions encoded in the JWT token. Simply use those roles within your applications to then determine fine grained ACL rules you wish to enforce.
 
 !!! info
 
@@ -726,7 +819,7 @@ components:
 
 ### :octicons-codescan-16:{ .section-icon } Execute pre-build commands
 
-MDos allows you to execute commands on the local machine every time you are about to deploy your application onto your Kubernetes cluster. Simply list the commands you wish to execute, and they will execute everytime you run the command `mdos application deploy`.  
+MDos allows you to execute commands on the local machine every time you are about to deploy your application onto your Kubernetes cluster. Simply list the commands you wish to execute, and they will execute every time you run the command `mdos application deploy`.  
 In this example, we are building a `mkdocs` project, then copy the resulting files over to the proper `volumes` directory ready for deployment
 
 ```yaml hl_lines="5 6 7 8" linenums="1"
