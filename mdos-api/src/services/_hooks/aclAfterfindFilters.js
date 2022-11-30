@@ -198,10 +198,20 @@ const certManagerIssuersFilterHook = async (context, jwtToken) => {
  * @returns 
  */
  const tlsSecretFilterHook = async (context, jwtToken) => {
+    context.result = context.result.filter((secret) => ![
+        "longhorn-system", 
+        "mdos-registry", 
+        "keycloak", 
+        "istio-system", 
+        "kube-system"
+    ].includes(secret.metadata.namespace))
+
+    console.log(context.result)
+
     if (jwtToken.resource_access.mdos && jwtToken.resource_access.mdos.roles.includes('admin')) {
         return context
     }
-    context.result = context.result.filter((secret) => !["longhorn-system", "mdos-registry", "keycloak", "istio-system", "kube-system"].includes(secret.metadata.namespace) && jwtToken.resource_access[secret.metadata.namespace])
+    context.result = context.result.filter((secret) => jwtToken.resource_access[secret.metadata.namespace])
     return context
 }
 
