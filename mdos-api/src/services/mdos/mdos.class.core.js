@@ -139,6 +139,8 @@ class MdosCore extends CommonCore {
                 ]
             }
 
+            if (this.app.get("mdos_framework_only")) valuesYaml.frameworkMode = true
+
             // Set port names
             if (component.services) {
                 component.services = component.services.map((s) => {
@@ -246,7 +248,7 @@ class MdosCore extends CommonCore {
                 }
             }
 
-            // Set component details for networkPolicy limitet
+            // Set component details for networkPolicy limited
             if (component.networkPolicy && component.networkPolicy.scope == "limited") {
                 component.networkPolicy.allow = valuesYaml.components.filter(_c => _c.uuid != component.uuid).map(_c => {
                     return {

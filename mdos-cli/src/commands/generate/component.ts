@@ -134,6 +134,7 @@ export default class Component extends Command {
         let publicRegResponses = null
         let targetSecretName = null
         let registryResponse = null
+        let buildImgResponse = null
         if (this.getConfig('FRAMEWORK_ONLY')) {
             // Ask if image will be available on a public registry
             publicRegResponses = await inquirer.prompt([
@@ -158,6 +159,16 @@ export default class Component extends Command {
                     },
                 ])
             }
+
+            buildImgResponse = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'confirm',
+                    message: 'Do you wish to build your application during the deployment of your application?',
+                    default: true
+                },
+            ])
+           
 
             // Ask if imagePullSecret is needed
             const pullSecretRegResponses = await inquirer.prompt([
@@ -316,10 +327,12 @@ export default class Component extends Command {
         const compJson: any = {
             name: appName,
             image: `${appName}`,
-            uuid: `${nanoid()}-${nanoid()}`,
             tag: '0.0.1',
+            uuid: `${nanoid()}-${nanoid()}`
         }
-
+        
+        if(buildImgResponse && !buildImgResponse.confirm) compJson.doNotBuild = true
+        
         if (!this.getConfig('FRAMEWORK_ONLY') && publicRegResponses && publicRegResponses.publicRegistry) compJson.publicRegistry = true
         if (registryResponse) compJson.registry = registryResponse.registry
         if (targetSecretName) compJson.imagePullSecrets = [{ name: targetSecretName }]

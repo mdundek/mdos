@@ -156,13 +156,21 @@ spec:
     {{- with $.Values.securityContext }}
           securityContext:
           {{- toYaml .securityContext | nindent 12 }}
-    {{- end }}
-    {{- if .registry }}
+    {{- end }
+    {{- if $.Values.frameworkMode }}
+      {{- if .registry }}
           image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
-    {{- else if not .publicRegistry }}
-          image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
-    {{- else }}
+      {{- else }}
           image: "{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+      {{- end }} 
+    {{- else }}
+      {{- if .registry }}
+          image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+      {{- else if not .publicRegistry }}
+          image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"      
+      {{- else }}
+          image: "{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+      {{- end }}
     {{- end }}
     {{- if .imagePullPolicy }}
           imagePullPolicy: {{ .imagePullPolicy }}

@@ -110,10 +110,26 @@ export default class Deploy extends Command {
             process.exit(1)
         }
         if (!nsResponse.data.find((ns: { name: string }) => ns.name == appYaml.tenantName)) {
-            error(
-                `Namespace '${appYaml.tenantName}' does not yet exists. It needs to be created first using the command 'mdos namespace create' before you can deploy applications to this namespace.`
-            )
-            process.exit(1)
+            if (!this.getConfig('FRAMEWORK_ONLY')) {
+                error(
+                    `Namespace '${appYaml.tenantName}' does not yet exists. It needs to be created first using the command 'mdos namespace create' before you can deploy applications to this namespace.`
+                )
+                process.exit(1)
+            } else {
+                CliUx.ux.action.start('Creating namespace')
+                try {
+                    await this.api(`kube`, 'post', {
+                        type: 'tenantNamespace',
+                        realm: 'mdos',
+                        namespace: appYaml.tenantName,
+                    })
+                    CliUx.ux.action.stop()
+                } catch (err) {
+                    CliUx.ux.action.stop('error')
+                    this.showError(err)
+                    process.exit(1)
+                }
+            }
         }
 
         // Build / bush images
