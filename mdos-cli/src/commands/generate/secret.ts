@@ -91,7 +91,6 @@ export default class Secret extends Command {
                     return true
                 },
             },
-            ,
             {
                 name: 'useRef',
                 message: 'Do you want to reference an existing Secret for this mount point?',
