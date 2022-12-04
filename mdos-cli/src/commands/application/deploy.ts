@@ -240,6 +240,13 @@ export default class Deploy extends Command {
                 processId: processId,
             })
             this.socketManager.unsubscribe()
+
+            // Set all status to "Running"
+            for(const cmdLine of consoleHandles) {
+                if(cmdLine.name.endsWith("-phase"))
+                    cmdLine.set(chalk.green("    Phase: Running"))
+            }
+            
             success('Application deployed')
         } catch (err) {
             if (!spinning) CliUx.ux.action.stop('error')
@@ -381,54 +388,69 @@ export default class Deploy extends Command {
     showRealtimeDeploymentDetails(consoleHandles: any[], deployStatus: any) {
         const podNames = Object.keys(deployStatus)
         for (const podName of podNames) {
-            let logLine
+            if(deployStatus[podName].containerStatuses.length > 0) {
+                let logLine
 
-            // Pod head line
-            let lineName = `${podName}-head`
-            let existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-            logLine = chalk.blue.bold(`Pod: ${deployStatus[podName].name}`)
-            if (!existingConsole) {
-                existingConsole = {
-                    name: lineName,
-                    set: this.getConsoleLineHandel(logLine),
-                }
-                consoleHandles.push(existingConsole)
-            } else {
-                existingConsole.set(logLine)
-            }
+                // Pod head line
+                let lineName = `${podName}-head`
+                let existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                logLine = chalk.blue.bold(`Pod: ${deployStatus[podName].name}`)
 
-            // Pod phase line
 
-            // Identify if state is an error
-            let isPending = false
-            if (['Pending'].includes(deployStatus[podName].phase)) isPending = true
-
-            // Identify if state is an error
-            let isError = false
-            if (['Failed', 'Unknown', 'Error'].includes(deployStatus[podName].phase)) isError = true
-
-            let isSuccess = false
-            if (['Running', 'Succeeded'].includes(deployStatus[podName].phase)) isSuccess = true
-
-            // If success, make sure it's not a false success
-            let falseSuccess = false
-            if (isSuccess) {
-                const notReadyInitContainers = deployStatus[podName].initContainerStatuses.find((statusObj: { ready: any }) => !statusObj.ready)
-                const notReadyContainers = deployStatus[podName].containerStatuses.find((statusObj: { started: any }) => !statusObj.started)
-
-                if (notReadyInitContainers || notReadyContainers) {
-                    falseSuccess = true
-                }
-            }
-
-            if (deployStatus[podName].phase) {
-                lineName = `${podName}-phase`
-                existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-                logLine = `    Phase: ${deployStatus[podName].phase}${isSuccess && falseSuccess ? ' (but not ready)' : ''}`
                 if (!existingConsole) {
                     existingConsole = {
                         name: lineName,
-                        set: this.getConsoleLineHandel(
+                        set: this.getConsoleLineHandel(logLine),
+                    }
+                    consoleHandles.push(existingConsole)
+                } else {
+                    existingConsole.set(logLine)
+                }
+
+                // Pod phase line
+
+                // Identify if state is an error
+                let isPending = false
+                if (['Pending'].includes(deployStatus[podName].phase)) isPending = true
+
+                // Identify if state is an error
+                let isError = false
+                if (['Failed', 'Unknown', 'Error'].includes(deployStatus[podName].phase)) isError = true
+
+                let isSuccess = false
+                if (['Running', 'Succeeded'].includes(deployStatus[podName].phase)) isSuccess = true
+
+                // If success, make sure it's not a false success
+                let falseSuccess = false
+                if (isSuccess) {
+                    const notReadyInitContainers = deployStatus[podName].initContainerStatuses.find((statusObj: { ready: any }) => !statusObj.ready)
+                    const notReadyContainers = deployStatus[podName].containerStatuses.find((statusObj: { started: any }) => !statusObj.started)
+
+                    if (notReadyInitContainers || notReadyContainers) {
+                        falseSuccess = true
+                    }
+                }
+
+                if (deployStatus[podName].phase) {
+                    lineName = `${podName}-phase`
+                    existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                    logLine = `    Phase: ${deployStatus[podName].phase}${isSuccess && falseSuccess ? ' (but not ready)' : ''}`
+                    if (!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(
+                                isError
+                                    ? chalk.red(logLine)
+                                    : isSuccess && !falseSuccess
+                                    ? chalk.green(logLine)
+                                    : isPending
+                                    ? chalk.grey(logLine)
+                                    : chalk.yellow.dim(logLine)
+                            ),
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(
                             isError
                                 ? chalk.red(logLine)
                                 : isSuccess && !falseSuccess
@@ -436,134 +458,123 @@ export default class Deploy extends Command {
                                 : isPending
                                 ? chalk.grey(logLine)
                                 : chalk.yellow.dim(logLine)
-                        ),
+                        )
                     }
-                    consoleHandles.push(existingConsole)
-                } else {
-                    existingConsole.set(
-                        isError
-                            ? chalk.red(logLine)
-                            : isSuccess && !falseSuccess
-                            ? chalk.green(logLine)
-                            : isPending
-                            ? chalk.grey(logLine)
-                            : chalk.yellow.dim(logLine)
+                }
+
+                // Process init containers
+                for (let initContainerStatus of deployStatus[podName].initContainerStatuses) {
+                    // Init container head line
+                    lineName = `${podName}-${initContainerStatus.name}-head`
+                    existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                    let logLine = chalk.bold.grey(`    Init container: ${initContainerStatus.name}`)
+                    if (!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(logLine),
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(logLine)
+                    }
+
+                    // Init container state line
+                    lineName = `${podName}-${initContainerStatus.name}-state`
+                    existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                    logLine = `        State: ${initContainerStatus.state}${initContainerStatus.reason ? ' (' + initContainerStatus.reason + ')' : ''}`
+                    if (!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(logLine),
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(logLine)
+                    }
+
+                    // Init container state line
+                    lineName = `${podName}-${initContainerStatus.name}-msg`
+                    existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                    logLine = `        Details: ${initContainerStatus.message ? initContainerStatus.message : 'n/a'}`
+
+                    // Identify if state is an error
+                    let isError = false
+                    if (
+                        initContainerStatus.state == 'waiting' &&
+                        ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(
+                            initContainerStatus.reason ? initContainerStatus.reason : ''
+                        )
                     )
-                }
-            }
+                        isError = true
 
-            // Process init containers
-            for (let initContainerStatus of deployStatus[podName].initContainerStatuses) {
-                // Init container head line
-                lineName = `${podName}-${initContainerStatus.name}-head`
-                existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-                let logLine = chalk.bold.grey(`    Init container: ${initContainerStatus.name}`)
-                if (!existingConsole) {
-                    existingConsole = {
-                        name: lineName,
-                        set: this.getConsoleLineHandel(logLine),
+                    if (initContainerStatus.state == 'terminated' && ['Error'].includes(initContainerStatus.reason ? initContainerStatus.reason : ''))
+                        isError = true
+
+                    if (!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : logLine),
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(isError ? chalk.red(logLine) : logLine)
                     }
-                    consoleHandles.push(existingConsole)
-                } else {
-                    existingConsole.set(logLine)
                 }
 
-                // Init container state line
-                lineName = `${podName}-${initContainerStatus.name}-state`
-                existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-                logLine = `        State: ${initContainerStatus.state}${initContainerStatus.reason ? ' (' + initContainerStatus.reason + ')' : ''}`
-                if (!existingConsole) {
-                    existingConsole = {
-                        name: lineName,
-                        set: this.getConsoleLineHandel(logLine),
+                // Process containers
+                for (let containerStatus of deployStatus[podName].containerStatuses) {
+                    // Init container head line
+                    lineName = `${podName}-${containerStatus.name}-head`
+                    existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                    let logLine = chalk.bold.grey(`    Container: ${containerStatus.name}`)
+                    if (!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(logLine),
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(logLine)
                     }
-                    consoleHandles.push(existingConsole)
-                } else {
-                    existingConsole.set(logLine)
-                }
 
-                // Init container state line
-                lineName = `${podName}-${initContainerStatus.name}-msg`
-                existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-                logLine = `        Details: ${initContainerStatus.message ? initContainerStatus.message : 'n/a'}`
+                    // Container state line
+                    lineName = `${podName}-${containerStatus.name}-state`
+                    existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                    logLine = `        State: ${containerStatus.state}${containerStatus.reason ? ' (' + containerStatus.reason + ')' : ''}`
 
-                // Identify if state is an error
-                let isError = false
-                if (
-                    initContainerStatus.state == 'waiting' &&
-                    ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(
-                        initContainerStatus.reason ? initContainerStatus.reason : ''
+                    // Identify if state is an error
+                    let isError = false
+                    if (
+                        containerStatus.state == 'waiting' &&
+                        ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(containerStatus.reason ? containerStatus.reason : '')
                     )
-                )
-                    isError = true
+                        isError = true
 
-                if (initContainerStatus.state == 'terminated' && ['Error'].includes(initContainerStatus.reason ? initContainerStatus.reason : ''))
-                    isError = true
+                    if (containerStatus.state == 'terminated' && ['Error'].includes(containerStatus.reason ? containerStatus.reason : '')) isError = true
 
-                if (!existingConsole) {
-                    existingConsole = {
-                        name: lineName,
-                        set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : logLine),
+                    if (!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : logLine),
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(isError ? chalk.red(logLine) : logLine)
                     }
-                    consoleHandles.push(existingConsole)
-                } else {
-                    existingConsole.set(isError ? chalk.red(logLine) : logLine)
-                }
-            }
 
-            // Process containers
-            for (let containerStatus of deployStatus[podName].containerStatuses) {
-                // Init container head line
-                lineName = `${podName}-${containerStatus.name}-head`
-                existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-                let logLine = chalk.bold.grey(`    Container: ${containerStatus.name}`)
-                if (!existingConsole) {
-                    existingConsole = {
-                        name: lineName,
-                        set: this.getConsoleLineHandel(logLine),
+                    // Init container state line
+                    lineName = `${podName}-${containerStatus.name}-msg`
+                    existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
+                    logLine = `        Details: ${containerStatus.message ? containerStatus.message : 'n/a'}`
+                    if (!existingConsole) {
+                        existingConsole = {
+                            name: lineName,
+                            set: this.getConsoleLineHandel(logLine),
+                        }
+                        consoleHandles.push(existingConsole)
+                    } else {
+                        existingConsole.set(logLine)
                     }
-                    consoleHandles.push(existingConsole)
-                } else {
-                    existingConsole.set(logLine)
-                }
-
-                // Container state line
-                lineName = `${podName}-${containerStatus.name}-state`
-                existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-                logLine = `        State: ${containerStatus.state}${containerStatus.reason ? ' (' + containerStatus.reason + ')' : ''}`
-
-                // Identify if state is an error
-                let isError = false
-                if (
-                    containerStatus.state == 'waiting' &&
-                    ['ErrImagePull', 'ImagePullBackOff', 'CrashLoopBackOff', 'Error'].includes(containerStatus.reason ? containerStatus.reason : '')
-                )
-                    isError = true
-
-                if (containerStatus.state == 'terminated' && ['Error'].includes(containerStatus.reason ? containerStatus.reason : '')) isError = true
-
-                if (!existingConsole) {
-                    existingConsole = {
-                        name: lineName,
-                        set: this.getConsoleLineHandel(isError ? chalk.red(logLine) : logLine),
-                    }
-                    consoleHandles.push(existingConsole)
-                } else {
-                    existingConsole.set(isError ? chalk.red(logLine) : logLine)
-                }
-
-                // Init container state line
-                lineName = `${podName}-${containerStatus.name}-msg`
-                existingConsole = consoleHandles.find((cObj: { name: string }) => cObj.name == lineName)
-                logLine = `        Details: ${containerStatus.message ? containerStatus.message : 'n/a'}`
-                if (!existingConsole) {
-                    existingConsole = {
-                        name: lineName,
-                        set: this.getConsoleLineHandel(logLine),
-                    }
-                    consoleHandles.push(existingConsole)
-                } else {
-                    existingConsole.set(logLine)
                 }
             }
         }

@@ -38,14 +38,14 @@ class KubeCore extends CommonCore {
                         namespace: dep.metadata.namespace,
                         values: chartValues,
                     })
-                } else if (!apps.find((a) => a.name == dep.name)) {
-                    apps.push({
-                        isHelm: false,
-                        type: 'deployment',
-                        name: dep.metadata.name,
-                        namespace: dep.metadata.namespace,
-                    })
                 }
+            } else if (!apps.find((a) => a.name == dep.metadata.name)) {
+                apps.push({
+                    isHelm: false,
+                    type: 'deployment',
+                    name: dep.metadata.name,
+                    namespace: dep.metadata.namespace,
+                })
             }
         }
 
@@ -59,14 +59,14 @@ class KubeCore extends CommonCore {
                         name: dep.metadata.annotations['meta.helm.sh/release-name'],
                         namespace: dep.metadata.namespace,
                     })
-                } else if (!apps.find((a) => a.name == dep.name)) {
-                    apps.push({
-                        isHelm: false,
-                        type: 'statefulSet',
-                        name: dep.metadata.name,
-                        namespace: dep.metadata.namespace,
-                    })
                 }
+            } else if (!apps.find((a) => a.name == dep.metadata.name)) {
+                apps.push({
+                    isHelm: false,
+                    type: 'statefulSet',
+                    name: dep.metadata.name,
+                    namespace: dep.metadata.namespace,
+                })
             }
         }
         return apps
