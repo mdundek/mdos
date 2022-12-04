@@ -1181,6 +1181,15 @@ class KubeBase extends KubeBaseConstants {
                                                     }
                                                 }
                                             }
+                                        } else {
+                                            podLiveStatus.containerStatuses.push({
+                                                name: `${__namespace}-${podResponse.metadata.labels.app}`,
+                                                state: 'waiting',
+                                                reason: 'Pending',
+                                                message: null,
+                                                ready: false,
+                                                started: false
+                                            })
                                         }
 
                                         // Save current status data in memory for later comparison
