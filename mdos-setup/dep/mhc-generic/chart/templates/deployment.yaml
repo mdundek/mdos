@@ -156,7 +156,7 @@ spec:
     {{- with $.Values.securityContext }}
           securityContext:
           {{- toYaml .securityContext | nindent 12 }}
-    {{- end }
+    {{- end }}
     {{- if $.Values.frameworkMode }}
       {{- if .registry }}
           image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
