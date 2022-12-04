@@ -42,7 +42,7 @@ class KubeCore extends CommonCore {
                     apps.push({
                         isHelm: false,
                         type: 'deployment',
-                        name: dep.name,
+                        name: dep.metadata.name,
                         namespace: dep.metadata.namespace,
                     })
                 }
@@ -63,7 +63,7 @@ class KubeCore extends CommonCore {
                     apps.push({
                         isHelm: false,
                         type: 'statefulSet',
-                        name: dep.name,
+                        name: dep.metadata.name,
                         namespace: dep.metadata.namespace,
                     })
                 }
