@@ -1131,7 +1131,7 @@ class KubeBase extends KubeBaseConstants {
 
                                 let changed = false
 
-                                // Now iterate over those pods to get detailes status information
+                                // Now iterate over those pods to get details status information
                                 for (const podResponse of cPods) {
                                     // Process Pod status
                                     if (podResponse.status) {
@@ -1181,16 +1181,17 @@ class KubeBase extends KubeBaseConstants {
                                                     }
                                                 }
                                             }
-                                        } else {
-                                            podLiveStatus.containerStatuses.push({
-                                                name: `${__namespace}-${podResponse.metadata.labels.app}`,
-                                                state: 'waiting',
-                                                reason: 'Pending',
-                                                message: null,
-                                                ready: false,
-                                                started: false
-                                            })
                                         }
+                                        // else {
+                                        //     podLiveStatus.containerStatuses.push({
+                                        //         name: `${_appName}-${podResponse.metadata.labels.app}`,
+                                        //         state: 'waiting',
+                                        //         reason: 'Pending',
+                                        //         message: null,
+                                        //         ready: false,
+                                        //         started: false
+                                        //     })
+                                        // }
 
                                         // Save current status data in memory for later comparison
                                         if (!podsCurrentStatus[podResponse.metadata.name]) {
