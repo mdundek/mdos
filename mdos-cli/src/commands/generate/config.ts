@@ -76,7 +76,9 @@ export default class Config extends Command {
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                        return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
+                    else if(targetCompYaml.configs && targetCompYaml.configs.find((c:any) => c.name.toUpperCase() == value.toUpperCase()))
+                        return 'Config name already defined'
                     return true
                 },
             },
@@ -86,15 +88,15 @@ export default class Config extends Command {
                 message: 'What type of config data do you wish to set up?',
                 choices: [
                     {
-                        name: 'environement variables',
+                        name: 'Environment variables',
                         value: 'env',
                     },
                     {
-                        name: 'read only files',
+                        name: 'Read only files',
                         value: 'file',
                     },
                     {
-                        name: 'read only directory',
+                        name: 'Read only directory',
                         value: 'dir',
                     },
                 ],
@@ -157,16 +159,13 @@ export default class Config extends Command {
         }
 
         if (responses.type == 'env') {
-            env.entries.push({
-                key: 'ENV_KEY',
-                value: 'my value',
-            })
+            await this.collectEnvVariables(responses.name, env, targetCompYaml)
         } else if (!responses.useRef) {
             env.mountPath = responses.mountpath
             env.entries.push({
                 key: 'myconfig',
                 filename: 'myfile.conf',
-                value: 'some multinene config file\nmore lines here',
+                value: 'some multiline config file\nmore lines here',
             })
         }
 
@@ -182,5 +181,53 @@ export default class Config extends Command {
             this.showError(err)
             process.exit(1)
         }
+    }
+
+    /**
+     * collectEnvVariables
+     * @param name 
+     * @param targetCompYaml 
+     */
+    async collectEnvVariables(name:string, env:any, targetCompYaml:any) {
+        const iterate = async() => {
+            let responses = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'key',
+                    message: 'Enter environment variable name:',
+                    validate: (value: string) => {
+                        if (value.trim().length == 0) return 'Mandatory field'
+                        else if (!/[a-zA-Z0-9_]$/.test(value))
+                            return 'Invalid value, only alpha-numeric and underscore characters are allowed'
+                        else if(targetCompYaml.configs && targetCompYaml.configs.find((c:any) => c.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase())))
+                            return 'Variable already exists'
+                        else if(targetCompYaml.secrets && targetCompYaml.secrets.find((c:any) => c.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase())))
+                            return 'Variable already exists'
+                        else if(env.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase()))
+                            return 'Variable already exists'
+                        return true
+                    },
+                }, {
+                    type: 'input',
+                    name: 'value',
+                    message: 'Enter value:',
+                    validate: (value: string) => {
+                        if (value.trim().length == 0) return 'Mandatory field'
+                        return true
+                    },
+                }
+            ])
+
+            env.entries.push(responses)
+
+            let responsesMore = await inquirer.prompt({
+                name: 'confirm',
+                message: 'Do you want to configure another environment variable?',
+                type: 'confirm',
+                default: false
+            })
+            if(responsesMore.confirm) await iterate()
+        }
+        await iterate()
     }
 }
