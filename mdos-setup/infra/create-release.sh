@@ -205,20 +205,6 @@ gen_and_publish_release_and_assets() {
 }
 
 build_push_docker_hub() {
-    # Login to docker hub
-    unset DOCKERHUB_LOGIN
-    while [ -z $DOCKERHUB_LOGIN ]; do 
-        user_input DOCKERHUB_USER "Please enter Dockerhub username:"
-        user_input DOCKERHUB_PASS "Please enter Dockerhub password:"
-
-        echo "$DOCKERHUB_PASS" | docker login --username $DOCKERHUB_USER --password-stdin
-        if [ $? == 0 ]; then
-            DOCKERHUB_LOGIN=1
-        else
-            error "Wrong credentials"
-        fi
-    done
-
     # Cert manager replica image
     cd $REPO_DIR/mdos-setup/dep/images/cert-job-manager
     DOCKER_BUILDKIT=1 docker build -t mdundek/cert-manager-replicate-bot:latest .
@@ -291,6 +277,22 @@ build_push_docker_hub() {
 
     # Make sure we are on main branch
     git checkout main > /dev/null 2>&1
+
+    # Login to docker hub
+    set +Ee
+    unset DOCKERHUB_LOGIN
+    while [ -z $DOCKERHUB_LOGIN ]; do 
+        user_input DOCKERHUB_USER "Please enter Dockerhub username:"
+        user_input DOCKERHUB_PASS "Please enter Dockerhub password:"
+
+        echo "$DOCKERHUB_PASS" | docker login --username $DOCKERHUB_USER --password-stdin
+        if [ $? == 0 ]; then
+            DOCKERHUB_LOGIN=1
+        else
+            error "Wrong credentials"
+        fi
+    done
+    set -Ee
 
     # Collect new app version
     collect_new_version
