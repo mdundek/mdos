@@ -67,6 +67,7 @@ export default class List extends Command {
                 `kube?target=applications&clientId=${this.getConfig('FRAMEWORK_ONLY') ? nsResponse.name : clientResponse.clientId}`,
                 'get'
             )
+
             const treeData = computeApplicationTree(response.data, this.getConfig('FRAMEWORK_ONLY') ? false : clientResponse.clientId == '*')
 
             console.log()

@@ -65,8 +65,11 @@ export default class InstallFramework extends Command {
             // 3. Install broker
             await this.createMdosBroker()
 
-            // // 4. Install MDos
+            // 4. Install MDos
             await this.createMdosApi()
+
+            // 5. Install ClusterRole for "dependsOn" init containers
+            await this.createDependsOnClusterRole()
 
             CliUx.ux.action.stop()
 
@@ -569,6 +572,7 @@ export default class InstallFramework extends Command {
                 RUN_TARGET: 'pod',
                 API_MODE: 'FRAMEWORK',
                 BROKER_CLIENT: 'http://mdos-broker-http:3039',
+                INGRESS_CLASS: this.ingressClass
             },
         })
 
@@ -687,6 +691,15 @@ export default class InstallFramework extends Command {
                                             },
                                         },
                                     },
+                                    {
+                                        name: 'INGRESS_CLASS',
+                                        valueFrom: {
+                                            configMapKeyRef: {
+                                                name: 'mdos-api-configs',
+                                                key: 'INGRESS_CLASS',
+                                            },
+                                        },
+                                    },
                                 ],
                                 ports: [
                                     {
@@ -765,6 +778,38 @@ export default class InstallFramework extends Command {
                 name: 'mdos-api-http-ingress',
             },
             spec: ingressSpec,
+        })
+    }
+
+    /**
+     * createDependsOnClusterRole
+     */
+    async createDependsOnClusterRole() {
+        try {
+            await axios.get(`${this.kubeApiUrl}/apis/rbac.authorization.k8s.io/v1/clusterroles/mdos-depends-on-query`)
+            await axios.delete(`${this.kubeApiUrl}/apis/rbac.authorization.k8s.io/v1/clusterroles/mdos-depends-on-query`)
+        } catch (err) {}
+        await axios.post(`${this.kubeApiUrl}/apis/rbac.authorization.k8s.io/v1/clusterroles`, {
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "kind": "ClusterRole",
+            "metadata": {
+                "name": "mdos-depends-on-query"
+            },
+            "rules": [
+                {
+                    "apiGroups": [
+                        "",
+                        "apps"
+                    ],
+                    "resources": [
+                        "pods"
+                    ],
+                    "verbs": [
+                        "list",
+                        "get"
+                    ]
+                }
+            ]
         })
     }
 

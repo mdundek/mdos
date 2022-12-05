@@ -88,9 +88,10 @@ rm -rf istio-discovery
 
 docker push registry.$DOMAIN/mdos-api:$CURRENT_APP_VERSION
 
+
 if [ ! -z $DO_EXPORT ]; then
-    docker tag registry.$DOMAIN/mdos-api:$CURRENT_APP_VERSION mdos-api:$CURRENT_APP_VERSION
-    docker save mdos-api:$CURRENT_APP_VERSION | gzip > ../mdos-setup/dep/mdos-api/mdos-api.tar.gz
+    docker tag registry.$DOMAIN/mdos-api:$CURRENT_APP_VERSION mdundek/mdos-api:$CURRENT_APP_VERSION
+    docker push mdundek/mdos-api:$CURRENT_APP_VERSION
 fi
 
 cd ../mdos-broker
@@ -98,8 +99,8 @@ docker build -t registry.$DOMAIN/mdos-broker:$CURRENT_APP_VERSION .
 docker push registry.$DOMAIN/mdos-broker:$CURRENT_APP_VERSION
 
 if [ ! -z $DO_EXPORT ]; then
-    docker tag registry.$DOMAIN/mdos-broker:$CURRENT_APP_VERSION mdos-broker:$CURRENT_APP_VERSION
-    docker save mdos-broker:$CURRENT_APP_VERSION | gzip > ../mdos-setup/dep/mdos-broker/mdos-broker.tar.gz
+    docker tag registry.$DOMAIN/mdos-broker:$CURRENT_APP_VERSION mdundek/mdos-broker:$CURRENT_APP_VERSION
+    docker push mdundek/mdos-broker:$CURRENT_APP_VERSION
 fi
 
 cd ../mdos-api/infra

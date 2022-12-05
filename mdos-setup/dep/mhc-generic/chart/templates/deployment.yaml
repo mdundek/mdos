@@ -46,6 +46,9 @@ spec:
         date: "{{ now | unixEpoch }}"
     {{- end }}
     spec:
+    {{- if .serviceAccount }}
+      serviceAccountName: {{ .serviceAccount }}
+    {{- end }}
     {{- with .imagePullSecrets }}
       imagePullSecrets:
       {{- toYaml . | nindent 8 }}
@@ -105,8 +108,14 @@ spec:
       {{- end }}
     {{- end }}
 
-    {{- if contains "true" $mdosSyncs }}
+
+    {{- if or (.initContainers) (contains "true" $mdosSyncs) }}
       initContainers:
+    {{- end }}
+
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= VOLUME SYNC =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if contains "true" $mdosSyncs }}
       - name: {{ $appName }}-{{ lower .name }}-init
         image: {{ $.Values.mdosRegistry }}/mdos-mirror-lftp:latest
       {{- if .imagePullPolicy }}
@@ -148,6 +157,44 @@ spec:
           value: "2"
     {{- end }}
 
+    {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= CUSTOM INIT CONTAINERS =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */}}
+
+    {{- if .initContainers }}
+      {{- range .initContainers }}
+      - name: {{ $appName }}-{{ $appComponentName }}-{{ .name }}-init
+        {{- if $.Values.frameworkMode }}
+          {{- if .registry }}
+        image: "{{ .registry }}/{{ .image }}:{{ .tag }}"
+          {{- else }}
+        image: "{{ .image }}:{{ .tag }}"
+          {{- end }} 
+        {{- else }}
+          {{- if .registry }}
+        image: "{{ .registry }}/{{ .image }}:{{ .tag }}"
+          {{- else if not .publicRegistry }}
+        image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag }}"      
+          {{- else }}
+        image: "{{ .image }}:{{ .tag }}"
+          {{- end }}
+        {{- end }}
+        {{- if .imagePullPolicy }}
+        imagePullPolicy: {{ .imagePullPolicy }}
+        {{- else if $.Values.global.imagePullPolicy }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        {{- else }}
+        imagePullPolicy: IfNotPresent
+        {{- end }}
+        {{- if .command }}
+        command:
+          {{- toYaml .command | nindent 10 }}
+        {{- end }}
+        {{- if .env }}
+        env:
+          {{- toYaml .env | nindent 10 }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=--=--=-=-=-= CONTAINER =-=-=-=-=-=-=--=-=-=-=-=-=-=-=-= */}}
     {{- /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}}
@@ -157,12 +204,20 @@ spec:
           securityContext:
           {{- toYaml .securityContext | nindent 12 }}
     {{- end }}
-    {{- if .registry }}
+    {{- if $.Values.frameworkMode }}
+      {{- if .registry }}
           image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
-    {{- else if not .publicRegistry }}
-          image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
-    {{- else }}
+      {{- else }}
           image: "{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+      {{- end }} 
+    {{- else }}
+      {{- if .registry }}
+          image: "{{ .registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+      {{- else if not .publicRegistry }}
+          image: "{{ $.Values.registry }}/{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"      
+      {{- else }}
+          image: "{{ .image }}:{{ .tag | default $.Chart.AppVersion }}"
+      {{- end }}
     {{- end }}
     {{- if .imagePullPolicy }}
           imagePullPolicy: {{ .imagePullPolicy }}

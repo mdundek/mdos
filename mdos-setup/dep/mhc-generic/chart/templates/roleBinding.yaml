@@ -1,0 +1,45 @@
+{{- range .Values.components }}
+  {{- if .roleBindings }}
+    {{- range .roleBindings }}
+---
+      {{- if .serviceAccount }}
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.tenantName }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .serviceAccount }}
+  namespace: {{ $.Values.tenantName }}
+roleRef:
+        {{- if .clusterRole }}
+  kind: ClusterRole
+  name: {{ .clusterRole }}
+  apiGroup: rbac.authorization.k8s.io
+        {{- end }}
+      {{- else }}
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.tenantName }}
+subjects:
+- kind: User
+  name: system:serviceaccount:{{ $.Values.tenantName }}:default
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+        {{- if .clusterRole }}
+  kind: ClusterRole
+  name: {{ .clusterRole }}
+  apiGroup: rbac.authorization.k8s.io
+        {{- else }}
+  kind: Role
+  name: {{ .role }}
+  apiGroup: rbac.authorization.k8s.io
+        {{- end }}
+      {{- end }}
+
+    {{- end }}
+  {{- end }}
+{{- end }}

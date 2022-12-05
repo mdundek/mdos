@@ -1,0 +1,9 @@
+{{- range .Values.components }}
+  {{- if .serviceAccount }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .serviceAccount }}
+  {{- end }}
+{{- end }}

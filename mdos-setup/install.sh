@@ -1532,6 +1532,23 @@ install_mdos() {
     mdos_deploy_app "true" "false"
 
     rm -rf ./target_values.yaml
+
+    # Also, create ClusterRole for "dependsOn" init containers
+    cat <<EOF | kubectl apply -f &>> $LOG_FILE -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mdos-depends-on-query
+rules:
+- apiGroups:
+  - ""
+  - "apps"
+  resources:
+  - pods
+  verbs:
+  - list
+  - get
+EOF
 }
 
 # ############################################

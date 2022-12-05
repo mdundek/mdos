@@ -60,7 +60,9 @@ export default class Secret extends Command {
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
                     else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
-                        return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
+                        return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
+                    else if(targetCompYaml.secrets && targetCompYaml.secrets.find((c:any) => c.name.toUpperCase() == value.toUpperCase()))
+                        return 'Secret name already defined'
                     return true
                 },
             },
@@ -70,11 +72,11 @@ export default class Secret extends Command {
                 message: 'What type of secret data do you wish to set up?',
                 choices: [
                     {
-                        name: 'environement variables',
+                        name: 'Environment variables',
                         value: 'env',
                     },
                     {
-                        name: 'read only files',
+                        name: 'Read only files',
                         value: 'file',
                     },
                 ],
@@ -91,7 +93,6 @@ export default class Secret extends Command {
                     return true
                 },
             },
-            ,
             {
                 name: 'useRef',
                 message: 'Do you want to reference an existing Secret for this mount point?',
@@ -138,10 +139,7 @@ export default class Secret extends Command {
         }
 
         if (responses.type == 'env') {
-            secret.entries.push({
-                key: 'ENV_KEY',
-                value: 'my value',
-            })
+            await this.collectSecretEnvVariables(responses.name, secret, targetCompYaml)
         } else if (!responses.useRef) {
             secret.mountPath = responses.mountpath
             secret.entries.push({
@@ -163,5 +161,53 @@ export default class Secret extends Command {
             this.showError(err)
             process.exit(1)
         }
+    }
+
+    /**
+     * collectEnvVariables
+     * @param name 
+     * @param targetCompYaml 
+     */
+     async collectSecretEnvVariables(name:string, secret:any, targetCompYaml:any) {
+        const iterate = async() => {
+            let responses = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'key',
+                    message: 'Enter secret environment variable name:',
+                    validate: (value: string) => {
+                        if (value.trim().length == 0) return 'Mandatory field'
+                        else if (!/[a-zA-Z0-9_]$/.test(value))
+                            return 'Invalid value, only alpha-numeric and underscore characters are allowed'
+                        else if(targetCompYaml.secrets && targetCompYaml.secrets.find((c:any) => c.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase())))
+                            return 'Variable already exists'
+                        else if(targetCompYaml.configs && targetCompYaml.configs.find((c:any) => c.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase())))
+                            return 'Variable already exists'
+                        else if(secret.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase()))
+                            return 'Variable already exists'
+                        return true
+                    },
+                }, {
+                    type: 'input',
+                    name: 'value',
+                    message: 'Enter value:',
+                    validate: (value: string) => {
+                        if (value.trim().length == 0) return 'Mandatory field'
+                        return true
+                    },
+                }
+            ])
+
+            secret.entries.push(responses)
+
+            let responsesMore = await inquirer.prompt({
+                name: 'confirm',
+                message: 'Do you want to configure another secret environment variable?',
+                type: 'confirm',
+                default: false
+            })
+            if(responsesMore.confirm) await iterate()
+        }
+        await iterate()
     }
 }
