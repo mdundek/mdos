@@ -2,6 +2,8 @@ const { NotFound, Conflict, Forbidden } = require('@feathersjs/errors')
 const jwt_decode = require('jwt-decode')
 const axios = require('axios')
 const CommonCore = require('../common.class.core')
+const { customAlphabet } = require('nanoid');
+const nanoid = customAlphabet('1234567890abcdef', 10)
 
 /**
  * MDos core functions class
@@ -102,7 +104,7 @@ class MdosCore extends CommonCore {
             valuesYaml.registry = `registry.${process.env.ROOT_DOMAIN}`
             valuesYaml.mdosRegistry = `registry.${process.env.ROOT_DOMAIN}`
         } else {
-            valuesYaml.ingressClassName = "istio"
+            valuesYaml.ingressClassName = process.env.INGRESS_CLASS
         }
 
         // Set default storage class if not set for volumes when deploying in framework only mode
@@ -139,6 +141,87 @@ class MdosCore extends CommonCore {
                 ]
             }
 
+            // Iterate over InitContainers
+            if(component.initContainers) {
+                for (const initContainer of component.initContainers) {
+                    if (!this.app.get("mdos_framework_only") && !initContainer.imagePullSecrets && !initContainer.publicRegistry) {
+                        // MDos registry target, append namespace name to image path
+                        if (initContainer.image.indexOf('/') == 0) initContainer.image = `${valuesYaml.tenantName}${initContainer.image}`
+                        else initContainer.image = `${valuesYaml.tenantName}/${initContainer.image}`
+                        // Skip images from public registries or with specific secrets
+                        initContainer.imagePullSecrets = [
+                            {
+                                name: 'mdos-regcred',
+                            },
+                        ]
+                    }
+                }
+            }
+           
+            // dependsOn other components InitContainers
+            if(component.dependsOn) {
+                // Create RoleBinding for deployment, allowing initContainer to read POD status
+                const uid = nanoid()
+                const roleBinding = {
+                    name: `depon-${uid}-rb`,
+                    clusterRole: "mdos-depends-on-query"
+                }
+                
+                if(component.roleBindings) component.roleBindings.push(roleBinding)
+                else component.roleBindings = [roleBinding]
+
+                // Now Create initContainers that will wait for components
+                for (const dependOnComponentName of component.dependsOn) {
+                    const waitOnTarget = valuesYaml.components.find(c => c.name == dependOnComponentName)
+                    const initContainerWaitOn = {
+                        name: `depon-${nanoid()}`,
+                        image: "tcx/snapshot/stackanetes/kubernetes-entrypoint",
+                        tag: "latest",
+                        registry: "projects.registry.vmware.com",
+                        imagePullPolicy: 'IfNotPresent',
+                        env: [{
+                            name: "DEPENDENCY_POD_JSON",
+                            value: JSON.stringify([
+                                {
+                                    namespace: valuesYaml.tenantName,
+                                    labels: {
+                                        appUuid: valuesYaml.uuid,
+                                        tenantName: valuesYaml.tenantName,
+                                        compUuid: waitOnTarget.uuid,
+                                        app: waitOnTarget.name
+                                    }
+                                }
+                            ])
+                        },{
+                            name: "COMMAND",
+                            value: "echo done"
+                        }, {
+                            name: "POD_NAME",
+                            valueFrom: {
+                                fieldRef: {
+                                    apiVersion: "v1",
+                                    fieldPath: "metadata.name"
+                                }
+                            }
+                        }, {
+                            name: "NAMESPACE",
+                            valueFrom: {
+                                fieldRef: {
+                                    apiVersion: "v1",
+                                    fieldPath: "metadata.namespace"
+                                }
+                            }
+                        }],
+                        command: ["kubernetes-entrypoint"]
+                    }
+                    if(component.initContainers) {
+                        component.initContainers.push(initContainerWaitOn)
+                    } else {
+                        component.initContainers = [initContainerWaitOn]
+                    }
+                }
+            }
+       
             if (this.app.get("mdos_framework_only")) valuesYaml.frameworkMode = true
 
             // Set port names

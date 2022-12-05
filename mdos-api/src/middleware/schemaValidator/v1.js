@@ -243,6 +243,34 @@ class SchemaV1 {
                                     additionalProperties: false,
                                 },
                             },
+                            dependsOn: { 
+                                type: 'array',
+                                items: {
+                                    type: 'string'
+                                }
+                            },
+                            initContainers: {
+                                type: 'array',
+                                items: {
+                                    type: 'object',
+                                    properties: {
+                                        name: {
+                                            type: 'string',
+                                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                        },
+                                        image: { type: 'string' },
+                                        tag: { type: 'string' },
+                                        registry: { type: 'string' },
+                                        publicRegistry: { type: 'boolean' },
+                                        imagePullPolicy: { type: 'string', enum: ['Always', 'IfNotPresent', 'Never'] },
+                                        env: { type: 'array' },
+                                        command: { type: 'array' },
+                                        args: { type: 'array' }
+                                    },
+                                    required: ['name', 'image', 'tag'],
+                                    additionalProperties: false,
+                                }
+                            }
                         },
                         required: ['name', 'image', 'tag', 'uuid'],
                         additionalProperties: false,

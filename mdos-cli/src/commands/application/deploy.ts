@@ -388,7 +388,7 @@ export default class Deploy extends Command {
     showRealtimeDeploymentDetails(consoleHandles: any[], deployStatus: any) {
         const podNames = Object.keys(deployStatus)
         for (const podName of podNames) {
-            if(deployStatus[podName].containerStatuses.length > 0) {
+            if(deployStatus[podName].containerStatuses.length > 0 || (deployStatus[podName].initContainerStatuses && deployStatus[podName].initContainerStatuses.length > 0)) {
                 let logLine
 
                 // Pod head line
