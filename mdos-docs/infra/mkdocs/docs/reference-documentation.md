@@ -549,7 +549,7 @@ It is also possible to mount `Secrets` or `ConfigMaps` from external references 
 
 ---
 
-### :octicons-codescan-16:{ .section-icon } Environement Variables
+### :octicons-codescan-16:{ .section-icon } Environment Variables
 
 Environment variables are a core concept of almost any cloud application. They can also be content sensitive in some cases (ex. passwords, private keys...), in which case you should consider using Kubernetes `Secrets` rather than `ConfigMaps`, or directly coding those as environment variables in your deployment YAML files.
 
@@ -754,6 +754,26 @@ The `custom` scope let's you specify specifically what application components fr
 Here is a more complex example that uses a `custom` scoped NetworkPolicy (please note the addition of the `allow` array value in this case):  
 
 <img src="/mdos/img/networkPolicies/custom.png" alt="custom" width="800"/>
+
+---
+
+### :octicons-codescan-16:{ .section-icon } Component dependencies
+
+If your component has a strong dependency with one or more of your application components, and it should wait until those components are up and running before starting this component, then use the flag `dependsOn`:
+
+```yaml hl_lines="7 8" linenums="1"
+...
+components:
+  - name: postgres
+    ...
+  - name: comp-1
+    ...
+    dependsOn: 
+      - postgres
+    ...
+```
+
+This will provision a `initContainer` that will monitor your other components, effectively delaying it's start up until those conditions are met.
 
 ---
 
