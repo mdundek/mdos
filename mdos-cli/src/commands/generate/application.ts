@@ -38,7 +38,7 @@ export default class Application extends Command {
                 message: 'Enter a application name:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     if (fs.existsSync(path.join(process.cwd(), value))) {
                         return 'A folder with this name already exists in this directory'
@@ -55,7 +55,7 @@ export default class Application extends Command {
                     : 'Enter a tenant name that this application belongs to:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
@@ -109,7 +109,7 @@ export default class Application extends Command {
                     path.join(volumesFolder, 'README.md'),
                     '# Important\n\nApplication volumes that are used to sync data to containers are stored in this folder, do not remove'
                 )
-                success("Application folder and mdos.yaml file created")
+                success('Application folder and mdos.yaml file created')
             } catch (err) {
                 this.showError(err)
                 process.exit(1)

@@ -90,7 +90,7 @@ export default class Create extends Command {
             message: 'Enter a name for your Shared Volume:',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                     return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                 else if (sharedVolumesResponse.data.find((vol: any) => vol.metadata.name.toLowerCase() == value.trim().toLowerCase()))
                     return 'Volume name already exists'

@@ -59,9 +59,9 @@ export default class Secret extends Command {
                 message: 'Enter a name for this new secret:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
-                    else if(targetCompYaml.secrets && targetCompYaml.secrets.find((c:any) => c.name.toUpperCase() == value.toUpperCase()))
+                    else if (targetCompYaml.secrets && targetCompYaml.secrets.find((c: any) => c.name.toUpperCase() == value.toUpperCase()))
                         return 'Secret name already defined'
                     return true
                 },
@@ -156,7 +156,7 @@ export default class Secret extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-            success("mdos.yaml file was updated")
+            success('mdos.yaml file was updated')
         } catch (err) {
             this.showError(err)
             process.exit(1)
@@ -165,11 +165,11 @@ export default class Secret extends Command {
 
     /**
      * collectEnvVariables
-     * @param name 
-     * @param targetCompYaml 
+     * @param name
+     * @param targetCompYaml
      */
-     async collectSecretEnvVariables(name:string, secret:any, targetCompYaml:any) {
-        const iterate = async() => {
+    async collectSecretEnvVariables(name: string, secret: any, targetCompYaml: any) {
+        const iterate = async () => {
             let responses = await inquirer.prompt([
                 {
                     type: 'input',
@@ -177,17 +177,22 @@ export default class Secret extends Command {
                     message: 'Enter secret environment variable name:',
                     validate: (value: string) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if (!/[a-zA-Z0-9_]$/.test(value))
-                            return 'Invalid value, only alpha-numeric and underscore characters are allowed'
-                        else if(targetCompYaml.secrets && targetCompYaml.secrets.find((c:any) => c.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase())))
+                        else if (!/[a-zA-Z0-9_]$/.test(value)) return 'Invalid value, only alpha-numeric and underscore characters are allowed'
+                        else if (
+                            targetCompYaml.secrets &&
+                            targetCompYaml.secrets.find((c: any) => c.entries.find((e: any) => e.key.toLowerCase() == value.toLowerCase()))
+                        )
                             return 'Variable already exists'
-                        else if(targetCompYaml.configs && targetCompYaml.configs.find((c:any) => c.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase())))
+                        else if (
+                            targetCompYaml.configs &&
+                            targetCompYaml.configs.find((c: any) => c.entries.find((e: any) => e.key.toLowerCase() == value.toLowerCase()))
+                        )
                             return 'Variable already exists'
-                        else if(secret.entries.find((e:any) => e.key.toLowerCase() == value.toLowerCase()))
-                            return 'Variable already exists'
+                        else if (secret.entries.find((e: any) => e.key.toLowerCase() == value.toLowerCase())) return 'Variable already exists'
                         return true
                     },
-                }, {
+                },
+                {
                     type: 'input',
                     name: 'value',
                     message: 'Enter value:',
@@ -195,7 +200,7 @@ export default class Secret extends Command {
                         if (value.trim().length == 0) return 'Mandatory field'
                         return true
                     },
-                }
+                },
             ])
 
             secret.entries.push(responses)
@@ -204,9 +209,9 @@ export default class Secret extends Command {
                 name: 'confirm',
                 message: 'Do you want to configure another secret environment variable?',
                 type: 'confirm',
-                default: false
+                default: false,
             })
-            if(responsesMore.confirm) await iterate()
+            if (responsesMore.confirm) await iterate()
         }
         await iterate()
     }

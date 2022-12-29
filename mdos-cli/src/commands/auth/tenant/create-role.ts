@@ -92,7 +92,7 @@ export default class CreateRole extends Command {
                     message: 'Enter the client role name to create:',
                     validate: (value: any) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                             return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                         else if (respClientRoles.data.find((o: { name: string }) => o.name.toLowerCase() == value.trim().toLowerCase()))
                             return 'Role already exists'
