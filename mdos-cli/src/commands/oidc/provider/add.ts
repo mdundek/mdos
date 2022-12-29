@@ -78,7 +78,7 @@ export default class Add extends Command {
                 },
                 validate: (value: any) => {
                     if (value.trim().length == 0) return `Mandatory field`
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,10}$/.test(value))
+                    else if (!/^[a-z]+[a-z0-9\-]{2,10}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 10 characters)'
                     return true
                 },

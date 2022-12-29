@@ -70,7 +70,7 @@ export default class Component extends Command {
                     message: 'Enter a application component name:',
                     validate: (value: string) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                             return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
                         if (fs.existsSync(path.join(appRootPath, value))) {
                             return 'A folder with this name already exists for this project'
@@ -165,10 +165,9 @@ export default class Component extends Command {
                     type: 'confirm',
                     name: 'confirm',
                     message: 'Do you wish to build your application during the deployment of your application?',
-                    default: true
+                    default: true,
                 },
             ])
-           
 
             // Ask if imagePullSecret is needed
             const pullSecretRegResponses = await inquirer.prompt([
@@ -185,7 +184,7 @@ export default class Component extends Command {
                 try {
                     await this.api(`kube?target=namespace&namespace=${appYaml.tenantName}`, 'get')
                 } catch (err) {
-                    if(extractErrorCode(err) != 404) {
+                    if (extractErrorCode(err) != 404) {
                         error('Could not access MDos API server to lookup existing docker secrets')
                         process.exit(1)
                     } else {
@@ -194,7 +193,7 @@ export default class Component extends Command {
                 }
 
                 // If no, create namespace
-                if(createNamespace) {
+                if (createNamespace) {
                     this.showBusy('Creating namespace', true)
                     try {
                         await this.api(`kube`, 'post', {
@@ -211,7 +210,7 @@ export default class Component extends Command {
 
                 // Collect imagePullSecrets
                 let pullSecretResponse: { data: any[] }
-                
+
                 try {
                     this.showBusy(`Looking up existing Docker secrets`, true)
                     pullSecretResponse = await this.api(`kube?target=image-pull-secrets&namespace=${appYaml.tenantName}`, 'get')
@@ -223,7 +222,7 @@ export default class Component extends Command {
 
                 // Do we need to create a new secret?
                 let createNewSecret = false
-                
+
                 if (pullSecretResponse.data.length == 0) {
                     createNewSecret = true
                     context('There are no existing Docker Secrets available in this namespace. Need to create one now.')
@@ -233,14 +232,17 @@ export default class Component extends Command {
                         type: 'list',
                         name: 'tlsSecretName',
                         message: 'What TLS secret holds your certificate and key data for this domain?',
-                        choices: [...pullSecretResponse.data.map((secret: any) => {
-                            return {
-                                name: secret.metadata.name,
-                                value: secret.metadata.name,
-                            }
-                        }), ...[new inquirer.Separator(), {name: "Create a new Docker Secret", value: "__NEW__"}]],
+                        choices: [
+                            ...pullSecretResponse.data.map((secret: any) => {
+                                return {
+                                    name: secret.metadata.name,
+                                    value: secret.metadata.name,
+                                }
+                            }),
+                            ...[new inquirer.Separator(), { name: 'Create a new Docker Secret', value: '__NEW__' }],
+                        ],
                     })
-                    if(responseTlsSecret.tlsSecretName == "__NEW__") {
+                    if (responseTlsSecret.tlsSecretName == '__NEW__') {
                         createNewSecret = true
                     } else {
                         targetSecretName = responseTlsSecret.tlsSecretName
@@ -248,7 +250,7 @@ export default class Component extends Command {
                 }
 
                 // Asked for new secret, collect username / password, then create secret
-                if(createNewSecret) {
+                if (createNewSecret) {
                     const secretResponses = await inquirer.prompt([
                         {
                             name: 'name',
@@ -287,7 +289,7 @@ export default class Component extends Command {
                         const dockerAuthObj: any = {
                             auths: {},
                         }
-                        dockerAuthObj.auths[registryResponse ? registryResponse.registry : "docker.io"] = {
+                        dockerAuthObj.auths[registryResponse ? registryResponse.registry : 'docker.io'] = {
                             username: secretResponses.username,
                             password: secretResponses.password,
                             auth: Buffer.from(`${secretResponses.username}:${secretResponses.password}`, 'utf-8').toString('base64'),
@@ -328,11 +330,11 @@ export default class Component extends Command {
             name: appName,
             image: `${appName}`,
             tag: '0.0.1',
-            uuid: `${nanoid()}-${nanoid()}`
+            uuid: `${nanoid()}-${nanoid()}`,
         }
-        
-        if(buildImgResponse && !buildImgResponse.confirm) compJson.doNotBuild = true
-        
+
+        if (buildImgResponse && !buildImgResponse.confirm) compJson.doNotBuild = true
+
         if (!this.getConfig('FRAMEWORK_ONLY') && publicRegResponses && publicRegResponses.publicRegistry) compJson.publicRegistry = true
         if (registryResponse) compJson.registry = registryResponse.registry
         if (targetSecretName) compJson.imagePullSecrets = [{ name: targetSecretName }]
@@ -351,7 +353,7 @@ export default class Component extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-            success("mdos.yaml file was updated")
+            success('mdos.yaml file was updated')
         } catch (err) {
             this.showError(err)
             try {

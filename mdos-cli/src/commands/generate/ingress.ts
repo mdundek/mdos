@@ -71,7 +71,7 @@ export default class Ingress extends Command {
         // Update ingress
         if (!targetCompYaml.ingress) targetCompYaml.ingress = []
 
-        let allResponses:any = {}
+        let allResponses: any = {}
         let responsesBase = await inquirer.prompt([
             {
                 type: 'input',
@@ -79,7 +79,7 @@ export default class Ingress extends Command {
                 message: 'Enter a name for the ingress:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
                     return true
                 },
@@ -110,33 +110,36 @@ export default class Ingress extends Command {
                     if (value.trim().length == 0) return 'Mandatory field'
                     return true
                 },
-            }
+            },
         ])
-        allResponses = {...responsesBase}
+        allResponses = { ...responsesBase }
 
         // Select target service port
         let createNewService = false
-        if(targetCompYaml.services && targetCompYaml.services.length > 0) {
+        if (targetCompYaml.services && targetCompYaml.services.length > 0) {
             const allPortsArray = targetCompYaml.services.map((s: { ports: any }) => s.ports).flat()
             const servicePortSelect = await inquirer.prompt([
                 {
                     type: 'list',
                     name: 'port',
                     message: 'What service target port should this traffic be redirected to?',
-                    choices: [...allPortsArray.map((p: { port: any }) => {
-                        return { name: p.port, value: p.port }
-                    }), ...[new inquirer.Separator(), {name: "Declare a different port for this ingress", value: "__NEW__"}]]
-                }
+                    choices: [
+                        ...allPortsArray.map((p: { port: any }) => {
+                            return { name: p.port, value: p.port }
+                        }),
+                        ...[new inquirer.Separator(), { name: 'Declare a different port for this ingress', value: '__NEW__' }],
+                    ],
+                },
             ])
-            if(servicePortSelect.port == "__NEW__") createNewService = true
+            if (servicePortSelect.port == '__NEW__') createNewService = true
             else allResponses.port = servicePortSelect.port
         } else {
-            context("There are no services declared for this component. You need to create a service for this ingress.")
+            context('There are no services declared for this component. You need to create a service for this ingress.')
             createNewService = true
         }
 
         // Need a new service for this ingress
-        if(createNewService) {
+        if (createNewService) {
             let port
             let svcname: any
             let serviceResponses = await inquirer.prompt([
@@ -161,11 +164,11 @@ export default class Ingress extends Command {
                     message: 'Enter a name for the new service:',
                     validate: (value: string) => {
                         if (value.trim().length == 0) return 'Mandatory field'
-                        else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                        else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                             return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
                         return true
                     },
-                }
+                },
             ])
             port = parseInt(serviceResponses.port)
             svcname = serviceResponses.name
@@ -228,7 +231,7 @@ export default class Ingress extends Command {
                 ],
             },
         ])
-        allResponses = {...allResponses, responsesFinalize}
+        allResponses = { ...allResponses, responsesFinalize }
 
         // If in Framework mode, we need to ask about TLS certificates
         if (this.getConfig('FRAMEWORK_ONLY')) {
@@ -310,7 +313,7 @@ export default class Ingress extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-            success("mdos.yaml file was updated")
+            success('mdos.yaml file was updated')
         } catch (err) {
             this.showError(err)
             process.exit(1)

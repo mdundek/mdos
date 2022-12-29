@@ -543,11 +543,11 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#environement-variables" class="md-nav__link">
-     Environement Variables
+  <a href="#environment-variables" class="md-nav__link">
+     Environment Variables
   </a>
   
-    <nav class="md-nav" aria-label=" Environement Variables">
+    <nav class="md-nav" aria-label=" Environment Variables">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -600,6 +600,13 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-dependencies" class="md-nav__link">
+     Component dependencies
+  </a>
   
 </li>
         
@@ -846,11 +853,11 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#environement-variables" class="md-nav__link">
-     Environement Variables
+  <a href="#environment-variables" class="md-nav__link">
+     Environment Variables
   </a>
   
-    <nav class="md-nav" aria-label=" Environement Variables">
+    <nav class="md-nav" aria-label=" Environment Variables">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -903,6 +910,13 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-dependencies" class="md-nav__link">
+     Component dependencies
+  </a>
   
 </li>
         
@@ -1641,7 +1655,7 @@ Your MDos project contains a <code>volumes</code> folder at the root, create a v
 <p><strong>mdos generate secret</strong> or <strong>mdos generate config</strong></p>
 </div>
 <hr />
-<h3 id="environement-variables"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> Environement Variables</h3>
+<h3 id="environment-variables"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> Environment Variables</h3>
 <p>Environment variables are a core concept of almost any cloud application. They can also be content sensitive in some cases (ex. passwords, private keys...), in which case you should consider using Kubernetes <code>Secrets</code> rather than <code>ConfigMaps</code>, or directly coding those as environment variables in your deployment YAML files.</p>
 <h4 id="using-configmaps-or-secrets"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 16.94v-4H5.08l-.03-2.01H14V6.94l5 5Z"/></svg></span> Using ConfigMaps or Secrets</h4>
 <p>If all you need is to set environment variables for your application components, use the following example:</p>
@@ -1958,6 +1972,28 @@ Now if you would like to use a different host / domain name to respond to your t
 <p>Here is a more complex example that uses a <code>custom</code> scoped NetworkPolicy (please note the addition of the <code>allow</code> array value in this case):  </p>
 <p><img src="/mdos/img/networkPolicies/custom.png" alt="custom" width="800"/></p>
 <hr />
+<h3 id="component-dependencies"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> Component dependencies</h3>
+<p>If your component has a strong dependency with one or more of your application components, and it should wait until those components are up and running before starting this component, then use the flag <code>dependsOn</code>:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-31-1">1</a></span>
+<span class="normal"><a href="#__codelineno-31-2">2</a></span>
+<span class="normal"><a href="#__codelineno-31-3">3</a></span>
+<span class="normal"><a href="#__codelineno-31-4">4</a></span>
+<span class="normal"><a href="#__codelineno-31-5">5</a></span>
+<span class="normal"><a href="#__codelineno-31-6">6</a></span>
+<span class="normal"><a href="#__codelineno-31-7">7</a></span>
+<span class="normal"><a href="#__codelineno-31-8">8</a></span>
+<span class="normal"><a href="#__codelineno-31-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1"></a><span class="nn">...</span><span class="w"></span>
+<a id="__codelineno-31-2" name="__codelineno-31-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-31-3" name="__codelineno-31-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres</span><span class="w"></span>
+<a id="__codelineno-31-4" name="__codelineno-31-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<a id="__codelineno-31-5" name="__codelineno-31-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
+<a id="__codelineno-31-6" name="__codelineno-31-6"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<a id="__codelineno-31-7" name="__codelineno-31-7"></a><span class="hll"><span class="w">    </span><span class="nt">dependsOn</span><span class="p">:</span><span class="w"> </span>
+</span><a id="__codelineno-31-8" name="__codelineno-31-8"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres</span><span class="w"></span>
+</span><a id="__codelineno-31-9" name="__codelineno-31-9"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+</code></pre></div></td></tr></table></div>
+<p>This will provision a <code>initContainer</code> that will monitor your other components, effectively delaying it's start up until those conditions are met.</p>
+<hr />
 <h3 id="oauth2-oidc"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> OAuth2 OIDC</h3>
 <div class="admonition error">
 <p class="admonition-title">Please note</p>
@@ -1972,23 +2008,23 @@ Now if you would like to use a different host / domain name to respond to your t
 <p class="admonition-title">Info</p>
 <p>For an example using the Keycloak OIDC authentication provider with custom roles and ACL, please refer to the chapter <a href="/mdos/advanced-resources/#securing-applications-using-oidc-providers">Securing applications using OIDC providers</a></p>
 </div>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-31-1">1</a></span>
-<span class="normal"><a href="#__codelineno-31-2">2</a></span>
-<span class="normal"><a href="#__codelineno-31-3">3</a></span>
-<span class="normal"><a href="#__codelineno-31-4">4</a></span>
-<span class="normal"><a href="#__codelineno-31-5">5</a></span>
-<span class="normal"><a href="#__codelineno-31-6">6</a></span>
-<span class="normal"><a href="#__codelineno-31-7">7</a></span>
-<span class="normal"><a href="#__codelineno-31-8">8</a></span>
-<span class="normal"><a href="#__codelineno-31-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1"></a><span class="nn">...</span><span class="w"></span>
-<a id="__codelineno-31-2" name="__codelineno-31-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-31-3" name="__codelineno-31-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
-<a id="__codelineno-31-4" name="__codelineno-31-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
-<a id="__codelineno-31-5" name="__codelineno-31-5"></a><span class="hll"><span class="w">    </span><span class="nt">oidc</span><span class="p">:</span><span class="w"></span>
-</span><a id="__codelineno-31-6" name="__codelineno-31-6"></a><span class="hll"><span class="w">      </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">google-test-provider</span><span class="w"></span>
-</span><a id="__codelineno-31-7" name="__codelineno-31-7"></a><span class="hll"><span class="w">      </span><span class="nt">hosts</span><span class="p">:</span><span class="w"></span>
-</span><a id="__codelineno-31-8" name="__codelineno-31-8"></a><span class="hll"><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nginx.mydomain.com</span><span class="w"></span>
-</span><a id="__codelineno-31-9" name="__codelineno-31-9"></a><span class="nn">...</span><span class="w"></span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-32-1">1</a></span>
+<span class="normal"><a href="#__codelineno-32-2">2</a></span>
+<span class="normal"><a href="#__codelineno-32-3">3</a></span>
+<span class="normal"><a href="#__codelineno-32-4">4</a></span>
+<span class="normal"><a href="#__codelineno-32-5">5</a></span>
+<span class="normal"><a href="#__codelineno-32-6">6</a></span>
+<span class="normal"><a href="#__codelineno-32-7">7</a></span>
+<span class="normal"><a href="#__codelineno-32-8">8</a></span>
+<span class="normal"><a href="#__codelineno-32-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1"></a><span class="nn">...</span><span class="w"></span>
+<a id="__codelineno-32-2" name="__codelineno-32-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-32-3" name="__codelineno-32-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
+<a id="__codelineno-32-4" name="__codelineno-32-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<a id="__codelineno-32-5" name="__codelineno-32-5"></a><span class="hll"><span class="w">    </span><span class="nt">oidc</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-32-6" name="__codelineno-32-6"></a><span class="hll"><span class="w">      </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">google-test-provider</span><span class="w"></span>
+</span><a id="__codelineno-32-7" name="__codelineno-32-7"></a><span class="hll"><span class="w">      </span><span class="nt">hosts</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-32-8" name="__codelineno-32-8"></a><span class="hll"><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nginx.mydomain.com</span><span class="w"></span>
+</span><a id="__codelineno-32-9" name="__codelineno-32-9"></a><span class="nn">...</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 <div class="admonition tip">
 <p class="admonition-title">CLI command</p>
@@ -1997,51 +2033,51 @@ Now if you would like to use a different host / domain name to respond to your t
 <hr />
 <h3 id="set-pod-resources"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> Set pod resources</h3>
 <p>This allows you to impose limits in terms of CPU / memory resources you application components can use. </p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-32-1"> 1</a></span>
-<span class="normal"><a href="#__codelineno-32-2"> 2</a></span>
-<span class="normal"><a href="#__codelineno-32-3"> 3</a></span>
-<span class="normal"><a href="#__codelineno-32-4"> 4</a></span>
-<span class="normal"><a href="#__codelineno-32-5"> 5</a></span>
-<span class="normal"><a href="#__codelineno-32-6"> 6</a></span>
-<span class="normal"><a href="#__codelineno-32-7"> 7</a></span>
-<span class="normal"><a href="#__codelineno-32-8"> 8</a></span>
-<span class="normal"><a href="#__codelineno-32-9"> 9</a></span>
-<span class="normal"><a href="#__codelineno-32-10">10</a></span>
-<span class="normal"><a href="#__codelineno-32-11">11</a></span>
-<span class="normal"><a href="#__codelineno-32-12">12</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1"></a><span class="nn">...</span><span class="w"></span>
-<a id="__codelineno-32-2" name="__codelineno-32-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-32-3" name="__codelineno-32-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
-<a id="__codelineno-32-4" name="__codelineno-32-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
-<a id="__codelineno-32-5" name="__codelineno-32-5"></a><span class="hll"><span class="w">    </span><span class="nt">resources</span><span class="p">:</span><span class="w"></span>
-</span><a id="__codelineno-32-6" name="__codelineno-32-6"></a><span class="hll"><span class="w">      </span><span class="nt">requests</span><span class="p">:</span><span class="w"></span>
-</span><a id="__codelineno-32-7" name="__codelineno-32-7"></a><span class="hll"><span class="w">        </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;64Mi&quot;</span><span class="w"></span>
-</span><a id="__codelineno-32-8" name="__codelineno-32-8"></a><span class="hll"><span class="w">        </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;250m&quot;</span><span class="w"></span>
-</span><a id="__codelineno-32-9" name="__codelineno-32-9"></a><span class="hll"><span class="w">      </span><span class="nt">limits</span><span class="p">:</span><span class="w"></span>
-</span><a id="__codelineno-32-10" name="__codelineno-32-10"></a><span class="hll"><span class="w">        </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;128Mi&quot;</span><span class="w"></span>
-</span><a id="__codelineno-32-11" name="__codelineno-32-11"></a><span class="hll"><span class="w">        </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;500m&quot;</span><span class="w"></span>
-</span><a id="__codelineno-32-12" name="__codelineno-32-12"></a><span class="nn">...</span><span class="w"></span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-33-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-33-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-33-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-33-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-33-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-33-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-33-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-33-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-33-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-33-10">10</a></span>
+<span class="normal"><a href="#__codelineno-33-11">11</a></span>
+<span class="normal"><a href="#__codelineno-33-12">12</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1"></a><span class="nn">...</span><span class="w"></span>
+<a id="__codelineno-33-2" name="__codelineno-33-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-33-3" name="__codelineno-33-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
+<a id="__codelineno-33-4" name="__codelineno-33-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<a id="__codelineno-33-5" name="__codelineno-33-5"></a><span class="hll"><span class="w">    </span><span class="nt">resources</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-33-6" name="__codelineno-33-6"></a><span class="hll"><span class="w">      </span><span class="nt">requests</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-33-7" name="__codelineno-33-7"></a><span class="hll"><span class="w">        </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;64Mi&quot;</span><span class="w"></span>
+</span><a id="__codelineno-33-8" name="__codelineno-33-8"></a><span class="hll"><span class="w">        </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;250m&quot;</span><span class="w"></span>
+</span><a id="__codelineno-33-9" name="__codelineno-33-9"></a><span class="hll"><span class="w">      </span><span class="nt">limits</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-33-10" name="__codelineno-33-10"></a><span class="hll"><span class="w">        </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;128Mi&quot;</span><span class="w"></span>
+</span><a id="__codelineno-33-11" name="__codelineno-33-11"></a><span class="hll"><span class="w">        </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;500m&quot;</span><span class="w"></span>
+</span><a id="__codelineno-33-12" name="__codelineno-33-12"></a><span class="nn">...</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 <hr />
 <h3 id="execute-pre-build-commands"><span class="twemoji section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8.47 4.97a.75.75 0 0 0 0 1.06L9.94 7.5 8.47 8.97a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0zM6.53 6.03a.75.75 0 0 0-1.06-1.06l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06L5.06 7.5l1.47-1.47z"/><path fill-rule="evenodd" d="M12.246 13.307a7.5 7.5 0 1 1 1.06-1.06l2.474 2.473a.75.75 0 1 1-1.06 1.06l-2.474-2.473zM1.5 7.5a6 6 0 1 1 10.386 4.094.75.75 0 0 0-.292.293A6 6 0 0 1 1.5 7.5z"/></svg></span> Execute pre-build commands</h3>
 <p>MDos allows you to execute commands on the local machine every time you are about to deploy your application onto your Kubernetes cluster. Simply list the commands you wish to execute, and they will execute every time you run the command <code>mdos application deploy</code>.<br />
 In this example, we are building a <code>mkdocs</code> project, then copy the resulting files over to the proper <code>volumes</code> directory ready for deployment</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-33-1">1</a></span>
-<span class="normal"><a href="#__codelineno-33-2">2</a></span>
-<span class="normal"><a href="#__codelineno-33-3">3</a></span>
-<span class="normal"><a href="#__codelineno-33-4">4</a></span>
-<span class="normal"><a href="#__codelineno-33-5">5</a></span>
-<span class="normal"><a href="#__codelineno-33-6">6</a></span>
-<span class="normal"><a href="#__codelineno-33-7">7</a></span>
-<span class="normal"><a href="#__codelineno-33-8">8</a></span>
-<span class="normal"><a href="#__codelineno-33-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1"></a><span class="nn">...</span><span class="w"></span>
-<a id="__codelineno-33-2" name="__codelineno-33-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
-<a id="__codelineno-33-3" name="__codelineno-33-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
-<a id="__codelineno-33-4" name="__codelineno-33-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
-<a id="__codelineno-33-5" name="__codelineno-33-5"></a><span class="hll"><span class="w">    </span><span class="nt">preBuildCmd</span><span class="p">:</span><span class="w"></span>
-</span><a id="__codelineno-33-6" name="__codelineno-33-6"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mkdocs build</span><span class="w"></span>
-</span><a id="__codelineno-33-7" name="__codelineno-33-7"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rm -rf ../volumes/docs/*</span><span class="w"></span>
-</span><a id="__codelineno-33-8" name="__codelineno-33-8"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cp -r ./site/* ../volumes/docs</span><span class="w"></span>
-</span><a id="__codelineno-33-9" name="__codelineno-33-9"></a><span class="nn">...</span><span class="w"></span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-34-1">1</a></span>
+<span class="normal"><a href="#__codelineno-34-2">2</a></span>
+<span class="normal"><a href="#__codelineno-34-3">3</a></span>
+<span class="normal"><a href="#__codelineno-34-4">4</a></span>
+<span class="normal"><a href="#__codelineno-34-5">5</a></span>
+<span class="normal"><a href="#__codelineno-34-6">6</a></span>
+<span class="normal"><a href="#__codelineno-34-7">7</a></span>
+<span class="normal"><a href="#__codelineno-34-8">8</a></span>
+<span class="normal"><a href="#__codelineno-34-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1"></a><span class="nn">...</span><span class="w"></span>
+<a id="__codelineno-34-2" name="__codelineno-34-2"></a><span class="nt">components</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-34-3" name="__codelineno-34-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comp-1</span><span class="w"></span>
+<a id="__codelineno-34-4" name="__codelineno-34-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<a id="__codelineno-34-5" name="__codelineno-34-5"></a><span class="hll"><span class="w">    </span><span class="nt">preBuildCmd</span><span class="p">:</span><span class="w"></span>
+</span><a id="__codelineno-34-6" name="__codelineno-34-6"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mkdocs build</span><span class="w"></span>
+</span><a id="__codelineno-34-7" name="__codelineno-34-7"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rm -rf ../volumes/docs/*</span><span class="w"></span>
+</span><a id="__codelineno-34-8" name="__codelineno-34-8"></a><span class="hll"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cp -r ./site/* ../volumes/docs</span><span class="w"></span>
+</span><a id="__codelineno-34-9" name="__codelineno-34-9"></a><span class="nn">...</span><span class="w"></span>
 </code></pre></div></td></tr></table></div>
 
 

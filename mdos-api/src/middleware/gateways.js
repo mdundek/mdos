@@ -71,7 +71,6 @@ class Gateways {
                                                 const crossGwHostRootDomain = crossGwHost.substring(crossGwHost.indexOf(".") + 1)
                                                 if(crossGwHostRootDomain.toLowerCase() == rootDomain.toLowerCase()) {
                                                     crossWildcardmatch = true
-                                                    console.log("HERE 1")
                                                 }
                                             }
 
@@ -83,7 +82,6 @@ class Gateways {
                                 return true
                             }
                             else {
-                                console.log("HERE 2")
                                 wildcardMatchWasCrossed = true
                             }
                         }
@@ -107,7 +105,6 @@ class Gateways {
                 return false
             })
             if(gtw.spec.serverMatch) {
-                console.log("CROSSED: ", wildcardMatchWasCrossed)
                 gtw.spec.wildcardMatch = wildcardMatch ? true : wildcardMatchWasCrossed
                 gtwMatches.push(gtw)
             }

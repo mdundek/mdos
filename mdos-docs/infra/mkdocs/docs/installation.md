@@ -16,7 +16,7 @@ hide:
 First, clone this repo on your target machine:
 
 ```sh
-git clone -b v2.0.0 https://github.com/mdundek/mdos.git
+git clone -b v2.0.1 https://github.com/mdundek/mdos.git
 ```
 
 ### Before you start
@@ -374,6 +374,21 @@ XXX.XXX.XXX.XXX grafana.mydomain.com
 ```
 
 <!-- ## Extra
+### Debian install sudo
+
+su
+
+nano /etc/apt/sources.list
+
+disable cd-rom & add:
+
+deb http://deb.debian.org/debian bullseye main
+deb-src http://deb.debian.org/debian bullseye main
+
+apt update
+apt-get install sudo -y
+/usr/sbin/adduser mdundek sudo
+
 
 ### disk mounts
 

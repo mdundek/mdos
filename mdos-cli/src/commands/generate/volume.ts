@@ -74,7 +74,7 @@ export default class Volume extends Command {
                 message: 'Enter a name for this volume:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
@@ -167,7 +167,7 @@ export default class Volume extends Command {
                             if (!value) return 'Mandatory field'
                             return true
                         },
-                        default: 1
+                        default: 1,
                     },
                 ])
                 aggregatedResponses = { ...aggregatedResponses, ...responses }
@@ -214,6 +214,17 @@ export default class Volume extends Command {
                 ])
                 aggregatedResponses = { ...aggregatedResponses, ...responses }
             }
+        } else {
+            responses = await inquirer.prompt({
+                type: 'input',
+                name: 'hostPath',
+                message: 'Enter the full path on the host (MDos server) for this volume:',
+                validate: (value: string) => {
+                    if (value.trim().length == 0) return 'Mandatory field'
+                    return true
+                },
+            })
+            aggregatedResponses = { ...aggregatedResponses, ...responses }
         }
 
         // Update ingress
@@ -257,7 +268,7 @@ export default class Volume extends Command {
 
         if (aggregatedResponses.size) vol.size = `${aggregatedResponses.size}Gi`
 
-        if (aggregatedResponses.useHostpath) vol.hostPath = aggregatedResponses.hostpath
+        if (aggregatedResponses.useHostpath) vol.hostPath = aggregatedResponses.hostPath
 
         if (aggregatedResponses.sharedVolumeName) vol.sharedVolumeName = aggregatedResponses.sharedVolumeName
 
@@ -268,7 +279,7 @@ export default class Volume extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-            success("mdos.yaml file was updated")
+            success('mdos.yaml file was updated')
         } catch (err) {
             this.showError(err)
             process.exit(1)

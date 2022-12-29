@@ -41,7 +41,7 @@ export default class Create extends Command {
             message: 'Enter a namespace name to create:',
             validate: (value: any) => {
                 if (value.trim().length == 0) return `Mandatory field`
-                else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                     return 'Invalid value, only alpha-numeric and dash characters are allowed (between 2 - 20 characters)'
                 return true
             },

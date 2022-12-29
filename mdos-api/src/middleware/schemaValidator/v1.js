@@ -6,7 +6,6 @@ var Validator = require('jsonschema').Validator
  * @class SchemaV1
  */
 class SchemaV1 {
-    
     /**
      * Creates an instance of SchemaV1.
      * @memberof SchemaV1
@@ -23,11 +22,11 @@ class SchemaV1 {
                 schemaVersion: { type: 'string', enum: ['v1', 'v1-framework'] },
                 tenantName: {
                     type: 'string',
-                    pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                    pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                 },
                 appName: {
                     type: 'string',
-                    pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                    pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                 },
                 uuid: {
                     type: 'string',
@@ -40,7 +39,7 @@ class SchemaV1 {
                         properties: {
                             name: {
                                 type: 'string',
-                                pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                             },
                             uuid: {
                                 type: 'string',
@@ -57,21 +56,21 @@ class SchemaV1 {
                                     type: 'object',
                                     properties: {
                                         name: {
-                                            type: 'string'
-                                        }
+                                            type: 'string',
+                                        },
                                     },
                                     required: ['name'],
                                     additionalProperties: false,
-                                }
+                                },
                             },
                             command: {
-                                type: 'array'
+                                type: 'array',
                             },
                             commandArgs: {
-                                type: 'array'
+                                type: 'array',
                             },
                             workingDir: {
-                                type: 'string'
+                                type: 'string',
                             },
                             resources: {
                                 type: 'object',
@@ -80,24 +79,24 @@ class SchemaV1 {
                                         type: 'object',
                                         properties: {
                                             memory: {
-                                                type: 'string'
+                                                type: 'string',
                                             },
                                             cpu: {
-                                                type: 'string'
-                                            }
-                                        }
+                                                type: 'string',
+                                            },
+                                        },
                                     },
                                     limits: {
                                         type: 'object',
                                         properties: {
                                             memory: {
-                                                type: 'string'
+                                                type: 'string',
                                             },
                                             cpu: {
-                                                type: 'string'
-                                            }
-                                        }
-                                    }
+                                                type: 'string',
+                                            },
+                                        },
+                                    },
                                 },
                                 required: ['requests', 'limits'],
                                 additionalProperties: false,
@@ -109,7 +108,7 @@ class SchemaV1 {
                                     properties: {
                                         name: {
                                             type: 'string',
-                                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                                         },
                                         ports: {
                                             type: 'array',
@@ -136,7 +135,7 @@ class SchemaV1 {
                                 properties: {
                                     scope: {
                                         type: 'string',
-                                        enum: ['private', 'limited', 'open', 'custom']
+                                        enum: ['private', 'limited', 'open', 'custom'],
                                     },
                                     allow: {
                                         type: 'array',
@@ -148,12 +147,12 @@ class SchemaV1 {
                                                 compUuid: { type: 'string' },
                                             },
                                             required: ['namespace', 'appUuid', 'compUuid'],
-                                            additionalProperties: false
+                                            additionalProperties: false,
                                         },
-                                    }
+                                    },
                                 },
                                 required: ['scope'],
-                                additionalProperties: false
+                                additionalProperties: false,
                             },
                             preBuildCmd: {
                                 type: 'array',
@@ -169,7 +168,7 @@ class SchemaV1 {
                                     properties: {
                                         name: {
                                             type: 'string',
-                                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                                         },
                                         type: { type: 'string', enum: ['env', 'file', 'dir'] },
                                         mountPath: { type: 'string' },
@@ -181,7 +180,7 @@ class SchemaV1 {
                                                 type: 'object',
                                                 properties: {
                                                     name: {
-                                                        type: 'string'
+                                                        type: 'string',
                                                     },
                                                     filename: {
                                                         type: 'string',
@@ -209,7 +208,7 @@ class SchemaV1 {
                                     properties: {
                                         name: {
                                             type: 'string',
-                                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                                         },
                                         type: { type: 'string', enum: ['env', 'file', 'dir'] },
                                         mountPath: { type: 'string' },
@@ -222,7 +221,7 @@ class SchemaV1 {
                                                 properties: {
                                                     name: {
                                                         type: 'string',
-                                                        pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                                        pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                                                     },
                                                     filename: {
                                                         type: 'string',
@@ -243,11 +242,11 @@ class SchemaV1 {
                                     additionalProperties: false,
                                 },
                             },
-                            dependsOn: { 
+                            dependsOn: {
                                 type: 'array',
                                 items: {
-                                    type: 'string'
-                                }
+                                    type: 'string',
+                                },
                             },
                             initContainers: {
                                 type: 'array',
@@ -256,7 +255,7 @@ class SchemaV1 {
                                     properties: {
                                         name: {
                                             type: 'string',
-                                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                                         },
                                         image: { type: 'string' },
                                         tag: { type: 'string' },
@@ -265,12 +264,12 @@ class SchemaV1 {
                                         imagePullPolicy: { type: 'string', enum: ['Always', 'IfNotPresent', 'Never'] },
                                         env: { type: 'array' },
                                         command: { type: 'array' },
-                                        args: { type: 'array' }
+                                        args: { type: 'array' },
                                     },
                                     required: ['name', 'image', 'tag'],
                                     additionalProperties: false,
-                                }
-                            }
+                                },
+                            },
                         },
                         required: ['name', 'image', 'tag', 'uuid'],
                         additionalProperties: false,
@@ -281,9 +280,8 @@ class SchemaV1 {
             additionalProperties: false,
         }
 
-
         // If MDos full mode
-        if(!this.frameworkOnlyMode) {
+        if (!this.frameworkOnlyMode) {
             this.applicationSchema.properties.components.items.properties.volumes = {
                 type: 'array',
                 items: {
@@ -291,25 +289,25 @@ class SchemaV1 {
                     properties: {
                         name: {
                             type: 'string',
-                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                         },
                         mountPath: { type: 'string' },
                         hostPath: { type: 'string' },
                         sharedVolumeName: { type: 'string' },
                         syncVolume: { type: 'boolean' },
                         trigger: { type: 'string' },
-                        size: { type: 'string' }
+                        size: { type: 'string' },
                     },
                     required: ['name', 'mountPath'],
                     additionalProperties: false,
                 },
-            };
+            }
             this.applicationSchema.properties.components.items.properties.oidc = {
                 type: 'object',
                 properties: {
                     provider: {
                         type: 'string',
-                        pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                        pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                     },
                     hosts: {
                         type: 'array',
@@ -332,7 +330,7 @@ class SchemaV1 {
                 },
                 required: ['provider', 'hosts'],
                 additionalProperties: false,
-            };   
+            }
             this.applicationSchema.properties.components.items.properties.ingress = {
                 type: 'array',
                 items: {
@@ -340,7 +338,7 @@ class SchemaV1 {
                     properties: {
                         name: {
                             type: 'string',
-                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                         },
                         matchHost: {
                             type: 'string',
@@ -354,8 +352,8 @@ class SchemaV1 {
                     required: ['name', 'matchHost', 'targetPort'],
                     additionalProperties: false,
                 },
-            };
-        } 
+            }
+        }
         // If MDos framework only mode
         else {
             this.applicationSchema.properties.components.items.properties.volumes = {
@@ -365,18 +363,18 @@ class SchemaV1 {
                     properties: {
                         name: {
                             type: 'string',
-                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                         },
                         mountPath: { type: 'string' },
                         hostPath: { type: 'string' },
                         sharedVolumeName: { type: 'string' },
                         trigger: { type: 'string' },
-                        size: { type: 'string' }
+                        size: { type: 'string' },
                     },
                     required: ['name', 'mountPath'],
                     additionalProperties: false,
                 },
-            };
+            }
             this.applicationSchema.properties.components.items.properties.ingress = {
                 type: 'array',
                 items: {
@@ -384,7 +382,7 @@ class SchemaV1 {
                     properties: {
                         name: {
                             type: 'string',
-                            pattern: /^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/,
+                            pattern: /^[a-z]+[a-z0-9\-]{2,20}$/,
                         },
                         matchHost: {
                             type: 'string',
@@ -398,7 +396,7 @@ class SchemaV1 {
                     required: ['name', 'matchHost', 'targetPort'],
                     additionalProperties: false,
                 },
-            };
+            }
         }
     }
 
@@ -406,7 +404,7 @@ class SchemaV1 {
      * Validate schema
      *
      * @param {*} jsonData
-     * @return {*} 
+     * @return {*}
      * @memberof SchemaV1
      */
     validate(jsonData) {
@@ -431,8 +429,8 @@ class SchemaV1 {
                                 stack: "'mountPath' property is required",
                             })
                         }
-                        if(!config.ref) {
-                            if(!config.entries || config.entries.length == 0) {
+                        if (!config.ref) {
+                            if (!config.entries || config.entries.length == 0) {
                                 errors.push({
                                     message: "'entries' property is required",
                                     instance: config,
@@ -446,14 +444,13 @@ class SchemaV1 {
                                             instance: entry,
                                             stack: "'filename' property is required",
                                         })
-                                    }
-                                    else if ((config.type == 'dir' || config.type == 'env') && entry.filename) {
+                                    } else if ((config.type == 'dir' || config.type == 'env') && entry.filename) {
                                         errors.push({
                                             message: "'filename' property is not compatible with 'dir' or 'env' type",
                                             instance: entry,
                                             stack: "'filename' property is not compatible with 'dir' or 'env' type",
                                         })
-                                    } 
+                                    }
                                     if ((config.type == 'file' || config.type == 'dir') && entry.name) {
                                         errors.push({
                                             message: "'name' property is not compatible with 'file' type and external config reference",
@@ -471,29 +468,29 @@ class SchemaV1 {
                                 }
                             }
                         } else {
-                            if((config.type == 'file' || config.type == 'env') && (!config.entries || config.entries.length == 0)) {
+                            if ((config.type == 'file' || config.type == 'env') && (!config.entries || config.entries.length == 0)) {
                                 errors.push({
                                     message: "'entries' property is required",
                                     instance: config,
                                     stack: "'entries' property is required",
                                 })
-                            } else if(config.type == 'dir' && config.entries) {
+                            } else if (config.type == 'dir' && config.entries) {
                                 errors.push({
                                     message: "'entries' property is not allowed when using type 'dir' that references an existing config",
                                     instance: config,
                                     stack: "'entries' property is not allowed when using type 'dir' that references an existing config",
                                 })
                             }
-                            if(config.type == 'file' || config.type == 'env' && config.entries) {
+                            if (config.type == 'file' || (config.type == 'env' && config.entries)) {
                                 for (const entry of config.entries) {
-                                    if(config.type == 'file' && !entry.key) {
+                                    if (config.type == 'file' && !entry.key) {
                                         errors.push({
                                             message: "'key' property is required",
                                             instance: entry,
                                             stack: "'key' property is required",
                                         })
                                     }
-                                    if(config.type == 'file' && !entry.filename) {
+                                    if (config.type == 'file' && !entry.filename) {
                                         errors.push({
                                             message: "'filename' property is required",
                                             instance: entry,
@@ -514,8 +511,8 @@ class SchemaV1 {
                                 stack: "'mountPath' property is required",
                             })
                         }
-                        if(!secret.ref) {
-                            if(!secret.entries || secret.entries.length == 0) {
+                        if (!secret.ref) {
+                            if (!secret.entries || secret.entries.length == 0) {
                                 errors.push({
                                     message: "'entries' property is required",
                                     instance: secret,
@@ -529,14 +526,13 @@ class SchemaV1 {
                                             instance: entry,
                                             stack: "'filename' property is required",
                                         })
-                                    }
-                                    else if ((secret.type == 'dir' || secret.type == 'env') && entry.filename) {
+                                    } else if ((secret.type == 'dir' || secret.type == 'env') && entry.filename) {
                                         errors.push({
                                             message: "'filename' property is not compatible with 'dir' or 'env' type",
                                             instance: entry,
                                             stack: "'filename' property is not compatible with 'dir' or 'env' type",
                                         })
-                                    } 
+                                    }
                                     if ((secret.type == 'file' || secret.type == 'dir') && entry.name) {
                                         errors.push({
                                             message: "'name' property is not compatible with 'file' type and external secret reference",
@@ -554,29 +550,29 @@ class SchemaV1 {
                                 }
                             }
                         } else {
-                            if((secret.type == 'file' || secret.type == 'env') && (!secret.entries || secret.entries.length == 0)) {
+                            if ((secret.type == 'file' || secret.type == 'env') && (!secret.entries || secret.entries.length == 0)) {
                                 errors.push({
                                     message: "'entries' property is required",
                                     instance: secret,
                                     stack: "'entries' property is required",
                                 })
-                            } else if(secret.type == 'dir' && secret.entries) {
+                            } else if (secret.type == 'dir' && secret.entries) {
                                 errors.push({
                                     message: "'entries' property is not allowed when using type 'dir' that references an existing secret",
                                     instance: secret,
                                     stack: "'entries' property is not allowed when using type 'dir' that references an existing secret",
                                 })
                             }
-                            if(secret.type == 'file' || secret.type == 'env' && secret.entries) {
+                            if (secret.type == 'file' || (secret.type == 'env' && secret.entries)) {
                                 for (const entry of secret.entries) {
-                                    if(secret.type == 'file' && !entry.key) {
+                                    if (secret.type == 'file' && !entry.key) {
                                         errors.push({
                                             message: "'key' property is required",
                                             instance: entry,
                                             stack: "'key' property is required",
                                         })
                                     }
-                                    if(secret.type == 'file' && !entry.filename) {
+                                    if (secret.type == 'file' && !entry.filename) {
                                         errors.push({
                                             message: "'filename' property is required",
                                             instance: entry,
@@ -600,11 +596,11 @@ class SchemaV1 {
                             })
                         }
                         if (!this.frameworkOnlyMode && volume.syncVolume) {
-                            if(!volume.trigger || !["initial", "always"].includes(volume.trigger)) {
+                            if (!volume.trigger || !['initial', 'always'].includes(volume.trigger)) {
                                 errors.push({
                                     message: "'syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",
                                     instance: volume,
-                                    stack:  "'syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",
+                                    stack: "'syncVolume' is set, but volume has missing property 'trigger', needs to be 'initial' or 'always'",
                                 })
                             }
                         }
@@ -627,7 +623,7 @@ class SchemaV1 {
 
                 // NetworkPolicy
                 if (component.networkPolicy) {
-                    if(component.networkPolicy.scope == 'custom' && (!component.networkPolicy.allow || component.networkPolicy.allow.length == 0)) {
+                    if (component.networkPolicy.scope == 'custom' && (!component.networkPolicy.allow || component.networkPolicy.allow.length == 0)) {
                         errors.push({
                             message: "'networkPolicy.allow' property is empty or missing",
                             instance: component.networkPolicy,

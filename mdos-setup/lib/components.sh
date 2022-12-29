@@ -266,7 +266,7 @@ regex_user_input() {
     user_input MVAL "$2" "$3"
 
     if [ "$4" == "k8s-name" ]; then
-        while ! [[ "$MVAL" =~ ^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$ ]]; do
+        while ! [[ "$MVAL" =~ ^[a-z]+[a-z0-9\-]{2,20}$ ]]; do
             warn "Invalide value. Try again"
             user_input MVAL "$2" "$3"
         done

@@ -62,7 +62,7 @@ export default class Service extends Command {
                 message: 'Enter a name for the service to add a port to:',
                 validate: (value: string) => {
                     if (value.trim().length == 0) return 'Mandatory field'
-                    else if (!/^[a-zA-Z]+[a-zA-Z0-9\-]{2,20}$/.test(value))
+                    else if (!/^[a-z]+[a-z0-9\-]{2,20}$/.test(value))
                         return 'Invalid value, only alpha-numeric and dash charactrers are allowed (between 2 - 20 characters)'
                     return true
                 },
@@ -110,7 +110,7 @@ export default class Service extends Command {
         // Create mdos.yaml file
         try {
             fs.writeFileSync(appYamlPath, YAML.stringify(appYaml))
-            success("mdos.yaml file was updated")
+            success('mdos.yaml file was updated')
         } catch (err) {
             this.showError(err)
             process.exit(1)
