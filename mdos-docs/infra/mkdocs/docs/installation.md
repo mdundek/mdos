@@ -16,7 +16,7 @@ hide:
 First, clone this repo on your target machine:
 
 ```sh
-git clone -b v2.0.1 https://github.com/mdundek/mdos.git
+git clone -b v2.0.2 https://github.com/mdundek/mdos.git
 ```
 
 ### Before you start
