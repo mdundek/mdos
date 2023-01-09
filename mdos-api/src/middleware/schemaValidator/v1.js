@@ -63,6 +63,7 @@ class SchemaV1 {
                                     additionalProperties: false,
                                 },
                             },
+                            securityContext: { type: 'object' },
                             command: {
                                 type: 'array',
                             },
