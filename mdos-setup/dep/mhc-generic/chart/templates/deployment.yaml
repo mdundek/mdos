@@ -45,6 +45,10 @@ spec:
     {{- if $.Values.forceUpdate }}
         date: "{{ now | unixEpoch }}"
     {{- end }}
+    {{- if .annotations }}
+      annotations:
+      {{- toYaml .annotations | nindent 8 }}
+    {{- end }}
     spec:
     {{- if .serviceAccount }}
       serviceAccountName: {{ .serviceAccount }}
@@ -262,6 +266,10 @@ spec:
       {{- else if eq .livenessProbe.type "tcp" }}
             tcpSocket:
               port: {{ .livenessProbe.port }}
+      {{- else if eq .livenessProbe.type "cmd" }}
+            exec:
+              command:
+        {{- toYaml .livenessProbe.commands | nindent 14 }}
       {{- end }}
       {{- if .livenessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds }}
@@ -296,6 +304,10 @@ spec:
       {{- else if eq .readinessProbe.type "tcp" }}
             tcpSocket:
               port: {{ .readinessProbe.port }}
+      {{- else if eq .readinessProbe.type "cmd" }}
+            exec:
+              command:
+        {{- toYaml .readinessProbe.commands | nindent 14 }}
       {{- end }}
       {{- if .readinessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds }}

@@ -103,7 +103,7 @@ export default class Protect extends Command {
                         name: 'component',
                         message: 'Which component would you like to protect?',
                         choices: availComponents.map((c: { ingress: any; name: string }) => {
-                            return { name: `${c.name} (${c.ingress.matchHost})`, value: c }
+                            return { name: `${c.name} (${c.ingress.map((i: { matchHost: any }) => i.matchHost).join(', ')})`, value: c }
                         }),
                     },
                 ])
