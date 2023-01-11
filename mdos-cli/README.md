@@ -6,7 +6,7 @@ $ npm install -g mdos-cli
 $ mdos COMMAND
 running command...
 $ mdos (--version)
-mdos-cli/2.0.2 darwin-x64 node-v18.9.0
+mdos-cli/2.0.3 darwin-x64 node-v18.9.0
 $ mdos --help [COMMAND]
 USAGE
   $ mdos COMMAND
@@ -2954,7 +2954,7 @@ DESCRIPTION
   Install MDos framework to your kubernetes cluster
 ```
 
-_See code: [dist/commands/install-framework.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.2/dist/commands/install-framework.ts)_
+_See code: [dist/commands/install-framework.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.3/dist/commands/install-framework.ts)_
 
 ## `mdos kc client add-role`
 
@@ -3612,7 +3612,7 @@ DESCRIPTION
   Login to the platform
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.2/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.3/dist/commands/login.ts)_
 
 ## `mdos logout`
 
@@ -3626,7 +3626,7 @@ DESCRIPTION
   Logout from the platform
 ```
 
-_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.2/dist/commands/logout.ts)_
+_See code: [dist/commands/logout.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.3/dist/commands/logout.ts)_
 
 ## `mdos namespace create`
 
@@ -4456,7 +4456,7 @@ DESCRIPTION
   Retrieve user kubeconfig file and set up
 ```
 
-_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.2/dist/commands/set-kubeconfig.ts)_
+_See code: [dist/commands/set-kubeconfig.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.3/dist/commands/set-kubeconfig.ts)_
 
 ## `mdos shared-volume create`
 
@@ -4855,7 +4855,7 @@ DESCRIPTION
   Get current status of your CLI environment
 ```
 
-_See code: [dist/commands/status.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.2/dist/commands/status.ts)_
+_See code: [dist/commands/status.ts](https://github.com/mdos-cli/hello-world/blob/v2.0.3/dist/commands/status.ts)_
 
 ## `mdos storage add`
 
