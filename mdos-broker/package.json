@@ -1,7 +1,7 @@
 {
   "name": "mdos-broker",
   "description": "MDos event broker",
-    "version": "2.0.2",
+    "version": "2.0.3",
   "homepage": "",
   "private": true,
   "main": "src",
