@@ -25,10 +25,11 @@ sync_volume () {
     fi
 
     if [ "$CURRENT_SYNC_TRIGGER" == "initial" ]; then
-        if [ "$(ls -A $CURRENT_SYNC_TARGET_DIR)" ]; then
-            logInfo "Sync trigger is \"initial\", and target folder already has some data init. Skipping sync." "$CURRENT_SYNC_TARGET_DIR"
-        else
+        FC=$(ls -A $CURRENT_SYNC_TARGET_DIR | grep -vw -E 'lost+found')
+        if [ "$FC" == "" ] || [ "$FC" == "lost+found" ]; then
             DO_SYNC=1
+        else
+            logInfo "Sync trigger is \"initial\", and target folder already has some data init ($FC). Skipping sync." "$CURRENT_SYNC_TARGET_DIR"
         fi
     else
         DO_SYNC=1
@@ -44,11 +45,12 @@ sync_volume () {
 
         # Do the Job
         lftp -u $FTP_USERNAME,$FTP_PASSWORD -p $PORT $PROTOCOL://$HOST <<-EOF
-        set ssl:verify-certificate no
-        set sftp:auto-confirm yes
-        mirror -v -e -s --parallel=$PARALLEL $CURRENT_SYNC_SOURCE_DIR $CURRENT_SYNC_TARGET_DIR
-        quit
+set ssl:verify-certificate no
+set sftp:auto-confirm yes
+mirror -v -e -s --parallel=$PARALLEL $CURRENT_SYNC_SOURCE_DIR $CURRENT_SYNC_TARGET_DIR
+quit
 EOF
+        chmod -R a+w $CURRENT_SYNC_TARGET_DIR
         echo "=>DONE"
     fi
 }
