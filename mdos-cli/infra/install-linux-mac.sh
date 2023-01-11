@@ -14,7 +14,7 @@
     if [ ! -z $1 ]; then
         CLI_VERSION=$1
     else
-        CLI_VERSION=v2.0.2
+        CLI_VERSION=v2.0.3
     fi
 
     if [[ ! ":$PATH:" == *":/usr/local/bin:"* ]]; then
