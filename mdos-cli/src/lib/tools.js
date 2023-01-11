@@ -447,7 +447,11 @@ const computeApplicationTree = (data, appendNamespace) => {
                 if (component.volumes) {
                     treeData[appNodeName][appCompNodeName]['Volumes:'] = {}
                     for (const volume of component.volumes) {
-                        let volString = `(Size: ${volume.size}, MountPath: ${volume.mountPath})`
+                        let volString
+                        if(!volume.hostPath)
+                            volString = `(Size: ${volume.size}, MountPath: ${volume.mountPath})`
+                        else
+                            volString = `(HostPath: ${volume.hostPath}, MountPath: ${volume.mountPath})`
                         treeData[appNodeName][appCompNodeName]['Volumes:'][`${volume.name}: ${chalk.gray(volString)}`] = null
                     }
                 }

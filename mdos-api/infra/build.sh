@@ -18,6 +18,10 @@ while [ "$1" != "" ]; do
             shift
             DOMAIN=$1
         ;; 
+        --version )
+            shift
+            CURRENT_APP_VERSION=$1
+        ;; 
         * ) echo "Invalid parameter detected => $1"
             exit 1
     esac
@@ -74,7 +78,9 @@ cd ..
 
 echo "li14ebe14" | docker login registry.$DOMAIN --username mdundek --password-stdin
 
-CURRENT_APP_VERSION=$(cat ./package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
+if [ -z $CURRENT_APP_VERSION ]; then
+    CURRENT_APP_VERSION=$(cat ./package.json | grep '"version":' | cut -d ":" -f2 | cut -d'"' -f 2)
+fi
 
 cp infra/dep/helm/helm .
 cp infra/dep/kubectl/kubectl .

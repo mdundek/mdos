@@ -63,6 +63,10 @@ class SchemaV1 {
                                     additionalProperties: false,
                                 },
                             },
+                            securityContext: { type: 'object' }, // NEW
+                            livenessProbe: { type: 'object' }, // NEW
+                            readinessProbe: { type: 'object' }, // NEW
+                            annotations: { type: 'object' }, // NEW
                             command: {
                                 type: 'array',
                             },
